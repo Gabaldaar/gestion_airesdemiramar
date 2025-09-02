@@ -36,7 +36,7 @@ import { AddPaymentForm } from "./_components/add-payment-form";
 import { AddRentalExpenseForm } from "./_components/add-rental-expense-form";
 import type { Booking } from "@/lib/types";
 
-export default function PropertyDetailPage({
+export default async function PropertyDetailPage({
   params,
 }: {
   params: { id: string };
