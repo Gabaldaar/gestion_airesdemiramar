@@ -2,7 +2,7 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Home, LayoutDashboard, Settings, Waves, TrendingDown, Users } from "lucide-react"
+import { BookOpen, Home, LayoutDashboard, Settings, Waves, TrendingDown, Users, AreaChart } from "lucide-react"
 
 import {
   Sidebar,
@@ -26,6 +26,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     { href: "/bookings", label: "Reservas", icon: BookOpen },
     { href: "/tenants", label: "Inquilinos", icon: Users },
     { href: "/expenses", label: "Gastos", icon: TrendingDown },
+    { href: "/reports", label: "Reportes", icon: AreaChart },
     { href: "/settings", label: "Configuración", icon: Settings },
   ]
 

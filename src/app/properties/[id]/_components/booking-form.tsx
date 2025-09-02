@@ -30,6 +30,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command"
 import {
   Form,
@@ -203,34 +204,36 @@ export function BookingForm({ property }: { property: Property }) {
                     <PopoverContent className="w-full p-0">
                       <Command>
                         <CommandInput placeholder="Buscar inquilino..." />
-                        <CommandEmpty>
-                            <div className="p-4 text-sm text-center">
-                                <p>No se encontró el inquilino.</p>
-                                <Button variant="link" onClick={handleAddNewTenant}>Agregar nuevo inquilino</Button>
-                            </div>
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {tenants.map((tenant) => (
-                            <CommandItem
-                              value={tenant.name}
-                              key={tenant.id}
-                              onSelect={() => {
-                                form.setValue("tenantId", tenant.id)
-                                setTenantPopoverOpen(false)
-                              }}
-                            >
-                              <CheckCircle
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  tenant.id === field.value
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                )}
-                              />
-                              {tenant.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
+                        <CommandList>
+                          <CommandEmpty>
+                              <div className="p-4 text-sm text-center">
+                                  <p>No se encontró el inquilino.</p>
+                                  <Button variant="link" onClick={handleAddNewTenant}>Agregar nuevo inquilino</Button>
+                              </div>
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {tenants.map((tenant) => (
+                              <CommandItem
+                                value={tenant.name}
+                                key={tenant.id}
+                                onSelect={() => {
+                                  form.setValue("tenantId", tenant.id)
+                                  setTenantPopoverOpen(false)
+                                }}
+                              >
+                                <CheckCircle
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    tenant.id === field.value
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {tenant.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
                       </Command>
                     </PopoverContent>
                   </Popover>
