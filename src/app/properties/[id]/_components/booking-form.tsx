@@ -38,15 +38,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { Combobox } from "@/components/ui/combobox";
 
 
 const bookingFormSchema = z.object({
-  tenantId: z.coerce.number({ required_error: "Debe seleccionar un inquilino." }),
+  tenantId: z.coerce.number({ required_error: "Debe seleccionar un inquilino." }).min(1, "Debe seleccionar un inquilino."),
   dateRange: z.object({
     from: z.date({ required_error: "Fecha de ingreso es requerida." }),
     to: z.date({ required_error: "Fecha de egreso es requerida." }),
@@ -148,8 +154,6 @@ export function BookingForm({ property }: { property: Property }) {
     router.push('/tenants?new=true');
   }
 
-  const tenantOptions = tenants.map(t => ({ value: String(t.id), label: t.name }));
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -171,21 +175,23 @@ export function BookingForm({ property }: { property: Property }) {
               control={form.control}
               name="tenantId"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem>
                   <FormLabel>Inquilino</FormLabel>
-                   <Combobox
-                      options={tenantOptions}
-                      value={String(field.value)}
-                      onChange={(value) => form.setValue("tenantId", Number(value))}
-                      placeholder="Seleccionar inquilino"
-                      searchPlaceholder="Buscar inquilino..."
-                      notFoundContent={
-                        <div className="p-4 text-sm text-center">
-                            <p>No se encontró el inquilino.</p>
-                            <Button variant="link" onClick={handleAddNewTenant}>Agregar nuevo inquilino</Button>
-                        </div>
-                      }
-                    />
+                   <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un inquilino" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {tenants.map(t => (
+                        <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="link" size="sm" className="p-0 h-auto" onClick={handleAddNewTenant}>
+                    O agregar un nuevo inquilino
+                  </Button>
                   <FormMessage />
                 </FormItem>
               )}
