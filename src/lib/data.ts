@@ -111,6 +111,20 @@ let bookings: Booking[] = [
       { id: 2, description: 'Limpieza extra', amount: 50, currency: 'USD' }
     ],
   },
+  {
+    id: 5,
+    propertyId: 4,
+    tenantId: 1,
+    tenantName: 'Juan Pérez',
+    tenantContact: 'juan.perez@email.com',
+    checkIn: '2025-01-10T14:00:00.000Z',
+    checkOut: '2025-01-20T10:00:00.000Z',
+    amountUSD: 2800,
+    amountARS: 2940000,
+    conversionRate: 1050,
+    payments: [],
+    rentalExpenses: [],
+  },
 ];
 
 let propertyExpenses: PropertyExpense[] = [
@@ -157,10 +171,12 @@ export const getTenantById = (id: number) => tenants.find(t => t.id === id);
 export const getBookings = () => {
     return bookings.map(booking => {
         const tenant = getTenantById(booking.tenantId);
+        const property = getPropertyById(booking.propertyId);
         return {
             ...booking,
             tenantName: tenant?.name || 'Inquilino no encontrado',
-            tenantContact: tenant?.email || 'N/A'
+            tenantContact: tenant?.email || 'N/A',
+            propertyName: property?.name || 'Propiedad no encontrada',
         }
     })
 };
