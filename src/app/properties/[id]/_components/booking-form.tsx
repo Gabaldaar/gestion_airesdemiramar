@@ -216,9 +216,12 @@ export function BookingForm({ property }: { property: Property }) {
                               <CommandItem
                                 value={tenant.name}
                                 key={tenant.id}
-                                onSelect={() => {
-                                  form.setValue("tenantId", tenant.id)
-                                  setTenantPopoverOpen(false)
+                                onSelect={(currentValue) => {
+                                  const selectedTenant = tenants.find(t => t.name.toLowerCase() === currentValue.toLowerCase());
+                                  if (selectedTenant) {
+                                    form.setValue("tenantId", selectedTenant.id);
+                                  }
+                                  setTenantPopoverOpen(false);
                                 }}
                               >
                                 <CheckCircle
