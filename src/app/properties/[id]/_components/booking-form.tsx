@@ -38,17 +38,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { Combobox } from "@/components/ui/combobox";
 
 
 const bookingFormSchema = z.object({
@@ -154,6 +148,8 @@ export function BookingForm({ property }: { property: Property }) {
     router.push('/tenants?new=true');
   }
 
+  const tenantOptions = tenants.map(t => ({ value: t.id.toString(), label: t.name }));
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -175,21 +171,17 @@ export function BookingForm({ property }: { property: Property }) {
               control={form.control}
               name="tenantId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Inquilino</FormLabel>
-                   <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un inquilino" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tenants.map(t => (
-                        <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="link" size="sm" className="p-0 h-auto" onClick={handleAddNewTenant}>
+                   <Combobox
+                      options={tenantOptions}
+                      value={field.value?.toString()}
+                      onChange={(value) => field.onChange(Number(value))}
+                      placeholder="Seleccionar inquilino..."
+                      searchPlaceholder="Buscar inquilino..."
+                      notFoundMessage="No se encontró el inquilino."
+                    />
+                  <Button variant="link" size="sm" className="p-0 h-auto self-start" onClick={handleAddNewTenant}>
                     O agregar un nuevo inquilino
                   </Button>
                   <FormMessage />
