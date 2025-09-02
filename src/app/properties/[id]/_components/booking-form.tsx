@@ -153,8 +153,6 @@ export function BookingForm({ property }: { property: Property }) {
   }
 
   const handleAddNewTenant = () => {
-    // Ideally, this would open a nested dialog or a different page.
-    // For simplicity, we'll just redirect to the tenants page to add a new one.
     router.push('/tenants?new=true');
   }
 
@@ -214,10 +212,13 @@ export function BookingForm({ property }: { property: Property }) {
                           <CommandGroup>
                             {tenants.map((tenant) => (
                               <CommandItem
-                                value={tenant.name}
                                 key={tenant.id}
-                                onSelect={() => {
-                                  form.setValue("tenantId", tenant.id);
+                                value={tenant.name}
+                                onSelect={(currentValue) => {
+                                  const selectedTenant = tenants.find(t => t.name.toLowerCase() === currentValue.toLowerCase());
+                                  if (selectedTenant) {
+                                    form.setValue("tenantId", selectedTenant.id);
+                                  }
                                   setTenantPopoverOpen(false);
                                 }}
                               >
