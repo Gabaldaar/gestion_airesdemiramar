@@ -6,10 +6,22 @@ export interface Property {
   imageUrl: string;
 }
 
+export interface Tenant {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  province: string;
+  country: string;
+}
+
 export interface Booking {
   id: number;
   propertyId: number;
-  tenantName: string;
+  tenantId: number;
+  tenantName: string; // Se mantiene por simplicidad en la UI, pero el ID es la referencia real
   tenantContact: string;
   checkIn: string;
   checkOut: string;

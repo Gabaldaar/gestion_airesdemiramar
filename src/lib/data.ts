@@ -1,5 +1,5 @@
 
-import type { Property, Booking, PropertyExpense, Pricing, Payment, RentalExpense } from './types';
+import type { Property, Booking, PropertyExpense, Pricing, Payment, RentalExpense, Tenant } from './types';
 
 // En una aplicación real, estos datos vendrían de una base de datos.
 // Usamos "let" en lugar de "const" para poder modificar los arrays en memoria.
@@ -34,10 +34,18 @@ let properties: Property[] = [
   },
 ];
 
+let tenants: Tenant[] = [
+    { id: 1, name: 'Juan Pérez', email: 'juan.perez@email.com', phone: '+54 223 555-0101', address: 'Calle Falsa 123', city: 'Mar del Plata', province: 'Buenos Aires', country: 'Argentina' },
+    { id: 2, name: 'Ana García', email: 'ana.garcia@email.com', phone: '+54 11 555-0102', address: 'Av. Siempre Viva 742', city: 'CABA', province: 'CABA', country: 'Argentina' },
+    { id: 3, name: 'Carlos López', email: 'carlos.lopez@email.com', phone: '+54 351 555-0103', address: 'El Jacarandá 456', city: 'Córdoba', province: 'Córdoba', country: 'Argentina' },
+    { id: 4, name: 'Maria Fernandez', email: 'maria.fernandez@email.com', phone: '+54 261 555-0104', address: 'San Martín 876', city: 'Mendoza', province: 'Mendoza', country: 'Argentina' },
+];
+
 let bookings: Booking[] = [
   {
     id: 1,
     propertyId: 1,
+    tenantId: 1,
     tenantName: 'Juan Pérez',
     tenantContact: 'juan.perez@email.com',
     checkIn: '2024-07-20T14:00:00.000Z',
@@ -56,6 +64,7 @@ let bookings: Booking[] = [
   {
     id: 2,
     propertyId: 2,
+    tenantId: 2,
     tenantName: 'Ana García',
     tenantContact: 'ana.garcia@email.com',
     checkIn: '2024-08-01T14:00:00.000Z',
@@ -71,6 +80,7 @@ let bookings: Booking[] = [
   {
     id: 3,
     propertyId: 1,
+    tenantId: 3,
     tenantName: 'Carlos López',
     tenantContact: 'carlos.lopez@email.com',
     checkIn: '2024-08-05T14:00:00.000Z',
@@ -86,6 +96,7 @@ let bookings: Booking[] = [
   {
     id: 4,
     propertyId: 3,
+    tenantId: 4,
     tenantName: 'Maria Fernandez',
     tenantContact: 'maria.fernandez@email.com',
     checkIn: '2024-07-22T14:00:00.000Z',
@@ -140,9 +151,21 @@ let pricing: Pricing[] = [
 export const getProperties = () => properties;
 export const getPropertyById = (id: number) => properties.find(p => p.id === id);
 
-export const getBookings = () => bookings;
-export const getBookingsByPropertyId = (propertyId: number) => bookings.filter(b => b.propertyId === propertyId);
-export const getBookingById = (id: number) => bookings.find(b => b.id === id);
+export const getTenants = () => tenants;
+export const getTenantById = (id: number) => tenants.find(t => t.id === id);
+
+export const getBookings = () => {
+    return bookings.map(booking => {
+        const tenant = getTenantById(booking.tenantId);
+        return {
+            ...booking,
+            tenantName: tenant?.name || 'Inquilino no encontrado',
+            tenantContact: tenant?.email || 'N/A'
+        }
+    })
+};
+export const getBookingsByPropertyId = (propertyId: number) => getBookings().filter(b => b.propertyId === propertyId);
+export const getBookingById = (id: number) => getBookings().find(b => b.id === id);
 
 export const getPropertyExpenses = () => propertyExpenses;
 export const getExpensesByPropertyId = (propertyId: number) => propertyExpenses.filter(e => e.propertyId === propertyId);
@@ -150,6 +173,23 @@ export const getExpensesByPropertyId = (propertyId: number) => propertyExpenses.
 export const getPricingByPropertyId = (propertyId: number) => pricing.find(p => p.propertyId === propertyId);
 
 // --- Funciones de Escritura (Simulación de API) ---
+
+export const addOrUpdateTenant = (data: Omit<Tenant, 'id'> & { id?: number }): Tenant => {
+    if (data.id) {
+        const tenantIndex = tenants.findIndex(t => t.id === data.id);
+        if (tenantIndex !== -1) {
+            tenants[tenantIndex] = { ...tenants[tenantIndex], ...data };
+            console.log("Updated tenant:", tenants[tenantIndex]);
+            return tenants[tenantIndex];
+        }
+    }
+    const newId = tenants.length > 0 ? Math.max(...tenants.map(t => t.id)) + 1 : 1;
+    const newTenant: Tenant = { ...data, id: newId };
+    tenants.push(newTenant);
+    console.log("Added tenant:", newTenant);
+    return newTenant;
+};
+
 
 export const updateProperty = (id: number, data: Partial<Omit<Property, 'id'>>) => {
     const propIndex = properties.findIndex(p => p.id === id);
@@ -162,11 +202,19 @@ export const updateProperty = (id: number, data: Partial<Omit<Property, 'id'>>) 
     return null;
 }
 
-export const addBooking = (data: Omit<Booking, 'id' | 'payments' | 'rentalExpenses'>) => {
+export const addBooking = (data: Omit<Booking, 'id' | 'payments' | 'rentalExpenses' | 'tenantName' | 'tenantContact'>) => {
+    const tenant = getTenantById(data.tenantId);
+    if (!tenant) {
+        console.error("Tenant not found for adding booking:", data.tenantId);
+        return null;
+    }
+    
     const newId = bookings.length > 0 ? Math.max(...bookings.map(b => b.id)) + 1 : 1;
     const newBooking: Booking = {
         ...data,
         id: newId,
+        tenantName: tenant.name,
+        tenantContact: tenant.email,
         payments: [],
         rentalExpenses: [],
     };

@@ -9,7 +9,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { getBookings, getProperties } from "@/lib/data"
 import { format } from "date-fns"
-import { es } from "date-fns/locale"
 
 export default function BookingsPage() {
   const bookings = getBookings();

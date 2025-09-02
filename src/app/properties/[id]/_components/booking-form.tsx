@@ -7,13 +7,13 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, Loader2, AlertCircle, CheckCircle, PlusCircle } from "lucide-react";
+import { CalendarIcon, Loader2, AlertCircle, CheckCircle, PlusCircle, ChevronsUpDown } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { calendarConflictCheck } from "@/ai/flows/calendar-conflict-check";
 
 import { cn } from "@/lib/utils";
-import type { Property } from "@/lib/types";
-import { addBooking } from "@/lib/data";
+import type { Property, Tenant } from "@/lib/types";
+import { addBooking, getTenants } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,9 +25,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command"
+import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -42,11 +48,11 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 
 const bookingFormSchema = z.object({
-  tenantName: z.string().min(3, { message: "El nombre es requerido." }),
-  tenantContact: z.string().email({ message: "Email inválido." }),
+  tenantId: z.coerce.number({ required_error: "Debe seleccionar un inquilino." }),
   dateRange: z.object({
     from: z.date({ required_error: "Fecha de ingreso es requerida." }),
     to: z.date({ required_error: "Fecha de egreso es requerida." }),
@@ -65,14 +71,21 @@ type ConflictState = {
 
 export function BookingForm({ property }: { property: Property }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
   const { toast } = useToast();
   const [conflictState, setConflictState] = useState<ConflictState>({ status: 'idle' });
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenantPopoverOpen, setTenantPopoverOpen] = useState(false)
+
+  useEffect(() => {
+    if(open) {
+      setTenants(getTenants());
+    }
+  }, [open]);
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
-      tenantName: "",
-      tenantContact: "",
       amountUSD: 0,
       conversionRate: 0,
       dateRange: {
@@ -119,21 +132,29 @@ export function BookingForm({ property }: { property: Property }) {
     
     addBooking({
       propertyId: property.id,
-      tenantName: data.tenantName,
-      tenantContact: data.tenantContact,
+      tenantId: data.tenantId,
       checkIn: data.dateRange.from.toISOString(),
       checkOut: data.dateRange.to.toISOString(),
       amountUSD: data.amountUSD,
       amountARS: data.amountUSD * data.conversionRate,
       conversionRate: data.conversionRate,
     });
+    
+    const tenant = tenants.find(t => t.id === data.tenantId)
 
     toast({
       title: "Reserva Creada",
-      description: `Se ha creado una reserva para ${data.tenantName}.`,
+      description: `Se ha creado una reserva para ${tenant?.name}.`,
     });
     setOpen(false);
     form.reset();
+    router.refresh();
+  }
+
+  const handleAddNewTenant = () => {
+    // Ideally, this would open a nested dialog or a different page.
+    // For simplicity, we'll just redirect to the tenants page to add a new one.
+    router.push('/tenants?new=true');
   }
 
   return (
@@ -144,7 +165,7 @@ export function BookingForm({ property }: { property: Property }) {
           Nueva Reserva
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Nueva Reserva para {property.name}</DialogTitle>
           <DialogDescription>
@@ -153,34 +174,70 @@ export function BookingForm({ property }: { property: Property }) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="tenantName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre del Inquilino</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tenantContact"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contacto (Email)</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="tenantId"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Inquilino</FormLabel>
+                  <Popover open={tenantPopoverOpen} onOpenChange={setTenantPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value
+                            ? tenants.find(
+                                (tenant) => tenant.id === field.value
+                              )?.name
+                            : "Seleccionar inquilino"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar inquilino..." />
+                        <CommandEmpty>
+                            <div className="p-4 text-sm text-center">
+                                <p>No se encontró el inquilino.</p>
+                                <Button variant="link" onClick={handleAddNewTenant}>Agregar nuevo inquilino</Button>
+                            </div>
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {tenants.map((tenant) => (
+                            <CommandItem
+                              value={tenant.name}
+                              key={tenant.id}
+                              onSelect={() => {
+                                form.setValue("tenantId", tenant.id)
+                                setTenantPopoverOpen(false)
+                              }}
+                            >
+                              <CheckCircle
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  tenant.id === field.value
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              {tenant.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}

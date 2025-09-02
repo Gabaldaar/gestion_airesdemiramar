@@ -30,12 +30,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
-import { DollarSign, HandCoins, PlusCircle } from "lucide-react";
+import { DollarSign, HandCoins } from "lucide-react";
 
 import { BookingForm } from "./_components/booking-form";
 import { AddPaymentForm } from "./_components/add-payment-form";
 import { AddRentalExpenseForm } from "./_components/add-rental-expense-form";
+import type { Booking } from "@/lib/types";
 
 export default function PropertyDetailPage({
   params,
@@ -61,8 +61,8 @@ export default function PropertyDetailPage({
     return { text: "Finalizada", variant: "outline" };
   };
   
-  const totalPaid = (booking: any) => booking.payments.reduce((sum: number, p: any) => sum + (p.currency === 'ARS' ? p.amount / p.conversionRate : p.amount), 0);
-  const outstandingAmount = (booking: any) => booking.amountUSD - totalPaid(booking);
+  const totalPaid = (booking: Booking) => booking.payments.reduce((sum, p) => sum + (p.currency === 'ARS' ? p.amount / p.conversionRate : p.amount), 0);
+  const outstandingAmount = (booking: Booking) => booking.amountUSD - totalPaid(booking);
 
   return (
     <div className="flex flex-col gap-8">
@@ -98,7 +98,7 @@ export default function PropertyDetailPage({
               </TabsList>
             </div>
             <TabsContent value="bookings" className="p-6 space-y-4">
-               {bookings.length > 0 ? bookings.map(b => (
+               {bookings.sort((a,b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime()).map(b => (
                 <Card key={b.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">

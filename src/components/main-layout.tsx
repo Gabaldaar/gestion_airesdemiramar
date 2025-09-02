@@ -2,7 +2,7 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Home, LayoutDashboard, Settings, Waves, TrendingDown } from "lucide-react"
+import { BookOpen, Home, LayoutDashboard, Settings, Waves, TrendingDown, Users } from "lucide-react"
 
 import {
   Sidebar,
@@ -24,6 +24,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
     { href: "/properties", label: "Propiedades", icon: Home },
     { href: "/bookings", label: "Reservas", icon: BookOpen },
+    { href: "/tenants", label: "Inquilinos", icon: Users },
     { href: "/expenses", label: "Gastos", icon: TrendingDown },
     { href: "/settings", label: "Configuración", icon: Settings },
   ]
@@ -47,7 +48,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href}
+                  isActive={pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/')}
                   tooltip={item.label}
                 >
                   <Link href={item.href}>

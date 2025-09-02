@@ -13,7 +13,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { getBookings, getProperties, getPropertyExpenses } from "@/lib/data"
-import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DollarSign, Home, LogIn, TrendingDown, Users } from "lucide-react"
