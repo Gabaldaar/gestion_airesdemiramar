@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, Loader2, AlertCircle, CheckCircle, PlusCircle, ChevronsUpDown } from "lucide-react";
+import { CalendarIcon, Loader2, AlertCircle, CheckCircle, PlusCircle } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { calendarConflictCheck } from "@/ai/flows/calendar-conflict-check";
 
@@ -24,14 +24,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
 import {
   Form,
   FormControl,
@@ -50,6 +42,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { Combobox } from "@/components/ui/combobox";
 
 
 const bookingFormSchema = z.object({
@@ -76,8 +69,7 @@ export function BookingForm({ property }: { property: Property }) {
   const { toast } = useToast();
   const [conflictState, setConflictState] = useState<ConflictState>({ status: 'idle' });
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [tenantPopoverOpen, setTenantPopoverOpen] = useState(false)
-
+  
   useEffect(() => {
     if(open) {
       setTenants(getTenants());
@@ -156,6 +148,8 @@ export function BookingForm({ property }: { property: Property }) {
     router.push('/tenants?new=true');
   }
 
+  const tenantOptions = tenants.map(t => ({ value: String(t.id), label: t.name }));
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -179,65 +173,19 @@ export function BookingForm({ property }: { property: Property }) {
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Inquilino</FormLabel>
-                  <Popover open={tenantPopoverOpen} onOpenChange={setTenantPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value
-                            ? tenants.find(
-                                (tenant) => tenant.id === field.value
-                              )?.name
-                            : "Seleccionar inquilino"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                      <Command>
-                        <CommandInput placeholder="Buscar inquilino..." />
-                        <CommandList>
-                          <CommandEmpty>
-                              <div className="p-4 text-sm text-center">
-                                  <p>No se encontró el inquilino.</p>
-                                  <Button variant="link" onClick={handleAddNewTenant}>Agregar nuevo inquilino</Button>
-                              </div>
-                          </CommandEmpty>
-                          <CommandGroup>
-                            {tenants.map((tenant) => (
-                              <CommandItem
-                                key={tenant.id}
-                                value={tenant.name}
-                                onSelect={(currentValue) => {
-                                  const selectedTenant = tenants.find(t => t.name.toLowerCase() === currentValue.toLowerCase());
-                                  if (selectedTenant) {
-                                    form.setValue("tenantId", selectedTenant.id);
-                                  }
-                                  setTenantPopoverOpen(false);
-                                }}
-                              >
-                                <CheckCircle
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    tenant.id === field.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                {tenant.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                   <Combobox
+                      options={tenantOptions}
+                      value={String(field.value)}
+                      onChange={(value) => form.setValue("tenantId", Number(value))}
+                      placeholder="Seleccionar inquilino"
+                      searchPlaceholder="Buscar inquilino..."
+                      notFoundContent={
+                        <div className="p-4 text-sm text-center">
+                            <p>No se encontró el inquilino.</p>
+                            <Button variant="link" onClick={handleAddNewTenant}>Agregar nuevo inquilino</Button>
+                        </div>
+                      }
+                    />
                   <FormMessage />
                 </FormItem>
               )}
@@ -332,7 +280,7 @@ export function BookingForm({ property }: { property: Property }) {
                     <FormItem>
                         <FormLabel>Monto (USD)</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} />
+                            <Input type="number" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -345,7 +293,7 @@ export function BookingForm({ property }: { property: Property }) {
                     <FormItem>
                         <FormLabel>Tipo de Cambio (ARS por USD)</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} />
+                            <Input type="number" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
