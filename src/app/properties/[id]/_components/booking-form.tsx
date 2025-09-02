@@ -34,6 +34,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -42,7 +49,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { Combobox } from "@/components/ui/combobox";
 
 
 const bookingFormSchema = z.object({
@@ -148,8 +154,6 @@ export function BookingForm({ property }: { property: Property }) {
     router.push('/tenants?new=true');
   }
 
-  const tenantOptions = tenants.map(t => ({ value: t.id.toString(), label: t.name }));
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -173,14 +177,20 @@ export function BookingForm({ property }: { property: Property }) {
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Inquilino</FormLabel>
-                   <Combobox
-                      options={tenantOptions}
-                      value={field.value?.toString()}
-                      onChange={(value) => field.onChange(Number(value))}
-                      placeholder="Seleccionar inquilino..."
-                      searchPlaceholder="Buscar inquilino..."
-                      notFoundMessage="No se encontró el inquilino."
-                    />
+                   <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar inquilino..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {tenants.map((tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id.toString()}>
+                            {tenant.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   <Button variant="link" size="sm" className="p-0 h-auto self-start" onClick={handleAddNewTenant}>
                     O agregar un nuevo inquilino
                   </Button>
