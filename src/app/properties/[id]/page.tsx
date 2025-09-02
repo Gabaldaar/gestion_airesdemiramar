@@ -1,4 +1,3 @@
-
 import Image from "next/image";
 import {
   getBookingsByPropertyId,
@@ -98,7 +97,7 @@ export default function PropertyDetailPage({
               </TabsList>
             </div>
             <TabsContent value="bookings" className="p-6 space-y-4">
-               {bookings.sort((a,b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime()).map(b => (
+               {bookings.length > 0 ? bookings.sort((a,b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime()).map(b => (
                 <Card key={b.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
