@@ -151,7 +151,7 @@ export const getPricingByPropertyId = (propertyId: number) => pricing.find(p => 
 
 // --- Funciones de Escritura (Simulación de API) ---
 
-export const updateProperty = (id: number, data: Partial<Omit<Property, 'id' | 'imageUrl'>>) => {
+export const updateProperty = (id: number, data: Partial<Omit<Property, 'id'>>) => {
     const propIndex = properties.findIndex(p => p.id === id);
     if(propIndex !== -1) {
         properties[propIndex] = { ...properties[propIndex], ...data };

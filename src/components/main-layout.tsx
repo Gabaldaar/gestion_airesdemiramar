@@ -37,7 +37,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <Waves className="h-6 w-6" />
             </Button>
             <h2 className="text-lg font-bold font-headline tracking-tight text-primary">
-              Miramar Rentals
+              Aires de Miramar
             </h2>
           </Link>
         </SidebarHeader>

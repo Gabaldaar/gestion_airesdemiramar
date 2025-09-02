@@ -29,6 +29,9 @@ const formSchema = z.object({
   googleCalendarId: z.string().email({
     message: "Por favor, introduce un ID de calendario de Google válido (email).",
   }),
+  imageUrl: z.string().url({
+      message: "Por favor, introduce una URL de imagen válida."
+  })
 })
 
 export function PropertySettingsForm({ property }: { property: Property }) {
@@ -41,6 +44,7 @@ export function PropertySettingsForm({ property }: { property: Property }) {
     defaultValues: {
       name: property.name,
       googleCalendarId: property.googleCalendarId,
+      imageUrl: property.imageUrl
     },
   })
 
@@ -90,6 +94,22 @@ export function PropertySettingsForm({ property }: { property: Property }) {
             )}
             />
         </div>
+        <FormField
+            control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>URL de la Imagen</FormLabel>
+                <FormControl>
+                    <Input placeholder="https://ejemplo.com/imagen.jpg" {...field} />
+                </FormControl>
+                <FormDescription>
+                    La imagen principal que se mostrará para la propiedad.
+                </FormDescription>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
         <Button type="submit" disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Guardar Cambios

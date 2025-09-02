@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster"
 import MainLayout from '@/components/main-layout';
 
 export const metadata: Metadata = {
-  title: 'Miramar Rentals Manager',
+  title: 'Aires de Miramar - Admin',
   description: 'Gestiona tus alquileres de temporada en Miramar',
 };
 

@@ -247,7 +247,7 @@ export function BookingForm({ property }: { property: Property }) {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Conflicto de Fechas</AlertTitle>
                     <AlertDescription>
-                      {conflictState.message || "Las fechas seleccionadas no están disponibles."}
+                      {conflictState.message || "Las fechas seleccionadas no están disponibles."} Se puede registrar de todas formas.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -294,7 +294,7 @@ export function BookingForm({ property }: { property: Property }) {
             
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={conflictState.hasConflict || conflictState.status === 'checking'}>
+              <Button type="submit" disabled={conflictState.status === 'checking'}>
                 Crear Reserva
               </Button>
             </DialogFooter>
