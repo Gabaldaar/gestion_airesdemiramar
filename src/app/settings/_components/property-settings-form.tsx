@@ -26,6 +26,9 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: "El nombre debe tener al menos 2 caracteres.",
   }),
+  address: z.string().min(5, {
+    message: "La dirección debe tener al menos 5 caracteres.",
+  }),
   googleCalendarId: z.string().email({
     message: "Por favor, introduce un ID de calendario de Google válido (email).",
   }),
@@ -43,6 +46,7 @@ export function PropertySettingsForm({ property }: { property: Property }) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: property.name,
+      address: property.address,
       googleCalendarId: property.googleCalendarId,
       imageUrl: property.imageUrl
     },
@@ -77,7 +81,21 @@ export function PropertySettingsForm({ property }: { property: Property }) {
                 </FormItem>
             )}
             />
-            <FormField
+             <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Dirección</FormLabel>
+                <FormControl>
+                    <Input placeholder="Ej. Av. Centauro 555" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <FormField
             control={form.control}
             name="googleCalendarId"
             render={({ field }) => (
@@ -93,7 +111,6 @@ export function PropertySettingsForm({ property }: { property: Property }) {
                 </FormItem>
             )}
             />
-        </div>
         <FormField
             control={form.control}
             name="imageUrl"

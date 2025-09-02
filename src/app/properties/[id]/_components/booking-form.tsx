@@ -201,7 +201,7 @@ export function BookingForm({ property }: { property: Property }) {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                       <Command>
                         <CommandInput placeholder="Buscar inquilino..." />
                         <CommandList>
