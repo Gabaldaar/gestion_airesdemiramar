@@ -214,13 +214,10 @@ export function BookingForm({ property }: { property: Property }) {
                           <CommandGroup>
                             {tenants.map((tenant) => (
                               <CommandItem
-                                value={tenant.name}
+                                value={String(tenant.id)}
                                 key={tenant.id}
                                 onSelect={(currentValue) => {
-                                  const selectedTenant = tenants.find(t => t.name.toLowerCase() === currentValue.toLowerCase());
-                                  if (selectedTenant) {
-                                    form.setValue("tenantId", selectedTenant.id);
-                                  }
+                                  form.setValue("tenantId", parseInt(currentValue, 10));
                                   setTenantPopoverOpen(false);
                                 }}
                               >
