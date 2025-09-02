@@ -1,8 +1,10 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -31,6 +33,7 @@ const formSchema = z.object({
 
 export function PropertySettingsForm({ property }: { property: Property }) {
   const { toast } = useToast()
+  const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -43,15 +46,14 @@ export function PropertySettingsForm({ property }: { property: Property }) {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSaving(true)
-    // Simulate API call
-    setTimeout(() => {
-      updateProperty(property.id, values)
-      toast({
-        title: "Propiedad actualizada",
-        description: `Los datos de "${values.name}" se han guardado.`,
-      })
-      setIsSaving(false)
-    }, 1000)
+    
+    updateProperty(property.id, values)
+    toast({
+      title: "Propiedad actualizada",
+      description: `Los datos de "${values.name}" se han guardado.`,
+    })
+    setIsSaving(false)
+    router.refresh() // Recarga la página para mostrar los nuevos datos
   }
 
   return (

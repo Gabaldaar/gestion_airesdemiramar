@@ -1,6 +1,9 @@
-import type { Property, Booking, PropertyExpense, Pricing } from './types';
 
-const properties: Property[] = [
+import type { Property, Booking, PropertyExpense, Pricing, Payment, RentalExpense } from './types';
+
+// En una aplicación real, estos datos vendrían de una base de datos.
+// Usamos "let" en lugar de "const" para poder modificar los arrays en memoria.
+let properties: Property[] = [
   {
     id: 1,
     name: 'Depto. Centauro',
@@ -31,7 +34,7 @@ const properties: Property[] = [
   },
 ];
 
-const bookings: Booking[] = [
+let bookings: Booking[] = [
   {
     id: 1,
     propertyId: 1,
@@ -99,14 +102,14 @@ const bookings: Booking[] = [
   },
 ];
 
-const propertyExpenses: PropertyExpense[] = [
+let propertyExpenses: PropertyExpense[] = [
     { id: 1, propertyId: 1, date: '2024-07-05T10:00:00.000Z', description: 'Impuesto municipal', amount: 100 },
     { id: 2, propertyId: 1, date: '2024-07-15T10:00:00.000Z', description: 'Reparación de cañería', amount: 250 },
     { id: 3, propertyId: 2, date: '2024-07-10T10:00:00.000Z', description: 'Servicio de jardinería', amount: 80 },
     { id: 4, propertyId: 3, date: '2024-07-01T10:00:00.000Z', description: 'Pago de expensas', amount: 150 },
 ];
 
-const pricing: Pricing[] = [
+let pricing: Pricing[] = [
     {
         propertyId: 1,
         defaultNightlyRate: 100,
@@ -133,7 +136,7 @@ const pricing: Pricing[] = [
     }
 ]
 
-
+// --- Funciones de Lectura ---
 export const getProperties = () => properties;
 export const getPropertyById = (id: number) => properties.find(p => p.id === id);
 
@@ -146,13 +149,62 @@ export const getExpensesByPropertyId = (propertyId: number) => propertyExpenses.
 
 export const getPricingByPropertyId = (propertyId: number) => pricing.find(p => p.propertyId === propertyId);
 
-// In a real app, these would be API calls to a server that updates a database.
-export const updateProperty = (id: number, data: Partial<Property>) => {
+// --- Funciones de Escritura (Simulación de API) ---
+
+export const updateProperty = (id: number, data: Partial<Omit<Property, 'id' | 'imageUrl'>>) => {
     const propIndex = properties.findIndex(p => p.id === id);
     if(propIndex !== -1) {
         properties[propIndex] = { ...properties[propIndex], ...data };
         console.log("Updated property:", properties[propIndex]);
         return properties[propIndex];
     }
+    console.error("Property not found for update:", id);
+    return null;
+}
+
+export const addBooking = (data: Omit<Booking, 'id' | 'payments' | 'rentalExpenses'>) => {
+    const newId = bookings.length > 0 ? Math.max(...bookings.map(b => b.id)) + 1 : 1;
+    const newBooking: Booking = {
+        ...data,
+        id: newId,
+        payments: [],
+        rentalExpenses: [],
+    };
+    bookings.push(newBooking);
+    console.log("Added booking:", newBooking);
+    return newBooking;
+}
+
+export const addPropertyExpense = (data: Omit<PropertyExpense, 'id'>) => {
+    const newId = propertyExpenses.length > 0 ? Math.max(...propertyExpenses.map(e => e.id)) + 1 : 1;
+    const newExpense: PropertyExpense = { ...data, id: newId };
+    propertyExpenses.push(newExpense);
+    console.log("Added property expense:", newExpense);
+    return newExpense;
+}
+
+export const addPayment = (bookingId: number, data: Omit<Payment, 'id'>) => {
+    const bookingIndex = bookings.findIndex(b => b.id === bookingId);
+    if(bookingIndex !== -1) {
+        const paymentId = bookings[bookingIndex].payments.length > 0 ? Math.max(...bookings[bookingIndex].payments.map(p => p.id)) + 1 : 1;
+        const newPayment: Payment = { ...data, id: paymentId };
+        bookings[bookingIndex].payments.push(newPayment);
+        console.log("Added payment:", newPayment, "to booking:", bookingId);
+        return newPayment;
+    }
+    console.error("Booking not found for adding payment:", bookingId);
+    return null;
+}
+
+export const addRentalExpense = (bookingId: number, data: Omit<RentalExpense, 'id'>) => {
+    const bookingIndex = bookings.findIndex(b => b.id === bookingId);
+    if(bookingIndex !== -1) {
+        const expenseId = bookings[bookingIndex].rentalExpenses.length > 0 ? Math.max(...bookings[bookingIndex].rentalExpenses.map(e => e.id)) + 1 : 1;
+        const newExpense: RentalExpense = { ...data, id: expenseId };
+        bookings[bookingIndex].rentalExpenses.push(newExpense);
+        console.log("Added rental expense:", newExpense, "to booking:", bookingId);
+        return newExpense;
+    }
+    console.error("Booking not found for adding rental expense:", bookingId);
     return null;
 }

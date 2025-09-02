@@ -13,6 +13,7 @@ import { calendarConflictCheck } from "@/ai/flows/calendar-conflict-check";
 
 import { cn } from "@/lib/utils";
 import type { Property } from "@/lib/types";
+import { addBooking } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -74,6 +75,10 @@ export function BookingForm({ property }: { property: Property }) {
       tenantContact: "",
       amountUSD: 0,
       conversionRate: 0,
+      dateRange: {
+        from: undefined,
+        to: undefined,
+      },
     },
   });
 
@@ -103,9 +108,28 @@ export function BookingForm({ property }: { property: Property }) {
   }, [debouncedDateRange, property.googleCalendarId]);
 
   function onSubmit(data: BookingFormValues) {
-    console.log("Submitting booking data:", data);
+    if (!data.dateRange.from || !data.dateRange.to) {
+        toast({
+            title: "Error",
+            description: "Por favor selecciona un rango de fechas.",
+            variant: "destructive"
+        });
+        return;
+    }
+    
+    addBooking({
+      propertyId: property.id,
+      tenantName: data.tenantName,
+      tenantContact: data.tenantContact,
+      checkIn: data.dateRange.from.toISOString(),
+      checkOut: data.dateRange.to.toISOString(),
+      amountUSD: data.amountUSD,
+      amountARS: data.amountUSD * data.conversionRate,
+      conversionRate: data.conversionRate,
+    });
+
     toast({
-      title: "Reserva Creada (Simulación)",
+      title: "Reserva Creada",
       description: `Se ha creado una reserva para ${data.tenantName}.`,
     });
     setOpen(false);
