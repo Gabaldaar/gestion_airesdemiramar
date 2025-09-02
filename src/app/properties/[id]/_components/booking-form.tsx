@@ -106,8 +106,8 @@ export function BookingForm({ property }: { property: Property }) {
         try {
           const result = await calendarConflictCheck({
             calendarId: property.googleCalendarId,
-            startDate: debouncedDateRange.from.toISOString(),
-            endDate: debouncedDateRange.to.toISOString(),
+            startDate: debouncedDateRange.from!.toISOString(),
+            endDate: debouncedDateRange.to!.toISOString(),
           });
           setConflictState({ status: 'checked', hasConflict: result.hasConflict, message: result.conflictDescription });
         } catch (error) {
@@ -214,10 +214,10 @@ export function BookingForm({ property }: { property: Property }) {
                           <CommandGroup>
                             {tenants.map((tenant) => (
                               <CommandItem
-                                value={String(tenant.id)}
+                                value={tenant.name}
                                 key={tenant.id}
-                                onSelect={(currentValue) => {
-                                  form.setValue("tenantId", parseInt(currentValue, 10));
+                                onSelect={() => {
+                                  form.setValue("tenantId", tenant.id);
                                   setTenantPopoverOpen(false);
                                 }}
                               >
