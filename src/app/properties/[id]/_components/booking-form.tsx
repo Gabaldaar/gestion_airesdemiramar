@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -71,6 +72,8 @@ export function BookingForm({ property }: { property: Property }) {
     defaultValues: {
       tenantName: "",
       tenantContact: "",
+      amountUSD: 0,
+      conversionRate: 0,
     },
   });
 
