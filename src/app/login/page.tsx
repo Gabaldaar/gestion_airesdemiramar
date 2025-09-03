@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Waves, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +18,6 @@ import { useToast } from "@/hooks/use-toast";
 import { setAuthCookie } from "@/lib/auth";
 
 export default function LoginPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -31,8 +29,8 @@ export default function LoginPage() {
     try {
         const result = await setAuthCookie(password);
         if (result.success) {
-            router.push("/");
-            router.refresh(); // Ensure the layout re-renders with the new cookie state
+            // Force a full page reload to ensure the new cookie state is recognized by the middleware
+            window.location.href = "/";
         } else {
             toast({
                 title: "Error de Autenticación",
