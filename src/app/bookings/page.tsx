@@ -7,22 +7,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getBookings, getProperties, getTenants } from "@/lib/data";
+import { getBookings, getProperties, getTenants, getTenantById } from "@/lib/data";
 import BookingsList from "@/components/bookings-list";
 
-export default async function BookingsPage() {
-  const [bookings, properties, tenants] = await Promise.all([
+export default async function BookingsPage({
+  searchParams,
+}: {
+  searchParams?: {
+    tenantId?: string;
+  };
+}) {
+  const tenantId = searchParams?.tenantId ? parseInt(searchParams.tenantId, 10) : undefined;
+
+  const [allBookings, properties, tenants] = await Promise.all([
     getBookings(),
     getProperties(),
     getTenants(),
   ]);
 
+  const bookings = tenantId 
+    ? allBookings.filter(b => b.tenantId === tenantId)
+    : allBookings;
+
+  const tenant = tenantId ? tenants.find(t => t.id === tenantId) : null;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reservas</CardTitle>
+        <CardTitle>{tenant ? `Reservas de ${tenant.name}` : 'Reservas'}</CardTitle>
         <CardDescription>
-          Administra todas las reservas de tus propiedades.
+          {tenant ? `Un historial de todas las reservas de ${tenant.name}.` : 'Administra todas las reservas de tus propiedades.'}
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -4,6 +4,7 @@
 
 
 
+
 export type Property = {
   id: number;
   name: string;
@@ -133,6 +134,10 @@ export async function getTenants(): Promise<Tenant[]> {
     return tenants;
 }
 
+export async function getTenantById(id: number): Promise<Tenant | undefined> {
+    return tenants.find(t => t.id === id);
+}
+
 export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
     const newTenant = {
         id: tenants.length > 0 ? Math.max(...tenants.map(t => t.id)) + 1 : 1,
@@ -149,6 +154,12 @@ export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null
     }
     tenants[tenantIndex] = updatedTenant;
     return updatedTenant;
+}
+
+export async function deleteTenant(id: number): Promise<boolean> {
+    const initialLength = tenants.length;
+    tenants = tenants.filter(t => t.id !== id);
+    return tenants.length < initialLength;
 }
 
 

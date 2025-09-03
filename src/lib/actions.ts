@@ -4,7 +4,8 @@
 import { revalidatePath } from "next/cache";
 import { 
     addTenant as dbAddTenant, 
-    updateTenant as dbUpdateTenant, 
+    updateTenant as dbUpdateTenant,
+    deleteTenant as dbDeleteTenant,
     addBooking as dbAddBooking,
     updateBooking as dbUpdateBooking,
     deleteBooking as dbDeleteBooking,
@@ -87,6 +88,23 @@ export async function updateTenant(previousState: any, formData: FormData) {
     return { success: false, message: "Error al actualizar inquilino." };
   }
 }
+
+
+export async function deleteTenant(previousState: any, formData: FormData) {
+    const id = parseInt(formData.get("id") as string, 10);
+  
+    if (!id) {
+      return { success: false, message: "ID de inquilino no válido." };
+    }
+  
+    try {
+      await dbDeleteTenant(id);
+      revalidatePath("/tenants");
+      return { success: true, message: "Inquilino eliminado correctamente." };
+    } catch (error) {
+      return { success: false, message: "Error al eliminar el inquilino." };
+    }
+  }
 
 export async function addBooking(previousState: any, formData: FormData) {
     const propertyId = parseInt(formData.get("propertyId") as string, 10);

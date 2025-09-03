@@ -1,4 +1,5 @@
 
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -18,7 +19,8 @@ import { getTenants, Tenant } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { TenantAddForm } from "@/components/tenant-add-form";
 import { TenantEditForm } from "@/components/tenant-edit-form";
-import { History, Pencil } from "lucide-react";
+import { TenantDeleteForm } from "@/components/tenant-delete-form";
+import { History } from "lucide-react";
 
 
 export default async function TenantsPage() {
@@ -58,9 +60,12 @@ export default async function TenantsPage() {
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     <TenantEditForm tenant={tenant} />
-                    <Button variant="ghost" size="icon">
-                      <History className="h-4 w-4" />
-                      <span className="sr-only">Ver Historial</span>
+                    <TenantDeleteForm tenantId={tenant.id} />
+                    <Button asChild variant="ghost" size="icon">
+                      <Link href={`/bookings?tenantId=${tenant.id}`}>
+                        <History className="h-4 w-4" />
+                        <span className="sr-only">Ver Historial</span>
+                      </Link>
                     </Button>
                   </div>
                 </TableCell>
