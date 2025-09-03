@@ -2,7 +2,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { addTenant as dbAddTenant, updateTenant as dbUpdateTenant, addBooking as dbAddBooking, addPropertyExpense as dbAddPropertyExpense } from "./data";
+import { 
+    addTenant as dbAddTenant, 
+    updateTenant as dbUpdateTenant, 
+    addBooking as dbAddBooking, 
+    addPropertyExpense as dbAddPropertyExpense,
+    updatePropertyExpense as dbUpdatePropertyExpense,
+    deletePropertyExpense as dbDeletePropertyExpense
+} from "./data";
 
 // Acción para actualizar una propiedad (simulada)
 export async function updateProperty(previousState: any, formData: FormData) {
@@ -131,5 +138,50 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
         return { success: true, message: "Gasto añadido correctamente." };
     } catch (error) {
         return { success: false, message: "Error al añadir el gasto." };
+    }
+}
+
+export async function updatePropertyExpense(previousState: any, formData: FormData) {
+    const id = parseInt(formData.get("id") as string, 10);
+    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+    const description = formData.get("description") as string;
+    const amount = parseFloat(formData.get("amount") as string);
+    const date = formData.get("date") as string;
+
+    if (!id || !propertyId || !description || !amount || !date) {
+        return { success: false, message: "Todos los campos son obligatorios." };
+    }
+
+    const updatedExpense = {
+        id,
+        propertyId,
+        description,
+        amount,
+        date,
+    };
+
+    try {
+        await dbUpdatePropertyExpense(updatedExpense);
+        revalidatePath(`/properties/${propertyId}`);
+        return { success: true, message: "Gasto actualizado correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al actualizar el gasto." };
+    }
+}
+
+export async function deletePropertyExpense(previousState: any, formData: FormData) {
+    const id = parseInt(formData.get("id") as string, 10);
+    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+
+     if (!id || !propertyId) {
+        return { success: false, message: "ID de gasto o propiedad no válido." };
+    }
+
+    try {
+        await dbDeletePropertyExpense(id);
+        revalidatePath(`/properties/${propertyId}`);
+        return { success: true, message: "Gasto eliminado correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al eliminar el gasto." };
     }
 }

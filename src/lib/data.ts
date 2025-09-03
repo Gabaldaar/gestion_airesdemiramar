@@ -161,3 +161,18 @@ export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): 
     propertyExpenses.push(newExpense);
     return newExpense;
 }
+
+export async function updatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense | null> {
+    const expenseIndex = propertyExpenses.findIndex(e => e.id === updatedExpense.id);
+    if (expenseIndex === -1) {
+        return null;
+    }
+    propertyExpenses[expenseIndex] = updatedExpense;
+    return updatedExpense;
+}
+
+export async function deletePropertyExpense(id: number): Promise<boolean> {
+    const initialLength = propertyExpenses.length;
+    propertyExpenses = propertyExpenses.filter(e => e.id !== id);
+    return propertyExpenses.length < initialLength;
+}
