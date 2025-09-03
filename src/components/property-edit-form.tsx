@@ -30,6 +30,9 @@ export function PropertyEditForm({ property }: { property: Property }) {
         <TableCell>
             <Input type="text" name="googleCalendarId" defaultValue={property.googleCalendarId} form={formId} />
         </TableCell>
+        <TableCell>
+            <Input type="text" name="imageUrl" defaultValue={property.imageUrl} form={formId} />
+        </TableCell>
         <TableCell className="text-right">
             <Button type="submit" form={formId}>Guardar</Button>
         </TableCell>
