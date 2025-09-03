@@ -18,34 +18,67 @@ import {
     addPayment as dbAddPayment,
     updatePayment as dbUpdatePayment,
     deletePayment as dbDeletePayment,
+    addProperty as dbAddProperty,
+    updateProperty as dbUpdateProperty,
     Tenant,
     Booking,
     PropertyExpense,
     BookingExpense,
-    Payment
+    Payment,
+    Property
 } from "./data";
 
-// Acción para actualizar una propiedad (simulada)
+
+export async function addProperty(previousState: any, formData: FormData) {
+  const newPropertyData = {
+    name: formData.get("name") as string,
+    address: formData.get("address") as string,
+    googleCalendarId: formData.get("googleCalendarId") as string,
+    imageUrl: formData.get("imageUrl") as string,
+  };
+
+  if (!newPropertyData.name || !newPropertyData.address) {
+    return { success: false, message: "El nombre y la dirección son obligatorios." };
+  }
+
+  try {
+    await dbAddProperty(newPropertyData);
+    revalidatePath("/settings");
+    revalidatePath("/properties");
+    revalidatePath("/");
+    return { success: true, message: "Propiedad añadida correctamente." };
+  } catch (error) {
+    console.error("Error adding property:", error);
+    return { success: false, message: "Error al añadir la propiedad." };
+  }
+}
+
+
+// Acción para actualizar una propiedad
 export async function updateProperty(previousState: any, formData: FormData) {
-  const id = formData.get("id");
-  const name = formData.get("name");
-  const address = formData.get("address");
-  const googleCalendarId = formData.get("googleCalendarId");
-  const imageUrl = formData.get("imageUrl");
+  const propertyData: Property = {
+    id: formData.get("id") as string,
+    name: formData.get("name") as string,
+    address: formData.get("address") as string,
+    googleCalendarId: formData.get("googleCalendarId") as string,
+    imageUrl: formData.get("imageUrl") as string,
+  };
 
-  console.log("Actualizando propiedad (simulado):", {
-    id,
-    name,
-    address,
-    googleCalendarId,
-    imageUrl,
-  });
-
-  // Aquí iría la lógica para actualizar la propiedad en la base de datos.
-  // Por ahora, solo invalidamos la caché para que Next.js recargue los datos.
-  revalidatePath("/settings");
-
-  return { success: true, message: "Propiedad actualizada." };
+   if (!propertyData.id || !propertyData.name || !propertyData.address) {
+    return { success: false, message: "Faltan datos para actualizar la propiedad." };
+  }
+  
+  try {
+    await dbUpdateProperty(propertyData);
+    revalidatePath("/settings");
+    revalidatePath(`/properties/${propertyData.id}`);
+    revalidatePath("/properties");
+    revalidatePath("/");
+    return { success: true, message: "Propiedad actualizada." };
+  } catch (error) {
+     console.error("Error updating property:", error);
+    return { success: false, message: "Error al actualizar la propiedad." };
+  }
 }
 
 // Acción para añadir un nuevo inquilino (simulada)

@@ -117,7 +117,7 @@ const paymentsCollection = collection(db, 'payments');
 
 
 export async function getProperties(): Promise<Property[]> {
-  const snapshot = await getDocs(propertiesCollection);
+  const snapshot = await getDocs(query(propertiesCollection, orderBy('name')));
   return snapshot.docs.map(processDoc) as Property[];
 }
 
@@ -128,8 +128,21 @@ export async function getPropertyById(id: string): Promise<Property | undefined>
   return docSnap.exists() ? processDoc(docSnap) as Property : undefined;
 }
 
+export async function addProperty(property: Omit<Property, 'id'>): Promise<Property> {
+    const docRef = await addDoc(propertiesCollection, property);
+    return { id: docRef.id, ...property };
+}
+
+export async function updateProperty(updatedProperty: Property): Promise<Property | null> {
+    const { id, ...data } = updatedProperty;
+    const docRef = doc(db, 'properties', id);
+    await updateDoc(docRef, data);
+    return updatedProperty;
+}
+
+
 export async function getTenants(): Promise<Tenant[]> {
-    const snapshot = await getDocs(tenantsCollection);
+    const snapshot = await getDocs(query(tenantsCollection, orderBy('name')));
     return snapshot.docs.map(processDoc) as Tenant[];
 }
 
