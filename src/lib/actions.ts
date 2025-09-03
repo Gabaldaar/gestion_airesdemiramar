@@ -2,7 +2,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { addTenant as dbAddTenant } from "./data";
+import { addTenant as dbAddTenant, updateTenant as dbUpdateTenant } from "./data";
 
 // Acción para actualizar una propiedad (simulada)
 export async function updateProperty(previousState: any, formData: FormData) {
@@ -47,5 +47,28 @@ export async function addTenant(previousState: any, formData: FormData) {
     return { success: true, message: "Inquilino añadido correctamente." };
   } catch (error) {
     return { success: false, message: "Error al añadir inquilino." };
+  }
+}
+
+export async function updateTenant(previousState: any, formData: FormData) {
+  const updatedTenant = {
+    id: parseInt(formData.get("id") as string, 10),
+    name: formData.get("name") as string,
+    dni: formData.get("dni") as string,
+    email: formData.get("email") as string,
+    phone: formData.get("phone") as string,
+    address: formData.get("address") as string,
+    city: formData.get("city") as string,
+    country: formData.get("country") as string,
+  };
+
+  console.log("Actualizando inquilino (simulado):", updatedTenant);
+
+  try {
+    await dbUpdateTenant(updatedTenant);
+    revalidatePath("/tenants");
+    return { success: true, message: "Inquilino actualizado correctamente." };
+  } catch (error) {
+    return { success: false, message: "Error al actualizar inquilino." };
   }
 }

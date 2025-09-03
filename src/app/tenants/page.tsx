@@ -17,6 +17,8 @@ import {
 import { getTenants, Tenant } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { TenantAddForm } from "@/components/tenant-add-form";
+import { TenantEditForm } from "@/components/tenant-edit-form";
+import { History, Pencil } from "lucide-react";
 
 
 export default async function TenantsPage() {
@@ -54,7 +56,13 @@ export default async function TenantsPage() {
                 <TableCell>{tenant.phone}</TableCell>
                 <TableCell>{`${tenant.address}, ${tenant.city}, ${tenant.country}`}</TableCell>
                 <TableCell className="text-right">
-                    <Button variant="outline" size="sm">Ver Historial</Button>
+                  <div className="flex items-center justify-end gap-2">
+                    <TenantEditForm tenant={tenant} />
+                    <Button variant="ghost" size="icon">
+                      <History className="h-4 w-4" />
+                      <span className="sr-only">Ver Historial</span>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

@@ -61,7 +61,7 @@ const properties: Property[] = [
     { id: 4, name: 'Depto 4', address: 'Avenida 23 N° 830, Miramar', googleCalendarId: 'cal4@google.com', imageUrl: 'https://picsum.photos/600/400?random=4' },
 ];
 
-const tenants: Tenant[] = [
+let tenants: Tenant[] = [
     { id: 1, name: 'Juan Perez', dni: '12345678', address: 'Su casa', city: 'CABA', country: 'Argentina', email: 'juan@perez.com', phone: '11-1234-5678' }
 ];
 
@@ -91,6 +91,16 @@ export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
     tenants.push(newTenant);
     return newTenant;
 }
+
+export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null> {
+    const tenantIndex = tenants.findIndex(t => t.id === updatedTenant.id);
+    if (tenantIndex === -1) {
+        return null;
+    }
+    tenants[tenantIndex] = updatedTenant;
+    return updatedTenant;
+}
+
 
 export async function getBookings(): Promise<Booking[]> {
     return bookings;
