@@ -28,6 +28,8 @@ export default function FinancialSummaryTable({ summary }: FinancialSummaryTable
   };
 
   const totalIncome = summary.reduce((acc, item) => acc + item.totalIncome, 0);
+  const totalPayments = summary.reduce((acc, item) => acc + item.totalPayments, 0);
+  const totalBalance = summary.reduce((acc, item) => acc + item.balance, 0);
   const totalPropertyExpenses = summary.reduce((acc, item) => acc + item.totalPropertyExpenses, 0);
   const totalBookingExpenses = summary.reduce((acc, item) => acc + item.totalBookingExpenses, 0);
   const totalNetResult = summary.reduce((acc, item) => acc + item.netResult, 0);
@@ -37,7 +39,9 @@ export default function FinancialSummaryTable({ summary }: FinancialSummaryTable
       <TableHeader>
         <TableRow>
           <TableHead>Propiedad</TableHead>
-          <TableHead className="text-right">Ingresos Totales</TableHead>
+          <TableHead className="text-right">Ingresos</TableHead>
+          <TableHead className="text-right">Pagos Recibidos</TableHead>
+          <TableHead className="text-right">Saldo</TableHead>
           <TableHead className="text-right">Gastos (Propiedad)</TableHead>
           <TableHead className="text-right">Gastos (Reservas)</TableHead>
           <TableHead className="text-right">Resultado Neto</TableHead>
@@ -48,6 +52,10 @@ export default function FinancialSummaryTable({ summary }: FinancialSummaryTable
           <TableRow key={item.propertyId}>
             <TableCell className="font-medium">{item.propertyName}</TableCell>
             <TableCell className="text-right text-green-600">{formatCurrency(item.totalIncome)}</TableCell>
+            <TableCell className="text-right text-blue-600">{formatCurrency(item.totalPayments)}</TableCell>
+            <TableCell className={`text-right font-bold ${item.balance <= 0 ? 'text-green-700' : 'text-orange-600'}`}>
+                {formatCurrency(item.balance)}
+            </TableCell>
             <TableCell className="text-right text-red-600">{formatCurrency(item.totalPropertyExpenses)}</TableCell>
             <TableCell className="text-right text-red-600">{formatCurrency(item.totalBookingExpenses)}</TableCell>
             <TableCell className={`text-right font-bold ${item.netResult >= 0 ? 'text-green-700' : 'text-red-700'}`}>
@@ -60,6 +68,10 @@ export default function FinancialSummaryTable({ summary }: FinancialSummaryTable
         <TableRow className="font-bold bg-muted/50">
           <TableCell>Total General</TableCell>
           <TableCell className="text-right text-green-600">{formatCurrency(totalIncome)}</TableCell>
+          <TableCell className="text-right text-blue-600">{formatCurrency(totalPayments)}</TableCell>
+           <TableCell className={`text-right font-bold ${totalBalance <= 0 ? 'text-green-700' : 'text-orange-600'}`}>
+                {formatCurrency(totalBalance)}
+            </TableCell>
           <TableCell className="text-right text-red-600">{formatCurrency(totalPropertyExpenses)}</TableCell>
           <TableCell className="text-right text-red-600">{formatCurrency(totalBookingExpenses)}</TableCell>
           <TableCell className={`text-right font-bold ${totalNetResult >= 0 ? 'text-green-700' : 'text-red-700'}`}>

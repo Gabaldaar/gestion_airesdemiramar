@@ -15,6 +15,8 @@ import { es } from 'date-fns/locale';
 import { BookingEditForm } from "./booking-edit-form";
 import { BookingDeleteForm } from "./booking-delete-form";
 import { BookingExpensesManager } from "./booking-expenses-manager";
+import { BookingPaymentsManager } from "./booking-payments-manager";
+import { Landmark } from "lucide-react";
 
 interface BookingsListProps {
   bookings: BookingWithTenantAndProperty[];
@@ -63,6 +65,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
             </TableCell>
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
+                    <BookingPaymentsManager bookingId={booking.id} bookingCurrency={booking.currency} />
                     <BookingExpensesManager bookingId={booking.id} />
                     <BookingEditForm booking={booking} tenants={tenants} properties={properties} />
                     <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />

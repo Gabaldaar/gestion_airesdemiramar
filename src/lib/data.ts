@@ -1,5 +1,6 @@
 
 
+
 export type Property = {
   id: number;
   name: string;
@@ -40,6 +41,7 @@ export type Payment = {
   bookingId: number;
   amount: number;
   date: string;
+  currency: 'USD' | 'ARS';
 };
 
 export type PropertyExpense = {
@@ -62,6 +64,8 @@ export type FinancialSummary = {
     propertyId: number;
     propertyName: string;
     totalIncome: number;
+    totalPayments: number;
+    balance: number;
     totalPropertyExpenses: number;
     totalBookingExpenses: number;
     netResult: number;
@@ -99,7 +103,11 @@ let bookingExpenses: BookingExpense[] = [
     { id: 2, bookingId: 1, description: "Limpieza", amount: 10000, date: '2024-07-30T00:00:00.000Z'},
 ];
 
-const payments: Payment[] = [];
+let payments: Payment[] = [
+    { id: 1, bookingId: 1, amount: 100000, date: '2024-07-01T00:00:00.000Z', currency: 'ARS' },
+    { id: 2, bookingId: 1, amount: 150000, date: '2024-07-14T00:00:00.000Z', currency: 'ARS' },
+    { id: 3, bookingId: 2, amount: 400, date: '2024-07-20T00:00:00.000Z', currency: 'USD' },
+];
 
 
 // --- FUNCIONES DE ACCESO A DATOS ---
@@ -244,26 +252,75 @@ export async function deleteBookingExpense(id: number): Promise<boolean> {
     return bookingExpenses.length < initialLength;
 }
 
+export async function getPaymentsByBookingId(bookingId: number): Promise<Payment[]> {
+    return payments
+        .filter(p => p.bookingId === bookingId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+export async function addPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
+    const newPayment = {
+        id: payments.length > 0 ? Math.max(...payments.map(p => p.id)) + 1 : 1,
+        ...payment
+    };
+    payments.push(newPayment);
+    return newPayment;
+}
+
+export async function updatePayment(updatedPayment: Payment): Promise<Payment | null> {
+    const paymentIndex = payments.findIndex(p => p.id === updatedPayment.id);
+    if (paymentIndex === -1) {
+        return null;
+    }
+    payments[paymentIndex] = updatedPayment;
+    return updatedPayment;
+}
+
+export async function deletePayment(id: number): Promise<boolean> {
+    const initialLength = payments.length;
+    payments = payments.filter(p => p.id !== id);
+    return payments.length < initialLength;
+}
+
+export async function getAllPayments(): Promise<Payment[]> {
+    return payments;
+}
+
+
 export async function getFinancialSummaryByProperty(): Promise<FinancialSummary[]> {
-  const [allProperties, allBookings, allPropertyExpenses, allBookingExpenses] = await Promise.all([
+  const [allProperties, allBookings, allPropertyExpenses, allBookingExpenses, allPayments] = await Promise.all([
     getProperties(),
     getBookings(),
     getAllPropertyExpenses(),
     getAllBookingExpenses(),
+    getAllPayments(),
   ]);
 
   const summary: FinancialSummary[] = allProperties.map(property => {
     const propertyBookings = allBookings.filter(b => b.propertyId === property.id);
     const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id);
+    
+    const getAmountInArs = (amount: number, currency: 'ARS' | 'USD', exchangeRate?: number) => {
+        if (currency === 'ARS') {
+            return amount;
+        }
+        return amount * (exchangeRate || 1000); // Default exchange rate
+    }
 
     const totalIncome = propertyBookings.reduce((acc, booking) => {
-      if (booking.currency === 'ARS') {
-        return acc + booking.amount;
-      } else {
-        // Usa el tipo de cambio de la reserva, o un valor por defecto (ej: 1000)
-        return acc + booking.amount * (booking.exchangeRate || 1000);
-      }
+      return acc + getAmountInArs(booking.amount, booking.currency, booking.exchangeRate);
     }, 0);
+
+    const totalPayments = propertyBookings.reduce((acc, booking) => {
+        const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
+        const bookingPaymentsTotal = paymentsForBooking.reduce((sum, payment) => {
+            const bookingForPayment = allBookings.find(b => b.id === payment.bookingId);
+            return sum + getAmountInArs(payment.amount, payment.currency, bookingForPayment?.exchangeRate);
+        }, 0);
+        return acc + bookingPaymentsTotal;
+    }, 0);
+
+    const balance = totalIncome - totalPayments;
 
     const totalPropertyExpenses = propertyExpenses.reduce((acc, expense) => acc + expense.amount, 0);
 
@@ -279,6 +336,8 @@ export async function getFinancialSummaryByProperty(): Promise<FinancialSummary[
       propertyId: property.id,
       propertyName: property.name,
       totalIncome,
+      totalPayments,
+      balance,
       totalPropertyExpenses,
       totalBookingExpenses,
       netResult,

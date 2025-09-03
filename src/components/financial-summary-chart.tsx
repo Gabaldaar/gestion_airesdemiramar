@@ -18,7 +18,8 @@ export default function FinancialSummaryChart({ summary }: FinancialSummaryChart
     name: item.propertyName,
     'Resultado Neto': item.netResult,
     'Ingresos': item.totalIncome,
-    'Gastos': item.totalPropertyExpenses + item.totalBookingExpenses
+    'Gastos': item.totalPropertyExpenses + item.totalBookingExpenses,
+    'Saldo': item.balance,
   }));
 
   const formatCurrency = (value: number) => {
@@ -52,6 +53,7 @@ export default function FinancialSummaryChart({ summary }: FinancialSummaryChart
                 <Bar dataKey="Ingresos" fill="#16a34a" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="Gastos" fill="#dc2626" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="Resultado Neto" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Saldo" fill="#f97316" radius={[4, 4, 0, 0]} />
             </BarChart>
         </ChartContainer>
     </div>

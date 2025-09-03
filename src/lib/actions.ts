@@ -14,6 +14,9 @@ import {
     addBookingExpense as dbAddBookingExpense,
     updateBookingExpense as dbUpdateBookingExpense,
     deleteBookingExpense as dbDeleteBookingExpense,
+    addPayment as dbAddPayment,
+    updatePayment as dbUpdatePayment,
+    deletePayment as dbDeletePayment,
 } from "./data";
 
 // Acción para actualizar una propiedad (simulada)
@@ -302,7 +305,6 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
 
 export async function deleteBookingExpense(previousState: any, formData: FormData) {
     const id = parseInt(formData.get("id") as string, 10);
-    const bookingId = parseInt(formData.get("bookingId") as string, 10); // Lo necesitamos para revalidar
 
      if (!id) {
         return { success: false, message: "ID de gasto no válido." };
@@ -315,5 +317,82 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
         return { success: true, message: "Gasto de reserva eliminado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al eliminar el gasto de reserva." };
+    }
+}
+
+
+export async function addPayment(previousState: any, formData: FormData) {
+    const bookingId = parseInt(formData.get("bookingId") as string, 10);
+    const amount = parseFloat(formData.get("amount") as string);
+    const currency = formData.get("currency") as 'USD' | 'ARS';
+    const date = formData.get("date") as string;
+
+    if (!bookingId || !amount || !currency || !date) {
+        return { success: false, message: "Todos los campos son obligatorios." };
+    }
+
+    const newPayment = {
+        bookingId,
+        amount,
+        currency,
+        date,
+    };
+
+    try {
+        await dbAddPayment(newPayment);
+        revalidatePath(`/bookings`);
+        revalidatePath(`/properties/*`);
+        revalidatePath(`/reports`);
+        return { success: true, message: "Pago añadido correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al añadir el pago." };
+    }
+}
+
+export async function updatePayment(previousState: any, formData: FormData) {
+    const id = parseInt(formData.get("id") as string, 10);
+    const bookingId = parseInt(formData.get("bookingId") as string, 10);
+    const amount = parseFloat(formData.get("amount") as string);
+    const currency = formData.get("currency") as 'USD' | 'ARS';
+    const date = formData.get("date") as string;
+
+    if (!id || !bookingId || !amount || !currency || !date) {
+        return { success: false, message: "Todos los campos son obligatorios." };
+    }
+
+    const updatedPayment = {
+        id,
+        bookingId,
+        amount,
+        currency,
+        date,
+    };
+
+    try {
+        await dbUpdatePayment(updatedPayment);
+        revalidatePath(`/bookings`);
+        revalidatePath(`/properties/*`);
+        revalidatePath(`/reports`);
+        return { success: true, message: "Pago actualizado correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al actualizar el pago." };
+    }
+}
+
+export async function deletePayment(previousState: any, formData: FormData) {
+    const id = parseInt(formData.get("id") as string, 10);
+
+     if (!id) {
+        return { success: false, message: "ID de pago no válido." };
+    }
+
+    try {
+        await dbDeletePayment(id);
+        revalidatePath(`/bookings`);
+        revalidatePath(`/properties/*`);
+        revalidatePath(`/reports`);
+        return { success: true, message: "Pago eliminado correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al eliminar el pago." };
     }
 }
