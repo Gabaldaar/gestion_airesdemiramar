@@ -37,11 +37,7 @@ export default async function SettingsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Dirección</TableHead>
-                <TableHead>ID Calendario Google</TableHead>
-                <TableHead>URL Foto</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                <TableHead colSpan={5}>Propiedades</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -34,7 +34,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { DateRange } from 'react-day-picker';
-import { NotesDialog } from './notes-dialog';
+import { Textarea } from './ui/textarea';
 
 
 const initialState = {
@@ -174,6 +174,12 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
                             </SelectContent>
                         </Select>
                     </div>
+                     <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="notes" className="text-right pt-2">
+                            Notas
+                        </Label>
+                        <Textarea id="notes" name="notes" defaultValue={booking.notes} className="col-span-3" />
+                    </div>
 
                 </div>
             </form>
@@ -185,11 +191,6 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
             )}
         </DialogContent>
         </Dialog>
-        <NotesDialog 
-            formId={formId}
-            notes={booking.notes}
-            state={state}
-        />
     </>
   );
 }
