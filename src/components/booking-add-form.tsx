@@ -130,8 +130,8 @@ export function BookingAddForm({ propertyId, tenants }: { propertyId: number, te
                         />
                         </PopoverContent>
                     </Popover>
-                    <input type="hidden" name="startDate" value={date?.from?.toISOString()} />
-                    <input type="hidden" name="endDate" value={date?.to?.toISOString()} />
+                    <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
+                    <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="amount" className="text-right">

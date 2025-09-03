@@ -57,7 +57,7 @@ export function ExpenseAddForm({ propertyId }: { propertyId: number }) {
         </DialogHeader>
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="propertyId" value={propertyId} />
-            <input type="hidden" name="date" value={date?.toISOString()} />
+            <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="date" className="text-right">
