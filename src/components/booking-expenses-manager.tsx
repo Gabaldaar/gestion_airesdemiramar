@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -32,17 +32,23 @@ export function BookingExpensesManager({ bookingId }: { bookingId: number }) {
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const fetchExpenses = useCallback(async () => {
+    setIsLoading(true);
+    const fetchedExpenses = await getBookingExpensesByBookingId(bookingId);
+    setExpenses(fetchedExpenses);
+    setIsLoading(false);
+  }, [bookingId]);
+
+
   useEffect(() => {
     if (isOpen) {
-      const fetchExpenses = async () => {
-        setIsLoading(true);
-        const fetchedExpenses = await getBookingExpensesByBookingId(bookingId);
-        setExpenses(fetchedExpenses);
-        setIsLoading(false);
-      };
       fetchExpenses();
     }
-  }, [isOpen, bookingId]);
+  }, [isOpen, fetchExpenses]);
+
+  const handleExpenseAdded = useCallback(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
@@ -71,13 +77,7 @@ export function BookingExpensesManager({ bookingId }: { bookingId: number }) {
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end">
-            <BookingExpenseAddForm bookingId={bookingId} onExpenseAdded={() => {
-                 const fetchExpenses = async () => {
-                    const fetchedExpenses = await getBookingExpensesByBookingId(bookingId);
-                    setExpenses(fetchedExpenses);
-                 };
-                 fetchExpenses();
-            }}/>
+            <BookingExpenseAddForm bookingId={bookingId} onExpenseAdded={handleExpenseAdded}/>
         </div>
         {isLoading ? (
           <p>Cargando gastos...</p>
