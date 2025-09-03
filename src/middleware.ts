@@ -6,14 +6,15 @@ const PROTECTED_ROUTES = ['/', '/properties', '/bookings', '/tenants', '/expense
 const LOGIN_ROUTE = '/login';
 const AUTH_COOKIE_NAME = 'auth';
 
+// En una aplicación real, esta contraseña NUNCA debería estar en el código fuente.
+// Debería ser una variable de entorno.
+const APP_PASSWORD = process.env.APP_PASSWORD || 'miramar2024';
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const cookie = request.cookies.get(AUTH_COOKIE_NAME);
   
-  // Directly get password from environment variable. It might not be available here depending on build process,
-  // but it's the correct way to reference it.
-  const appPassword = process.env.APP_PASSWORD || 'miramar2024';
-  const isAuthenticated = cookie?.value === appPassword;
+  const isAuthenticated = cookie?.value === APP_PASSWORD;
 
   const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route) && (route !== '/' || pathname === '/'));
   

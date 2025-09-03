@@ -16,11 +16,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { setAuthCookie } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const { toast } = useToast();
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,8 +31,9 @@ export default function LoginPage() {
     try {
         const result = await setAuthCookie(password);
         if (result.success) {
-            // Force a full page reload to ensure the new cookie state is recognized by the middleware
-            window.location.href = "/";
+            // Use router.push and then router.refresh to ensure state is updated
+            router.push('/');
+            router.refresh();
         } else {
             toast({
                 title: "Error de Autenticación",
