@@ -55,7 +55,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             <CardHeader className="p-0">
               <div className="relative aspect-video w-full">
                 <Image
-                  src={property.imageUrl}
+                  src={property.imageUrl || '/images/properties/placeholder.png'}
                   alt={`Foto de ${property.name}`}
                   fill
                   className="rounded-t-lg object-cover"
