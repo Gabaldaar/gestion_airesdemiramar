@@ -34,7 +34,7 @@ const initialState = {
   success: false,
 };
 
-export function PaymentAddForm({ bookingId, onPaymentAdded, defaultCurrency }: { bookingId: number, onPaymentAdded: () => void, defaultCurrency: 'ARS' | 'USD' }) {
+export function PaymentAddForm({ bookingId, onPaymentAdded, defaultCurrency }: { bookingId: string, onPaymentAdded: () => void, defaultCurrency: 'ARS' | 'USD' }) {
   const [state, formAction] = useActionState(addPayment, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);

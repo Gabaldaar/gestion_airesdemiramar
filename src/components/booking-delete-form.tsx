@@ -22,7 +22,7 @@ const initialState = {
   success: false,
 };
 
-export function BookingDeleteForm({ bookingId, propertyId }: { bookingId: number; propertyId: number }) {
+export function BookingDeleteForm({ bookingId, propertyId }: { bookingId: string; propertyId: string }) {
   const [state, formAction] = useActionState(deleteBooking, initialState);
 
   return (

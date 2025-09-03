@@ -28,7 +28,7 @@ import { PaymentAddForm } from './payment-add-form';
 import { PaymentEditForm } from './payment-edit-form';
 import { PaymentDeleteForm } from './payment-delete-form';
 
-export function BookingPaymentsManager({ bookingId, bookingCurrency }: { bookingId: number, bookingCurrency: 'ARS' | 'USD' }) {
+export function BookingPaymentsManager({ bookingId, bookingCurrency }: { bookingId: string, bookingCurrency: 'ARS' | 'USD' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(false);

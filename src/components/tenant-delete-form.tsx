@@ -22,7 +22,7 @@ const initialState = {
   success: false,
 };
 
-export function TenantDeleteForm({ tenantId }: { tenantId: number }) {
+export function TenantDeleteForm({ tenantId }: { tenantId: string }) {
   const [state, formAction] = useActionState(deleteTenant, initialState);
 
   return (

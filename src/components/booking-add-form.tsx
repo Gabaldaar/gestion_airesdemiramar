@@ -42,7 +42,7 @@ const initialState = {
   success: false,
 };
 
-export function BookingAddForm({ propertyId, tenants }: { propertyId: number, tenants: Tenant[] }) {
+export function BookingAddForm({ propertyId, tenants }: { propertyId: string, tenants: Tenant[] }) {
   const [state, formAction] = useActionState(addBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -84,7 +84,7 @@ export function BookingAddForm({ propertyId, tenants }: { propertyId: number, te
                         </SelectTrigger>
                         <SelectContent>
                             {tenants.map(tenant => (
-                                <SelectItem key={tenant.id} value={String(tenant.id)}>
+                                <SelectItem key={tenant.id} value={tenant.id}>
                                     {tenant.name}
                                 </SelectItem>
                             ))}

@@ -27,7 +27,7 @@ const initialState = {
   success: false,
 };
 
-export function BookingExpenseAddForm({ bookingId, onExpenseAdded }: { bookingId: number, onExpenseAdded: () => void }) {
+export function BookingExpenseAddForm({ bookingId, onExpenseAdded }: { bookingId: string, onExpenseAdded: () => void }) {
   const [state, formAction] = useActionState(addBookingExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);

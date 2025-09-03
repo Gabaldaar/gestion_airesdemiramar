@@ -18,6 +18,11 @@ import {
     addPayment as dbAddPayment,
     updatePayment as dbUpdatePayment,
     deletePayment as dbDeletePayment,
+    Tenant,
+    Booking,
+    PropertyExpense,
+    BookingExpense,
+    Payment
 } from "./data";
 
 // Acción para actualizar una propiedad (simulada)
@@ -55,8 +60,6 @@ export async function addTenant(previousState: any, formData: FormData) {
     country: (formData.get("country") as string) || "Argentina",
   };
 
-  console.log("Añadiendo nuevo inquilino (simulado):", newTenant);
-  
   try {
     await dbAddTenant(newTenant);
     revalidatePath("/tenants");
@@ -67,8 +70,8 @@ export async function addTenant(previousState: any, formData: FormData) {
 }
 
 export async function updateTenant(previousState: any, formData: FormData) {
-  const updatedTenant = {
-    id: parseInt(formData.get("id") as string, 10),
+  const updatedTenant: Tenant = {
+    id: formData.get("id") as string,
     name: formData.get("name") as string,
     dni: formData.get("dni") as string,
     email: formData.get("email") as string,
@@ -77,8 +80,6 @@ export async function updateTenant(previousState: any, formData: FormData) {
     city: formData.get("city") as string,
     country: formData.get("country") as string,
   };
-
-  console.log("Actualizando inquilino (simulado):", updatedTenant);
 
   try {
     await dbUpdateTenant(updatedTenant);
@@ -91,7 +92,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
 
 
 export async function deleteTenant(previousState: any, formData: FormData) {
-    const id = parseInt(formData.get("id") as string, 10);
+    const id = formData.get("id") as string;
   
     if (!id) {
       return { success: false, message: "ID de inquilino no válido." };
@@ -107,8 +108,8 @@ export async function deleteTenant(previousState: any, formData: FormData) {
   }
 
 export async function addBooking(previousState: any, formData: FormData) {
-    const propertyId = parseInt(formData.get("propertyId") as string, 10);
-    const tenantId = parseInt(formData.get("tenantId") as string, 10);
+    const propertyId = formData.get("propertyId") as string;
+    const tenantId = formData.get("tenantId") as string;
     const startDate = formData.get("startDate") as string;
     const endDate = formData.get("endDate") as string;
     const amount = parseFloat(formData.get("amount") as string);
@@ -127,8 +128,6 @@ export async function addBooking(previousState: any, formData: FormData) {
         currency,
     };
 
-    console.log("Creando nueva reserva (simulado):", newBooking);
-
     try {
         await dbAddBooking(newBooking);
         revalidatePath(`/properties/${propertyId}`);
@@ -136,14 +135,15 @@ export async function addBooking(previousState: any, formData: FormData) {
         revalidatePath('/'); // Revalidate dashboard
         return { success: true, message: "Reserva creada correctamente." };
     } catch (error) {
+        console.error("Error adding booking:", error);
         return { success: false, message: "Error al crear la reserva." };
     }
 }
 
 export async function updateBooking(previousState: any, formData: FormData) {
-    const id = parseInt(formData.get("id") as string, 10);
-    const propertyId = parseInt(formData.get("propertyId") as string, 10);
-    const tenantId = parseInt(formData.get("tenantId") as string, 10);
+    const id = formData.get("id") as string;
+    const propertyId = formData.get("propertyId") as string;
+    const tenantId = formData.get("tenantId") as string;
     const startDate = formData.get("startDate") as string;
     const endDate = formData.get("endDate") as string;
     const amount = parseFloat(formData.get("amount") as string);
@@ -153,7 +153,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
         return { success: false, message: "Todos los campos son obligatorios." };
     }
 
-    const updatedBooking = {
+    const updatedBooking: Booking = {
         id,
         propertyId,
         tenantId,
@@ -175,8 +175,8 @@ export async function updateBooking(previousState: any, formData: FormData) {
 }
 
 export async function deleteBooking(previousState: any, formData: FormData) {
-    const id = parseInt(formData.get("id") as string, 10);
-    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+    const id = formData.get("id") as string;
+    const propertyId = formData.get("propertyId") as string;
 
      if (!id || !propertyId) {
         return { success: false, message: "ID de reserva o propiedad no válido." };
@@ -195,7 +195,7 @@ export async function deleteBooking(previousState: any, formData: FormData) {
 
 
 export async function addPropertyExpense(previousState: any, formData: FormData) {
-    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+    const propertyId = formData.get("propertyId") as string;
     const description = formData.get("description") as string;
     const amount = parseFloat(formData.get("amount") as string);
     const date = formData.get("date") as string;
@@ -211,8 +211,6 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
         date,
     };
 
-    console.log("Añadiendo nuevo gasto (simulado):", newExpense);
-
     try {
         await dbAddPropertyExpense(newExpense);
         revalidatePath(`/properties/${propertyId}`);
@@ -224,8 +222,8 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
 }
 
 export async function updatePropertyExpense(previousState: any, formData: FormData) {
-    const id = parseInt(formData.get("id") as string, 10);
-    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+    const id = formData.get("id") as string;
+    const propertyId = formData.get("propertyId") as string;
     const description = formData.get("description") as string;
     const amount = parseFloat(formData.get("amount") as string);
     const date = formData.get("date") as string;
@@ -234,7 +232,7 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
         return { success: false, message: "Todos los campos son obligatorios." };
     }
 
-    const updatedExpense = {
+    const updatedExpense: PropertyExpense = {
         id,
         propertyId,
         description,
@@ -253,8 +251,8 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
 }
 
 export async function deletePropertyExpense(previousState: any, formData: FormData) {
-    const id = parseInt(formData.get("id") as string, 10);
-    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+    const id = formData.get("id") as string;
+    const propertyId = formData.get("propertyId") as string;
 
      if (!id || !propertyId) {
         return { success: false, message: "ID de gasto o propiedad no válido." };
@@ -272,7 +270,7 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
 
 
 export async function addBookingExpense(previousState: any, formData: FormData) {
-    const bookingId = parseInt(formData.get("bookingId") as string, 10);
+    const bookingId = formData.get("bookingId") as string;
     const description = formData.get("description") as string;
     const amount = parseFloat(formData.get("amount") as string);
     const date = formData.get("date") as string;
@@ -300,8 +298,8 @@ export async function addBookingExpense(previousState: any, formData: FormData) 
 }
 
 export async function updateBookingExpense(previousState: any, formData: FormData) {
-    const id = parseInt(formData.get("id") as string, 10);
-    const bookingId = parseInt(formData.get("bookingId") as string, 10);
+    const id = formData.get("id") as string;
+    const bookingId = formData.get("bookingId") as string;
     const description = formData.get("description") as string;
     const amount = parseFloat(formData.get("amount") as string);
     const date = formData.get("date") as string;
@@ -310,7 +308,7 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
         return { success: false, message: "Todos los campos son obligatorios." };
     }
 
-    const updatedExpense = {
+    const updatedExpense: BookingExpense = {
         id,
         bookingId,
         description,
@@ -330,7 +328,7 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
 }
 
 export async function deleteBookingExpense(previousState: any, formData: FormData) {
-    const id = parseInt(formData.get("id") as string, 10);
+    const id = formData.get("id") as string;
 
      if (!id) {
         return { success: false, message: "ID de gasto no válido." };
@@ -349,7 +347,7 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
 
 
 export async function addPayment(previousState: any, formData: FormData) {
-    const bookingId = parseInt(formData.get("bookingId") as string, 10);
+    const bookingId = formData.get("bookingId") as string;
     const amount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const date = formData.get("date") as string;
@@ -377,8 +375,8 @@ export async function addPayment(previousState: any, formData: FormData) {
 }
 
 export async function updatePayment(previousState: any, formData: FormData) {
-    const id = parseInt(formData.get("id") as string, 10);
-    const bookingId = parseInt(formData.get("bookingId") as string, 10);
+    const id = formData.get("id") as string;
+    const bookingId = formData.get("bookingId") as string;
     const amount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const date = formData.get("date") as string;
@@ -387,7 +385,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
         return { success: false, message: "Todos los campos son obligatorios." };
     }
 
-    const updatedPayment = {
+    const updatedPayment: Payment = {
         id,
         bookingId,
         amount,
@@ -407,7 +405,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
 }
 
 export async function deletePayment(previousState: any, formData: FormData) {
-    const id = parseInt(formData.get("id") as string, 10);
+    const id = formData.get("id") as string;
 
      if (!id) {
         return { success: false, message: "ID de pago no válido." };

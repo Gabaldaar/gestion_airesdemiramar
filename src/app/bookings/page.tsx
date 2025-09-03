@@ -17,7 +17,7 @@ export default async function BookingsPage({
     tenantId?: string;
   };
 }) {
-  const tenantId = searchParams?.tenantId ? parseInt(searchParams.tenantId, 10) : undefined;
+  const tenantId = searchParams?.tenantId;
 
   const [allBookings, properties, tenants] = await Promise.all([
     getBookings(),

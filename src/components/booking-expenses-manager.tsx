@@ -28,7 +28,7 @@ import { BookingExpenseAddForm } from './booking-expense-add-form';
 import { BookingExpenseEditForm } from './booking-expense-edit-form';
 import { BookingExpenseDeleteForm } from './booking-expense-delete-form';
 
-export function BookingExpensesManager({ bookingId }: { bookingId: number }) {
+export function BookingExpensesManager({ bookingId }: { bookingId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [isLoading, setIsLoading] = useState(false);

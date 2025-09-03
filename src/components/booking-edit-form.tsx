@@ -83,7 +83,7 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
                         </SelectTrigger>
                         <SelectContent>
                             {properties.map(property => (
-                                <SelectItem key={property.id} value={String(property.id)}>
+                                <SelectItem key={property.id} value={property.id}>
                                     {property.name}
                                 </SelectItem>
                             ))}
@@ -100,7 +100,7 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
                         </SelectTrigger>
                         <SelectContent>
                             {tenants.map(tenant => (
-                                <SelectItem key={tenant.id} value={String(tenant.id)}>
+                                <SelectItem key={tenant.id} value={tenant.id}>
                                     {tenant.name}
                                 </SelectItem>
                             ))}

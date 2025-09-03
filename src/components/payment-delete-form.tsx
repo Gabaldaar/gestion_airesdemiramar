@@ -22,7 +22,7 @@ const initialState = {
   success: false,
 };
 
-export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: number; onPaymentDeleted: () => void }) {
+export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: string; onPaymentDeleted: () => void }) {
   const [state, formAction] = useActionState(deletePayment, initialState);
 
   useEffect(() => {

@@ -22,7 +22,7 @@ import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
-  const propertyId = parseInt(params.id, 10);
+  const propertyId = params.id;
   const [property, properties, tenants, bookings, expenses] = await Promise.all([
     getPropertyById(propertyId),
     getProperties(),

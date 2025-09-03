@@ -22,7 +22,7 @@ const initialState = {
   success: false,
 };
 
-export function ExpenseDeleteForm({ expenseId, propertyId }: { expenseId: number; propertyId: number }) {
+export function ExpenseDeleteForm({ expenseId, propertyId }: { expenseId: string; propertyId: string }) {
   const [state, formAction] = useActionState(deletePropertyExpense, initialState);
 
   return (

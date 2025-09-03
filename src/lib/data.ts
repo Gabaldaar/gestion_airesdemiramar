@@ -1,12 +1,37 @@
 
+import { db } from './firebase';
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  Timestamp,
+  writeBatch,
+  collectionGroup
+} from 'firebase/firestore';
 
+// --- TYPE DEFINITIONS ---
 
-
-
+// Helper to convert Firestore Timestamps to ISO strings
+const processDoc = (doc: any) => {
+    const data = doc.data();
+    for (const key in data) {
+        if (data[key] instanceof Timestamp) {
+            data[key] = data[key].toDate().toISOString();
+        }
+    }
+    return { id: doc.id, ...data };
+};
 
 
 export type Property = {
-  id: number;
+  id: string;
   name: string;
   address: string;
   googleCalendarId: string;
@@ -14,7 +39,7 @@ export type Property = {
 };
 
 export type Tenant = {
-  id: number;
+  id: string;
   name: string;
   dni: string;
   address: string;
@@ -25,14 +50,14 @@ export type Tenant = {
 };
 
 export type Booking = {
-  id: number;
-  propertyId: number;
-  tenantId: number;
+  id: string;
+  propertyId: string;
+  tenantId: string;
   startDate: string;
   endDate: string;
   amount: number;
   currency: 'USD' | 'ARS';
-  exchangeRate?: number; // Para convertir de USD a ARS
+  exchangeRate?: number;
 };
 
 export type BookingWithTenantAndProperty = Booking & {
@@ -47,31 +72,31 @@ export type BookingWithDetails = BookingWithTenantAndProperty & {
 
 
 export type Payment = {
-  id: number;
-  bookingId: number;
+  id: string;
+  bookingId: string;
   amount: number;
   date: string;
   currency: 'USD' | 'ARS';
 };
 
 export type PropertyExpense = {
-    id: number;
-    propertyId: number;
+    id: string;
+    propertyId: string;
     description: string;
     amount: number;
     date: string;
 }
 
 export type BookingExpense = {
-    id: number;
-    bookingId: number;
+    id: string;
+    bookingId: string;
     description: string;
     amount: number;
     date: string;
 }
 
 export type FinancialSummary = {
-    propertyId: number;
+    propertyId: string;
     propertyName: string;
     totalIncome: number;
     totalPayments: number;
@@ -81,127 +106,70 @@ export type FinancialSummary = {
     netResult: number;
 }
 
+// --- DATA ACCESS FUNCTIONS ---
 
-// --- DATOS DE EJEMPLO ---
+const propertiesCollection = collection(db, 'properties');
+const tenantsCollection = collection(db, 'tenants');
+const bookingsCollection = collection(db, 'bookings');
+const propertyExpensesCollection = collection(db, 'propertyExpenses');
+const bookingExpensesCollection = collection(db, 'bookingExpenses');
+const paymentsCollection = collection(db, 'payments');
 
-const properties: Property[] = [
-    { id: 1, name: 'Depto 1', address: 'Calle Falsa 123, Miramar', googleCalendarId: 'c_722f29379255a8057c603d6f1a8316c0dd1a53c15a452f14643c713833d73c8d@group.calendar.google.com', imageUrl: 'https://picsum.photos/600/400?random=1' },
-    { id: 2, name: 'Depto 2', address: 'Avenida Siempreviva 742, Miramar', googleCalendarId: 'cal2@google.com', imageUrl: 'https://picsum.photos/600/400?random=2' },
-    { id: 3, name: 'Casa 3', address: 'Calle 20 N° 1550, Miramar', googleCalendarId: 'c_722f29379255a8057c603d6f1a8316c0dd1a53c15a452f14643c713833d73c8d@group.calendar.google.com', imageUrl: 'https://picsum.photos/600/400?random=3' },
-    { id: 4, name: 'Depto 4', address: 'Avenida 23 N° 830, Miramar', googleCalendarId: 'cal4@google.com', imageUrl: 'https://picsum.photos/600/400?random=4' },
-];
-
-let tenants: Tenant[] = [
-    { id: 1, name: 'Juan Perez', dni: '12345678', address: 'Su casa', city: 'CABA', country: 'Argentina', email: 'juan@perez.com', phone: '11-1234-5678' },
-    { id: 2, name: 'Maria Garcia', dni: '87654321', address: 'Calle Otra 456', city: 'Cordoba', country: 'Argentina', email: 'maria@garcia.com', phone: '351-123-4567' },
-    { id: 3, name: 'Pedro Martinez', dni: '11223344', address: 'Avenida Ficticia 789', city: 'Rosario', country: 'Argentina', email: 'pedro@martinez.com', phone: '341-987-6543' }
-];
-
-// Función para generar fechas
-const getDate = (daysToAdd: number) => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysToAdd);
-    return date.toISOString();
-}
-
-let bookings: Booking[] = [
-    // Reservas pasadas
-    { id: 1, propertyId: 1, tenantId: 2, startDate: getDate(-25), endDate: getDate(-15), amount: 250000, currency: 'ARS' },
-    { id: 2, propertyId: 3, tenantId: 1, startDate: getDate(-50), endDate: getDate(-40), amount: 800, currency: 'USD', exchangeRate: 1000 },
-    
-    // Reserva en curso
-    { id: 9, propertyId: 2, tenantId: 3, startDate: getDate(-2), endDate: getDate(5), amount: 180000, currency: 'ARS' },
-    
-    // Reservas futuras (próximas)
-    { id: 3, propertyId: 1, tenantId: 3, startDate: getDate(10), endDate: getDate(17), amount: 350000, currency: 'ARS' },
-    { id: 4, propertyId: 2, tenantId: 1, startDate: getDate(25), endDate: getDate(35), amount: 450000, currency: 'ARS' },
-    { id: 5, propertyId: 4, tenantId: 2, startDate: getDate(40), endDate: getDate(50), amount: 1200, currency: 'USD', exchangeRate: 1250 },
-    
-    // Reservas para la temporada alta
-    { id: 6, propertyId: 1, tenantId: 1, startDate: '2024-12-28T00:00:00.000Z', endDate: '2025-01-10T00:00:00.000Z', amount: 750000, currency: 'ARS' },
-    { id: 7, propertyId: 3, tenantId: 3, startDate: '2025-01-15T00:00:00.000Z', endDate: '2025-01-30T00:00:00.000Z', amount: 950000, currency: 'ARS' },
-    { id: 8, propertyId: 2, tenantId: 2, startDate: '2025-02-01T00:00:00.000Z', endDate: '2025-02-15T00:00:00.000Z', amount: 850000, currency: 'ARS' },
-];
-
-let propertyExpenses: PropertyExpense[] = [
-    { id: 1, propertyId: 1, description: "Arreglo de cañería", amount: 15000, date: '2024-07-10T00:00:00.000Z' },
-    { id: 2, propertyId: 1, description: "Pintura frente", amount: 45000, date: '2024-06-20T00:00:00.000Z' },
-];
-
-let bookingExpenses: BookingExpense[] = [
-    { id: 1, bookingId: 1, description: "Comisión plataforma", amount: 25000, date: '2024-07-15T00:00:00.000Z'},
-    { id: 2, bookingId: 1, description: "Limpieza", amount: 10000, date: '2024-07-30T00:00:00.000Z'},
-];
-
-let payments: Payment[] = [
-    // Pagos para reservas pasadas
-    { id: 1, bookingId: 1, amount: 250000, date: getDate(-26), currency: 'ARS' },
-    { id: 2, bookingId: 2, amount: 800, date: getDate(-51), currency: 'USD' },
-    
-     // Pago para reserva en curso (saldo pendiente)
-    { id: 6, bookingId: 9, amount: 100000, date: getDate(-3), currency: 'ARS' },
-
-    // Pagos para reservas futuras (algunas con saldo)
-    { id: 3, bookingId: 3, amount: 150000, date: getDate(1), currency: 'ARS' }, // Saldo pendiente
-    { id: 4, bookingId: 4, amount: 450000, date: getDate(20), currency: 'ARS' }, // Pagada
-    { id: 5, bookingId: 6, amount: 300000, date: getDate(5), currency: 'ARS' }, // Saldo pendiente
-];
-
-
-// --- FUNCIONES DE ACCESO A DATOS ---
 
 export async function getProperties(): Promise<Property[]> {
-  return properties;
+  const snapshot = await getDocs(propertiesCollection);
+  return snapshot.docs.map(processDoc) as Property[];
 }
 
-export async function getPropertyById(id: number): Promise<Property | undefined> {
-  return properties.find(p => p.id === id);
+export async function getPropertyById(id: string): Promise<Property | undefined> {
+  if (!id) return undefined;
+  const docRef = doc(db, 'properties', id);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? processDoc(docSnap) as Property : undefined;
 }
 
 export async function getTenants(): Promise<Tenant[]> {
-    return tenants;
+    const snapshot = await getDocs(tenantsCollection);
+    return snapshot.docs.map(processDoc) as Tenant[];
 }
 
-export async function getTenantById(id: number): Promise<Tenant | undefined> {
-    return tenants.find(t => t.id === id);
+export async function getTenantById(id: string): Promise<Tenant | undefined> {
+    if (!id) return undefined;
+    const docRef = doc(db, 'tenants', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? processDoc(docSnap) as Tenant : undefined;
 }
 
 export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
-    const newTenant = {
-        id: tenants.length > 0 ? Math.max(...tenants.map(t => t.id)) + 1 : 1,
-        ...tenant
-    };
-    tenants.push(newTenant);
-    return newTenant;
+    const docRef = await addDoc(tenantsCollection, tenant);
+    return { id: docRef.id, ...tenant };
 }
 
 export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null> {
-    const tenantIndex = tenants.findIndex(t => t.id === updatedTenant.id);
-    if (tenantIndex === -1) {
-        return null;
-    }
-    tenants[tenantIndex] = updatedTenant;
+    const { id, ...data } = updatedTenant;
+    const docRef = doc(db, 'tenants', id);
+    await updateDoc(docRef, data);
     return updatedTenant;
 }
 
-export async function deleteTenant(id: number): Promise<boolean> {
-    const initialLength = tenants.length;
-    tenants = tenants.filter(t => t.id !== id);
-    return tenants.length < initialLength;
+export async function deleteTenant(id: string): Promise<boolean> {
+    const docRef = doc(db, 'tenants', id);
+    await deleteDoc(docRef);
+    return true;
 }
 
 
 async function getBookingDetails(booking: Booking, allPayments: Payment[]): Promise<BookingWithDetails> {
-    const tenant = tenants.find(t => t.id === booking.tenantId);
-    const property = properties.find(p => p.id === booking.propertyId);
+    const [tenant, property] = await Promise.all([
+        getTenantById(booking.tenantId),
+        getPropertyById(booking.propertyId)
+    ]);
 
     const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
     const totalPaid = paymentsForBooking.reduce((acc, payment) => {
         if (payment.currency === booking.currency) {
             return acc + payment.amount;
         }
-        // Basic conversion if currencies differ, assuming ARS->USD or USD->ARS
-        // This logic might need to be more robust in a real-world app
         if (payment.currency === 'USD' && booking.currency === 'ARS') {
             return acc + payment.amount * (booking.exchangeRate || 1000);
         }
@@ -218,163 +186,149 @@ async function getBookingDetails(booking: Booking, allPayments: Payment[]): Prom
 
 
 export async function getBookings(): Promise<BookingWithDetails[]> {
+    const snapshot = await getDocs(query(bookingsCollection, orderBy('startDate', 'desc')));
+    const allBookings = snapshot.docs.map(processDoc) as Booking[];
     const allPayments = await getAllPayments();
-    const detailedBookings = await Promise.all(
-        bookings.map(booking => getBookingDetails(booking, allPayments))
-    );
-    return detailedBookings.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    return Promise.all(allBookings.map(booking => getBookingDetails(booking, allPayments)));
 }
 
-export async function getBookingsByPropertyId(propertyId: number): Promise<BookingWithDetails[]> {
-    const propertyBookings = bookings.filter(b => b.propertyId === propertyId);
-     const allPayments = await getAllPayments();
-    const detailedBookings = await Promise.all(
-        propertyBookings.map(booking => getBookingDetails(booking, allPayments))
-    );
-    return detailedBookings.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+export async function getBookingsByPropertyId(propertyId: string): Promise<BookingWithDetails[]> {
+    const q = query(bookingsCollection, where('propertyId', '==', propertyId), orderBy('startDate', 'desc'));
+    const snapshot = await getDocs(q);
+    const propertyBookings = snapshot.docs.map(processDoc) as Booking[];
+    const allPayments = await getAllPayments();
+    return Promise.all(propertyBookings.map(booking => getBookingDetails(booking, allPayments)));
 }
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
-    const newBooking = {
-        id: bookings.length > 0 ? Math.max(...bookings.map(b => b.id)) + 1 : 1,
-        ...booking
-    };
-    bookings.push(newBooking);
-    console.log('Bookings after adding:', bookings);
-    return newBooking;
+    const docRef = await addDoc(bookingsCollection, booking);
+    return { id: docRef.id, ...booking };
 }
 
 export async function updateBooking(updatedBooking: Booking): Promise<Booking | null> {
-    const bookingIndex = bookings.findIndex(b => b.id === updatedBooking.id);
-    if (bookingIndex === -1) {
-        return null;
-    }
-    bookings[bookingIndex] = updatedBooking;
+    const { id, ...data } = updatedBooking;
+    const docRef = doc(db, 'bookings', id);
+    await updateDoc(docRef, data);
     return updatedBooking;
 }
 
-export async function deleteBooking(id: number): Promise<boolean> {
-    const initialLength = bookings.length;
-    bookings = bookings.filter(b => b.id !== id);
-    // Also delete associated payments and expenses
-    payments = payments.filter(p => p.bookingId !== id);
-    bookingExpenses = bookingExpenses.filter(e => e.bookingId !== id);
-    return bookings.length < initialLength;
+export async function deleteBooking(id: string): Promise<boolean> {
+    const batch = writeBatch(db);
+    
+    // Delete booking
+    const bookingRef = doc(db, 'bookings', id);
+    batch.delete(bookingRef);
+
+    // Delete associated payments
+    const paymentsQuery = query(paymentsCollection, where('bookingId', '==', id));
+    const paymentsSnapshot = await getDocs(paymentsQuery);
+    paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+    // Delete associated booking expenses
+    const expensesQuery = query(bookingExpensesCollection, where('bookingId', '==', id));
+    const expensesSnapshot = await getDocs(expensesQuery);
+    expensesSnapshot.forEach(doc => batch.delete(doc.ref));
+    
+    await batch.commit();
+    return true;
 }
 
 export async function getAllPropertyExpenses(): Promise<PropertyExpense[]> {
-    return propertyExpenses;
+    const snapshot = await getDocs(propertyExpensesCollection);
+    return snapshot.docs.map(processDoc) as PropertyExpense[];
 }
 
-export async function getPropertyExpensesByPropertyId(propertyId: number): Promise<PropertyExpense[]> {
-    return propertyExpenses
-        .filter(e => e.propertyId === propertyId)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+export async function getPropertyExpensesByPropertyId(propertyId: string): Promise<PropertyExpense[]> {
+    const q = query(propertyExpensesCollection, where('propertyId', '==', propertyId), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as PropertyExpense[];
 }
 
 export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
-    const newExpense = {
-        id: propertyExpenses.length > 0 ? Math.max(...propertyExpenses.map(e => e.id)) + 1 : 1,
-        ...expense
-    };
-    propertyExpenses.push(newExpense);
-    return newExpense;
+    const docRef = await addDoc(propertyExpensesCollection, expense);
+    return { id: docRef.id, ...expense };
 }
 
 export async function updatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense | null> {
-    const expenseIndex = propertyExpenses.findIndex(e => e.id === updatedExpense.id);
-    if (expenseIndex === -1) {
-        return null;
-    }
-    propertyExpenses[expenseIndex] = updatedExpense;
+    const { id, ...data } = updatedExpense;
+    const docRef = doc(db, 'propertyExpenses', id);
+    await updateDoc(docRef, data);
     return updatedExpense;
 }
 
-export async function deletePropertyExpense(id: number): Promise<boolean> {
-    const initialLength = propertyExpenses.length;
-    propertyExpenses = propertyExpenses.filter(e => e.id !== id);
-    return propertyExpenses.length < initialLength;
+export async function deletePropertyExpense(id: string): Promise<boolean> {
+    const docRef = doc(db, 'propertyExpenses', id);
+    await deleteDoc(docRef);
+    return true;
 }
 
 export async function getAllBookingExpenses(): Promise<BookingExpense[]> {
-    return bookingExpenses;
+    const snapshot = await getDocs(bookingExpensesCollection);
+    return snapshot.docs.map(processDoc) as BookingExpense[];
 }
 
-export async function getBookingExpensesByBookingId(bookingId: number): Promise<BookingExpense[]> {
-    return bookingExpenses
-        .filter(e => e.bookingId === bookingId)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+export async function getBookingExpensesByBookingId(bookingId: string): Promise<BookingExpense[]> {
+    const q = query(bookingExpensesCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as BookingExpense[];
 }
 
 export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
-    const newExpense = {
-        id: bookingExpenses.length > 0 ? Math.max(...bookingExpenses.map(e => e.id)) + 1 : 1,
-        ...expense
-    };
-    bookingExpenses.push(newExpense);
-    return newExpense;
+    const docRef = await addDoc(bookingExpensesCollection, expense);
+    return { id: docRef.id, ...expense };
 }
 
 export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense | null> {
-    const expenseIndex = bookingExpenses.findIndex(e => e.id === updatedExpense.id);
-    if (expenseIndex === -1) {
-        return null;
-    }
-    bookingExpenses[expenseIndex] = updatedExpense;
+    const { id, ...data } = updatedExpense;
+    const docRef = doc(db, 'bookingExpenses', id);
+    await updateDoc(docRef, data);
     return updatedExpense;
 }
 
-export async function deleteBookingExpense(id: number): Promise<boolean> {
-    const initialLength = bookingExpenses.length;
-    bookingExpenses = bookingExpenses.filter(e => e.id !== id);
-    return bookingExpenses.length < initialLength;
+export async function deleteBookingExpense(id: string): Promise<boolean> {
+    const docRef = doc(db, 'bookingExpenses', id);
+    await deleteDoc(docRef);
+    return true;
 }
 
-export async function getPaymentsByBookingId(bookingId: number): Promise<Payment[]> {
-    return payments
-        .filter(p => p.bookingId === bookingId)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+export async function getPaymentsByBookingId(bookingId: string): Promise<Payment[]> {
+    const q = query(paymentsCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as Payment[];
 }
 
 export async function addPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
-    const newPayment = {
-        id: payments.length > 0 ? Math.max(...payments.map(p => p.id)) + 1 : 1,
-        ...payment
-    };
-    payments.push(newPayment);
-    return newPayment;
+    const docRef = await addDoc(paymentsCollection, payment);
+    return { id: docRef.id, ...payment };
 }
 
 export async function updatePayment(updatedPayment: Payment): Promise<Payment | null> {
-    const paymentIndex = payments.findIndex(p => p.id === updatedPayment.id);
-    if (paymentIndex === -1) {
-        return null;
-    }
-    payments[paymentIndex] = updatedPayment;
+    const { id, ...data } = updatedPayment;
+    const docRef = doc(db, 'payments', id);
+    await updateDoc(docRef, data);
     return updatedPayment;
 }
 
-export async function deletePayment(id: number): Promise<boolean> {
-    const initialLength = payments.length;
-    payments = payments.filter(p => p.id !== id);
-    return payments.length < initialLength;
+export async function deletePayment(id: string): Promise<boolean> {
+    const docRef = doc(db, 'payments', id);
+    await deleteDoc(docRef);
+    return true;
 }
 
 export async function getAllPayments(): Promise<Payment[]> {
-    return payments;
+    const snapshot = await getDocs(paymentsCollection);
+    return snapshot.docs.map(processDoc) as Payment[];
 }
 
 
 export async function getFinancialSummaryByProperty(options?: { startDate?: string; endDate?: string }): Promise<FinancialSummary[]> {
   const startDate = options?.startDate;
   const endDate = options?.endDate;
-  // Adjust to include the whole day for the 'to' date
   const fromDate = startDate ? new Date(startDate) : null;
   if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
   
   const toDate = endDate ? new Date(endDate) : null;
   if (toDate) toDate.setUTCHours(23, 59, 59, 999);
-
 
   const [allProperties, allBookings, allPropertyExpenses, allBookingExpenses, allPayments] = await Promise.all([
     getProperties(),
@@ -389,7 +343,6 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
         if (!fromDate && !toDate) return true;
         const itemDate = new Date(dateStr);
         if (fromDate && itemDate < fromDate) return false;
-        // Adjust the 'to' date comparison to be inclusive
         if (toDate && itemDate > toDate) return false;
         return true;
     };
@@ -399,7 +352,6 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
     
     const relevantBookingIds = new Set(propertyBookings.map(b => b.id));
 
-    // Filter expenses and payments based on the bookings that are within the date range
     const relevantBookingExpenses = allBookingExpenses.filter(e => relevantBookingIds.has(e.bookingId) && isWithinDateRange(e.date));
     const relevantPayments = allPayments.filter(p => relevantBookingIds.has(p.bookingId) && isWithinDateRange(p.date));
 

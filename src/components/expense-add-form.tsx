@@ -27,7 +27,7 @@ const initialState = {
   success: false,
 };
 
-export function ExpenseAddForm({ propertyId }: { propertyId: number }) {
+export function ExpenseAddForm({ propertyId }: { propertyId: string }) {
   const [state, formAction] = useActionState(addPropertyExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
