@@ -2,7 +2,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { checkAuth } from './lib/auth';
-import { AUTH_COOKIE_NAME } from './lib/constants';
 
 const PROTECTED_ROUTES = ['/', '/properties', '/bookings', '/tenants', '/expenses', '/reports', '/settings'];
 const LOGIN_ROUTE = '/login';
