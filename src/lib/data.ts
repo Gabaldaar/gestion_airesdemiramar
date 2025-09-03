@@ -10,6 +10,7 @@ export type Property = {
 export type Tenant = {
   id: number;
   name: string;
+  dni: string;
   address: string;
   city: string;
   country: string;
@@ -61,7 +62,7 @@ const properties: Property[] = [
 ];
 
 const tenants: Tenant[] = [
-    { id: 1, name: 'Juan Perez', address: 'Su casa', city: 'CABA', country: 'Argentina', email: 'juan@perez.com', phone: '11-1234-5678' }
+    { id: 1, name: 'Juan Perez', dni: '12345678', address: 'Su casa', city: 'CABA', country: 'Argentina', email: 'juan@perez.com', phone: '11-1234-5678' }
 ];
 
 const bookings: Booking[] = [];
@@ -80,6 +81,15 @@ export async function getPropertyById(id: number): Promise<Property | undefined>
 
 export async function getTenants(): Promise<Tenant[]> {
     return tenants;
+}
+
+export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
+    const newTenant = {
+        id: tenants.length > 0 ? Math.max(...tenants.map(t => t.id)) + 1 : 1,
+        ...tenant
+    };
+    tenants.push(newTenant);
+    return newTenant;
 }
 
 export async function getBookings(): Promise<Booking[]> {

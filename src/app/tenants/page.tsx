@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/table";
 import { getTenants, Tenant } from "@/lib/data";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { TenantAddForm } from "@/components/tenant-add-form";
+
 
 export default async function TenantsPage() {
   const tenants = await getTenants();
@@ -30,16 +31,14 @@ export default async function TenantsPage() {
             Administra la información de tus inquilinos.
           </CardDescription>
         </div>
-        <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nuevo Inquilino
-        </Button>
+        <TenantAddForm />
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
+              <TableHead>DNI</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Teléfono</TableHead>
               <TableHead>Dirección</TableHead>
@@ -50,6 +49,7 @@ export default async function TenantsPage() {
             {tenants.map((tenant: Tenant) => (
               <TableRow key={tenant.id}>
                 <TableCell className="font-medium">{tenant.name}</TableCell>
+                <TableCell>{tenant.dni}</TableCell>
                 <TableCell>{tenant.email}</TableCell>
                 <TableCell>{tenant.phone}</TableCell>
                 <TableCell>{`${tenant.address}, ${tenant.city}, ${tenant.country}`}</TableCell>
