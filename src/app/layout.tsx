@@ -7,8 +7,8 @@ import MainLayout from "@/components/main-layout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Admin Panel",
-  description: "Panel de administración de propiedades",
+  title: "Aires de Miramar",
+  description: "Gestión de alquileres temporarios",
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body className={cn(inter.className, "min-h-screen bg-background font-sans antialiased")}>
         <MainLayout>
           {children}

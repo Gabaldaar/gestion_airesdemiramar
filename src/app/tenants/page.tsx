@@ -7,17 +7,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default async function BookingsPage() {
+export default async function TenantsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reservas</CardTitle>
+        <CardTitle>Inquilinos</CardTitle>
         <CardDescription>
-          Administra todas las reservas de tus propiedades.
+            Administra la información de tus inquilinos.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p>Próximamente: listado de reservas.</p>
+        <p>Próximamente: listado de inquilinos.</p>
       </CardContent>
     </Card>
   );

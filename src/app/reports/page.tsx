@@ -7,17 +7,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default async function BookingsPage() {
+export default async function ReportsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reservas</CardTitle>
+        <CardTitle>Reportes</CardTitle>
         <CardDescription>
-          Administra todas las reservas de tus propiedades.
+            Visualiza el rendimiento de tus propiedades.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p>Próximamente: listado de reservas.</p>
+        <p>Próximamente: panel de reportes.</p>
       </CardContent>
     </Card>
   );

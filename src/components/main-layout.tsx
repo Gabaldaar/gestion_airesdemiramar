@@ -1,10 +1,9 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Calendar, Settings, PanelLeft } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, PanelLeft, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -15,7 +14,9 @@ import {
 const navItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/properties', label: 'Propiedades', icon: Building2 },
+  { href: '/tenants', label: 'Inquilinos', icon: Users },
   { href: '/bookings', label: 'Reservas', icon: Calendar },
+  { href: '/reports', label: 'Reportes', icon: BarChart3 },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
 
@@ -50,9 +51,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <div className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
+            <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
               <Building2 className="h-6 w-6" />
-              <span className="">Admin Panel</span>
+              <span className="">Aires de Miramar</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -75,9 +76,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                <Link href="/" className="flex items-center gap-2 font-semibold">
+                <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
                   <Building2 className="h-6 w-6" />
-                  <span className="">Admin Panel</span>
+                  <span className="">Aires de Miramar</span>
                 </Link>
               </div>
               <SidebarNav />
