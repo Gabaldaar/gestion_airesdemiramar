@@ -21,3 +21,8 @@ export async function loginAction(prevState: { error: string } | undefined, form
     return { error: 'La contraseña es incorrecta.' }
   }
 }
+
+export async function logoutAction() {
+  cookies().delete(AUTH_COOKIE_NAME);
+  redirect('/login');
+}

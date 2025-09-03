@@ -17,11 +17,13 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { deleteAuthCookie } from "@/lib/auth"
+import { logoutAction } from "@/lib/actions"
+import { useTransition } from "react"
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
 
   const menuItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -34,8 +36,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   ]
 
   const handleLogout = async () => {
-    await deleteAuthCookie();
-    router.refresh();
+    startTransition(async () => {
+      await logoutAction();
+    });
   }
 
   return (
@@ -72,10 +75,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} tooltip="Cerrar Sesión">
-                    <LogOut/>
-                    <span>Cerrar Sesión</span>
-                </SidebarMenuButton>
+                <form action={handleLogout}>
+                    <SidebarMenuButton type="submit" disabled={isPending} tooltip="Cerrar Sesión">
+                        <LogOut/>
+                        <span>{isPending ? "Cerrando sesión..." : "Cerrar Sesión"}</span>
+                    </SidebarMenuButton>
+                </form>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
