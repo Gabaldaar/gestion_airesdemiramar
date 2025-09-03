@@ -14,7 +14,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarInset,
-  SidebarFooter,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 
@@ -50,7 +49,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === '/' ? item.href === '/' : (item.href !== '/' && pathname.startsWith(item.href))}
+                  isActive={pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))}
                   tooltip={item.label}
                 >
                   <Link href={item.href}>
@@ -62,9 +61,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             ))}
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
-            {/* Logout button removed */}
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-background/50 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
