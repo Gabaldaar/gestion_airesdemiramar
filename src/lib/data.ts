@@ -54,8 +54,10 @@ export type BookingExpense = {
 // --- DATOS DE EJEMPLO ---
 
 const properties: Property[] = [
-    { id: 1, name: 'Depto 1', address: 'Calle Falsa 123', googleCalendarId: 'cal1@google.com', imageUrl: 'https://picsum.photos/600/400?random=1' },
-    { id: 2, name: 'Depto 2', address: 'Avenida Siempreviva 742', googleCalendarId: 'cal2@google.com', imageUrl: 'https://picsum.photos/600/400?random=2' },
+    { id: 1, name: 'Depto 1', address: 'Calle Falsa 123, Miramar', googleCalendarId: 'cal1@google.com', imageUrl: 'https://picsum.photos/600/400?random=1' },
+    { id: 2, name: 'Depto 2', address: 'Avenida Siempreviva 742, Miramar', googleCalendarId: 'cal2@google.com', imageUrl: 'https://picsum.photos/600/400?random=2' },
+    { id: 3, name: 'Casa 3', address: 'Calle 20 N° 1550, Miramar', googleCalendarId: 'cal3@google.com', imageUrl: 'https://picsum.photos/600/400?random=3' },
+    { id: 4, name: 'Depto 4', address: 'Avenida 23 N° 830, Miramar', googleCalendarId: 'cal4@google.com', imageUrl: 'https://picsum.photos/600/400?random=4' },
 ];
 
 const tenants: Tenant[] = [
