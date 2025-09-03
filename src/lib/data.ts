@@ -120,7 +120,7 @@ export async function getBookings(): Promise<BookingWithTenantAndProperty[]> {
         const tenant = tenants.find(t => t.id === booking.tenantId);
         const property = properties.find(p => p.id === booking.propertyId);
         return { ...booking, tenant, property };
-    });
+    }).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 }
 
 export async function getBookingsByPropertyId(propertyId: number): Promise<BookingWithTenantAndProperty[]> {
@@ -128,7 +128,7 @@ export async function getBookingsByPropertyId(propertyId: number): Promise<Booki
     return propertyBookings.map(booking => {
         const tenant = tenants.find(t => t.id === booking.tenantId);
         return { ...booking, tenant };
-    });
+    }).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 }
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
