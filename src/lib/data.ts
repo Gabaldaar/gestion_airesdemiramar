@@ -58,6 +58,16 @@ export type BookingExpense = {
     date: string;
 }
 
+export type FinancialSummary = {
+    propertyId: number;
+    propertyName: string;
+    totalIncome: number;
+    totalPropertyExpenses: number;
+    totalBookingExpenses: number;
+    netResult: number;
+}
+
+
 // --- DATOS DE EJEMPLO ---
 
 const properties: Property[] = [
@@ -75,7 +85,7 @@ let tenants: Tenant[] = [
 
 let bookings: Booking[] = [
     { id: 1, propertyId: 1, tenantId: 2, startDate: '2024-07-15T00:00:00.000Z', endDate: '2024-07-30T00:00:00.000Z', amount: 250000, currency: 'ARS' },
-    { id: 2, propertyId: 3, tenantId: 1, startDate: '2024-08-01T00:00:00.000Z', endDate: '2024-08-15T00:00:00.000Z', amount: 800, currency: 'USD' },
+    { id: 2, propertyId: 3, tenantId: 1, startDate: '2024-08-01T00:00:00.000Z', endDate: '2024-08-15T00:00:00.000Z', amount: 800, currency: 'USD', exchangeRate: 1000 },
     { id: 3, propertyId: 1, tenantId: 3, startDate: '2024-09-01T00:00:00.000Z', endDate: '2024-09-10T00:00:00.000Z', amount: 350000, currency: 'ARS' },
 ];
 
@@ -166,6 +176,10 @@ export async function deleteBooking(id: number): Promise<boolean> {
     return bookings.length < initialLength;
 }
 
+export async function getAllPropertyExpenses(): Promise<PropertyExpense[]> {
+    return propertyExpenses;
+}
+
 export async function getPropertyExpensesByPropertyId(propertyId: number): Promise<PropertyExpense[]> {
     return propertyExpenses
         .filter(e => e.propertyId === propertyId)
@@ -196,6 +210,10 @@ export async function deletePropertyExpense(id: number): Promise<boolean> {
     return propertyExpenses.length < initialLength;
 }
 
+export async function getAllBookingExpenses(): Promise<BookingExpense[]> {
+    return bookingExpenses;
+}
+
 export async function getBookingExpensesByBookingId(bookingId: number): Promise<BookingExpense[]> {
     return bookingExpenses
         .filter(e => e.bookingId === bookingId)
@@ -224,4 +242,48 @@ export async function deleteBookingExpense(id: number): Promise<boolean> {
     const initialLength = bookingExpenses.length;
     bookingExpenses = bookingExpenses.filter(e => e.id !== id);
     return bookingExpenses.length < initialLength;
+}
+
+export async function getFinancialSummaryByProperty(): Promise<FinancialSummary[]> {
+  const [allProperties, allBookings, allPropertyExpenses, allBookingExpenses] = await Promise.all([
+    getProperties(),
+    getBookings(),
+    getAllPropertyExpenses(),
+    getAllBookingExpenses(),
+  ]);
+
+  const summary: FinancialSummary[] = allProperties.map(property => {
+    const propertyBookings = allBookings.filter(b => b.propertyId === property.id);
+    const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id);
+
+    const totalIncome = propertyBookings.reduce((acc, booking) => {
+      if (booking.currency === 'ARS') {
+        return acc + booking.amount;
+      } else {
+        // Usa el tipo de cambio de la reserva, o un valor por defecto (ej: 1000)
+        return acc + booking.amount * (booking.exchangeRate || 1000);
+      }
+    }, 0);
+
+    const totalPropertyExpenses = propertyExpenses.reduce((acc, expense) => acc + expense.amount, 0);
+
+    const totalBookingExpenses = propertyBookings.reduce((acc, booking) => {
+        const expensesForThisBooking = allBookingExpenses.filter(e => e.bookingId === booking.id);
+        const bookingExpensesTotal = expensesForThisBooking.reduce((sum, expense) => sum + expense.amount, 0);
+        return acc + bookingExpensesTotal;
+    }, 0);
+
+    const netResult = totalIncome - totalPropertyExpenses - totalBookingExpenses;
+
+    return {
+      propertyId: property.id,
+      propertyName: property.name,
+      totalIncome,
+      totalPropertyExpenses,
+      totalBookingExpenses,
+      netResult,
+    };
+  });
+
+  return summary;
 }

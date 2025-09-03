@@ -6,18 +6,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getFinancialSummaryByProperty } from "@/lib/data";
+import FinancialSummaryTable from "@/components/financial-summary-table";
 
 export default async function ReportsPage() {
+  const summary = await getFinancialSummaryByProperty();
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reportes</CardTitle>
+        <CardTitle>Reporte Financiero por Propiedad</CardTitle>
         <CardDescription>
-            Visualiza el rendimiento de tus propiedades.
+          Visualiza un resumen de ingresos, gastos y resultados por cada propiedad.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p>Próximamente: panel de reportes.</p>
+        <FinancialSummaryTable summary={summary} />
       </CardContent>
     </Card>
   );
