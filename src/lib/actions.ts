@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { getSession, setSession, deleteSession } from '@/lib/session';
 import { APP_PASSWORD } from './constants';
  
-export async function loginAction(formData: FormData) {
+export async function loginAction(previousState: any, formData: FormData) {
   const password = formData.get('password')
  
   if (password !== APP_PASSWORD) {
