@@ -16,6 +16,7 @@ import { BookingEditForm } from "./booking-edit-form";
 import { BookingDeleteForm } from "./booking-delete-form";
 import { BookingExpensesManager } from "./booking-expenses-manager";
 import { BookingPaymentsManager } from "./booking-payments-manager";
+import { NotesViewer } from "./notes-viewer";
 
 interface BookingsListProps {
   bookings: BookingWithDetails[];
@@ -68,6 +69,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
             </TableCell>
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
+                    {booking.notes && <NotesViewer notes={booking.notes} title={`Notas sobre la reserva`} />}
                     <BookingPaymentsManager bookingId={booking.id} bookingCurrency={booking.currency} />
                     <BookingExpensesManager bookingId={booking.id} />
                     <BookingEditForm booking={booking} tenants={tenants} properties={properties} />
