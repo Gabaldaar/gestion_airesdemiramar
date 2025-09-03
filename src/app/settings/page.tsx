@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getProperties, Property } from "@/lib/data";
+import { PropertyEditForm } from "@/components/property-edit-form";
 
 export default async function SettingsPage() {
   const properties = await getProperties();
@@ -34,15 +35,12 @@ export default async function SettingsPage() {
               <TableHead>Nombre</TableHead>
               <TableHead>Dirección</TableHead>
               <TableHead>ID Calendario Google</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {properties.map((property: Property) => (
-              <TableRow key={property.id}>
-                <TableCell className="font-medium">{property.name}</TableCell>
-                <TableCell>{property.address}</TableCell>
-                <TableCell>{property.googleCalendarId}</TableCell>
-              </TableRow>
+              <PropertyEditForm key={property.id} property={property} />
             ))}
           </TableBody>
         </Table>
