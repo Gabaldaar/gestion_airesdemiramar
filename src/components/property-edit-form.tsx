@@ -15,24 +15,24 @@ const initialState = {
 
 export function PropertyEditForm({ property }: { property: Property }) {
   const [state, formAction] = useActionState(updateProperty, initialState);
+  const formId = `property-edit-form-${property.id}`;
 
   return (
     <TableRow>
-      <form action={formAction} className="contents">
-        <input type="hidden" name="id" value={property.id} />
         <TableCell className="font-medium">
-          <Input type="text" name="name" defaultValue={property.name} />
+            <form id={formId} action={formAction} className="hidden" />
+            <input type="hidden" name="id" value={property.id} form={formId} />
+            <Input type="text" name="name" defaultValue={property.name} form={formId} />
         </TableCell>
         <TableCell>
-          <Input type="text" name="address" defaultValue={property.address} />
+            <Input type="text" name="address" defaultValue={property.address} form={formId} />
         </TableCell>
         <TableCell>
-          <Input type="text" name="googleCalendarId" defaultValue={property.googleCalendarId} />
+            <Input type="text" name="googleCalendarId" defaultValue={property.googleCalendarId} form={formId} />
         </TableCell>
         <TableCell className="text-right">
-          <Button type="submit">Guardar</Button>
+            <Button type="submit" form={formId}>Guardar</Button>
         </TableCell>
-      </form>
     </TableRow>
   );
 }
