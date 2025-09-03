@@ -61,9 +61,9 @@ export type BookingExpense = {
 // --- DATOS DE EJEMPLO ---
 
 const properties: Property[] = [
-    { id: 1, name: 'Depto 1', address: 'Calle Falsa 123, Miramar', googleCalendarId: 'cal1@google.com', imageUrl: 'https://picsum.photos/600/400?random=1' },
+    { id: 1, name: 'Depto 1', address: 'Calle Falsa 123, Miramar', googleCalendarId: 'c_722f29379255a8057c603d6f1a8316c0dd1a53c15a452f14643c713833d73c8d@group.calendar.google.com', imageUrl: 'https://picsum.photos/600/400?random=1' },
     { id: 2, name: 'Depto 2', address: 'Avenida Siempreviva 742, Miramar', googleCalendarId: 'cal2@google.com', imageUrl: 'https://picsum.photos/600/400?random=2' },
-    { id: 3, name: 'Casa 3', address: 'Calle 20 N° 1550, Miramar', googleCalendarId: 'cal3@google.com', imageUrl: 'https://picsum.photos/600/400?random=3' },
+    { id: 3, name: 'Casa 3', address: 'Calle 20 N° 1550, Miramar', googleCalendarId: 'c_722f29379255a8057c603d6f1a8316c0dd1a53c15a452f14643c713833d73c8d@group.calendar.google.com', imageUrl: 'https://picsum.photos/600/400?random=3' },
     { id: 4, name: 'Depto 4', address: 'Avenida 23 N° 830, Miramar', googleCalendarId: 'cal4@google.com', imageUrl: 'https://picsum.photos/600/400?random=4' },
 ];
 
@@ -84,6 +84,10 @@ let propertyExpenses: PropertyExpense[] = [
     { id: 2, propertyId: 1, description: "Pintura frente", amount: 45000, date: '2024-06-20T00:00:00.000Z' },
 ];
 
+let bookingExpenses: BookingExpense[] = [
+    { id: 1, bookingId: 1, description: "Comisión plataforma", amount: 25000, date: '2024-07-15T00:00:00.000Z'},
+    { id: 2, bookingId: 1, description: "Limpieza", amount: 10000, date: '2024-07-30T00:00:00.000Z'},
+];
 
 const payments: Payment[] = [];
 
@@ -190,4 +194,34 @@ export async function deletePropertyExpense(id: number): Promise<boolean> {
     const initialLength = propertyExpenses.length;
     propertyExpenses = propertyExpenses.filter(e => e.id !== id);
     return propertyExpenses.length < initialLength;
+}
+
+export async function getBookingExpensesByBookingId(bookingId: number): Promise<BookingExpense[]> {
+    return bookingExpenses
+        .filter(e => e.bookingId === bookingId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
+    const newExpense = {
+        id: bookingExpenses.length > 0 ? Math.max(...bookingExpenses.map(e => e.id)) + 1 : 1,
+        ...expense
+    };
+    bookingExpenses.push(newExpense);
+    return newExpense;
+}
+
+export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense | null> {
+    const expenseIndex = bookingExpenses.findIndex(e => e.id === updatedExpense.id);
+    if (expenseIndex === -1) {
+        return null;
+    }
+    bookingExpenses[expenseIndex] = updatedExpense;
+    return updatedExpense;
+}
+
+export async function deleteBookingExpense(id: number): Promise<boolean> {
+    const initialLength = bookingExpenses.length;
+    bookingExpenses = bookingExpenses.filter(e => e.id !== id);
+    return bookingExpenses.length < initialLength;
 }

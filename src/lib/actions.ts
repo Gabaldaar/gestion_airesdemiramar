@@ -10,7 +10,10 @@ import {
     deleteBooking as dbDeleteBooking,
     addPropertyExpense as dbAddPropertyExpense,
     updatePropertyExpense as dbUpdatePropertyExpense,
-    deletePropertyExpense as dbDeletePropertyExpense
+    deletePropertyExpense as dbDeletePropertyExpense,
+    addBookingExpense as dbAddBookingExpense,
+    updateBookingExpense as dbUpdateBookingExpense,
+    deleteBookingExpense as dbDeleteBookingExpense,
 } from "./data";
 
 // Acción para actualizar una propiedad (simulada)
@@ -237,5 +240,80 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
         return { success: true, message: "Gasto eliminado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al eliminar el gasto." };
+    }
+}
+
+
+export async function addBookingExpense(previousState: any, formData: FormData) {
+    const bookingId = parseInt(formData.get("bookingId") as string, 10);
+    const description = formData.get("description") as string;
+    const amount = parseFloat(formData.get("amount") as string);
+    const date = formData.get("date") as string;
+
+    if (!bookingId || !description || !amount || !date) {
+        return { success: false, message: "Todos los campos son obligatorios." };
+    }
+
+    const newExpense = {
+        bookingId,
+        description,
+        amount,
+        date,
+    };
+
+    try {
+        await dbAddBookingExpense(newExpense);
+        revalidatePath(`/bookings`); // Revalidar para actualizar el estado, aunque sea en un modal
+        revalidatePath(`/properties/*`);
+        return { success: true, message: "Gasto de reserva añadido correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al añadir el gasto de reserva." };
+    }
+}
+
+export async function updateBookingExpense(previousState: any, formData: FormData) {
+    const id = parseInt(formData.get("id") as string, 10);
+    const bookingId = parseInt(formData.get("bookingId") as string, 10);
+    const description = formData.get("description") as string;
+    const amount = parseFloat(formData.get("amount") as string);
+    const date = formData.get("date") as string;
+
+    if (!id || !bookingId || !description || !amount || !date) {
+        return { success: false, message: "Todos los campos son obligatorios." };
+    }
+
+    const updatedExpense = {
+        id,
+        bookingId,
+        description,
+        amount,
+        date,
+    };
+
+    try {
+        await dbUpdateBookingExpense(updatedExpense);
+        revalidatePath(`/bookings`);
+        revalidatePath(`/properties/*`);
+        return { success: true, message: "Gasto de reserva actualizado correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al actualizar el gasto de reserva." };
+    }
+}
+
+export async function deleteBookingExpense(previousState: any, formData: FormData) {
+    const id = parseInt(formData.get("id") as string, 10);
+    const bookingId = parseInt(formData.get("bookingId") as string, 10); // Lo necesitamos para revalidar
+
+     if (!id) {
+        return { success: false, message: "ID de gasto no válido." };
+    }
+
+    try {
+        await dbDeleteBookingExpense(id);
+        revalidatePath(`/bookings`);
+        revalidatePath(`/properties/*`);
+        return { success: true, message: "Gasto de reserva eliminado correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al eliminar el gasto de reserva." };
     }
 }
