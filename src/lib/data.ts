@@ -1,6 +1,7 @@
 
 
 
+
 export type Property = {
   id: number;
   name: string;
@@ -35,6 +36,12 @@ export type BookingWithTenantAndProperty = Booking & {
     tenant?: Tenant;
     property?: Property;
 }
+
+export type BookingWithDetails = BookingWithTenantAndProperty & {
+    totalPaid: number;
+    balance: number;
+}
+
 
 export type Payment = {
   id: number;
@@ -143,20 +150,47 @@ export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null
 }
 
 
-export async function getBookings(): Promise<BookingWithTenantAndProperty[]> {
-    return bookings.map(booking => {
-        const tenant = tenants.find(t => t.id === booking.tenantId);
-        const property = properties.find(p => p.id === booking.propertyId);
-        return { ...booking, tenant, property };
-    }).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+async function getBookingDetails(booking: Booking, allPayments: Payment[]): Promise<BookingWithDetails> {
+    const tenant = tenants.find(t => t.id === booking.tenantId);
+    const property = properties.find(p => p.id === booking.propertyId);
+
+    const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
+    const totalPaid = paymentsForBooking.reduce((acc, payment) => {
+        if (payment.currency === booking.currency) {
+            return acc + payment.amount;
+        }
+        // Basic conversion if currencies differ, assuming ARS->USD or USD->ARS
+        // This logic might need to be more robust in a real-world app
+        if (payment.currency === 'USD' && booking.currency === 'ARS') {
+            return acc + payment.amount * (booking.exchangeRate || 1000);
+        }
+        if (payment.currency === 'ARS' && booking.currency === 'USD') {
+            return acc + payment.amount / (booking.exchangeRate || 1000);
+        }
+        return acc;
+    }, 0);
+
+    const balance = booking.amount - totalPaid;
+
+    return { ...booking, tenant, property, totalPaid, balance };
 }
 
-export async function getBookingsByPropertyId(propertyId: number): Promise<BookingWithTenantAndProperty[]> {
+
+export async function getBookings(): Promise<BookingWithDetails[]> {
+    const allPayments = await getAllPayments();
+    const detailedBookings = await Promise.all(
+        bookings.map(booking => getBookingDetails(booking, allPayments))
+    );
+    return detailedBookings.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+}
+
+export async function getBookingsByPropertyId(propertyId: number): Promise<BookingWithDetails[]> {
     const propertyBookings = bookings.filter(b => b.propertyId === propertyId);
-    return propertyBookings.map(booking => {
-        const tenant = tenants.find(t => t.id === booking.tenantId);
-        return { ...booking, tenant };
-    }).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+     const allPayments = await getAllPayments();
+    const detailedBookings = await Promise.all(
+        propertyBookings.map(booking => getBookingDetails(booking, allPayments))
+    );
+    return detailedBookings.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 }
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {

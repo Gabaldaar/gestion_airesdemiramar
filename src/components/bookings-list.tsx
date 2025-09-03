@@ -9,17 +9,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { BookingWithTenantAndProperty, Property, Tenant } from "@/lib/data";
+import { BookingWithDetails, Property, Tenant } from "@/lib/data";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BookingEditForm } from "./booking-edit-form";
 import { BookingDeleteForm } from "./booking-delete-form";
 import { BookingExpensesManager } from "./booking-expenses-manager";
 import { BookingPaymentsManager } from "./booking-payments-manager";
-import { Landmark } from "lucide-react";
 
 interface BookingsListProps {
-  bookings: BookingWithTenantAndProperty[];
+  bookings: BookingWithDetails[];
   properties: Property[];
   tenants: Tenant[];
   showProperty?: boolean;
@@ -50,6 +49,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
           <TableHead>Check-in</TableHead>
           <TableHead>Check-out</TableHead>
           <TableHead>Monto</TableHead>
+          <TableHead>Saldo</TableHead>
           <TableHead className="text-right">Acciones</TableHead>
         </TableRow>
       </TableHeader>
@@ -62,6 +62,9 @@ export default function BookingsList({ bookings, properties, tenants, showProper
             <TableCell>{formatDate(booking.endDate)}</TableCell>
             <TableCell>
                 <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
+            </TableCell>
+            <TableCell className={`font-bold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                {formatCurrency(booking.balance, booking.currency)}
             </TableCell>
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
