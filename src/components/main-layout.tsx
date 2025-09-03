@@ -49,7 +49,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))}
+                  isActive={item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)}
                   tooltip={item.label}
                 >
                   <Link href={item.href}>
