@@ -39,6 +39,7 @@ export function PropertyEditForm({ property }: { property: Property }) {
                 <NotesDialog 
                     formId={formId}
                     notes={property.notes}
+                    state={state}
                 />
                 <Button type="submit" form={formId}>Guardar</Button>
             </div>

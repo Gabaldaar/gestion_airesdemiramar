@@ -59,10 +59,6 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
 
   return (
     <>
-        <NotesDialog 
-            formId={formId}
-            notes={booking.notes}
-        />
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -79,6 +75,8 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
             </DialogHeader>
             <form id={formId} action={formAction}>
                 <input type="hidden" name="id" value={booking.id} />
+                {/*  This hidden input for notes will be populated by the textarea in NotesDialog */}
+                <input type="hidden" name="notes" defaultValue={booking.notes || ''} />
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="propertyId" className="text-right">
@@ -189,6 +187,11 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
             )}
         </DialogContent>
         </Dialog>
+        <NotesDialog 
+            formId={formId}
+            notes={booking.notes}
+            state={state}
+        />
     </>
   );
 }

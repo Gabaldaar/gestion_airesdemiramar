@@ -31,6 +31,7 @@ export function PropertyNotesForm({ property }: { property: Property }) {
                  <NotesDialog 
                     formId={formId}
                     notes={property.notes}
+                    state={state}
                 />
                 {/* The submit button is inside the dialog now, but we could have a standalone save button here too */}
             </div>
