@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, PanelLeft, BarChart3, Waves } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, Waves } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -67,11 +67,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <SheetTrigger asChild>
               <Button
                 variant="outline"
-                size="icon"
+                size="sm"
                 className="shrink-0 md:hidden"
               >
-                <PanelLeft className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
+                <Menu className="h-5 w-5" />
+                <span className="ml-2">Menú</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
@@ -88,7 +88,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             {/* User menu can go here */}
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <main className="flex flex-1 flex-col gap-4 p-2 md:p-4 lg:gap-6 lg:p-6">
           {children}
         </main>
       </div>

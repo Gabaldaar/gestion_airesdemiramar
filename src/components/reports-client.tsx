@@ -64,7 +64,7 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
             Selecciona un rango de fechas para filtrar el reporte.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center gap-4">
+        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <DatePicker date={from ? new Date(from) : undefined} onDateSelect={handleFromDateSelect} placeholder="Desde"/>
             <DatePicker date={to ? new Date(to) : undefined} onDateSelect={handleToDateSelect} placeholder="Hasta"/>
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>

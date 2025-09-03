@@ -25,19 +25,19 @@ export function PropertyEditForm({ property }: { property: Property }) {
             <form id={formId} action={formAction} className="space-y-4">
                 <input type="hidden" name="id" value={property.id} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="md:col-span-2">
                         <Label htmlFor={`name-${property.id}`}>Nombre</Label>
                         <Input id={`name-${property.id}`} type="text" name="name" defaultValue={property.name} />
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                         <Label htmlFor={`address-${property.id}`}>Dirección</Label>
                         <Input id={`address-${property.id}`} type="text" name="address" defaultValue={property.address} />
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                         <Label htmlFor={`googleCalendarId-${property.id}`}>ID Calendario Google</Label>
                         <Input id={`googleCalendarId-${property.id}`} type="text" name="googleCalendarId" defaultValue={property.googleCalendarId} />
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                         <Label htmlFor={`imageUrl-${property.id}`}>URL de Foto</Label>
                         <Input id={`imageUrl-${property.id}`} type="text" name="imageUrl" defaultValue={property.imageUrl} />
                     </div>
