@@ -15,6 +15,17 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+const configKeys: (keyof typeof firebaseConfig)[] = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+const missingConfig = configKeys.filter(key => !firebaseConfig[key]);
+
+if (missingConfig.length > 0) {
+  // Do not throw an error for measurementId as it is often optional
+  if(!(missingConfig.length === 1 && missingConfig[0] === 'measurementId')) {
+    throw new Error(`Missing Firebase config environment variables: ${missingConfig.join(", ")}. Please set them in your deployment environment.`);
+  }
+}
+
+
 // Initialize Firebase
 // We check if any apps are already initialized to prevent re-initialization errors.
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
