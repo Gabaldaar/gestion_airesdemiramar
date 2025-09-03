@@ -35,6 +35,7 @@ export async function addProperty(previousState: any, formData: FormData) {
     address: formData.get("address") as string,
     googleCalendarId: formData.get("googleCalendarId") as string,
     imageUrl: formData.get("imageUrl") as string,
+    notes: formData.get("notes") as string || "",
   };
 
   if (!newPropertyData.name || !newPropertyData.address) {
@@ -62,6 +63,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
     address: formData.get("address") as string,
     googleCalendarId: formData.get("googleCalendarId") as string,
     imageUrl: formData.get("imageUrl") as string,
+    notes: formData.get("notes") as string || "",
   };
 
    if (!propertyData.id || !propertyData.name || !propertyData.address) {
@@ -91,6 +93,7 @@ export async function addTenant(previousState: any, formData: FormData) {
     address: formData.get("address") as string,
     city: formData.get("city") as string,
     country: (formData.get("country") as string) || "Argentina",
+    notes: formData.get("notes") as string || "",
   };
 
   try {
@@ -112,6 +115,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
     address: formData.get("address") as string,
     city: formData.get("city") as string,
     country: formData.get("country") as string,
+    notes: formData.get("notes") as string || "",
   };
 
   try {
@@ -147,6 +151,7 @@ export async function addBooking(previousState: any, formData: FormData) {
     const endDate = formData.get("endDate") as string;
     const amount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
+    const notes = formData.get("notes") as string || "";
 
     if (!propertyId || !tenantId || !startDate || !endDate || !amount || !currency) {
         return { success: false, message: "Todos los campos son obligatorios." };
@@ -159,6 +164,7 @@ export async function addBooking(previousState: any, formData: FormData) {
         endDate,
         amount,
         currency,
+        notes,
     };
 
     try {
@@ -181,6 +187,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
     const endDate = formData.get("endDate") as string;
     const amount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
+    const notes = formData.get("notes") as string || "";
 
     if (!id || !propertyId || !tenantId || !startDate || !endDate || !amount || !currency) {
         return { success: false, message: "Todos los campos son obligatorios." };
@@ -194,6 +201,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
         endDate,
         amount,
         currency,
+        notes,
     };
 
     try {

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Property } from '@/lib/data';
 import { updateProperty } from '@/lib/actions';
+import { NotesDialog } from './notes-dialog';
 
 const initialState = {
   message: '',
@@ -34,7 +35,13 @@ export function PropertyEditForm({ property }: { property: Property }) {
             <Input type="text" name="imageUrl" defaultValue={property.imageUrl} form={formId} />
         </TableCell>
         <TableCell className="text-right">
-            <Button type="submit" form={formId}>Guardar</Button>
+            <div className="flex items-center justify-end gap-2">
+                <NotesDialog 
+                    formId={formId}
+                    notes={property.notes}
+                />
+                <Button type="submit" form={formId}>Guardar</Button>
+            </div>
         </TableCell>
     </TableRow>
   );

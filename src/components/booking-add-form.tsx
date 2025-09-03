@@ -35,6 +35,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { DateRange } from 'react-day-picker';
+import { Textarea } from './ui/textarea';
 
 
 const initialState = {
@@ -154,6 +155,12 @@ export function BookingAddForm({ propertyId, tenants }: { propertyId: string, te
                             <SelectItem value="USD">USD</SelectItem>
                         </SelectContent>
                     </Select>
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="notes" className="text-right pt-2">
+                        Notas
+                    </Label>
+                    <Textarea id="notes" name="notes" className="col-span-3" />
                 </div>
 
             </div>

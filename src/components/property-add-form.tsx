@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addProperty } from '@/lib/actions';
 import { PlusCircle } from 'lucide-react';
+import { Textarea } from './ui/textarea';
 
 const initialState = {
   message: '',
@@ -74,6 +75,12 @@ export function PropertyAddForm() {
                     URL de Foto
                     </Label>
                     <Input id="imageUrl" name="imageUrl" defaultValue="https://picsum.photos/600/400" className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="notes" className="text-right pt-2">
+                        Notas
+                    </Label>
+                    <Textarea id="notes" name="notes" className="col-span-3" />
                 </div>
             </div>
             <DialogFooter>

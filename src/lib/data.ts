@@ -36,6 +36,7 @@ export type Property = {
   address: string;
   googleCalendarId: string;
   imageUrl: string;
+  notes?: string;
 };
 
 export type Tenant = {
@@ -47,6 +48,7 @@ export type Tenant = {
   country: string;
   email: string;
   phone: string;
+  notes?: string;
 };
 
 export type Booking = {
@@ -58,6 +60,7 @@ export type Booking = {
   amount: number;
   currency: 'USD' | 'ARS';
   exchangeRate?: number;
+  notes?: string;
 };
 
 export type BookingWithTenantAndProperty = Booking & {

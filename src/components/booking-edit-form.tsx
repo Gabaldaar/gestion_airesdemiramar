@@ -34,6 +34,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { DateRange } from 'react-day-picker';
+import { NotesDialog } from './notes-dialog';
 
 
 const initialState = {
@@ -48,6 +49,7 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
       from: new Date(booking.startDate),
       to: new Date(booking.endDate)
   });
+  const formId = `booking-edit-form-${booking.id}`;
 
   useEffect(() => {
     if (state.success) {
@@ -56,131 +58,137 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
   }, [state]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Pencil className="h-4 w-4" />
-          <span className="sr-only">Editar Reserva</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Editar Reserva</DialogTitle>
-          <DialogDescription>
-            Modifica los datos de la reserva.
-          </DialogDescription>
-        </DialogHeader>
-        <form action={formAction}>
-            <input type="hidden" name="id" value={booking.id} />
-            <div className="grid gap-4 py-4">
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="propertyId" className="text-right">
-                    Propiedad
-                    </Label>
-                    <Select name="propertyId" defaultValue={String(booking.propertyId)} required>
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {properties.map(property => (
-                                <SelectItem key={property.id} value={property.id}>
-                                    {property.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="tenantId" className="text-right">
-                    Inquilino
-                    </Label>
-                    <Select name="tenantId" defaultValue={String(booking.tenantId)} required>
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {tenants.map(tenant => (
-                                <SelectItem key={tenant.id} value={tenant.id}>
-                                    {tenant.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="dates" className="text-right">
-                        Fechas
-                    </Label>
-                     <Popover>
-                        <PopoverTrigger asChild>
-                        <Button
-                            id="date"
-                            variant={"outline"}
-                            className={cn(
-                            "col-span-3 justify-start text-left font-normal",
-                            !date && "text-muted-foreground"
-                            )}
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date?.from ? (
-                            date.to ? (
-                                <>
-                                {format(date.from, "dd 'de' LLL, y", { locale: es })} -{" "}
-                                {format(date.to, "dd 'de' LLL, y", { locale: es })}
-                                </>
-                            ) : (
-                                format(date.from, "dd 'de' LLL, y", { locale: es })
-                            )
-                            ) : (
-                            <span>Selecciona las fechas</span>
-                            )}
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                            initialFocus
-                            mode="range"
-                            defaultMonth={date?.from}
-                            selected={date}
-                            onSelect={setDate}
-                            numberOfMonths={2}
-                            locale={es}
-                        />
-                        </PopoverContent>
-                    </Popover>
-                    <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
-                    <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="amount" className="text-right">
-                    Monto
-                    </Label>
-                    <Input id="amount" name="amount" type="number" defaultValue={booking.amount} className="col-span-3" required />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="currency" className="text-right">
-                    Moneda
-                    </Label>
-                    <Select name="currency" defaultValue={booking.currency} required>
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ARS">ARS</SelectItem>
-                            <SelectItem value="USD">USD</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+    <>
+        <NotesDialog 
+            formId={formId}
+            notes={booking.notes}
+        />
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+            <Button variant="ghost" size="icon">
+            <Pencil className="h-4 w-4" />
+            <span className="sr-only">Editar Reserva</span>
+            </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+            <DialogTitle>Editar Reserva</DialogTitle>
+            <DialogDescription>
+                Modifica los datos de la reserva.
+            </DialogDescription>
+            </DialogHeader>
+            <form id={formId} action={formAction}>
+                <input type="hidden" name="id" value={booking.id} />
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="propertyId" className="text-right">
+                        Propiedad
+                        </Label>
+                        <Select name="propertyId" defaultValue={String(booking.propertyId)} required>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {properties.map(property => (
+                                    <SelectItem key={property.id} value={property.id}>
+                                        {property.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="tenantId" className="text-right">
+                        Inquilino
+                        </Label>
+                        <Select name="tenantId" defaultValue={String(booking.tenantId)} required>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {tenants.map(tenant => (
+                                    <SelectItem key={tenant.id} value={tenant.id}>
+                                        {tenant.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="dates" className="text-right">
+                            Fechas
+                        </Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                id="date"
+                                variant={"outline"}
+                                className={cn(
+                                "col-span-3 justify-start text-left font-normal",
+                                !date && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {date?.from ? (
+                                date.to ? (
+                                    <>
+                                    {format(date.from, "dd 'de' LLL, y", { locale: es })} -{" "}
+                                    {format(date.to, "dd 'de' LLL, y", { locale: es })}
+                                    </>
+                                ) : (
+                                    format(date.from, "dd 'de' LLL, y", { locale: es })
+                                )
+                                ) : (
+                                <span>Selecciona las fechas</span>
+                                )}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={date?.from}
+                                selected={date}
+                                onSelect={setDate}
+                                numberOfMonths={2}
+                                locale={es}
+                            />
+                            </PopoverContent>
+                        </Popover>
+                        <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
+                        <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="amount" className="text-right">
+                        Monto
+                        </Label>
+                        <Input id="amount" name="amount" type="number" defaultValue={booking.amount} className="col-span-3" required />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="currency" className="text-right">
+                        Moneda
+                        </Label>
+                        <Select name="currency" defaultValue={booking.currency} required>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ARS">ARS</SelectItem>
+                                <SelectItem value="USD">USD</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-            </div>
-            <DialogFooter>
-                <Button type="submit">Guardar Cambios</Button>
+                </div>
+            </form>
+             <DialogFooter>
+                <Button type="submit" form={formId}>Guardar Cambios</Button>
             </DialogFooter>
-        </form>
-         {state.message && !state.success && (
-            <p className="text-red-500 text-sm mt-2">{state.message}</p>
-        )}
-      </DialogContent>
-    </Dialog>
+            {state.message && !state.success && (
+                <p className="text-red-500 text-sm mt-2">{state.message}</p>
+            )}
+        </DialogContent>
+        </Dialog>
+    </>
   );
 }
