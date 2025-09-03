@@ -26,6 +26,7 @@ import { Tenant } from '@/lib/data';
 import { PlusCircle } from 'lucide-react';
 import { Calendar as CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
+import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -108,11 +109,11 @@ export function BookingAddForm({ propertyId, tenants }: { propertyId: number, te
                             {date?.from ? (
                             date.to ? (
                                 <>
-                                {format(date.from, "LLL dd, y")} -{" "}
-                                {format(date.to, "LLL dd, y")}
+                                {format(date.from, "dd 'de' LLL, y", { locale: es })} -{" "}
+                                {format(date.to, "dd 'de' LLL, y", { locale: es })}
                                 </>
                             ) : (
-                                format(date.from, "LLL dd, y")
+                                format(date.from, "dd 'de' LLL, y", { locale: es })
                             )
                             ) : (
                             <span>Selecciona las fechas</span>
@@ -127,6 +128,7 @@ export function BookingAddForm({ propertyId, tenants }: { propertyId: number, te
                             selected={date}
                             onSelect={setDate}
                             numberOfMonths={2}
+                            locale={es}
                         />
                         </PopoverContent>
                     </Popover>

@@ -19,6 +19,7 @@ import { PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 
 const initialState = {
@@ -73,7 +74,7 @@ export function ExpenseAddForm({ propertyId }: { propertyId: number }) {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date ? format(date, "PPP") : <span>Selecciona una fecha</span>}
+                            {date ? format(date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -82,6 +83,7 @@ export function ExpenseAddForm({ propertyId }: { propertyId: number }) {
                             selected={date}
                             onSelect={setDate}
                             initialFocus
+                            locale={es}
                         />
                         </PopoverContent>
                     </Popover>
