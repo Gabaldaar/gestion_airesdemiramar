@@ -17,6 +17,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -61,6 +62,8 @@ export function BookingExpensesManager({ bookingId }: { bookingId: number }) {
     }).format(amount);
   };
 
+  const totalAmount = expenses.reduce((acc, expense) => acc + expense.amount, 0);
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -89,7 +92,7 @@ export function BookingExpensesManager({ bookingId }: { bookingId: number }) {
               <TableRow>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Descripción</TableHead>
-                <TableHead>Monto</TableHead>
+                <TableHead className="text-right">Monto</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -98,7 +101,7 @@ export function BookingExpensesManager({ bookingId }: { bookingId: number }) {
                 <TableRow key={expense.id}>
                   <TableCell>{formatDate(expense.date)}</TableCell>
                   <TableCell className="font-medium">{expense.description}</TableCell>
-                  <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <BookingExpenseEditForm expense={expense} />
@@ -108,6 +111,13 @@ export function BookingExpensesManager({ bookingId }: { bookingId: number }) {
                 </TableRow>
               ))}
             </TableBody>
+             <TableFooter>
+                <TableRow>
+                    <TableCell colSpan={2} className="font-bold text-right">Total</TableCell>
+                    <TableCell className="text-right font-bold">{formatCurrency(totalAmount)}</TableCell>
+                    <TableCell></TableCell>
+                </TableRow>
+            </TableFooter>
           </Table>
         )}
       </DialogContent>

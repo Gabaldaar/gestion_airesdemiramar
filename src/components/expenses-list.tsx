@@ -3,6 +3,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -33,13 +34,15 @@ export default function ExpensesList({ expenses }: ExpensesListProps) {
     }).format(amount);
   }
 
+  const totalAmount = expenses.reduce((acc, expense) => acc + expense.amount, 0);
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Fecha</TableHead>
           <TableHead>Descripción</TableHead>
-          <TableHead>Monto</TableHead>
+          <TableHead className="text-right">Monto</TableHead>
           <TableHead className="text-right">Acciones</TableHead>
         </TableRow>
       </TableHeader>
@@ -48,7 +51,7 @@ export default function ExpensesList({ expenses }: ExpensesListProps) {
           <TableRow key={expense.id}>
             <TableCell>{formatDate(expense.date)}</TableCell>
             <TableCell className="font-medium">{expense.description}</TableCell>
-            <TableCell>{formatCurrency(expense.amount)}</TableCell>
+            <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
                     <ExpenseEditForm expense={expense} />
@@ -58,6 +61,13 @@ export default function ExpensesList({ expenses }: ExpensesListProps) {
           </TableRow>
         ))}
       </TableBody>
+      <TableFooter>
+        <TableRow>
+          <TableCell colSpan={2} className="font-bold text-right">Total</TableCell>
+          <TableCell className="text-right font-bold">{formatCurrency(totalAmount)}</TableCell>
+          <TableCell></TableCell>
+        </TableRow>
+      </TableFooter>
     </Table>
   );
 }
