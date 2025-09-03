@@ -31,8 +31,8 @@ export default function LoginPage() {
     try {
         const result = await setAuthCookie(password);
         if (result.success) {
-            // Use router.push and then router.refresh to ensure state is updated
-            router.push('/');
+            // This is the key change. router.refresh() re-fetches server components,
+            // which will cause RootLayout to re-render and see the new auth state.
             router.refresh();
         } else {
             toast({
@@ -42,6 +42,7 @@ export default function LoginPage() {
             });
         }
     } catch (error) {
+        console.error(error);
         toast({
             title: "Error",
             description: "Ocurrió un problema al intentar iniciar sesión.",
