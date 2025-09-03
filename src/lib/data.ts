@@ -4,7 +4,6 @@
 
 
 
-
 export type Property = {
   id: number;
   name: string;
@@ -97,10 +96,27 @@ let tenants: Tenant[] = [
     { id: 3, name: 'Pedro Martinez', dni: '11223344', address: 'Avenida Ficticia 789', city: 'Rosario', country: 'Argentina', email: 'pedro@martinez.com', phone: '341-987-6543' }
 ];
 
+// Función para generar fechas futuras
+const getFutureDate = (daysToAdd: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysToAdd);
+    return date.toISOString();
+}
+
 let bookings: Booking[] = [
-    { id: 1, propertyId: 1, tenantId: 2, startDate: '2024-07-15T00:00:00.000Z', endDate: '2024-07-30T00:00:00.000Z', amount: 250000, currency: 'ARS' },
-    { id: 2, propertyId: 3, tenantId: 1, startDate: '2024-08-01T00:00:00.000Z', endDate: '2024-08-15T00:00:00.000Z', amount: 800, currency: 'USD', exchangeRate: 1000 },
-    { id: 3, propertyId: 1, tenantId: 3, startDate: '2024-09-01T00:00:00.000Z', endDate: '2024-09-10T00:00:00.000Z', amount: 350000, currency: 'ARS' },
+    // Reservas pasadas
+    { id: 1, propertyId: 1, tenantId: 2, startDate: '2024-01-15T00:00:00.000Z', endDate: '2024-01-30T00:00:00.000Z', amount: 250000, currency: 'ARS' },
+    { id: 2, propertyId: 3, tenantId: 1, startDate: '2024-02-01T00:00:00.000Z', endDate: '2024-02-15T00:00:00.000Z', amount: 800, currency: 'USD', exchangeRate: 1000 },
+    
+    // Reservas futuras (próximas)
+    { id: 3, propertyId: 1, tenantId: 3, startDate: getFutureDate(10), endDate: getFutureDate(17), amount: 350000, currency: 'ARS' },
+    { id: 4, propertyId: 2, tenantId: 1, startDate: getFutureDate(25), endDate: getFutureDate(35), amount: 450000, currency: 'ARS' },
+    { id: 5, propertyId: 4, tenantId: 2, startDate: getFutureDate(40), endDate: getFutureDate(50), amount: 1200, currency: 'USD', exchangeRate: 1250 },
+    
+    // Reservas para la temporada alta
+    { id: 6, propertyId: 1, tenantId: 1, startDate: '2024-12-28T00:00:00.000Z', endDate: '2025-01-10T00:00:00.000Z', amount: 750000, currency: 'ARS' },
+    { id: 7, propertyId: 3, tenantId: 3, startDate: '2025-01-15T00:00:00.000Z', endDate: '2025-01-30T00:00:00.000Z', amount: 950000, currency: 'ARS' },
+    { id: 8, propertyId: 2, tenantId: 2, startDate: '2025-02-01T00:00:00.000Z', endDate: '2025-02-15T00:00:00.000Z', amount: 850000, currency: 'ARS' },
 ];
 
 let propertyExpenses: PropertyExpense[] = [
@@ -114,9 +130,14 @@ let bookingExpenses: BookingExpense[] = [
 ];
 
 let payments: Payment[] = [
-    { id: 1, bookingId: 1, amount: 100000, date: '2024-07-01T00:00:00.000Z', currency: 'ARS' },
-    { id: 2, bookingId: 1, amount: 150000, date: '2024-07-14T00:00:00.000Z', currency: 'ARS' },
-    { id: 3, bookingId: 2, amount: 400, date: '2024-07-20T00:00:00.000Z', currency: 'USD' },
+    // Pagos para reservas pasadas
+    { id: 1, bookingId: 1, amount: 250000, date: '2024-01-10T00:00:00.000Z', currency: 'ARS' },
+    { id: 2, bookingId: 2, amount: 800, date: '2024-01-20T00:00:00.000Z', currency: 'USD' },
+    
+    // Pagos para reservas futuras (algunas con saldo)
+    { id: 3, bookingId: 3, amount: 150000, date: getFutureDate(1), currency: 'ARS' }, // Saldo pendiente
+    { id: 4, bookingId: 4, amount: 450000, date: getFutureDate(20), currency: 'ARS' }, // Pagada
+    { id: 5, bookingId: 6, amount: 300000, date: getFutureDate(5), currency: 'ARS' }, // Saldo pendiente
 ];
 
 
@@ -228,6 +249,9 @@ export async function updateBooking(updatedBooking: Booking): Promise<Booking | 
 export async function deleteBooking(id: number): Promise<boolean> {
     const initialLength = bookings.length;
     bookings = bookings.filter(b => b.id !== id);
+    // Also delete associated payments and expenses
+    payments = payments.filter(p => p.bookingId !== id);
+    bookingExpenses = bookingExpenses.filter(e => e.bookingId !== id);
     return bookings.length < initialLength;
 }
 
@@ -337,8 +361,13 @@ export async function getAllPayments(): Promise<Payment[]> {
 export async function getFinancialSummaryByProperty(options?: { startDate?: string; endDate?: string }): Promise<FinancialSummary[]> {
   const startDate = options?.startDate;
   const endDate = options?.endDate;
+  // Adjust to include the whole day for the 'to' date
   const fromDate = startDate ? new Date(startDate) : null;
+  if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
+  
   const toDate = endDate ? new Date(endDate) : null;
+  if (toDate) toDate.setUTCHours(23, 59, 59, 999);
+
 
   const [allProperties, allBookings, allPropertyExpenses, allBookingExpenses, allPayments] = await Promise.all([
     getProperties(),
@@ -353,13 +382,17 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
         if (!fromDate && !toDate) return true;
         const itemDate = new Date(dateStr);
         if (fromDate && itemDate < fromDate) return false;
+        // Adjust the 'to' date comparison to be inclusive
         if (toDate && itemDate > toDate) return false;
         return true;
     };
 
     const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate));
     const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id && isWithinDateRange(e.date));
+    
     const relevantBookingIds = new Set(propertyBookings.map(b => b.id));
+
+    // Filter expenses and payments based on the bookings that are within the date range
     const relevantBookingExpenses = allBookingExpenses.filter(e => relevantBookingIds.has(e.bookingId) && isWithinDateRange(e.date));
     const relevantPayments = allPayments.filter(p => relevantBookingIds.has(p.bookingId) && isWithinDateRange(p.date));
 

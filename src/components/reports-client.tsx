@@ -12,23 +12,33 @@ import { FinancialSummary } from "@/lib/data";
 import FinancialSummaryTable from "@/components/financial-summary-table";
 import FinancialSummaryChart from "@/components/financial-summary-chart";
 import { DatePicker } from "./ui/date-picker";
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from "./ui/button";
 
 interface ReportsClientProps {
   summary: FinancialSummary[];
-  from?: string;
-  to?: string;
 }
 
-export default function ReportsClient({ summary, from, to }: ReportsClientProps) {
+export default function ReportsClient({ summary }: ReportsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const handleDateChange = (from?: string, to?: string) => {
-    const params = new URLSearchParams();
-    if (from) params.set('from', from);
-    if (to) params.set('to', to);
+  const from = searchParams.get('from') || undefined;
+  const to = searchParams.get('to') || undefined;
+
+  const handleDateChange = (newFrom?: string, newTo?: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (newFrom) {
+      params.set('from', newFrom);
+    } else {
+      params.delete('from');
+    }
+    if (newTo) {
+      params.set('to', newTo);
+    } else {
+      params.delete('to');
+    }
     router.push(`${pathname}?${params.toString()}`);
   };
 

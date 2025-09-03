@@ -133,6 +133,7 @@ export async function addBooking(previousState: any, formData: FormData) {
         await dbAddBooking(newBooking);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
+        revalidatePath('/'); // Revalidate dashboard
         return { success: true, message: "Reserva creada correctamente." };
     } catch (error) {
         return { success: false, message: "Error al crear la reserva." };
@@ -166,6 +167,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
         await dbUpdateBooking(updatedBooking);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
+        revalidatePath('/'); // Revalidate dashboard
         return { success: true, message: "Reserva actualizada correctamente." };
     } catch (error) {
         return { success: false, message: "Error al actualizar la reserva." };
@@ -184,6 +186,7 @@ export async function deleteBooking(previousState: any, formData: FormData) {
         await dbDeleteBooking(id);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
+        revalidatePath('/'); // Revalidate dashboard
         return { success: true, message: "Reserva eliminada correctamente." };
     } catch (error) {
         return { success: false, message: "Error al eliminar la reserva." };
@@ -213,6 +216,7 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
     try {
         await dbAddPropertyExpense(newExpense);
         revalidatePath(`/properties/${propertyId}`);
+        revalidatePath('/reports');
         return { success: true, message: "Gasto añadido correctamente." };
     } catch (error) {
         return { success: false, message: "Error al añadir el gasto." };
@@ -241,6 +245,7 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
     try {
         await dbUpdatePropertyExpense(updatedExpense);
         revalidatePath(`/properties/${propertyId}`);
+        revalidatePath('/reports');
         return { success: true, message: "Gasto actualizado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al actualizar el gasto." };
@@ -258,6 +263,7 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
     try {
         await dbDeletePropertyExpense(id);
         revalidatePath(`/properties/${propertyId}`);
+        revalidatePath('/reports');
         return { success: true, message: "Gasto eliminado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al eliminar el gasto." };
@@ -286,6 +292,7 @@ export async function addBookingExpense(previousState: any, formData: FormData) 
         await dbAddBookingExpense(newExpense);
         revalidatePath(`/bookings`); // Revalidar para actualizar el estado, aunque sea en un modal
         revalidatePath(`/properties/*`);
+        revalidatePath('/reports');
         return { success: true, message: "Gasto de reserva añadido correctamente." };
     } catch (error) {
         return { success: false, message: "Error al añadir el gasto de reserva." };
@@ -315,6 +322,7 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
         await dbUpdateBookingExpense(updatedExpense);
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
+        revalidatePath('/reports');
         return { success: true, message: "Gasto de reserva actualizado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al actualizar el gasto de reserva." };
@@ -332,6 +340,7 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
         await dbDeleteBookingExpense(id);
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
+        revalidatePath('/reports');
         return { success: true, message: "Gasto de reserva eliminado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al eliminar el gasto de reserva." };
