@@ -4,21 +4,17 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from "@/components/ui/toaster"
 import MainLayout from '@/components/main-layout';
-import LoginPage from './login/page';
-import { getSession } from '@/lib/session';
 
 export const metadata: Metadata = {
   title: 'Aires de Miramar - Admin',
   description: 'Gestiona tus alquileres de temporada en Miramar',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getSession();
-
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
@@ -27,13 +23,9 @@ export default async function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased", "min-h-screen bg-background font-sans")}>
-          {!session ? (
-            <LoginPage />
-          ) : (
-            <MainLayout>
-              {children}
-            </MainLayout>
-          )}
+        <MainLayout>
+          {children}
+        </MainLayout>
         <Toaster />
       </body>
     </html>

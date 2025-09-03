@@ -2,7 +2,7 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Home, LayoutDashboard, Settings, Waves, TrendingDown, Users, AreaChart, LogOut } from "lucide-react"
+import { BookOpen, Home, LayoutDashboard, Settings, Waves, TrendingDown, Users, AreaChart } from "lucide-react"
 
 import {
   Sidebar,
@@ -17,7 +17,6 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { logoutAction } from "@/lib/actions"
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -31,10 +30,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     { href: "/reports", label: "Reportes", icon: AreaChart },
     { href: "/settings", label: "Configuración", icon: Settings },
   ]
-
-  const handleLogout = async () => {
-    await logoutAction();
-  }
 
   return (
     <SidebarProvider>
@@ -68,12 +63,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-            <form action={logoutAction}>
-                <Button type="submit" variant="ghost" className="w-full justify-start">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Cerrar Sesión
-                </Button>
-            </form>
+            {/* Logout button removed */}
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
