@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ const initialState = {
 };
 
 export function PropertyEditForm({ property }: { property: Property }) {
-  const [state, formAction] = useFormState(updateProperty, initialState);
+  const [state, formAction] = useActionState(updateProperty, initialState);
 
   return (
     <TableRow>
