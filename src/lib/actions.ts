@@ -2,7 +2,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { addTenant as dbAddTenant, updateTenant as dbUpdateTenant, addBooking as dbAddBooking } from "./data";
+import { addTenant as dbAddTenant, updateTenant as dbUpdateTenant, addBooking as dbAddBooking, addPropertyExpense as dbAddPropertyExpense } from "./data";
 
 // Acción para actualizar una propiedad (simulada)
 export async function updateProperty(previousState: any, formData: FormData) {
@@ -103,5 +103,33 @@ export async function addBooking(previousState: any, formData: FormData) {
         return { success: true, message: "Reserva creada correctamente." };
     } catch (error) {
         return { success: false, message: "Error al crear la reserva." };
+    }
+}
+
+export async function addPropertyExpense(previousState: any, formData: FormData) {
+    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+    const description = formData.get("description") as string;
+    const amount = parseFloat(formData.get("amount") as string);
+    const date = new Date().toISOString(); // Or get from form
+
+    if (!propertyId || !description || !amount) {
+        return { success: false, message: "La descripción y el monto son obligatorios." };
+    }
+
+    const newExpense = {
+        propertyId,
+        description,
+        amount,
+        date,
+    };
+
+    console.log("Añadiendo nuevo gasto (simulado):", newExpense);
+
+    try {
+        await dbAddPropertyExpense(newExpense);
+        revalidatePath(`/properties/${propertyId}`);
+        return { success: true, message: "Gasto añadido correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al añadir el gasto." };
     }
 }

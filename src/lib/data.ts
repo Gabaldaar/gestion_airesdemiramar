@@ -79,6 +79,12 @@ let bookings: Booking[] = [
     { id: 3, propertyId: 1, tenantId: 3, startDate: '2024-09-01T00:00:00.000Z', endDate: '2024-09-10T00:00:00.000Z', amount: 350000, currency: 'ARS' },
 ];
 
+let propertyExpenses: PropertyExpense[] = [
+    { id: 1, propertyId: 1, description: "Arreglo de cañería", amount: 15000, date: '2024-07-10T00:00:00.000Z' },
+    { id: 2, propertyId: 1, description: "Pintura frente", amount: 45000, date: '2024-06-20T00:00:00.000Z' },
+];
+
+
 const payments: Payment[] = [];
 
 
@@ -139,4 +145,19 @@ export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking>
     bookings.push(newBooking);
     console.log('Bookings after adding:', bookings);
     return newBooking;
+}
+
+export async function getPropertyExpensesByPropertyId(propertyId: number): Promise<PropertyExpense[]> {
+    return propertyExpenses
+        .filter(e => e.propertyId === propertyId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
+    const newExpense = {
+        id: propertyExpenses.length > 0 ? Math.max(...propertyExpenses.map(e => e.id)) + 1 : 1,
+        ...expense
+    };
+    propertyExpenses.push(newExpense);
+    return newExpense;
 }

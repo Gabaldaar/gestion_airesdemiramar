@@ -15,18 +15,19 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Button } from '@/components/ui/button';
-import { getPropertyById, getTenants, getBookingsByPropertyId } from "@/lib/data";
-import { PlusCircle } from 'lucide-react';
+import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
+import { ExpenseAddForm } from '@/components/expense-add-form';
+import ExpensesList from '@/components/expenses-list';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   const propertyId = parseInt(params.id, 10);
-  const [property, tenants, bookings] = await Promise.all([
+  const [property, tenants, bookings, expenses] = await Promise.all([
     getPropertyById(propertyId),
     getTenants(),
     getBookingsByPropertyId(propertyId),
+    getPropertyExpensesByPropertyId(propertyId),
   ]);
 
   if (!property) {
@@ -42,10 +43,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
         <div className="flex items-center space-x-2">
           <BookingAddForm propertyId={property.id} tenants={tenants} />
-          <Button variant="outline">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Añadir Gasto
-          </Button>
+          <ExpenseAddForm propertyId={property.id} />
         </div>
       </div>
       <div className="relative aspect-[16/9] w-full">
@@ -95,11 +93,11 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             <CardHeader>
               <CardTitle>Gastos de la Propiedad</CardTitle>
               <CardDescription>
-                Registra y consulta los gastos asociados a la propiedad o a un alquiler específico.
+                Registra y consulta los gastos asociados a la propiedad.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p>Próximamente: Tabla de gastos con fecha, descripción y monto.</p>
+              <ExpensesList expenses={expenses} />
             </CardContent>
           </Card>
         </TabsContent>
