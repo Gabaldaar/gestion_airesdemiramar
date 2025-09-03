@@ -75,7 +75,6 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
             </DialogHeader>
             <form id={formId} action={formAction}>
                 <input type="hidden" name="id" value={booking.id} />
-                {/* NOTE: The "notes" field is now managed exclusively by the NotesDialog's Textarea */}
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="propertyId" className="text-right">
