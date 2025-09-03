@@ -1,9 +1,22 @@
 
 import type { Property, Booking, PropertyExpense, Pricing, Payment, RentalExpense, Tenant } from './types';
 
-// En una aplicación real, estos datos vendrían de una base de datos.
-// Usamos "let" en lugar de "const" para poder modificar los arrays en memoria.
-let properties: Property[] = [
+// --- Simulación de Base de Datos con Caché en Memoria ---
+
+// En un entorno de desarrollo de Next.js, los módulos se pueden volver a evaluar en cada solicitud.
+// Usar `globalThis` como caché asegura que nuestros "datos de base de datos" persistan
+// entre las recargas de módulos, simulando una base de datos real y evitando
+// que el estado se reinicie, lo que causaba el problema de desautenticación.
+
+const globalForDb = globalThis as unknown as {
+  properties: Property[];
+  tenants: Tenant[];
+  bookings: Booking[];
+  propertyExpenses: PropertyExpense[];
+  pricing: Pricing[];
+};
+
+const initialProperties: Property[] = [
   {
     id: 1,
     name: 'Depto. Centauro',
@@ -34,14 +47,14 @@ let properties: Property[] = [
   },
 ];
 
-let tenants: Tenant[] = [
+const initialTenants: Tenant[] = [
     { id: 1, name: 'Juan Pérez', email: 'juan.perez@email.com', phone: '+54 223 555-0101', address: 'Calle Falsa 123', city: 'Mar del Plata', province: 'Buenos Aires', country: 'Argentina' },
     { id: 2, name: 'Ana García', email: 'ana.garcia@email.com', phone: '+54 11 555-0102', address: 'Av. Siempre Viva 742', city: 'CABA', province: 'CABA', country: 'Argentina' },
     { id: 3, name: 'Carlos López', email: 'carlos.lopez@email.com', phone: '+54 351 555-0103', address: 'El Jacarandá 456', city: 'Córdoba', province: 'Córdoba', country: 'Argentina' },
     { id: 4, name: 'Maria Fernandez', email: 'maria.fernandez@email.com', phone: '+54 261 555-0104', address: 'San Martín 876', city: 'Mendoza', province: 'Mendoza', country: 'Argentina' },
 ];
 
-let bookings: Booking[] = [
+const initialBookings: Booking[] = [
   {
     id: 1,
     propertyId: 1,
@@ -127,14 +140,14 @@ let bookings: Booking[] = [
   },
 ];
 
-let propertyExpenses: PropertyExpense[] = [
+const initialPropertyExpenses: PropertyExpense[] = [
     { id: 1, propertyId: 1, date: '2024-07-05T10:00:00.000Z', description: 'Impuesto municipal', amount: 100 },
     { id: 2, propertyId: 1, date: '2024-07-15T10:00:00.000Z', description: 'Reparación de cañería', amount: 250 },
     { id: 3, propertyId: 2, date: '2024-07-10T10:00:00.000Z', description: 'Servicio de jardinería', amount: 80 },
     { id: 4, propertyId: 3, date: '2024-07-01T10:00:00.000Z', description: 'Pago de expensas', amount: 150 },
 ];
 
-let pricing: Pricing[] = [
+const initialPricing: Pricing[] = [
     {
         propertyId: 1,
         defaultNightlyRate: 100,
@@ -159,7 +172,14 @@ let pricing: Pricing[] = [
         seasonalRates: [{ from: '2024-12-20', to: '2025-02-28', rate: 280 }],
         promotions: [{ minNights: 10, discountPercent: 5 }],
     }
-]
+];
+
+let properties = globalForDb.properties ?? (globalForDb.properties = initialProperties);
+let tenants = globalForDb.tenants ?? (globalForDb.tenants = initialTenants);
+let bookings = globalForDb.bookings ?? (globalForDb.bookings = initialBookings);
+let propertyExpenses = globalForDb.propertyExpenses ?? (globalForDb.propertyExpenses = initialPropertyExpenses);
+let pricing = globalForDb.pricing ?? (globalForDb.pricing = initialPricing);
+
 
 // --- Funciones de Lectura ---
 export const getProperties = () => properties;
@@ -195,14 +215,12 @@ export const addOrUpdateTenant = (data: Omit<Tenant, 'id'> & { id?: number }): T
         const tenantIndex = tenants.findIndex(t => t.id === data.id);
         if (tenantIndex !== -1) {
             tenants[tenantIndex] = { ...tenants[tenantIndex], ...data };
-            console.log("Updated tenant:", tenants[tenantIndex]);
             return tenants[tenantIndex];
         }
     }
     const newId = tenants.length > 0 ? Math.max(...tenants.map(t => t.id)) + 1 : 1;
     const newTenant: Tenant = { ...data, id: newId };
     tenants.push(newTenant);
-    console.log("Added tenant:", newTenant);
     return newTenant;
 };
 
@@ -211,7 +229,6 @@ export const updateProperty = (id: number, data: Partial<Omit<Property, 'id'>>) 
     const propIndex = properties.findIndex(p => p.id === id);
     if(propIndex !== -1) {
         properties[propIndex] = { ...properties[propIndex], ...data };
-        console.log("Updated property:", properties[propIndex]);
         return properties[propIndex];
     }
     console.error("Property not found for update:", id);
@@ -235,7 +252,6 @@ export const addBooking = (data: Omit<Booking, 'id' | 'payments' | 'rentalExpens
         rentalExpenses: [],
     };
     bookings.push(newBooking);
-    console.log("Added booking:", newBooking);
     return newBooking;
 }
 
@@ -243,7 +259,6 @@ export const addPropertyExpense = (data: Omit<PropertyExpense, 'id'>) => {
     const newId = propertyExpenses.length > 0 ? Math.max(...propertyExpenses.map(e => e.id)) + 1 : 1;
     const newExpense: PropertyExpense = { ...data, id: newId };
     propertyExpenses.push(newExpense);
-    console.log("Added property expense:", newExpense);
     return newExpense;
 }
 
@@ -253,7 +268,6 @@ export const addPayment = (bookingId: number, data: Omit<Payment, 'id'>) => {
         const paymentId = bookings[bookingIndex].payments.length > 0 ? Math.max(...bookings[bookingIndex].payments.map(p => p.id)) + 1 : 1;
         const newPayment: Payment = { ...data, id: paymentId };
         bookings[bookingIndex].payments.push(newPayment);
-        console.log("Added payment:", newPayment, "to booking:", bookingId);
         return newPayment;
     }
     console.error("Booking not found for adding payment:", bookingId);
@@ -266,7 +280,6 @@ export const addRentalExpense = (bookingId: number, data: Omit<RentalExpense, 'i
         const expenseId = bookings[bookingIndex].rentalExpenses.length > 0 ? Math.max(...bookings[bookingIndex].rentalExpenses.map(e => e.id)) + 1 : 1;
         const newExpense: RentalExpense = { ...data, id: expenseId };
         bookings[bookingIndex].rentalExpenses.push(newExpense);
-        console.log("Added rental expense:", newExpense, "to booking:", bookingId);
         return newExpense;
     }
     console.error("Booking not found for adding rental expense:", bookingId);
