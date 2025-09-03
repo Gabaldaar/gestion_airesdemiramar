@@ -62,10 +62,16 @@ const properties: Property[] = [
 ];
 
 let tenants: Tenant[] = [
-    { id: 1, name: 'Juan Perez', dni: '12345678', address: 'Su casa', city: 'CABA', country: 'Argentina', email: 'juan@perez.com', phone: '11-1234-5678' }
+    { id: 1, name: 'Juan Perez', dni: '12345678', address: 'Su casa', city: 'CABA', country: 'Argentina', email: 'juan@perez.com', phone: '11-1234-5678' },
+    { id: 2, name: 'Maria Garcia', dni: '87654321', address: 'Calle Otra 456', city: 'Cordoba', country: 'Argentina', email: 'maria@garcia.com', phone: '351-123-4567' },
+    { id: 3, name: 'Pedro Martinez', dni: '11223344', address: 'Avenida Ficticia 789', city: 'Rosario', country: 'Argentina', email: 'pedro@martinez.com', phone: '341-987-6543' }
 ];
 
-const bookings: Booking[] = [];
+let bookings: Booking[] = [
+    { id: 1, propertyId: 1, tenantId: 2, startDate: '2024-07-15T00:00:00.000Z', endDate: '2024-07-30T00:00:00.000Z', amount: 250000, currency: 'ARS' },
+    { id: 2, propertyId: 3, tenantId: 1, startDate: '2024-08-01T00:00:00.000Z', endDate: '2024-08-15T00:00:00.000Z', amount: 800, currency: 'USD' }
+];
+
 const payments: Payment[] = [];
 
 
