@@ -1,5 +1,6 @@
 
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -20,26 +21,28 @@ export default async function PropertiesPage() {
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {properties.map((property: Property) => (
-          <Card key={property.id}>
-            <CardHeader className="p-0">
-               <div className="relative aspect-video w-full">
-                <Image
-                  src={property.imageUrl}
-                  alt={`Foto de ${property.name}`}
-                  fill
-                  className="rounded-t-lg object-cover"
-                  data-ai-hint="apartment building exterior"
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              <CardTitle className="text-xl">{property.name}</CardTitle>
-              <CardDescription>{property.address}</CardDescription>
-            </CardContent>
-            <CardFooter>
-              {/* Aquí podrían ir acciones, como "Ver detalles" */}
-            </CardFooter>
-          </Card>
+          <Link href={`/properties/${property.id}`} key={property.id} className="group">
+            <Card className="h-full overflow-hidden transition-all group-hover:shadow-lg">
+              <CardHeader className="p-0">
+                 <div className="relative aspect-video w-full">
+                  <Image
+                    src={property.imageUrl}
+                    alt={`Foto de ${property.name}`}
+                    fill
+                    className="rounded-t-lg object-cover transition-transform group-hover:scale-105"
+                    data-ai-hint="apartment building exterior"
+                  />
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <CardTitle className="text-xl">{property.name}</CardTitle>
+                <CardDescription>{property.address}</CardDescription>
+              </CardContent>
+              <CardFooter>
+                 {/*  Aquí podrían ir acciones, como "Ver detalles"  */}
+              </CardFooter>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

@@ -74,6 +74,10 @@ export async function getProperties(): Promise<Property[]> {
   return properties;
 }
 
+export async function getPropertyById(id: number): Promise<Property | undefined> {
+  return properties.find(p => p.id === id);
+}
+
 export async function getTenants(): Promise<Tenant[]> {
     return tenants;
 }
