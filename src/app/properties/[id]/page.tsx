@@ -20,6 +20,9 @@ import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
+import { NotesDialog } from '@/components/notes-dialog';
+import { updateProperty } from '@/lib/actions';
+import { PropertyNotesForm } from '@/components/property-notes-form';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   const propertyId = params.id;
@@ -46,6 +49,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
           <p className="text-muted-foreground">{property.address}</p>
         </div>
+        <PropertyNotesForm property={property} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">

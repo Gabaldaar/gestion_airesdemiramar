@@ -32,7 +32,7 @@ export function NotesDialog({ formId, notes }: NotesDialogProps) {
             <DialogHeader>
             <DialogTitle>Notas</DialogTitle>
             <DialogDescription>
-                Añade o edita las notas. Se guardarán al presionar el botón de Guardar principal.
+                Añade o edita las notas. Los cambios se guardarán al presionar el botón de Guardar.
             </DialogDescription>
             </DialogHeader>
             <Textarea
@@ -44,8 +44,9 @@ export function NotesDialog({ formId, notes }: NotesDialogProps) {
             />
             <DialogFooter>
                 <DialogTrigger asChild>
-                    <Button>Cerrar</Button>
+                    <Button variant="outline">Cancelar</Button>
                 </DialogTrigger>
+                <Button type="submit" form={formId}>Guardar Notas</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
