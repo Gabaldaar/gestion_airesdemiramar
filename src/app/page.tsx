@@ -1,8 +1,9 @@
 
-import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings } from "@/lib/data";
+import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings, BookingWithDetails } from "@/lib/data";
 import DashboardStats from "@/components/dashboard-stats";
 import DashboardRecentBookings from "@/components/dashboard-recent-bookings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import DashboardCurrentBookings from "@/components/dashboard-current-bookings";
 
 export default async function DashboardPage() {
   const [summary, properties, tenants, bookings] = await Promise.all([
@@ -17,10 +18,22 @@ export default async function DashboardPage() {
   const totalProperties = properties.length;
   const totalTenants = tenants.length;
 
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   const upcomingBookings = bookings
-    .filter(b => new Date(b.startDate) >= new Date())
+    .filter(b => new Date(b.startDate) >= today)
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
     .slice(0, 5);
+
+  const currentBookings = bookings
+    .filter(b => {
+        const startDate = new Date(b.startDate);
+        const endDate = new Date(b.endDate);
+        return today >= startDate && today <= endDate;
+    })
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
 
   return (
     <div className="flex-1 space-y-4">
@@ -37,7 +50,18 @@ export default async function DashboardPage() {
         totalTenants={totalTenants}
       />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-1 lg:col-span-7">
+        <Card className="col-span-1 lg:col-span-4">
+          <CardHeader>
+            <CardTitle>Reservas en Curso</CardTitle>
+            <CardDescription>
+              Reservas activas en este momento.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DashboardCurrentBookings bookings={currentBookings} />
+          </CardContent>
+        </Card>
+        <Card className="col-span-1 lg:col-span-3">
           <CardHeader>
             <CardTitle>Próximas Reservas</CardTitle>
             <CardDescription>

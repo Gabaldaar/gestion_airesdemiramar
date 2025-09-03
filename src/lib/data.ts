@@ -4,6 +4,7 @@
 
 
 
+
 export type Property = {
   id: number;
   name: string;
@@ -96,8 +97,8 @@ let tenants: Tenant[] = [
     { id: 3, name: 'Pedro Martinez', dni: '11223344', address: 'Avenida Ficticia 789', city: 'Rosario', country: 'Argentina', email: 'pedro@martinez.com', phone: '341-987-6543' }
 ];
 
-// Función para generar fechas futuras
-const getFutureDate = (daysToAdd: number) => {
+// Función para generar fechas
+const getDate = (daysToAdd: number) => {
     const date = new Date();
     date.setDate(date.getDate() + daysToAdd);
     return date.toISOString();
@@ -105,13 +106,16 @@ const getFutureDate = (daysToAdd: number) => {
 
 let bookings: Booking[] = [
     // Reservas pasadas
-    { id: 1, propertyId: 1, tenantId: 2, startDate: '2024-01-15T00:00:00.000Z', endDate: '2024-01-30T00:00:00.000Z', amount: 250000, currency: 'ARS' },
-    { id: 2, propertyId: 3, tenantId: 1, startDate: '2024-02-01T00:00:00.000Z', endDate: '2024-02-15T00:00:00.000Z', amount: 800, currency: 'USD', exchangeRate: 1000 },
+    { id: 1, propertyId: 1, tenantId: 2, startDate: getDate(-25), endDate: getDate(-15), amount: 250000, currency: 'ARS' },
+    { id: 2, propertyId: 3, tenantId: 1, startDate: getDate(-50), endDate: getDate(-40), amount: 800, currency: 'USD', exchangeRate: 1000 },
+    
+    // Reserva en curso
+    { id: 9, propertyId: 2, tenantId: 3, startDate: getDate(-2), endDate: getDate(5), amount: 180000, currency: 'ARS' },
     
     // Reservas futuras (próximas)
-    { id: 3, propertyId: 1, tenantId: 3, startDate: getFutureDate(10), endDate: getFutureDate(17), amount: 350000, currency: 'ARS' },
-    { id: 4, propertyId: 2, tenantId: 1, startDate: getFutureDate(25), endDate: getFutureDate(35), amount: 450000, currency: 'ARS' },
-    { id: 5, propertyId: 4, tenantId: 2, startDate: getFutureDate(40), endDate: getFutureDate(50), amount: 1200, currency: 'USD', exchangeRate: 1250 },
+    { id: 3, propertyId: 1, tenantId: 3, startDate: getDate(10), endDate: getDate(17), amount: 350000, currency: 'ARS' },
+    { id: 4, propertyId: 2, tenantId: 1, startDate: getDate(25), endDate: getDate(35), amount: 450000, currency: 'ARS' },
+    { id: 5, propertyId: 4, tenantId: 2, startDate: getDate(40), endDate: getDate(50), amount: 1200, currency: 'USD', exchangeRate: 1250 },
     
     // Reservas para la temporada alta
     { id: 6, propertyId: 1, tenantId: 1, startDate: '2024-12-28T00:00:00.000Z', endDate: '2025-01-10T00:00:00.000Z', amount: 750000, currency: 'ARS' },
@@ -131,13 +135,16 @@ let bookingExpenses: BookingExpense[] = [
 
 let payments: Payment[] = [
     // Pagos para reservas pasadas
-    { id: 1, bookingId: 1, amount: 250000, date: '2024-01-10T00:00:00.000Z', currency: 'ARS' },
-    { id: 2, bookingId: 2, amount: 800, date: '2024-01-20T00:00:00.000Z', currency: 'USD' },
+    { id: 1, bookingId: 1, amount: 250000, date: getDate(-26), currency: 'ARS' },
+    { id: 2, bookingId: 2, amount: 800, date: getDate(-51), currency: 'USD' },
     
+     // Pago para reserva en curso (saldo pendiente)
+    { id: 6, bookingId: 9, amount: 100000, date: getDate(-3), currency: 'ARS' },
+
     // Pagos para reservas futuras (algunas con saldo)
-    { id: 3, bookingId: 3, amount: 150000, date: getFutureDate(1), currency: 'ARS' }, // Saldo pendiente
-    { id: 4, bookingId: 4, amount: 450000, date: getFutureDate(20), currency: 'ARS' }, // Pagada
-    { id: 5, bookingId: 6, amount: 300000, date: getFutureDate(5), currency: 'ARS' }, // Saldo pendiente
+    { id: 3, bookingId: 3, amount: 150000, date: getDate(1), currency: 'ARS' }, // Saldo pendiente
+    { id: 4, bookingId: 4, amount: 450000, date: getDate(20), currency: 'ARS' }, // Pagada
+    { id: 5, bookingId: 6, amount: 300000, date: getDate(5), currency: 'ARS' }, // Saldo pendiente
 ];
 
 
