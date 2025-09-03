@@ -17,7 +17,10 @@ export default async function DashboardPage() {
   const totalProperties = properties.length;
   const totalTenants = tenants.length;
 
-  const recentBookings = bookings.slice(0, 5);
+  const upcomingBookings = bookings
+    .filter(b => new Date(b.startDate) >= new Date())
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .slice(0, 5);
 
   return (
     <div className="flex-1 space-y-4">
@@ -36,13 +39,13 @@ export default async function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-1 lg:col-span-7">
           <CardHeader>
-            <CardTitle>Reservas Recientes</CardTitle>
+            <CardTitle>Próximas Reservas</CardTitle>
             <CardDescription>
-              Las últimas 5 reservas registradas en el sistema.
+              Las próximas 5 reservas agendadas.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DashboardRecentBookings bookings={recentBookings} />
+            <DashboardRecentBookings bookings={upcomingBookings} />
           </CardContent>
         </Card>
       </div>

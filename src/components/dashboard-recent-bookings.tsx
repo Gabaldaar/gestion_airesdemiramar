@@ -14,7 +14,7 @@ import { es } from 'date-fns/locale';
 
 export default function DashboardRecentBookings({ bookings }: { bookings: BookingWithTenantAndProperty[]}) {
   if (bookings.length === 0) {
-    return <p className="text-sm text-muted-foreground">No hay reservas recientes para mostrar.</p>;
+    return <p className="text-sm text-muted-foreground">No hay próximas reservas para mostrar.</p>;
   }
 
   const formatDate = (dateString: string) => {
