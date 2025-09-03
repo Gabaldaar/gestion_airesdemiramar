@@ -1,3 +1,7 @@
+// Import and configure dotenv at the very top.
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
