@@ -79,7 +79,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                 <TabsTrigger value="expenses">Gastos</TabsTrigger>
               </TabsList>
               <div className="flex items-center space-x-2">
-                <BookingAddForm propertyId={property.id} tenants={tenants} />
+                <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
                 <ExpenseAddForm propertyId={property.id} />
               </div>
             </div>

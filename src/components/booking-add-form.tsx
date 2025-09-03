@@ -22,18 +22,19 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { addBooking } from '@/lib/actions';
-import { Tenant } from '@/lib/data';
-import { PlusCircle } from 'lucide-react';
+import { Tenant, Booking } from '@/lib/data';
+import { PlusCircle, AlertTriangle } from 'lucide-react';
 import { Calendar as CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { es } from 'date-fns/locale';
-import { cn } from "@/lib/utils"
+import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DateRange } from 'react-day-picker';
 import { Textarea } from './ui/textarea';
 
@@ -43,19 +44,31 @@ const initialState = {
   success: false,
 };
 
-export function BookingAddForm({ propertyId, tenants }: { propertyId: string, tenants: Tenant[] }) {
+export function BookingAddForm({ propertyId, tenants, existingBookings }: { propertyId: string, tenants: Tenant[], existingBookings: Booking[] }) {
   const [state, formAction] = useActionState(addBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
    const [date, setDate] = useState<DateRange | undefined>(undefined);
+   const [conflict, setConflict] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
       formRef.current?.reset();
       setDate(undefined);
+      setConflict(null);
     }
   }, [state]);
+
+  useEffect(() => {
+    if (date?.from && date?.to) {
+        const conflictingBooking = checkDateConflict(date, existingBookings, '');
+        setConflict(conflictingBooking);
+    } else {
+        setConflict(null);
+    }
+  }, [date, existingBookings]);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -136,6 +149,19 @@ export function BookingAddForm({ propertyId, tenants }: { propertyId: string, te
                     <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
                     <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                 </div>
+
+                {conflict && (
+                    <div className="col-span-4">
+                         <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
+                            <AlertDescription>
+                                El rango seleccionado se solapa con otra reserva.
+                            </AlertDescription>
+                        </Alert>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="amount" className="text-right">
                     Monto

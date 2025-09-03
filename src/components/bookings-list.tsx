@@ -74,7 +74,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     {booking.notes && <NotesViewer notes={booking.notes} title={`Notas sobre la reserva`} />}
                     <BookingPaymentsManager bookingId={booking.id} bookingCurrency={booking.currency} />
                     <BookingExpensesManager bookingId={booking.id} />
-                    <BookingEditForm booking={booking} tenants={tenants} properties={properties} />
+                    <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
                     <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />
                 </div>
             </TableCell>

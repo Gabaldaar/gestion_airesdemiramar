@@ -23,10 +23,10 @@ import {
 } from "@/components/ui/select"
 import { updateBooking } from '@/lib/actions';
 import { Booking, Tenant, Property } from '@/lib/data';
-import { Pencil, Calendar as CalendarIcon } from 'lucide-react';
+import { Pencil, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import { format } from "date-fns"
 import { es } from 'date-fns/locale';
-import { cn } from "@/lib/utils"
+import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/popover"
 import { DateRange } from 'react-day-picker';
 import { Textarea } from './ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 
 const initialState = {
@@ -42,13 +43,14 @@ const initialState = {
   success: false,
 };
 
-export function BookingEditForm({ booking, tenants, properties }: { booking: Booking, tenants: Tenant[], properties: Property[] }) {
+export function BookingEditForm({ booking, tenants, properties, allBookings }: { booking: Booking, tenants: Tenant[], properties: Property[], allBookings?: Booking[] }) {
   const [state, formAction] = useActionState(updateBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>({
       from: new Date(booking.startDate),
       to: new Date(booking.endDate)
   });
+   const [conflict, setConflict] = useState<Booking | null>(null);
   const formId = `booking-edit-form-${booking.id}`;
 
   useEffect(() => {
@@ -56,6 +58,17 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
       setIsOpen(false);
     }
   }, [state]);
+
+   useEffect(() => {
+    if (date?.from && date?.to && allBookings) {
+        const bookingsForProperty = allBookings.filter(b => b.propertyId === booking.propertyId);
+        const conflictingBooking = checkDateConflict(date, bookingsForProperty, booking.id);
+        setConflict(conflictingBooking);
+    } else {
+        setConflict(null);
+    }
+  }, [date, allBookings, booking.id, booking.propertyId]);
+
 
   return (
     <>
@@ -154,6 +167,19 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
                         <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
                         <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                     </div>
+
+                    {conflict && (
+                        <div className="col-span-4">
+                            <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
+                                <AlertDescription>
+                                    El rango seleccionado se solapa con otra reserva.
+                                </AlertDescription>
+                            </Alert>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="amount" className="text-right">
                         Monto
