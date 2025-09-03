@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default async function DashboardPage() {
   const [summary, properties, tenants, bookings] = await Promise.all([
-    getFinancialSummaryByProperty(),
+    getFinancialSummaryByProperty({}),
     getProperties(),
     getTenants(),
     getBookings(),

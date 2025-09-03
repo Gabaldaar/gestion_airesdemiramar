@@ -2,6 +2,8 @@
 
 
 
+
+
 export type Property = {
   id: number;
   name: string;
@@ -321,7 +323,12 @@ export async function getAllPayments(): Promise<Payment[]> {
 }
 
 
-export async function getFinancialSummaryByProperty(): Promise<FinancialSummary[]> {
+export async function getFinancialSummaryByProperty(options?: { startDate?: string; endDate?: string }): Promise<FinancialSummary[]> {
+  const startDate = options?.startDate;
+  const endDate = options?.endDate;
+  const fromDate = startDate ? new Date(startDate) : null;
+  const toDate = endDate ? new Date(endDate) : null;
+
   const [allProperties, allBookings, allPropertyExpenses, allBookingExpenses, allPayments] = await Promise.all([
     getProperties(),
     getBookings(),
@@ -331,9 +338,21 @@ export async function getFinancialSummaryByProperty(): Promise<FinancialSummary[
   ]);
 
   const summary: FinancialSummary[] = allProperties.map(property => {
-    const propertyBookings = allBookings.filter(b => b.propertyId === property.id);
-    const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id);
-    
+    const isWithinDateRange = (dateStr: string) => {
+        if (!fromDate && !toDate) return true;
+        const itemDate = new Date(dateStr);
+        if (fromDate && itemDate < fromDate) return false;
+        if (toDate && itemDate > toDate) return false;
+        return true;
+    };
+
+    const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate));
+    const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id && isWithinDateRange(e.date));
+    const relevantBookingIds = new Set(propertyBookings.map(b => b.id));
+    const relevantBookingExpenses = allBookingExpenses.filter(e => relevantBookingIds.has(e.bookingId) && isWithinDateRange(e.date));
+    const relevantPayments = allPayments.filter(p => relevantBookingIds.has(p.bookingId) && isWithinDateRange(p.date));
+
+
     const getAmountInArs = (amount: number, currency: 'ARS' | 'USD', exchangeRate?: number) => {
         if (currency === 'ARS') {
             return amount;
@@ -345,24 +364,17 @@ export async function getFinancialSummaryByProperty(): Promise<FinancialSummary[
       return acc + getAmountInArs(booking.amount, booking.currency, booking.exchangeRate);
     }, 0);
 
-    const totalPayments = propertyBookings.reduce((acc, booking) => {
-        const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
-        const bookingPaymentsTotal = paymentsForBooking.reduce((sum, payment) => {
-            const bookingForPayment = allBookings.find(b => b.id === payment.bookingId);
-            return sum + getAmountInArs(payment.amount, payment.currency, bookingForPayment?.exchangeRate);
-        }, 0);
-        return acc + bookingPaymentsTotal;
+    const totalPayments = relevantPayments.reduce((acc, payment) => {
+      const bookingForPayment = allBookings.find(b => b.id === payment.bookingId);
+      return acc + getAmountInArs(payment.amount, payment.currency, bookingForPayment?.exchangeRate);
     }, 0);
+
 
     const balance = totalIncome - totalPayments;
 
     const totalPropertyExpenses = propertyExpenses.reduce((acc, expense) => acc + expense.amount, 0);
 
-    const totalBookingExpenses = propertyBookings.reduce((acc, booking) => {
-        const expensesForThisBooking = allBookingExpenses.filter(e => e.bookingId === booking.id);
-        const bookingExpensesTotal = expensesForThisBooking.reduce((sum, expense) => sum + expense.amount, 0);
-        return acc + bookingExpensesTotal;
-    }, 0);
+    const totalBookingExpenses = relevantBookingExpenses.reduce((acc, expense) => acc + expense.amount, 0);
 
     const netResult = totalIncome - totalPropertyExpenses - totalBookingExpenses;
 
