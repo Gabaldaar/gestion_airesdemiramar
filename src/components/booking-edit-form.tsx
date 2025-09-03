@@ -92,6 +92,17 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                 Modifica los datos de la reserva.
             </DialogDescription>
             </DialogHeader>
+
+            {conflict && (
+                <Alert variant="destructive" className='mb-4'>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
+                    <AlertDescription>
+                        El rango seleccionado se solapa con otra reserva.
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <form id={formId} action={formAction}>
                 <input type="hidden" name="id" value={booking.id} />
                 <div className="grid gap-4 py-4">
@@ -173,20 +184,6 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                         <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
                         <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                     </div>
-
-                    {conflict && (
-                         <div className="col-span-4 grid grid-cols-4 items-center gap-4">
-                            <div className="col-start-2 col-span-3">
-                                <Alert variant="destructive">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
-                                    <AlertDescription>
-                                        El rango seleccionado se solapa con otra reserva.
-                                    </AlertDescription>
-                                </Alert>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="amount" className="text-right">

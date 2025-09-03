@@ -76,7 +76,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
 
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; setIsOpen(open)}}>
       <DialogTrigger asChild>
         <Button onClick={() => { setIsOpen(true); resetForm(); }}>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -90,6 +90,17 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
             Completa los datos de la reserva.
           </DialogDescription>
         </DialogHeader>
+        
+        {conflict && (
+            <Alert variant="destructive" className='mb-4'>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
+                <AlertDescription>
+                    El rango seleccionado se solapa con otra reserva.
+                </AlertDescription>
+            </Alert>
+        )}
+
         <form action={formAction} ref={formRef}>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -153,20 +164,6 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                     <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
                     <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                 </div>
-
-                {conflict && (
-                    <div className="col-span-4 grid grid-cols-4 items-center gap-4">
-                        <div className="col-start-2 col-span-3">
-                            <Alert variant="destructive">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
-                                <AlertDescription>
-                                    El rango seleccionado se solapa con otra reserva.
-                                </AlertDescription>
-                            </Alert>
-                        </div>
-                    </div>
-                )}
 
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="amount" className="text-right">
