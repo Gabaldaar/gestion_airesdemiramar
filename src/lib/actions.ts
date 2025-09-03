@@ -2,27 +2,21 @@
 'use server'
  
 import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
-import { APP_PASSWORD, AUTH_COOKIE_NAME } from './constants'
+import { getSession, setSession, deleteSession } from '@/lib/session';
+import { APP_PASSWORD } from './constants';
  
-export async function loginAction(prevState: { error: string } | undefined, formData: FormData) {
+export async function loginAction(formData: FormData) {
   const password = formData.get('password')
  
-  if (password === APP_PASSWORD) {
-    cookies().set(AUTH_COOKIE_NAME, password, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 7, // 1 week
-    })
-    redirect('/')
-  } else {
-    return { error: 'La contraseña es incorrecta.' }
+  if (password !== APP_PASSWORD) {
+    return { error: 'Clave incorrecta.' };
   }
+ 
+  await setSession();
+  redirect('/')
 }
 
 export async function logoutAction() {
-  cookies().delete(AUTH_COOKIE_NAME);
+  await deleteSession();
   redirect('/login');
 }

@@ -1,7 +1,7 @@
 
 "use client"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { BookOpen, Home, LayoutDashboard, Settings, Waves, TrendingDown, Users, AreaChart, LogOut } from "lucide-react"
 
 import {
@@ -18,12 +18,9 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { logoutAction } from "@/lib/actions"
-import { useTransition } from "react"
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [isPending, startTransition] = useTransition();
-
 
   const menuItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -36,9 +33,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   ]
 
   const handleLogout = async () => {
-    startTransition(async () => {
-      await logoutAction();
-    });
+    await logoutAction();
   }
 
   return (
@@ -60,7 +55,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/')}
+                  isActive={pathname === '/' ? item.href === '/' : (item.href !== '/' && pathname.startsWith(item.href))}
                   tooltip={item.label}
                 >
                   <Link href={item.href}>
@@ -73,16 +68,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-                <form action={handleLogout}>
-                    <SidebarMenuButton type="submit" disabled={isPending} tooltip="Cerrar Sesión">
-                        <LogOut/>
-                        <span>{isPending ? "Cerrando sesión..." : "Cerrar Sesión"}</span>
-                    </SidebarMenuButton>
-                </form>
-            </SidebarMenuItem>
-          </SidebarMenu>
+            <form action={logoutAction}>
+                <Button type="submit" variant="ghost" className="w-full justify-start">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Cerrar Sesión
+                </Button>
+            </form>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>

@@ -1,37 +1,27 @@
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { checkAuth } from './lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/session';
 
-const PROTECTED_ROUTES = ['/', '/properties', '/bookings', '/tenants', '/expenses', '/reports', '/settings'];
-const LOGIN_ROUTE = '/login';
+const protectedRoutes = ['/'];
+const publicRoutes = ['/login'];
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const isAuthenticated = await checkAuth();
+export default async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+  const isProtectedRoute = protectedRoutes.some(p => path.startsWith(p)) && path !== '/login';
 
-  const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route) && (route !== '/' || pathname === '/'));
+  const session = await getSession();
 
-  if (isProtectedRoute && !isAuthenticated) {
-    return NextResponse.redirect(new URL(LOGIN_ROUTE, request.url));
+  if (isProtectedRoute && !session) {
+    return NextResponse.redirect(new URL('/login', req.nextUrl));
   }
 
-  if (pathname === LOGIN_ROUTE && isAuthenticated) {
-    return NextResponse.redirect(new URL('/', request.url));
+  if (publicRoutes.includes(path) && session) {
+    return NextResponse.redirect(new URL('/', req.nextUrl));
   }
-
+ 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
 };

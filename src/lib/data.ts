@@ -1,22 +1,9 @@
 
 import type { Property, Booking, PropertyExpense, Pricing, Payment, RentalExpense, Tenant } from './types';
 
-// --- Simulación de Base de Datos con Caché en Memoria ---
+// --- Simulación de Base de Datos en Memoria ---
 
-// En un entorno de desarrollo de Next.js, los módulos se pueden volver a evaluar en cada solicitud.
-// Usar `globalThis` como caché asegura que nuestros "datos de base de datos" persistan
-// entre las recargas de módulos, simulando una base de datos real y evitando
-// que el estado se reinicie, lo que causaba el problema de desautenticación.
-
-const globalForDb = globalThis as unknown as {
-  properties: Property[];
-  tenants: Tenant[];
-  bookings: Booking[];
-  propertyExpenses: PropertyExpense[];
-  pricing: Pricing[];
-};
-
-const initialProperties: Property[] = [
+const properties: Property[] = [
   {
     id: 1,
     name: 'Depto. Centauro',
@@ -47,14 +34,14 @@ const initialProperties: Property[] = [
   },
 ];
 
-const initialTenants: Tenant[] = [
+const tenants: Tenant[] = [
     { id: 1, name: 'Juan Pérez', email: 'juan.perez@email.com', phone: '+54 223 555-0101', address: 'Calle Falsa 123', city: 'Mar del Plata', province: 'Buenos Aires', country: 'Argentina' },
     { id: 2, name: 'Ana García', email: 'ana.garcia@email.com', phone: '+54 11 555-0102', address: 'Av. Siempre Viva 742', city: 'CABA', province: 'CABA', country: 'Argentina' },
     { id: 3, name: 'Carlos López', email: 'carlos.lopez@email.com', phone: '+54 351 555-0103', address: 'El Jacarandá 456', city: 'Córdoba', province: 'Córdoba', country: 'Argentina' },
     { id: 4, name: 'Maria Fernandez', email: 'maria.fernandez@email.com', phone: '+54 261 555-0104', address: 'San Martín 876', city: 'Mendoza', province: 'Mendoza', country: 'Argentina' },
 ];
 
-const initialBookings: Booking[] = [
+const bookings: Booking[] = [
   {
     id: 1,
     propertyId: 1,
@@ -140,14 +127,14 @@ const initialBookings: Booking[] = [
   },
 ];
 
-const initialPropertyExpenses: PropertyExpense[] = [
+const propertyExpenses: PropertyExpense[] = [
     { id: 1, propertyId: 1, date: '2024-07-05T10:00:00.000Z', description: 'Impuesto municipal', amount: 100 },
     { id: 2, propertyId: 1, date: '2024-07-15T10:00:00.000Z', description: 'Reparación de cañería', amount: 250 },
     { id: 3, propertyId: 2, date: '2024-07-10T10:00:00.000Z', description: 'Servicio de jardinería', amount: 80 },
     { id: 4, propertyId: 3, date: '2024-07-01T10:00:00.000Z', description: 'Pago de expensas', amount: 150 },
 ];
 
-const initialPricing: Pricing[] = [
+const pricing: Pricing[] = [
     {
         propertyId: 1,
         defaultNightlyRate: 100,
@@ -173,12 +160,6 @@ const initialPricing: Pricing[] = [
         promotions: [{ minNights: 10, discountPercent: 5 }],
     }
 ];
-
-let properties = globalForDb.properties ?? (globalForDb.properties = initialProperties);
-let tenants = globalForDb.tenants ?? (globalForDb.tenants = initialTenants);
-let bookings = globalForDb.bookings ?? (globalForDb.bookings = initialBookings);
-let propertyExpenses = globalForDb.propertyExpenses ?? (globalForDb.propertyExpenses = initialPropertyExpenses);
-let pricing = globalForDb.pricing ?? (globalForDb.pricing = initialPricing);
 
 
 // --- Funciones de Lectura ---

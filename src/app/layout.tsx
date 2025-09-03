@@ -4,8 +4,8 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from "@/components/ui/toaster"
 import MainLayout from '@/components/main-layout';
-import { checkAuth } from '@/lib/auth';
 import LoginPage from './login/page';
+import { getSession } from '@/lib/session';
 
 export const metadata: Metadata = {
   title: 'Aires de Miramar - Admin',
@@ -17,7 +17,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const isAuthenticated = await checkAuth();
+  const session = await getSession();
 
   return (
     <html lang="es" suppressHydrationWarning>
@@ -27,13 +27,13 @@ export default async function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased", "min-h-screen bg-background font-sans")}>
-        {isAuthenticated ? (
-          <MainLayout>
-            {children}
-          </MainLayout>
-        ) : (
-          <LoginPage />
-        )}
+          {!session ? (
+            <LoginPage />
+          ) : (
+            <MainLayout>
+              {children}
+            </MainLayout>
+          )}
         <Toaster />
       </body>
     </html>
