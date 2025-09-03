@@ -7,7 +7,7 @@ import MainLayout from "@/components/main-layout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Aires de Miramar",
+  title: "Gestión - Aires de Miramar",
   description: "Gestión de alquileres temporarios",
 };
 
