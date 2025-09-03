@@ -110,10 +110,10 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
     const propertyId = parseInt(formData.get("propertyId") as string, 10);
     const description = formData.get("description") as string;
     const amount = parseFloat(formData.get("amount") as string);
-    const date = new Date().toISOString(); // Or get from form
+    const date = formData.get("date") as string;
 
-    if (!propertyId || !description || !amount) {
-        return { success: false, message: "La descripción y el monto son obligatorios." };
+    if (!propertyId || !description || !amount || !date) {
+        return { success: false, message: "La descripción, el monto y la fecha son obligatorios." };
     }
 
     const newExpense = {

@@ -15,7 +15,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addPropertyExpense } from '@/lib/actions';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Calendar } from './ui/calendar';
 
 const initialState = {
   message: '',
@@ -26,11 +30,13 @@ export function ExpenseAddForm({ propertyId }: { propertyId: number }) {
   const [state, formAction] = useActionState(addPropertyExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
       formRef.current?.reset();
+      setDate(new Date());
     }
   }, [state]);
 
@@ -51,7 +57,35 @@ export function ExpenseAddForm({ propertyId }: { propertyId: number }) {
         </DialogHeader>
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="propertyId" value={propertyId} />
+            <input type="hidden" name="date" value={date?.toISOString()} />
             <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="date" className="text-right">
+                        Fecha
+                    </Label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant={"outline"}
+                            className={cn(
+                            "col-span-3 justify-start text-left font-normal",
+                            !date && "text-muted-foreground"
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date ? format(date, "PPP") : <span>Selecciona una fecha</span>}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
+                </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="description" className="text-right">
                     Descripción
