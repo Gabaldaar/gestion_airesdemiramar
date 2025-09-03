@@ -1,4 +1,5 @@
 
+
 import {
   Table,
   TableBody,
@@ -25,6 +26,8 @@ export default function DashboardRecentBookings({ bookings }: { bookings: Bookin
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   }
 

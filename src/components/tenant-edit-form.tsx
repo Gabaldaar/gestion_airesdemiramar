@@ -64,7 +64,7 @@ export function TenantEditForm({ tenant }: { tenant: Tenant }) {
                       <Label htmlFor="dni" className="text-right">
                       DNI
                       </Label>
-                      <Input id="dni" name="dni" defaultValue={tenant.dni} className="col-span-3" required />
+                      <Input id="dni" name="dni" defaultValue={tenant.dni} className="col-span-3" />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="email" className="text-right">

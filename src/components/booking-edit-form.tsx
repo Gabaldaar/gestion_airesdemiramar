@@ -158,7 +158,7 @@ export function BookingEditForm({ booking, tenants, properties }: { booking: Boo
                         <Label htmlFor="amount" className="text-right">
                         Monto
                         </Label>
-                        <Input id="amount" name="amount" type="number" defaultValue={booking.amount} className="col-span-3" required />
+                        <Input id="amount" name="amount" type="number" step="0.01" defaultValue={booking.amount} className="col-span-3" required />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="currency" className="text-right">

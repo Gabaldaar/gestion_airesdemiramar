@@ -38,6 +38,8 @@ export default function BookingsList({ bookings, properties, tenants, showProper
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   }
 

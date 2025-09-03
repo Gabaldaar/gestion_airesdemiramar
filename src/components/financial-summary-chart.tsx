@@ -26,7 +26,8 @@ export default function FinancialSummaryChart({ summary }: FinancialSummaryChart
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: 'ARS',
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
   }
 

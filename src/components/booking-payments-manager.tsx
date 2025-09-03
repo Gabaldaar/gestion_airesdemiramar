@@ -64,6 +64,8 @@ export function BookingPaymentsManager({ bookingId, bookingCurrency }: { booking
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 

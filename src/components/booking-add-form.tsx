@@ -140,7 +140,7 @@ export function BookingAddForm({ propertyId, tenants }: { propertyId: string, te
                     <Label htmlFor="amount" className="text-right">
                     Monto
                     </Label>
-                    <Input id="amount" name="amount" type="number" className="col-span-3" required />
+                    <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="currency" className="text-right">
