@@ -105,3 +105,13 @@ export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null
 export async function getBookings(): Promise<Booking[]> {
     return bookings;
 }
+
+export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
+    const newBooking = {
+        id: bookings.length > 0 ? Math.max(...bookings.map(b => b.id)) + 1 : 1,
+        ...booking
+    };
+    bookings.push(newBooking);
+    console.log('Bookings after adding:', bookings);
+    return newBooking;
+}

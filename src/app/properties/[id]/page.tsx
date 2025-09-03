@@ -15,12 +15,16 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
-import { getPropertyById } from "@/lib/data";
+import { getPropertyById, getTenants } from "@/lib/data";
 import { PlusCircle } from 'lucide-react';
+import { BookingAddForm } from '@/components/booking-add-form';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   const propertyId = parseInt(params.id, 10);
-  const property = await getPropertyById(propertyId);
+  const [property, tenants] = await Promise.all([
+    getPropertyById(propertyId),
+    getTenants()
+  ]);
 
   if (!property) {
     notFound();
@@ -34,10 +38,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           <p className="text-muted-foreground">{property.address}</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nueva Reserva
-          </Button>
+          <BookingAddForm propertyId={property.id} tenants={tenants} />
           <Button variant="outline">
             <PlusCircle className="mr-2 h-4 w-4" />
             Añadir Gasto

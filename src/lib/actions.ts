@@ -2,7 +2,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { addTenant as dbAddTenant, updateTenant as dbUpdateTenant } from "./data";
+import { addTenant as dbAddTenant, updateTenant as dbUpdateTenant, addBooking as dbAddBooking } from "./data";
 
 // Acción para actualizar una propiedad (simulada)
 export async function updateProperty(previousState: any, formData: FormData) {
@@ -71,4 +71,37 @@ export async function updateTenant(previousState: any, formData: FormData) {
   } catch (error) {
     return { success: false, message: "Error al actualizar inquilino." };
   }
+}
+
+export async function addBooking(previousState: any, formData: FormData) {
+    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+    const tenantId = parseInt(formData.get("tenantId") as string, 10);
+    const startDate = formData.get("startDate") as string;
+    const endDate = formData.get("endDate") as string;
+    const amount = parseFloat(formData.get("amount") as string);
+    const currency = formData.get("currency") as 'USD' | 'ARS';
+
+    if (!propertyId || !tenantId || !startDate || !endDate || !amount || !currency) {
+        return { success: false, message: "Todos los campos son obligatorios." };
+    }
+
+    const newBooking = {
+        propertyId,
+        tenantId,
+        startDate,
+        endDate,
+        amount,
+        currency,
+    };
+
+    console.log("Creando nueva reserva (simulado):", newBooking);
+
+    try {
+        await dbAddBooking(newBooking);
+        revalidatePath(`/properties/${propertyId}`);
+        revalidatePath('/bookings');
+        return { success: true, message: "Reserva creada correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al crear la reserva." };
+    }
 }
