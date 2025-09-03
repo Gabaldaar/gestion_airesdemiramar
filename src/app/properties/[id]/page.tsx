@@ -35,6 +35,10 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     notFound();
   }
 
+  const calendarSrc = property.googleCalendarId 
+    ? `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(property.googleCalendarId)}&ctz=America/Argentina/Buenos_Aires`
+    : null;
+
   return (
     <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between space-y-2">
@@ -83,11 +87,24 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                 <CardHeader>
                   <CardTitle>Calendario de Disponibilidad</CardTitle>
                   <CardDescription>
-                    Visualiza la disponibilidad e intégralo con Google Calendar.
+                    Disponibilidad de la propiedad.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Próximamente: Integración con el calendario de Google.</p>
+                  {calendarSrc ? (
+                    <div className="relative h-[600px] w-full">
+                        <iframe
+                            src={calendarSrc}
+                            style={{ borderWidth: 0 }}
+                            width="100%"
+                            height="600"
+                            frameBorder="0"
+                            scrolling="no"
+                        ></iframe>
+                    </div>
+                  ) : (
+                    <p>No hay un calendario de Google configurado para esta propiedad.</p>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
