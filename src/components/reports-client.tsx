@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FinancialSummary } from "@/lib/data";
+import { FinancialSummaryByCurrency } from "@/lib/data";
 import FinancialSummaryTable from "@/components/financial-summary-table";
 import FinancialSummaryChart from "@/components/financial-summary-chart";
 import { DatePicker } from "./ui/date-picker";
@@ -16,7 +16,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from "./ui/button";
 
 interface ReportsClientProps {
-  summary: FinancialSummary[];
+  summary: FinancialSummaryByCurrency;
 }
 
 export default function ReportsClient({ summary }: ReportsClientProps) {
@@ -54,6 +54,8 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
     router.push(pathname);
   };
 
+  const hasArsData = summary.ars.some(s => s.totalIncome > 0 || s.totalPropertyExpenses > 0 || s.totalBookingExpenses > 0);
+  const hasUsdData = summary.usd.some(s => s.totalIncome > 0);
 
   return (
     <div className="space-y-4">
@@ -70,28 +72,69 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Resultado Neto por Propiedad</CardTitle>
-          <CardDescription>
-            Comparación del resultado neto entre las propiedades.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FinancialSummaryChart summary={summary} />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Reporte Financiero por Propiedad</CardTitle>
-          <CardDescription>
-            Visualiza un resumen de ingresos, gastos y resultados por cada propiedad.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FinancialSummaryTable summary={summary} />
-        </CardContent>
-      </Card>
+
+      {hasArsData && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Resultado por Propiedad (ARS)</CardTitle>
+              <CardDescription>
+                Comparación del resultado neto entre las propiedades en ARS.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FinancialSummaryChart summary={summary.ars} currency="ARS" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Reporte Financiero por Propiedad (ARS)</CardTitle>
+              <CardDescription>
+                Resumen de ingresos, gastos y resultados por propiedad en ARS.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FinancialSummaryTable summary={summary.ars} currency="ARS" />
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {hasUsdData && (
+         <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Resultado por Propiedad (USD)</CardTitle>
+              <CardDescription>
+                Comparación del resultado neto entre las propiedades en USD.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FinancialSummaryChart summary={summary.usd} currency="USD" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Reporte Financiero por Propiedad (USD)</CardTitle>
+              <CardDescription>
+                 Resumen de ingresos, gastos y resultados por propiedad en USD.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FinancialSummaryTable summary={summary.usd} currency="USD" />
+            </CardContent>
+          </Card>
+        </>
+      )}
+      
+      {!hasArsData && !hasUsdData && (
+        <Card>
+          <CardContent>
+            <p className="text-center text-muted-foreground py-8">No hay datos financieros para mostrar en el período seleccionado.</p>
+          </CardContent>
+        </Card>
+      )}
+
     </div>
   );
 }

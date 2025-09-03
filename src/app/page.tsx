@@ -6,15 +6,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import DashboardCurrentBookings from "@/components/dashboard-current-bookings";
 
 export default async function DashboardPage() {
-  const [summary, properties, tenants, bookings] = await Promise.all([
+  const [summaryByCurrency, properties, tenants, bookings] = await Promise.all([
     getFinancialSummaryByProperty({}),
     getProperties(),
     getTenants(),
     getBookings(),
   ]);
 
-  const totalIncome = summary.reduce((acc, item) => acc + item.totalIncome, 0);
-  const totalNetResult = summary.reduce((acc, item) => acc + item.netResult, 0);
+  const totalIncomeArs = summaryByCurrency.ars.reduce((acc, item) => acc + item.totalIncome, 0);
+  const totalNetResultArs = summaryByCurrency.ars.reduce((acc, item) => acc + item.netResult, 0);
+  const totalIncomeUsd = summaryByCurrency.usd.reduce((acc, item) => acc + item.totalIncome, 0);
+  const totalNetResultUsd = summaryByCurrency.usd.reduce((acc, item) => acc + item.netResult, 0);
+
   const totalProperties = properties.length;
   const totalTenants = tenants.length;
 
@@ -44,8 +47,10 @@ export default async function DashboardPage() {
         </div>
       </div>
       <DashboardStats
-        totalIncome={totalIncome}
-        totalNetResult={totalNetResult}
+        totalIncomeArs={totalIncomeArs}
+        totalNetResultArs={totalNetResultArs}
+        totalIncomeUsd={totalIncomeUsd}
+        totalNetResultUsd={totalNetResultUsd}
         totalProperties={totalProperties}
         totalTenants={totalTenants}
       />

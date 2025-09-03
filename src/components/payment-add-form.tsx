@@ -106,7 +106,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, defaultCurrency }: {
                     <Label htmlFor="currency" className="text-right">
                     Moneda
                     </Label>
-                    <Select name="currency" defaultValue={defaultCurrency} required>
+                    <Select name="currency" defaultValue={defaultCurrency || 'USD'} required>
                         <SelectTrigger className="col-span-3">
                             <SelectValue />
                         </SelectTrigger>

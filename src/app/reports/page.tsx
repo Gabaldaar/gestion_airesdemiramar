@@ -1,3 +1,4 @@
+
 import { getFinancialSummaryByProperty } from "@/lib/data";
 import ReportsClient from "@/components/reports-client";
 import { Suspense } from "react";

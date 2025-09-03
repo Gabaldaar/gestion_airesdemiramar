@@ -175,7 +175,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                     <Label htmlFor="currency" className="text-right">
                     Moneda
                     </Label>
-                    <Select name="currency" defaultValue='ARS' required>
+                    <Select name="currency" defaultValue='USD' required>
                         <SelectTrigger className="col-span-3">
                             <SelectValue />
                         </SelectTrigger>

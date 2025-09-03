@@ -1,5 +1,4 @@
 
-
 import {
   Table,
   TableBody,
@@ -13,9 +12,10 @@ import { FinancialSummary } from "@/lib/data";
 
 interface FinancialSummaryTableProps {
   summary: FinancialSummary[];
+  currency: 'ARS' | 'USD';
 }
 
-export default function FinancialSummaryTable({ summary }: FinancialSummaryTableProps) {
+export default function FinancialSummaryTable({ summary, currency }: FinancialSummaryTableProps) {
   if (summary.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay datos para mostrar en el reporte.</p>;
   }
@@ -23,7 +23,7 @@ export default function FinancialSummaryTable({ summary }: FinancialSummaryTable
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'ARS',
+      currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -35,6 +35,21 @@ export default function FinancialSummaryTable({ summary }: FinancialSummaryTable
   const totalPropertyExpenses = summary.reduce((acc, item) => acc + item.totalPropertyExpenses, 0);
   const totalBookingExpenses = summary.reduce((acc, item) => acc + item.totalBookingExpenses, 0);
   const totalNetResult = summary.reduce((acc, item) => acc + item.netResult, 0);
+  
+  // Filter out rows that have all zero values
+  const filteredSummary = summary.filter(item => 
+      item.totalIncome !== 0 ||
+      item.totalPayments !== 0 ||
+      item.balance !== 0 ||
+      item.totalPropertyExpenses !== 0 ||
+      item.totalBookingExpenses !== 0 ||
+      item.netResult !== 0
+  );
+
+  if (filteredSummary.length === 0) {
+    return <p className="text-sm text-muted-foreground py-4 text-center">No hay datos en {currency} para el período seleccionado.</p>;
+  }
+
 
   return (
     <Table>
@@ -44,13 +59,13 @@ export default function FinancialSummaryTable({ summary }: FinancialSummaryTable
           <TableHead className="text-right">Ingresos</TableHead>
           <TableHead className="text-right">Pagos Recibidos</TableHead>
           <TableHead className="text-right">Saldo</TableHead>
-          <TableHead className="text-right">Gastos (Propiedad)</TableHead>
-          <TableHead className="text-right">Gastos (Reservas)</TableHead>
+          {currency === 'ARS' && <TableHead className="text-right">Gastos (Propiedad)</TableHead>}
+          {currency === 'ARS' && <TableHead className="text-right">Gastos (Reservas)</TableHead>}
           <TableHead className="text-right">Resultado Neto</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {summary.map((item) => (
+        {filteredSummary.map((item) => (
           <TableRow key={item.propertyId}>
             <TableCell className="font-medium">{item.propertyName}</TableCell>
             <TableCell className="text-right text-green-600">{formatCurrency(item.totalIncome)}</TableCell>
@@ -58,8 +73,8 @@ export default function FinancialSummaryTable({ summary }: FinancialSummaryTable
             <TableCell className={`text-right font-bold ${item.balance <= 0 ? 'text-green-700' : 'text-orange-600'}`}>
                 {formatCurrency(item.balance)}
             </TableCell>
-            <TableCell className="text-right text-red-600">{formatCurrency(item.totalPropertyExpenses)}</TableCell>
-            <TableCell className="text-right text-red-600">{formatCurrency(item.totalBookingExpenses)}</TableCell>
+            {currency === 'ARS' && <TableCell className="text-right text-red-600">{formatCurrency(item.totalPropertyExpenses)}</TableCell>}
+            {currency === 'ARS' && <TableCell className="text-right text-red-600">{formatCurrency(item.totalBookingExpenses)}</TableCell>}
             <TableCell className={`text-right font-bold ${item.netResult >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                 {formatCurrency(item.netResult)}
             </TableCell>
@@ -74,8 +89,8 @@ export default function FinancialSummaryTable({ summary }: FinancialSummaryTable
            <TableCell className={`text-right font-bold ${totalBalance <= 0 ? 'text-green-700' : 'text-orange-600'}`}>
                 {formatCurrency(totalBalance)}
             </TableCell>
-          <TableCell className="text-right text-red-600">{formatCurrency(totalPropertyExpenses)}</TableCell>
-          <TableCell className="text-right text-red-600">{formatCurrency(totalBookingExpenses)}</TableCell>
+          {currency === 'ARS' && <TableCell className="text-right text-red-600">{formatCurrency(totalPropertyExpenses)}</TableCell>}
+          {currency === 'ARS' && <TableCell className="text-right text-red-600">{formatCurrency(totalBookingExpenses)}</TableCell>}
           <TableCell className={`text-right font-bold ${totalNetResult >= 0 ? 'text-green-700' : 'text-red-700'}`}>
             {formatCurrency(totalNetResult)}
             </TableCell>

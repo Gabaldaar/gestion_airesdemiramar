@@ -11,9 +11,10 @@ import {
 
 interface FinancialSummaryChartProps {
   summary: FinancialSummary[];
+  currency: 'ARS' | 'USD';
 }
 
-export default function FinancialSummaryChart({ summary }: FinancialSummaryChartProps) {
+export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
   const chartData = summary.map(item => ({
     name: item.propertyName,
     'Resultado Neto': item.netResult,
@@ -25,7 +26,7 @@ export default function FinancialSummaryChart({ summary }: FinancialSummaryChart
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'ARS',
+      currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);

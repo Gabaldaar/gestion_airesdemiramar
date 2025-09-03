@@ -1,5 +1,4 @@
 
-
 import {
   Card,
   CardContent,
@@ -9,23 +8,27 @@ import {
 import { DollarSign, Building, Users, TrendingUp } from "lucide-react"
 
 interface DashboardStatsProps {
-  totalIncome: number;
-  totalNetResult: number;
+  totalIncomeArs: number;
+  totalNetResultArs: number;
+  totalIncomeUsd: number;
+  totalNetResultUsd: number;
   totalProperties: number;
   totalTenants: number;
 }
 
 export default function DashboardStats({
-  totalIncome,
-  totalNetResult,
+  totalIncomeArs,
+  totalNetResultArs,
+  totalIncomeUsd,
+  totalNetResultUsd,
   totalProperties,
   totalTenants,
 }: DashboardStatsProps) {
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'ARS',
+      currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -41,7 +44,8 @@ export default function DashboardStats({
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(totalIncome)}</div>
+          <div className="text-2xl font-bold">{formatCurrency(totalIncomeArs, 'ARS')}</div>
+          <div className="text-lg font-bold">{formatCurrency(totalIncomeUsd, 'USD')}</div>
           <p className="text-xs text-muted-foreground">
             Suma de todas las reservas
           </p>
@@ -55,7 +59,8 @@ export default function DashboardStats({
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className={`text-2xl font-bold ${totalNetResult >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalNetResult)}</div>
+          <div className={`text-2xl font-bold ${totalNetResultArs >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalNetResultArs, 'ARS')}</div>
+          <div className={`text-lg font-bold ${totalNetResultUsd >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalNetResultUsd, 'USD')}</div>
            <p className="text-xs text-muted-foreground">
             Ingresos menos gastos
           </p>
