@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // This rule allows anyone with your project's credentials to read and write
+    // to your database. This is good for getting started, but it's important
+    // to secure your database for production apps.
+    // Learn more about security rules at: https://firebase.google.com/docs/firestore/security/get-started
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
