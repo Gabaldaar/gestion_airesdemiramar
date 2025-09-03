@@ -1,5 +1,4 @@
 
-
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import {
@@ -20,8 +19,6 @@ import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
-import { NotesDialog } from '@/components/notes-dialog';
-import { updateProperty } from '@/lib/actions';
 import { PropertyNotesForm } from '@/components/property-notes-form';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
