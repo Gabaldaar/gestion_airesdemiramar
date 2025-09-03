@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,15 +49,19 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   const [state, formAction] = useActionState(addBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-   const [date, setDate] = useState<DateRange | undefined>(undefined);
-   const [conflict, setConflict] = useState<Booking | null>(null);
+  const [date, setDate] = useState<DateRange | undefined>(undefined);
+  const [conflict, setConflict] = useState<Booking | null>(null);
+
+  const resetForm = () => {
+    formRef.current?.reset();
+    setDate(undefined);
+    setConflict(null);
+  };
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
-      formRef.current?.reset();
-      setDate(undefined);
-      setConflict(null);
+      resetForm();
     }
   }, [state]);
 
@@ -73,7 +78,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button onClick={() => { setIsOpen(true); resetForm(); }}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Nueva Reserva
         </Button>
@@ -86,7 +91,6 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} ref={formRef}>
-            <input type="hidden" name="propertyId" value={propertyId} />
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="tenantId" className="text-right">
@@ -151,14 +155,16 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 </div>
 
                 {conflict && (
-                    <div className="col-span-4">
-                         <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
-                            <AlertDescription>
-                                El rango seleccionado se solapa con otra reserva.
-                            </AlertDescription>
-                        </Alert>
+                    <div className="col-span-4 grid grid-cols-4 items-center gap-4">
+                        <div className="col-start-2 col-span-3">
+                            <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
+                                <AlertDescription>
+                                    El rango seleccionado se solapa con otra reserva.
+                                </AlertDescription>
+                            </Alert>
+                        </div>
                     </div>
                 )}
 
@@ -188,10 +194,13 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                     </Label>
                     <Textarea id="notes" name="notes" className="col-span-3" />
                 </div>
-
+                <input type="hidden" name="propertyId" value={propertyId} />
             </div>
             <DialogFooter>
-                <Button type="submit">Crear Reserva</Button>
+                <DialogClose asChild>
+                    <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
+                </DialogClose>
+                <Button type="submit" disabled={!date?.from || !date?.to}>Crear Reserva</Button>
             </DialogFooter>
         </form>
          {state.message && !state.success && (

@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,8 +51,13 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
       from: new Date(booking.startDate),
       to: new Date(booking.endDate)
   });
-   const [conflict, setConflict] = useState<Booking | null>(null);
+  const [conflict, setConflict] = useState<Booking | null>(null);
   const formId = `booking-edit-form-${booking.id}`;
+
+  const resetForm = () => {
+    setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
+    setConflict(null);
+  };
 
   useEffect(() => {
     if (state.success) {
@@ -72,7 +78,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
 
   return (
     <>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; setIsOpen(open)}}>
         <DialogTrigger asChild>
             <Button variant="ghost" size="icon">
             <Pencil className="h-4 w-4" />
@@ -169,14 +175,16 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                     </div>
 
                     {conflict && (
-                        <div className="col-span-4">
-                            <Alert variant="destructive">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
-                                <AlertDescription>
-                                    El rango seleccionado se solapa con otra reserva.
-                                </AlertDescription>
-                            </Alert>
+                         <div className="col-span-4 grid grid-cols-4 items-center gap-4">
+                            <div className="col-start-2 col-span-3">
+                                <Alert variant="destructive">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
+                                    <AlertDescription>
+                                        El rango seleccionado se solapa con otra reserva.
+                                    </AlertDescription>
+                                </Alert>
+                            </div>
                         </div>
                     )}
 
@@ -210,7 +218,10 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                 </div>
             </form>
              <DialogFooter>
-                <Button type="submit" form={formId}>Guardar Cambios</Button>
+                <DialogClose asChild>
+                    <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
+                </DialogClose>
+                <Button type="submit" form={formId} disabled={!date?.from || !date?.to}>Guardar Cambios</Button>
             </DialogFooter>
             {state.message && !state.success && (
                 <p className="text-red-500 text-sm mt-2">{state.message}</p>
