@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import { Waves, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,44 +14,22 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { setAuthCookie } from "@/lib/auth";
-import { useRouter } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { loginAction } from "@/lib/actions";
+
+function LoginButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? 'Ingresando...' : <> <LogIn className="mr-2" /> Ingresar </>}
+    </Button>
+  );
+}
 
 export default function LoginPage() {
-  const { toast } = useToast();
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-        const result = await setAuthCookie(password);
-        if (result.success) {
-            // This is the key change. router.refresh() re-fetches server components,
-            // which will cause RootLayout to re-render and see the new auth state.
-            router.refresh();
-        } else {
-            toast({
-                title: "Error de Autenticación",
-                description: "La contraseña es incorrecta.",
-                variant: "destructive",
-            });
-        }
-    } catch (error) {
-        console.error(error);
-        toast({
-            title: "Error",
-            description: "Ocurrió un problema al intentar iniciar sesión.",
-            variant: "destructive",
-        });
-    } finally {
-        setIsLoading(false);
-    }
-  };
+  const [state, formAction] = useFormState(loginAction, undefined);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -67,21 +45,24 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={formAction} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
                 required
-                disabled={isLoading}
               />
             </div>
-             <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Ingresando...' : <> <LogIn className="mr-2" /> Ingresar </>}
-            </Button>
+            {state?.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error de Autenticación</AlertTitle>
+                <AlertDescription>{state.error}</AlertDescription>
+              </Alert>
+            )}
+            <LoginButton />
           </form>
         </CardContent>
         <CardFooter>
