@@ -17,7 +17,6 @@ import { Label } from '@/components/ui/label';
 import { updateTenant } from '@/lib/actions';
 import { Tenant } from '@/lib/data';
 import { Pencil } from 'lucide-react';
-import { Textarea } from './ui/textarea';
 import { NotesDialog } from './notes-dialog';
 
 const initialState = {
@@ -54,8 +53,7 @@ export function TenantEditForm({ tenant }: { tenant: Tenant }) {
           </DialogHeader>
           <form id={formId} action={formAction}>
               <input type="hidden" name="id" value={tenant.id} />
-              {/* This hidden input for notes will be populated by the textarea in NotesDialog */}
-              <input type="hidden" name="notes" defaultValue={tenant.notes || ''} />
+              {/* NOTE: The "notes" field is now managed exclusively by the NotesDialog's Textarea */}
               <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="name" className="text-right">
