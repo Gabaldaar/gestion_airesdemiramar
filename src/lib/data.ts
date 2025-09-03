@@ -1,9 +1,10 @@
 
+
 import type { Property, Booking, PropertyExpense, Pricing, Payment, RentalExpense, Tenant } from './types';
 
 // --- Simulación de Base de Datos en Memoria ---
 
-const properties: Property[] = [
+let properties: Property[] = [
   {
     id: 1,
     name: 'Depto. Centauro',
@@ -34,20 +35,18 @@ const properties: Property[] = [
   },
 ];
 
-const tenants: Tenant[] = [
+let tenants: Tenant[] = [
     { id: 1, name: 'Juan Pérez', email: 'juan.perez@email.com', phone: '+54 223 555-0101', address: 'Calle Falsa 123', city: 'Mar del Plata', province: 'Buenos Aires', country: 'Argentina' },
     { id: 2, name: 'Ana García', email: 'ana.garcia@email.com', phone: '+54 11 555-0102', address: 'Av. Siempre Viva 742', city: 'CABA', province: 'CABA', country: 'Argentina' },
     { id: 3, name: 'Carlos López', email: 'carlos.lopez@email.com', phone: '+54 351 555-0103', address: 'El Jacarandá 456', city: 'Córdoba', province: 'Córdoba', country: 'Argentina' },
     { id: 4, name: 'Maria Fernandez', email: 'maria.fernandez@email.com', phone: '+54 261 555-0104', address: 'San Martín 876', city: 'Mendoza', province: 'Mendoza', country: 'Argentina' },
 ];
 
-const bookings: Booking[] = [
+let bookings: Booking[] = [
   {
     id: 1,
     propertyId: 1,
     tenantId: 1,
-    tenantName: 'Juan Pérez',
-    tenantContact: 'juan.perez@email.com',
     checkIn: '2024-07-20T14:00:00.000Z',
     checkOut: '2024-07-27T10:00:00.000Z',
     amountUSD: 700,
@@ -65,8 +64,6 @@ const bookings: Booking[] = [
     id: 2,
     propertyId: 2,
     tenantId: 2,
-    tenantName: 'Ana García',
-    tenantContact: 'ana.garcia@email.com',
     checkIn: '2024-08-01T14:00:00.000Z',
     checkOut: '2024-08-15T10:00:00.000Z',
     amountUSD: 2100,
@@ -81,8 +78,6 @@ const bookings: Booking[] = [
     id: 3,
     propertyId: 1,
     tenantId: 3,
-    tenantName: 'Carlos López',
-    tenantContact: 'carlos.lopez@email.com',
     checkIn: '2024-08-05T14:00:00.000Z',
     checkOut: '2024-08-12T10:00:00.000Z',
     amountUSD: 800,
@@ -97,8 +92,6 @@ const bookings: Booking[] = [
     id: 4,
     propertyId: 3,
     tenantId: 4,
-    tenantName: 'Maria Fernandez',
-    tenantContact: 'maria.fernandez@email.com',
     checkIn: '2024-07-22T14:00:00.000Z',
     checkOut: '2024-07-29T10:00:00.000Z',
     amountUSD: 1200,
@@ -115,8 +108,6 @@ const bookings: Booking[] = [
     id: 5,
     propertyId: 4,
     tenantId: 1,
-    tenantName: 'Juan Pérez',
-    tenantContact: 'juan.perez@email.com',
     checkIn: '2025-01-10T14:00:00.000Z',
     checkOut: '2025-01-20T10:00:00.000Z',
     amountUSD: 2800,
@@ -125,16 +116,23 @@ const bookings: Booking[] = [
     payments: [],
     rentalExpenses: [],
   },
-];
+].map(b => {
+    const tenant = tenants.find(t => t.id === b.tenantId);
+    return {
+        ...b,
+        tenantName: tenant?.name || 'Inquilino no encontrado',
+        tenantContact: tenant?.email || 'N/A',
+    }
+});
 
-const propertyExpenses: PropertyExpense[] = [
+let propertyExpenses: PropertyExpense[] = [
     { id: 1, propertyId: 1, date: '2024-07-05T10:00:00.000Z', description: 'Impuesto municipal', amount: 100 },
     { id: 2, propertyId: 1, date: '2024-07-15T10:00:00.000Z', description: 'Reparación de cañería', amount: 250 },
     { id: 3, propertyId: 2, date: '2024-07-10T10:00:00.000Z', description: 'Servicio de jardinería', amount: 80 },
     { id: 4, propertyId: 3, date: '2024-07-01T10:00:00.000Z', description: 'Pago de expensas', amount: 150 },
 ];
 
-const pricing: Pricing[] = [
+let pricing: Pricing[] = [
     {
         propertyId: 1,
         defaultNightlyRate: 100,
@@ -169,18 +167,7 @@ export const getPropertyById = (id: number) => properties.find(p => p.id === id)
 export const getTenants = () => tenants;
 export const getTenantById = (id: number) => tenants.find(t => t.id === id);
 
-export const getBookings = () => {
-    return bookings.map(booking => {
-        const tenant = getTenantById(booking.tenantId);
-        const property = getPropertyById(booking.propertyId);
-        return {
-            ...booking,
-            tenantName: tenant?.name || 'Inquilino no encontrado',
-            tenantContact: tenant?.email || 'N/A',
-            propertyName: property?.name || 'Propiedad no encontrada',
-        }
-    })
-};
+export const getBookings = () => bookings;
 export const getBookingsByPropertyId = (propertyId: number) => getBookings().filter(b => b.propertyId === propertyId);
 export const getBookingById = (id: number) => getBookings().find(b => b.id === id);
 

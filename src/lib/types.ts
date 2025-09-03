@@ -1,4 +1,5 @@
 
+
 export interface Property {
   id: number;
   name: string;
@@ -11,11 +12,11 @@ export interface Tenant {
   id: number;
   name: string;
   email: string;
-  phone: string;
-  address: string;
-  city: string;
-  province: string;
-  country: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  country?: string;
 }
 
 export interface Booking {
@@ -23,7 +24,7 @@ export interface Booking {
   propertyId: number;
   propertyName?: string;
   tenantId: number;
-  tenantName: string; // Se mantiene por simplicidad en la UI, pero el ID es la referencia real
+  tenantName: string;
   tenantContact: string;
   checkIn: string;
   checkOut: string;
