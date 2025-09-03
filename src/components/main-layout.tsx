@@ -10,6 +10,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useState } from 'react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: Home },
@@ -20,7 +21,7 @@ const navItems = [
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
 
-function SidebarNav() {
+function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -35,6 +36,7 @@ function SidebarNav() {
               'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
               isActive && 'bg-muted text-primary'
             )}
+            onClick={onLinkClick} // Close sheet on click
           >
             <Icon className="h-4 w-4" />
             {label}
@@ -46,6 +48,8 @@ function SidebarNav() {
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -63,7 +67,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </div>
       <div className="flex flex-col">
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 md:hidden">
-           <Sheet>
+           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="outline"
@@ -81,7 +85,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                   <span className="">Aires de Miramar</span>
                 </Link>
               </div>
-              <SidebarNav />
+              <SidebarNav onLinkClick={() => setIsSheetOpen(false)} />
             </SheetContent>
           </Sheet>
           <div className='ml-auto'>
