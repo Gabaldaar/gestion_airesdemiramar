@@ -34,18 +34,23 @@ export function BookingPaymentsManager({ bookingId, bookingCurrency }: { booking
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchPayments = useCallback(async () => {
+    if (!isOpen) return;
     setIsLoading(true);
-    const fetchedPayments = await getPaymentsByBookingId(bookingId);
-    setPayments(fetchedPayments);
-    setIsLoading(false);
-  }, [bookingId]);
+    try {
+      const fetchedPayments = await getPaymentsByBookingId(bookingId);
+      setPayments(fetchedPayments);
+    } catch (error) {
+      console.error("Failed to fetch payments:", error);
+      setPayments([]); // Clear payments on error
+    } finally {
+      setIsLoading(false);
+    }
+  }, [bookingId, isOpen]);
 
 
   useEffect(() => {
-    if (isOpen) {
-      fetchPayments();
-    }
-  }, [isOpen, fetchPayments]);
+    fetchPayments();
+  }, [fetchPayments]);
 
   const handlePaymentAction = useCallback(() => {
     fetchPayments();
@@ -87,36 +92,38 @@ export function BookingPaymentsManager({ bookingId, bookingCurrency }: { booking
         ) : payments.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">No hay pagos para mostrar.</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead className="text-right">Monto</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell>{formatDate(payment.date)}</TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(payment.amount, payment.currency)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
-                      <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handlePaymentAction} />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-             <TableFooter>
+          <div className="overflow-y-auto max-h-[60vh]">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                    <TableCell className="font-bold text-right">Total</TableCell>
-                    <TableCell className="text-right font-bold">{formatCurrency(totalAmount, bookingCurrency)}</TableCell>
-                    <TableCell></TableCell>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead className="text-right">Monto</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-            </TableFooter>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {payments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>{formatDate(payment.date)}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(payment.amount, payment.currency)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
+                        <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handlePaymentAction} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                  <TableRow>
+                      <TableCell className="font-bold text-right">Total</TableCell>
+                      <TableCell className="text-right font-bold">{formatCurrency(totalAmount, bookingCurrency)}</TableCell>
+                      <TableCell></TableCell>
+                  </TableRow>
+              </TableFooter>
+            </Table>
+          </div>
         )}
       </DialogContent>
     </Dialog>
