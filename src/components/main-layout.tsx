@@ -25,7 +25,7 @@ function SidebarNav() {
   return (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
       {navItems.map(({ href, label, icon: Icon }) => {
-        const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
+        const isActive = pathname === href;
         return (
           <Link
             key={href}
