@@ -1,4 +1,5 @@
 
+
 export type Property = {
   id: number;
   name: string;
@@ -28,6 +29,11 @@ export type Booking = {
   currency: 'USD' | 'ARS';
   exchangeRate?: number; // Para convertir de USD a ARS
 };
+
+export type BookingWithTenantAndProperty = Booking & {
+    tenant?: Tenant;
+    property?: Property;
+}
 
 export type Payment = {
   id: number;
@@ -69,7 +75,8 @@ let tenants: Tenant[] = [
 
 let bookings: Booking[] = [
     { id: 1, propertyId: 1, tenantId: 2, startDate: '2024-07-15T00:00:00.000Z', endDate: '2024-07-30T00:00:00.000Z', amount: 250000, currency: 'ARS' },
-    { id: 2, propertyId: 3, tenantId: 1, startDate: '2024-08-01T00:00:00.000Z', endDate: '2024-08-15T00:00:00.000Z', amount: 800, currency: 'USD' }
+    { id: 2, propertyId: 3, tenantId: 1, startDate: '2024-08-01T00:00:00.000Z', endDate: '2024-08-15T00:00:00.000Z', amount: 800, currency: 'USD' },
+    { id: 3, propertyId: 1, tenantId: 3, startDate: '2024-09-01T00:00:00.000Z', endDate: '2024-09-10T00:00:00.000Z', amount: 350000, currency: 'ARS' },
 ];
 
 const payments: Payment[] = [];
@@ -108,8 +115,20 @@ export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null
 }
 
 
-export async function getBookings(): Promise<Booking[]> {
-    return bookings;
+export async function getBookings(): Promise<BookingWithTenantAndProperty[]> {
+    return bookings.map(booking => {
+        const tenant = tenants.find(t => t.id === booking.tenantId);
+        const property = properties.find(p => p.id === booking.propertyId);
+        return { ...booking, tenant, property };
+    });
+}
+
+export async function getBookingsByPropertyId(propertyId: number): Promise<BookingWithTenantAndProperty[]> {
+    const propertyBookings = bookings.filter(b => b.propertyId === propertyId);
+    return propertyBookings.map(booking => {
+        const tenant = tenants.find(t => t.id === booking.tenantId);
+        return { ...booking, tenant };
+    });
 }
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {

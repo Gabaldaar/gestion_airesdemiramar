@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import {
@@ -15,15 +16,17 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
-import { getPropertyById, getTenants } from "@/lib/data";
+import { getPropertyById, getTenants, getBookingsByPropertyId } from "@/lib/data";
 import { PlusCircle } from 'lucide-react';
 import { BookingAddForm } from '@/components/booking-add-form';
+import BookingsList from '@/components/bookings-list';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   const propertyId = parseInt(params.id, 10);
-  const [property, tenants] = await Promise.all([
+  const [property, tenants, bookings] = await Promise.all([
     getPropertyById(propertyId),
-    getTenants()
+    getTenants(),
+    getBookingsByPropertyId(propertyId),
   ]);
 
   if (!property) {
@@ -83,7 +86,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p>Próximamente: Listado de reservas con detalles del inquilino y pagos.</p>
+              <BookingsList bookings={bookings} />
             </CardContent>
           </Card>
         </TabsContent>

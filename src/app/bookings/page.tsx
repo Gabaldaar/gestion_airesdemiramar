@@ -1,4 +1,5 @@
 
+
 import {
   Card,
   CardContent,
@@ -6,8 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getBookings } from "@/lib/data";
+import BookingsList from "@/components/bookings-list";
 
 export default async function BookingsPage() {
+  const bookings = await getBookings();
+
   return (
     <Card>
       <CardHeader>
@@ -17,7 +22,7 @@ export default async function BookingsPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p>Próximamente: listado de reservas.</p>
+        <BookingsList bookings={bookings} showProperty={true} />
       </CardContent>
     </Card>
   );
