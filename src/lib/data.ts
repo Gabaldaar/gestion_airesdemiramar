@@ -147,6 +147,21 @@ export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking>
     return newBooking;
 }
 
+export async function updateBooking(updatedBooking: Booking): Promise<Booking | null> {
+    const bookingIndex = bookings.findIndex(b => b.id === updatedBooking.id);
+    if (bookingIndex === -1) {
+        return null;
+    }
+    bookings[bookingIndex] = updatedBooking;
+    return updatedBooking;
+}
+
+export async function deleteBooking(id: number): Promise<boolean> {
+    const initialLength = bookings.length;
+    bookings = bookings.filter(b => b.id !== id);
+    return bookings.length < initialLength;
+}
+
 export async function getPropertyExpensesByPropertyId(propertyId: number): Promise<PropertyExpense[]> {
     return propertyExpenses
         .filter(e => e.propertyId === propertyId)

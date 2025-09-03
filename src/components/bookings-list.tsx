@@ -1,4 +1,5 @@
 
+
 import {
   Table,
   TableBody,
@@ -8,16 +9,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { BookingWithTenantAndProperty } from "@/lib/data";
+import { BookingWithTenantAndProperty, Property, Tenant } from "@/lib/data";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { BookingEditForm } from "./booking-edit-form";
+import { BookingDeleteForm } from "./booking-delete-form";
 
 interface BookingsListProps {
   bookings: BookingWithTenantAndProperty[];
+  properties: Property[];
+  tenants: Tenant[];
   showProperty?: boolean;
 }
 
-export default function BookingsList({ bookings, showProperty = false }: BookingsListProps) {
+export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
   }
@@ -41,7 +46,8 @@ export default function BookingsList({ bookings, showProperty = false }: Booking
           <TableHead>Inquilino</TableHead>
           <TableHead>Check-in</TableHead>
           <TableHead>Check-out</TableHead>
-          <TableHead className="text-right">Monto</TableHead>
+          <TableHead>Monto</TableHead>
+          <TableHead className="text-right">Acciones</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -51,8 +57,14 @@ export default function BookingsList({ bookings, showProperty = false }: Booking
             <TableCell className="font-medium">{booking.tenant?.name || 'N/A'}</TableCell>
             <TableCell>{formatDate(booking.startDate)}</TableCell>
             <TableCell>{formatDate(booking.endDate)}</TableCell>
-            <TableCell className="text-right">
+            <TableCell>
                 <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
+            </TableCell>
+            <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                    <BookingEditForm booking={booking} tenants={tenants} properties={properties} />
+                    <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />
+                </div>
             </TableCell>
           </TableRow>
         ))}

@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 import { 
     addTenant as dbAddTenant, 
     updateTenant as dbUpdateTenant, 
-    addBooking as dbAddBooking, 
+    addBooking as dbAddBooking,
+    updateBooking as dbUpdateBooking,
+    deleteBooking as dbDeleteBooking,
     addPropertyExpense as dbAddPropertyExpense,
     updatePropertyExpense as dbUpdatePropertyExpense,
     deletePropertyExpense as dbDeletePropertyExpense
@@ -112,6 +114,58 @@ export async function addBooking(previousState: any, formData: FormData) {
         return { success: false, message: "Error al crear la reserva." };
     }
 }
+
+export async function updateBooking(previousState: any, formData: FormData) {
+    const id = parseInt(formData.get("id") as string, 10);
+    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+    const tenantId = parseInt(formData.get("tenantId") as string, 10);
+    const startDate = formData.get("startDate") as string;
+    const endDate = formData.get("endDate") as string;
+    const amount = parseFloat(formData.get("amount") as string);
+    const currency = formData.get("currency") as 'USD' | 'ARS';
+
+    if (!id || !propertyId || !tenantId || !startDate || !endDate || !amount || !currency) {
+        return { success: false, message: "Todos los campos son obligatorios." };
+    }
+
+    const updatedBooking = {
+        id,
+        propertyId,
+        tenantId,
+        startDate,
+        endDate,
+        amount,
+        currency,
+    };
+
+    try {
+        await dbUpdateBooking(updatedBooking);
+        revalidatePath(`/properties/${propertyId}`);
+        revalidatePath('/bookings');
+        return { success: true, message: "Reserva actualizada correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al actualizar la reserva." };
+    }
+}
+
+export async function deleteBooking(previousState: any, formData: FormData) {
+    const id = parseInt(formData.get("id") as string, 10);
+    const propertyId = parseInt(formData.get("propertyId") as string, 10);
+
+     if (!id || !propertyId) {
+        return { success: false, message: "ID de reserva o propiedad no válido." };
+    }
+
+    try {
+        await dbDeleteBooking(id);
+        revalidatePath(`/properties/${propertyId}`);
+        revalidatePath('/bookings');
+        return { success: true, message: "Reserva eliminada correctamente." };
+    } catch (error) {
+        return { success: false, message: "Error al eliminar la reserva." };
+    }
+}
+
 
 export async function addPropertyExpense(previousState: any, formData: FormData) {
     const propertyId = parseInt(formData.get("propertyId") as string, 10);

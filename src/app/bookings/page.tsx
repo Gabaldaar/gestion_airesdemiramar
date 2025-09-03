@@ -7,11 +7,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getBookings } from "@/lib/data";
+import { getBookings, getProperties, getTenants } from "@/lib/data";
 import BookingsList from "@/components/bookings-list";
 
 export default async function BookingsPage() {
-  const bookings = await getBookings();
+  const [bookings, properties, tenants] = await Promise.all([
+    getBookings(),
+    getProperties(),
+    getTenants(),
+  ]);
 
   return (
     <Card>
@@ -22,7 +26,7 @@ export default async function BookingsPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <BookingsList bookings={bookings} showProperty={true} />
+        <BookingsList bookings={bookings} properties={properties} tenants={tenants} showProperty={true} />
       </CardContent>
     </Card>
   );

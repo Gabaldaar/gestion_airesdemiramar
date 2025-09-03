@@ -15,7 +15,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId } from "@/lib/data";
+import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
@@ -23,8 +23,9 @@ import ExpensesList from '@/components/expenses-list';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   const propertyId = parseInt(params.id, 10);
-  const [property, tenants, bookings, expenses] = await Promise.all([
+  const [property, properties, tenants, bookings, expenses] = await Promise.all([
     getPropertyById(propertyId),
+    getProperties(),
     getTenants(),
     getBookingsByPropertyId(propertyId),
     getPropertyExpensesByPropertyId(propertyId),
@@ -84,7 +85,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <BookingsList bookings={bookings} />
+              <BookingsList bookings={bookings} properties={properties} tenants={tenants} />
             </CardContent>
           </Card>
         </TabsContent>
