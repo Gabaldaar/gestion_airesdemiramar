@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { Waves, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +30,7 @@ function LoginButton() {
 }
 
 export default function LoginPage() {
-  const [state, formAction] = useFormState(loginAction, undefined);
+  const [state, formAction] = useActionState(loginAction, undefined);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
