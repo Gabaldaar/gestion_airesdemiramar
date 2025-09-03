@@ -1,12 +1,10 @@
-// Import and configure dotenv at the very top.
-import * as dotenv from 'dotenv';
-dotenv.config();
-
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
+// These variables are populated by Next.js using the .env file
+// and the environment variables set in your hosting provider (e.g., Netlify).
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -17,17 +15,8 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Validate that all required environment variables are present
-const missingConfig = Object.entries(firebaseConfig)
-  .filter(([key, value]) => !value)
-  .map(([key]) => key);
-
-if (missingConfig.length > 0) {
-  throw new Error(`Missing Firebase config environment variables: ${missingConfig.join(", ")}. Please set them in your deployment environment.`);
-}
-
-
 // Initialize Firebase
+// We check if any apps are already initialized to prevent re-initialization errors.
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
