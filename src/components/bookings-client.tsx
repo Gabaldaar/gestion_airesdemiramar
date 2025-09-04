@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { BookingWithDetails, Property, Tenant } from '@/lib/data';
+import { BookingWithDetails, ContractStatus, Property, Tenant } from '@/lib/data';
 import BookingsList from '@/components/bookings-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from './ui/label';
 
 type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt';
+type ContractStatusFilter = 'all' | ContractStatus;
+
 
 interface BookingsClientProps {
   initialBookings: BookingWithDetails[];
@@ -23,6 +25,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
+  const [contractStatusFilter, setContractStatusFilter] = useState<ContractStatusFilter>('all');
   
   // Apply the initial tenant filter if it exists
   const bookingsForTenant = useMemo(() => {
@@ -44,6 +47,11 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
       // Property Filter
       if (propertyIdFilter !== 'all' && booking.propertyId !== propertyIdFilter) {
         return false;
+      }
+      
+      // Contract Status Filter
+      if (contractStatusFilter !== 'all' && (booking.contractStatus || 'not_sent') !== contractStatusFilter) {
+          return false;
       }
 
       // Date Range Filter
@@ -69,13 +77,14 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
       
       return true;
     });
-  }, [bookingsForTenant, fromDate, toDate, statusFilter, propertyIdFilter]);
+  }, [bookingsForTenant, fromDate, toDate, statusFilter, propertyIdFilter, contractStatusFilter]);
 
   const handleClearFilters = () => {
     setFromDate(undefined);
     setToDate(undefined);
     setStatusFilter('all');
     setPropertyIdFilter('all');
+    setContractStatusFilter('all');
   };
 
   return (
@@ -115,6 +124,21 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
                     <SelectItem value="upcoming">Próximas</SelectItem>
                     <SelectItem value="closed">Cerradas</SelectItem>
                     <SelectItem value="with-debt">Con Deuda</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+        <div className="grid gap-2">
+            <Label>Contrato</Label>
+            <Select value={contractStatusFilter} onValueChange={(value) => setContractStatusFilter(value as ContractStatusFilter)}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Contrato" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="not_sent">S/Enviar</SelectItem>
+                    <SelectItem value="sent">Enviado</SelectItem>
+                    <SelectItem value="signed">Firmado</SelectItem>
+                    <SelectItem value="not_required">N/A</SelectItem>
                 </SelectContent>
             </Select>
         </div>

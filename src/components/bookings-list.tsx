@@ -27,10 +27,10 @@ interface BookingsListProps {
 }
 
 const contractStatusMap: Record<ContractStatus, { text: string, className: string }> = {
-    not_sent: { text: 'Sin Enviar', className: 'bg-gray-500 hover:bg-gray-600' },
+    not_sent: { text: 'S/Enviar', className: 'bg-gray-500 hover:bg-gray-600' },
     sent: { text: 'Enviado', className: 'bg-blue-500 hover:bg-blue-600' },
     signed: { text: 'Firmado', className: 'bg-green-600 hover:bg-green-700' },
-    not_required: { text: 'No Requiere', className: 'bg-yellow-600 text-black hover:bg-yellow-700' }
+    not_required: { text: 'N/A', className: 'bg-yellow-600 text-black hover:bg-yellow-700' }
 };
 
 export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {

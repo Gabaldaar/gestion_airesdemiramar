@@ -214,10 +214,10 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="not_sent">Sin Enviar</SelectItem>
+                                <SelectItem value="not_sent">S/Enviar</SelectItem>
                                 <SelectItem value="sent">Enviado</SelectItem>
                                 <SelectItem value="signed">Firmado</SelectItem>
-                                <SelectItem value="not_required">No Requiere</SelectItem>
+                                <SelectItem value="not_required">N/A</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
