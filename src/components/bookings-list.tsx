@@ -51,7 +51,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
     }).format(amount);
   }
   
-  const getTenantNameColorClass = (booking: BookingWithDetails): string => {
+  const getBookingColorClass = (booking: BookingWithDetails): string => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -111,8 +111,8 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               const contractInfo = contractStatusMap[status];
               return (
               <TableRow key={booking.id}>
-                {showProperty && <TableCell>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className={cn("font-medium", getTenantNameColorClass(booking))}>
+                {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
+                <TableCell className="font-medium">
                     {booking.tenant?.email ? (
                         <a 
                             href={`mailto:${booking.tenant.email}?subject=${encodeURIComponent(`Tu reserva en Miramar - ${booking.property?.name} - Check-in ${format(new Date(booking.startDate), 'dd/MM/yyyy')}`)}`}
