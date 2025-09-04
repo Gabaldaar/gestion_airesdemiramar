@@ -26,11 +26,17 @@ export default function DashboardStats({
 }: DashboardStatsProps) {
 
   const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
-    const currencyCode = currency === 'ARS' ? 'ARS' : 'USD';
-    const locale = currency === 'ARS' ? 'es-AR' : 'en-US';
-    return new Intl.NumberFormat(locale, {
+    if (currency === 'USD') {
+        return `USD ${new Intl.NumberFormat('en-US', {
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(amount)}`;
+    }
+    // For ARS
+    return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: currencyCode,
+      currency: 'ARS',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
