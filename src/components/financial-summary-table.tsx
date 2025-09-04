@@ -59,8 +59,8 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
           <TableHead className="text-right">Ingresos</TableHead>
           <TableHead className="text-right">Pagos Recibidos</TableHead>
           <TableHead className="text-right">Saldo</TableHead>
-          {currency === 'ARS' && <TableHead className="text-right">Gastos (Propiedad)</TableHead>}
-          {currency === 'ARS' && <TableHead className="text-right">Gastos (Reservas)</TableHead>}
+          <TableHead className="text-right">Gastos (Propiedad)</TableHead>
+          <TableHead className="text-right">Gastos (Reservas)</TableHead>
           <TableHead className="text-right">Resultado Neto</TableHead>
         </TableRow>
       </TableHeader>
@@ -73,8 +73,8 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
             <TableCell className={`text-right font-bold ${item.balance <= 0 ? 'text-green-700' : 'text-orange-600'}`}>
                 {formatCurrency(item.balance)}
             </TableCell>
-            {currency === 'ARS' && <TableCell className="text-right text-red-600">{formatCurrency(item.totalPropertyExpenses)}</TableCell>}
-            {currency === 'ARS' && <TableCell className="text-right text-red-600">{formatCurrency(item.totalBookingExpenses)}</TableCell>}
+            <TableCell className="text-right text-red-600">{formatCurrency(item.totalPropertyExpenses)}</TableCell>
+            <TableCell className="text-right text-red-600">{formatCurrency(item.totalBookingExpenses)}</TableCell>
             <TableCell className={`text-right font-bold ${item.netResult >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                 {formatCurrency(item.netResult)}
             </TableCell>
@@ -89,8 +89,8 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
            <TableCell className={`text-right font-bold ${totalBalance <= 0 ? 'text-green-700' : 'text-orange-600'}`}>
                 {formatCurrency(totalBalance)}
             </TableCell>
-          {currency === 'ARS' && <TableCell className="text-right text-red-600">{formatCurrency(totalPropertyExpenses)}</TableCell>}
-          {currency === 'ARS' && <TableCell className="text-right text-red-600">{formatCurrency(totalBookingExpenses)}</TableCell>}
+          <TableCell className="text-right text-red-600">{formatCurrency(totalPropertyExpenses)}</TableCell>
+          <TableCell className="text-right text-red-600">{formatCurrency(totalBookingExpenses)}</TableCell>
           <TableCell className={`text-right font-bold ${totalNetResult >= 0 ? 'text-green-700' : 'text-red-700'}`}>
             {formatCurrency(totalNetResult)}
             </TableCell>
