@@ -182,7 +182,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="current">En Curso</SelectItem>
                       <SelectItem value="upcoming">Próximas</SelectItem>
-                      <SelectItem value="closed">Cerradas</SelectItem>
+                      <SelectItem value="closed">Cumplidas</SelectItem>
                       <SelectItem value="with-debt">Con Deuda</SelectItem>
                   </SelectContent>
               </Select>
