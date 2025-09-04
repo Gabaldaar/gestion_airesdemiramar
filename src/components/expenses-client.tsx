@@ -31,7 +31,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
       const expenseDate = new Date(expense.date);
 
       // Property Filter
-      if (propertyIdFilter !== 'all' && expense.propertyId !== propertyIdFilter) {
+      if (propertyIdFilter !== 'all' && ('propertyId' in expense && expense.propertyId !== propertyIdFilter)) {
         return false;
       }
       
@@ -41,12 +41,13 @@ export default function ExpensesClient({ initialExpenses, properties, categories
       }
 
       // Category Filter
-      if (categoryIdFilter !== 'all' && (expense.categoryName || 'sin-categoria') !== categories.find(c => c.id === categoryIdFilter)?.name) {
-          if(categoryIdFilter === 'none' && expense.categoryName) return false;
-          if(categoryIdFilter !== 'none' && categoryIdFilter !== 'all') {
-             const category = categories.find(c => c.id === categoryIdFilter);
-             if(expense.categoryName !== category?.name) return false;
-          }
+      if (categoryIdFilter !== 'all') {
+        if (categoryIdFilter === 'none' && expense.categoryId) {
+          return false;
+        }
+        if (categoryIdFilter !== 'none' && expense.categoryId !== categoryIdFilter) {
+          return false;
+        }
       }
 
 
@@ -64,7 +65,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
       
       return true;
     });
-  }, [initialExpenses, fromDate, toDate, propertyIdFilter, typeFilter, categoryIdFilter, categories]);
+  }, [initialExpenses, fromDate, toDate, propertyIdFilter, typeFilter, categoryIdFilter]);
 
   const handleClearFilters = () => {
     setFromDate(undefined);
@@ -132,7 +133,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
              <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
         </div>
       </div>
-      <ExpensesUnifiedList expenses={filteredExpenses} />
+      <ExpensesUnifiedList expenses={filteredExpenses} categories={categories} />
     </div>
   );
 }

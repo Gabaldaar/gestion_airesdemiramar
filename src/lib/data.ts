@@ -118,19 +118,15 @@ export type BookingExpense = {
     categoryId?: string;
 }
 
-export type UnifiedExpense = {
-    id: string;
+// Extend unified expense to include all original fields for editing
+export type UnifiedExpense = (PropertyExpense | BookingExpense) & {
     type: 'Propiedad' | 'Reserva';
-    date: string;
-    description: string;
     amountARS: number;
     amountUSD: number;
-    propertyId: string;
     propertyName: string;
     tenantName?: string;
-    bookingId?: string;
     categoryName?: string;
-}
+};
 
 
 export type FinancialSummary = {
@@ -580,13 +576,10 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
 
     propertyExpenses.forEach(expense => {
         unifiedList.push({
-            id: expense.id,
+            ...expense,
             type: 'Propiedad',
-            date: expense.date,
-            description: expense.description,
             amountARS: expense.amount,
             amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate)),
-            propertyId: expense.propertyId,
             propertyName: propertiesMap.get(expense.propertyId) || 'N/A',
             categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
         });
@@ -596,16 +589,12 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
         const booking = bookingsMap.get(expense.bookingId);
         if (booking) {
             unifiedList.push({
-                id: expense.id,
+                ...expense,
                 type: 'Reserva',
-                date: expense.date,
-                description: expense.description,
                 amountARS: expense.amount,
                 amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate)),
-                propertyId: booking.propertyId,
                 propertyName: propertiesMap.get(booking.propertyId) || 'N/A',
                 tenantName: tenantsMap.get(booking.tenantId) || 'N/A',
-                bookingId: expense.bookingId,
                 categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
             });
         }

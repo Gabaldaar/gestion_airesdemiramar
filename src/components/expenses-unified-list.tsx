@@ -10,15 +10,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UnifiedExpense } from "@/lib/data";
+import { UnifiedExpense, ExpenseCategory, PropertyExpense, BookingExpense } from "@/lib/data";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ExpenseEditForm } from "./expense-edit-form";
+import { BookingExpenseEditForm } from "./booking-expense-edit-form";
 
 interface ExpensesUnifiedListProps {
   expenses: UnifiedExpense[];
+  categories: ExpenseCategory[];
 }
 
-export default function ExpensesUnifiedList({ expenses }: ExpensesUnifiedListProps) {
+export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUnifiedListProps) {
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
@@ -56,6 +59,7 @@ export default function ExpensesUnifiedList({ expenses }: ExpensesUnifiedListPro
           <TableHead>Inquilino</TableHead>
           <TableHead className="text-right">Monto (ARS)</TableHead>
           <TableHead className="text-right">Monto (USD)</TableHead>
+          <TableHead className="text-right">Acciones</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -73,6 +77,15 @@ export default function ExpensesUnifiedList({ expenses }: ExpensesUnifiedListPro
             <TableCell>{expense.tenantName || 'N/A'}</TableCell>
             <TableCell className="text-right">{formatCurrency(expense.amountARS, 'ARS')}</TableCell>
             <TableCell className="text-right">{formatCurrency(expense.amountUSD, 'USD')}</TableCell>
+            <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                    {expense.type === 'Propiedad' ? (
+                        <ExpenseEditForm expense={expense as PropertyExpense} categories={categories} />
+                    ) : (
+                        <BookingExpenseEditForm expense={expense as BookingExpense} categories={categories} />
+                    )}
+                </div>
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -81,6 +94,7 @@ export default function ExpensesUnifiedList({ expenses }: ExpensesUnifiedListPro
           <TableCell colSpan={6} className="text-right">Total</TableCell>
           <TableCell className="text-right">{formatCurrency(totalAmountARS, 'ARS')}</TableCell>
           <TableCell className="text-right">{formatCurrency(totalAmountUSD, 'USD')}</TableCell>
+          <TableCell></TableCell>
         </TableRow>
       </TableFooter>
     </Table>
