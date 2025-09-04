@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { BookingWithDetails, Property, Tenant } from "@/lib/data";
+import { BookingWithDetails, Property, Tenant, ContractStatus } from "@/lib/data";
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BookingEditForm } from "./booking-edit-form";
@@ -25,6 +25,13 @@ interface BookingsListProps {
   tenants: Tenant[];
   showProperty?: boolean;
 }
+
+const contractStatusMap: Record<ContractStatus, { text: string, className: string }> = {
+    not_sent: { text: 'Sin Enviar', className: 'bg-gray-500 hover:bg-gray-600' },
+    sent: { text: 'Enviado', className: 'bg-blue-500 hover:bg-blue-600' },
+    signed: { text: 'Firmado', className: 'bg-green-600 hover:bg-green-700' },
+    not_required: { text: 'No Requiere', className: 'bg-yellow-600 text-black hover:bg-yellow-700' }
+};
 
 export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
   if (bookings.length === 0) {
@@ -92,13 +99,17 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableHead>Inquilino</TableHead>
               <TableHead>Check-in</TableHead>
               <TableHead>Check-out</TableHead>
+              <TableHead>Contrato</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Saldo</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bookings.map((booking) => (
+            {bookings.map((booking) => {
+              const status = booking.contractStatus || 'not_sent';
+              const contractInfo = contractStatusMap[status];
+              return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell>{booking.property?.name || 'N/A'}</TableCell>}
                 <TableCell className={cn("font-medium", getTenantNameColorClass(booking))}>
@@ -106,6 +117,11 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 </TableCell>
                 <TableCell>{formatDate(booking.startDate)}</TableCell>
                 <TableCell>{formatDate(booking.endDate)}</TableCell>
+                <TableCell>
+                    <Badge className={contractInfo.className}>
+                        {contractInfo.text}
+                    </Badge>
+                </TableCell>
                 <TableCell>
                     <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
                 </TableCell>
@@ -115,14 +131,14 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                         {booking.notes && <NotesViewer notes={booking.notes} title={`Notas sobre la reserva`} />}
-                        <BookingPaymentsManager bookingId={booking.id} bookingCurrency={booking.currency} />
+                        <BookingPaymentsManager bookingId={booking.id} />
                         <BookingExpensesManager bookingId={booking.id} />
                         <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
                         <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />
                     </div>
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
           </TableBody>
         </Table>
     </div>

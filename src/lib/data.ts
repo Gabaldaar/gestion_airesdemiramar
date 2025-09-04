@@ -51,6 +51,8 @@ export type Tenant = {
   notes?: string;
 };
 
+export type ContractStatus = 'not_sent' | 'sent' | 'signed' | 'not_required';
+
 export type Booking = {
   id: string;
   propertyId: string;
@@ -61,6 +63,7 @@ export type Booking = {
   currency: 'USD' | 'ARS';
   exchangeRate?: number;
   notes?: string;
+  contractStatus?: ContractStatus;
 };
 
 export type BookingWithTenantAndProperty = Booking & {

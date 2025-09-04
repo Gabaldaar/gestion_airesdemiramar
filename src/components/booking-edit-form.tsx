@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { updateBooking } from '@/lib/actions';
-import { Booking, Tenant, Property } from '@/lib/data';
+import { Booking, Tenant, Property, ContractStatus } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import { format } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -202,6 +202,22 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                             <SelectContent>
                                 <SelectItem value="ARS">ARS</SelectItem>
                                 <SelectItem value="USD">USD</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="contractStatus" className="text-right">
+                        Contrato
+                        </Label>
+                        <Select name="contractStatus" defaultValue={booking.contractStatus || 'not_sent'} required>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="not_sent">Sin Enviar</SelectItem>
+                                <SelectItem value="sent">Enviado</SelectItem>
+                                <SelectItem value="signed">Firmado</SelectItem>
+                                <SelectItem value="not_required">No Requiere</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

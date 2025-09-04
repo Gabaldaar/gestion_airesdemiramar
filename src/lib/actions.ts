@@ -25,7 +25,8 @@ import {
     PropertyExpense,
     BookingExpense,
     Payment,
-    Property
+    Property,
+    ContractStatus
 } from "./data";
 
 
@@ -163,6 +164,7 @@ export async function addBooking(previousState: any, formData: FormData) {
         amount,
         currency,
         notes,
+        contractStatus: 'not_sent' as ContractStatus,
     };
 
     try {
@@ -186,6 +188,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
     const amount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const notes = formData.get("notes") as string;
+    const contractStatus = formData.get("contractStatus") as ContractStatus;
 
     if (!id || !propertyId || !tenantId || !startDate || !endDate || !amount || !currency) {
         return { success: false, message: "Todos los campos son obligatorios." };
@@ -200,6 +203,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
         amount,
         currency,
         notes,
+        contractStatus,
     };
 
     try {
