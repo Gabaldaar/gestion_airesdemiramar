@@ -41,7 +41,13 @@ export default function TenantsList({ tenants }: TenantsListProps) {
               <TableRow key={tenant.id}>
                 <TableCell className="font-medium">{tenant.name}</TableCell>
                 <TableCell>{tenant.dni}</TableCell>
-                <TableCell>{tenant.email}</TableCell>
+                <TableCell>
+                    {tenant.email ? (
+                        <a href={`mailto:${tenant.email}`} className="text-primary hover:underline">
+                            {tenant.email}
+                        </a>
+                    ) : null}
+                </TableCell>
                 <TableCell>{tenant.phone}</TableCell>
                 <TableCell>{`${tenant.address}, ${tenant.city}, ${tenant.country}`}</TableCell>
                 <TableCell className="text-right">
@@ -63,4 +69,5 @@ export default function TenantsList({ tenants }: TenantsListProps) {
         </Table>
   );
 }
+
 
