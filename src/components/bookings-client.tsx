@@ -89,61 +89,65 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-lg bg-muted/50 flex-wrap">
-        <div className="grid gap-2">
-            <Label>Propiedad</Label>
-            <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Propiedad" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    {properties.map(p => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
+            <div className="grid gap-2">
+                <Label>Desde</Label>
+                <DatePicker date={fromDate} onDateSelect={setFromDate} placeholder="Desde" />
+            </div>
+            <div className="grid gap-2">
+                <Label>Hasta</Label>
+                <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Hasta" />
+            </div>
         </div>
-        <div className="grid gap-2">
-            <Label>Desde</Label>
-            <DatePicker date={fromDate} onDateSelect={setFromDate} placeholder="Desde" />
-        </div>
-        <div className="grid gap-2">
-            <Label>Hasta</Label>
-            <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Hasta" />
-        </div>
-        <div className="grid gap-2">
-            <Label>Estado</Label>
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="current">En Curso</SelectItem>
-                    <SelectItem value="upcoming">Próximas</SelectItem>
-                    <SelectItem value="closed">Cerradas</SelectItem>
-                    <SelectItem value="with-debt">Con Deuda</SelectItem>
-                </SelectContent>
-            </Select>
-        </div>
-        <div className="grid gap-2">
-            <Label>Contrato</Label>
-            <Select value={contractStatusFilter} onValueChange={(value) => setContractStatusFilter(value as ContractStatusFilter)}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Contrato" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="not_sent">S/Enviar</SelectItem>
-                    <SelectItem value="sent">Enviado</SelectItem>
-                    <SelectItem value="signed">Firmado</SelectItem>
-                    <SelectItem value="not_required">N/A</SelectItem>
-                </SelectContent>
-            </Select>
-        </div>
-        <div className="self-end">
-             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
+          <div className="grid gap-2">
+              <Label>Propiedad</Label>
+              <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Propiedad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      {properties.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+          </div>
+          <div className="grid gap-2">
+              <Label>Estado</Label>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="current">En Curso</SelectItem>
+                      <SelectItem value="upcoming">Próximas</SelectItem>
+                      <SelectItem value="closed">Cerradas</SelectItem>
+                      <SelectItem value="with-debt">Con Deuda</SelectItem>
+                  </SelectContent>
+              </Select>
+          </div>
+          <div className="grid gap-2">
+              <Label>Contrato</Label>
+              <Select value={contractStatusFilter} onValueChange={(value) => setContractStatusFilter(value as ContractStatusFilter)}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Contrato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="not_sent">S/Enviar</SelectItem>
+                      <SelectItem value="sent">Enviado</SelectItem>
+                      <SelectItem value="signed">Firmado</SelectItem>
+                      <SelectItem value="not_required">N/A</SelectItem>
+                  </SelectContent>
+              </Select>
+          </div>
+          <div className="self-end">
+              <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
+          </div>
         </div>
       </div>
       <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} showProperty={true} />
