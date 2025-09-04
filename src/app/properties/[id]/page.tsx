@@ -23,7 +23,6 @@ import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   const propertyId = params.id;
@@ -112,7 +111,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Disponibilidad de la propiedad.
                   </CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                   {calendarSrc ? (
                     <div className="relative h-[600px] w-full">
