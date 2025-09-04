@@ -21,6 +21,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Textarea } from './ui/textarea';
 
 const initialState = {
   message: '',
@@ -32,15 +34,25 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded }: { bookingId
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS');
+
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
       formRef.current?.reset();
       setDate(new Date());
-      onExpenseAdded(); // Callback to refresh the list
+      setCurrency('ARS');
+      onExpenseAdded();
     }
   }, [state, onExpenseAdded]);
+
+  const resetForm = () => {
+    formRef.current?.reset();
+    setDate(new Date());
+    setCurrency('ARS');
+    setIsOpen(false);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -89,20 +101,43 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded }: { bookingId
                         </PopoverContent>
                     </Popover>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="description" className="text-right">
-                    Descripción
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="currency" className="text-right">
+                    Moneda
                     </Label>
-                    <Input id="description" name="description" className="col-span-3" required />
+                    <Select name="currency" value={currency} onValueChange={(value) => setCurrency(value as 'ARS' | 'USD')} required>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ARS">ARS</SelectItem>
+                            <SelectItem value="USD">USD</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="amount" className="text-right">
-                    Monto (ARS)
+                    Monto
                     </Label>
                     <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
                 </div>
+                {currency === 'USD' && (
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="exchangeRate" className="text-right">
+                        Valor USD
+                        </Label>
+                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" className="col-span-3" placeholder="Valor del USD en ARS" required />
+                    </div>
+                )}
+                 <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="description" className="text-right pt-2">
+                        Descripción
+                    </Label>
+                    <Textarea id="description" name="description" className="col-span-3" required />
+                </div>
             </div>
             <DialogFooter>
+                <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 <Button type="submit">Añadir Gasto</Button>
             </DialogFooter>
         </form>

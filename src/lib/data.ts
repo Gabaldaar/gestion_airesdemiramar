@@ -89,16 +89,22 @@ export type PropertyExpense = {
     id: string;
     propertyId: string;
     description: string;
-    amount: number;
+    amount: number; // Always in ARS
     date: string;
+    currency: 'ARS'; // Always ARS
+    exchangeRate?: number; // Stores the USD to ARS rate if original expense was in USD
+    originalUsdAmount?: number; // Stores the original amount if paid in USD
 }
 
 export type BookingExpense = {
     id: string;
     bookingId: string;
     description: string;
-    amount: number;
+    amount: number; // Always in ARS
     date: string;
+    currency: 'ARS'; // Always ARS
+    exchangeRate?: number; 
+    originalUsdAmount?: number;
 }
 
 export type FinancialSummary = {
@@ -189,8 +195,6 @@ async function getBookingDetails(booking: Booking, allPayments: Payment[]): Prom
         getPropertyById(booking.propertyId)
     ]);
 
-    // All payments are in USD. If booking is in ARS, this comparison might not be ideal.
-    // For now, let's assume we are comparing apples to apples or the main currency is USD.
     const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
     const totalPaidInUSD = paymentsForBooking.reduce((acc, payment) => acc + payment.amount, 0);
 
@@ -206,8 +210,7 @@ export async function getBookings(): Promise<BookingWithDetails[]> {
     const snapshot = await getDocs(query(bookingsCollection, orderBy('startDate', 'desc')));
     const allBookings = snapshot.docs.map(processDoc) as Booking[];
     const allPayments = await getAllPayments();
-    // This part of the logic may need refinement if bookings in ARS are common.
-    // Let's assume booking currency is the primary context for now.
+    
     const detailedBookings = await Promise.all(allBookings.map(async (booking) => {
         const [tenant, property] = await Promise.all([
             getTenantById(booking.tenantId),
@@ -216,18 +219,16 @@ export async function getBookings(): Promise<BookingWithDetails[]> {
         const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
         const totalPaid = paymentsForBooking.reduce((acc, payment) => acc + payment.amount, 0);
         
-        // Balance calculation needs to respect the booking's currency.
-        // We sum payments (always in USD) and compare against the booking amount (which can be ARS or USD)
-        // This is tricky. For the list, we will show the balance in the booking's currency.
         let balance;
         if (booking.currency === 'USD') {
              balance = booking.amount - totalPaid;
         } else {
-             // If booking is in ARS, we can't directly subtract USD payments.
-             // This is a simplification. The main report is more accurate.
-             // We'll show total paid in USD, and balance as booking amount - (paid in USD * rate), which is complex.
-             // For now, let's just show what's been paid in USD vs the ARS total.
-             balance = booking.amount; // Simplified view, shows full amount. Accurate balance is in reports.
+             const lastPaymentRate = paymentsForBooking[paymentsForBooking.length - 1]?.exchangeRate;
+             if (lastPaymentRate) {
+                balance = booking.amount - (totalPaid * lastPaymentRate);
+             } else {
+                balance = booking.amount;
+             }
         }
 
         return { ...booking, tenant, property, totalPaid, balance };
@@ -259,16 +260,13 @@ export async function updateBooking(updatedBooking: Booking): Promise<Booking | 
 export async function deleteBooking(id: string): Promise<boolean> {
     const batch = writeBatch(db);
     
-    // Delete booking
     const bookingRef = doc(db, 'bookings', id);
     batch.delete(bookingRef);
 
-    // Delete associated payments
     const paymentsQuery = query(paymentsCollection, where('bookingId', '==', id));
     const paymentsSnapshot = await getDocs(paymentsQuery);
     paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-    // Delete associated booking expenses
     const expensesQuery = query(bookingExpensesCollection, where('bookingId', '==', id));
     const expensesSnapshot = await getDocs(expensesQuery);
     expensesSnapshot.forEach(doc => batch.delete(doc.ref));
@@ -289,15 +287,15 @@ export async function getPropertyExpensesByPropertyId(propertyId: string): Promi
 }
 
 export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
-    const docRef = await addDoc(propertyExpensesCollection, expense);
-    return { id: docRef.id, ...expense };
+    const docRef = await addDoc(propertyExpensesCollection, { ...expense, currency: 'ARS' });
+    return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
 export async function updatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense | null> {
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'propertyExpenses', id);
-await updateDoc(docRef, data);
-    return updatedExpense;
+    await updateDoc(docRef, { ...data, currency: 'ARS' });
+    return { ...updatedExpense, currency: 'ARS' };
 }
 
 export async function deletePropertyExpense(id: string): Promise<boolean> {
@@ -318,15 +316,15 @@ export async function getBookingExpensesByBookingId(bookingId: string): Promise<
 }
 
 export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
-    const docRef = await addDoc(bookingExpensesCollection, expense);
-    return { id: docRef.id, ...expense };
+    const docRef = await addDoc(bookingExpensesCollection, { ...expense, currency: 'ARS' });
+    return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
 export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense | null> {
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'bookingExpenses', id);
-    await updateDoc(docRef, data);
-    return updatedExpense;
+    await updateDoc(docRef, { ...data, currency: 'ARS' });
+    return { ...updatedExpense, currency: 'ARS' };
 }
 
 export async function deleteBookingExpense(id: string): Promise<boolean> {
@@ -376,7 +374,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
   const [allProperties, allBookingsData, allPropertyExpenses, allBookingExpenses, allPayments] = await Promise.all([
     getProperties(),
-    getDocs(query(bookingsCollection)), // Fetch raw bookings
+    getDocs(query(bookingsCollection)),
     getAllPropertyExpenses(),
     getAllBookingExpenses(),
     getAllPayments(),
@@ -391,60 +389,31 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
       if (toDate && itemDate > toDate) return false;
       return true;
   };
+  
+  const getAverageExchangeRate = (): number => {
+    const paymentsWithRate = allPayments.filter(p => p.exchangeRate && isWithinDateRange(p.date));
+    if (paymentsWithRate.length === 0) return 1000; // Default fallback
+    const totalRate = paymentsWithRate.reduce((acc, p) => acc + p.exchangeRate!, 0);
+    return totalRate / paymentsWithRate.length;
+  }
 
-  const createSummaryForCurrency = (currency: 'ARS' | 'USD'): FinancialSummary[] => {
+  const avgExchangeRate = getAverageExchangeRate();
+
+  const createSummaryForARS = (): FinancialSummary[] => {
     return allProperties.map(property => {
-      const propertyBookings = allBookings.filter(b => 
-        b.propertyId === property.id && 
-        b.currency === currency && 
-        isWithinDateRange(b.startDate)
-      );
-      
+      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && b.currency === 'ARS' && isWithinDateRange(b.startDate));
+      const totalIncome = propertyBookings.reduce((acc, b) => acc + b.amount, 0);
+
       const propertyBookingIds = new Set(allBookings.filter(b => b.propertyId === property.id).map(b => b.id));
+      const propertyPayments = allPayments.filter(p => propertyBookingIds.has(p.bookingId) && isWithinDateRange(p.date));
+      const totalPayments = propertyPayments.reduce((acc, p) => acc + (p.originalArsAmount ?? (p.amount * avgExchangeRate)), 0);
 
-      const propertyPayments = allPayments.filter(p => 
-        propertyBookingIds.has(p.bookingId) &&
-        isWithinDateRange(p.date)
-      );
-
-      const propertyExpenses = allPropertyExpenses.filter(e => 
-        e.propertyId === property.id && 
-        isWithinDateRange(e.date)
-      );
+      const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id && isWithinDateRange(e.date));
+      const totalPropertyExpenses = propertyExpenses.reduce((acc, e) => acc + e.amount, 0);
       
-      const relevantBookingIds = new Set(propertyBookings.map(b => b.id));
-
-      const relevantBookingExpenses = allBookingExpenses.filter(e => 
-        relevantBookingIds.has(e.bookingId) && 
-        isWithinDateRange(e.date)
-      );
-      
-      const totalIncome = propertyBookings.reduce((acc, booking) => acc + booking.amount, 0);
-      
-      // Payments are always in USD, so for ARS summary we need to convert them
-      // And for USD summary, we just sum them up.
-      const totalPayments = propertyPayments.reduce((acc, payment) => {
-          if(currency === 'USD') {
-              return acc + payment.amount;
-          }
-          if(currency === 'ARS') {
-              // This is an approximation. Assumes exchange rate is stored.
-              return acc + (payment.amount * (payment.exchangeRate || 1));
-          }
-          return acc;
-      }, 0);
-
-
-      const balance = totalIncome - totalPayments;
-      
-      // Expenses are always in ARS, so they are only included in the ARS summary
-      const totalPropertyExpenses = currency === 'ARS' 
-        ? propertyExpenses.reduce((acc, expense) => acc + expense.amount, 0)
-        : 0;
-
-      const totalBookingExpenses = currency === 'ARS'
-        ? relevantBookingExpenses.reduce((acc, expense) => acc + expense.amount, 0)
-        : 0;
+      const relevantBookingIds = new Set(allBookings.filter(b => b.propertyId === property.id).map(b => b.id));
+      const relevantBookingExpenses = allBookingExpenses.filter(e => relevantBookingIds.has(e.bookingId) && isWithinDateRange(e.date));
+      const totalBookingExpenses = relevantBookingExpenses.reduce((acc, e) => acc + e.amount, 0);
 
       const netResult = totalPayments - totalPropertyExpenses - totalBookingExpenses;
 
@@ -453,7 +422,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
         propertyName: property.name,
         totalIncome,
         totalPayments,
-        balance,
+        balance: totalIncome - totalPayments,
         totalPropertyExpenses,
         totalBookingExpenses,
         netResult,
@@ -461,30 +430,39 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
     });
   }
 
-  const usdSummary = allProperties.map(property => {
-      const propertyBookingIds = new Set(allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate)).map(b => b.id));
-      
+  const createSummaryForUSD = (): FinancialSummary[] => {
+    return allProperties.map(property => {
+      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && b.currency === 'USD' && isWithinDateRange(b.startDate));
+      const totalIncome = propertyBookings.reduce((acc, b) => acc + b.amount, 0);
+
+      const propertyBookingIds = new Set(allBookings.filter(b => b.propertyId === property.id).map(b => b.id));
       const propertyPayments = allPayments.filter(p => propertyBookingIds.has(p.bookingId) && isWithinDateRange(p.date));
       const totalPayments = propertyPayments.reduce((acc, p) => acc + p.amount, 0);
 
-      const propertyBookingsUSD = allBookings.filter(b => b.propertyId === property.id && b.currency === 'USD' && isWithinDateRange(b.startDate));
-      const totalIncome = propertyBookingsUSD.reduce((acc, b) => acc + b.amount, 0);
+      const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id && isWithinDateRange(e.date));
+      const totalPropertyExpensesInUSD = propertyExpenses.reduce((acc, e) => acc + (e.amount / (e.exchangeRate || avgExchangeRate)), 0);
 
+      const relevantBookingIds = new Set(allBookings.filter(b => b.propertyId === property.id).map(b => b.id));
+      const relevantBookingExpenses = allBookingExpenses.filter(e => relevantBookingIds.has(e.bookingId) && isWithinDateRange(e.date));
+      const totalBookingExpensesInUSD = relevantBookingExpenses.reduce((acc, e) => acc + (e.amount / (e.exchangeRate || avgExchangeRate)), 0);
+      
+      const netResult = totalPayments - totalPropertyExpensesInUSD - totalBookingExpensesInUSD;
+      
       return {
           propertyId: property.id,
           propertyName: property.name,
           totalIncome: totalIncome,
           totalPayments: totalPayments,
           balance: totalIncome - totalPayments,
-          totalPropertyExpenses: 0,
-          totalBookingExpenses: 0,
-          netResult: totalPayments,
+          totalPropertyExpenses: totalPropertyExpensesInUSD,
+          totalBookingExpenses: totalBookingExpensesInUSD,
+          netResult: netResult,
       }
-  });
-
+    });
+  }
 
   return {
-    ars: createSummaryForCurrency('ARS'),
-    usd: usdSummary,
+    ars: createSummaryForARS(),
+    usd: createSummaryForUSD(),
   };
 }
