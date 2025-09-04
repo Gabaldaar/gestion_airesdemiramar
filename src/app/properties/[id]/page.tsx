@@ -50,22 +50,22 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between space-y-2">
         <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="icon" disabled={!prevProperty}>
-              <Link href={prevProperty ? `/properties/${prevProperty.id}` : '#'}>
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">Propiedad Anterior</span>
-              </Link>
-            </Button>
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
-                <p className="text-muted-foreground">{property.address}</p>
-            </div>
-             <Button asChild variant="outline" size="icon" disabled={!nextProperty}>
-              <Link href={nextProperty ? `/properties/${nextProperty.id}` : '#'}>
-                <ChevronRight className="h-4 w-4" />
-                <span className="sr-only">Siguiente Propiedad</span>
-              </Link>
-            </Button>
+          <Button asChild variant="outline" size="icon" disabled={!prevProperty}>
+            <Link href={prevProperty ? `/properties/${prevProperty.id}` : '#'}>
+              <ChevronLeft className="h-4 w-4" />
+              <span className="sr-only">Propiedad Anterior</span>
+            </Link>
+          </Button>
+          <div>
+              <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
+              <p className="text-muted-foreground">{property.address}</p>
+          </div>
+           <Button asChild variant="outline" size="icon" disabled={!nextProperty}>
+            <Link href={nextProperty ? `/properties/${nextProperty.id}` : '#'}>
+              <ChevronRight className="h-4 w-4" />
+              <span className="sr-only">Siguiente Propiedad</span>
+            </Link>
+          </Button>
         </div>
         <PropertyNotesForm property={property} />
       </div>
@@ -111,7 +111,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Disponibilidad de la propiedad.
                   </CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                   {calendarSrc ? (
                     <div className="relative h-[600px] w-full">
