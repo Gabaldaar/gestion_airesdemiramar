@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 
-type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed';
+type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt';
 
 interface BookingsClientProps {
   initialBookings: BookingWithDetails[];
@@ -53,10 +53,12 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
          const isCurrent = bookingStartDate <= today && bookingEndDate >= today;
          const isUpcoming = bookingStartDate > today;
          const isClosed = bookingEndDate < today;
+         const hasDebt = booking.balance > 0;
 
          if (statusFilter === 'current' && !isCurrent) return false;
          if (statusFilter === 'upcoming' && !isUpcoming) return false;
          if (statusFilter === 'closed' && !isClosed) return false;
+         if (statusFilter === 'with-debt' && !hasDebt) return false;
       }
       
       return true;
@@ -91,6 +93,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
                     <SelectItem value="current">En Curso</SelectItem>
                     <SelectItem value="upcoming">Próximas</SelectItem>
                     <SelectItem value="closed">Cerradas</SelectItem>
+                    <SelectItem value="with-debt">Con Deuda</SelectItem>
                 </SelectContent>
             </Select>
         </div>
