@@ -129,7 +129,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Registra y consulta los gastos asociados a la propiedad.
                   </CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                   <ExpensesList expenses={expenses} />
                 </CardContent>
