@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Landmark } from 'lucide-react';
+import { Landmark, NotebookPen } from 'lucide-react';
 import { getPaymentsByBookingId, Payment } from '@/lib/data';
 import {
   Table,
@@ -27,8 +27,9 @@ import { es } from 'date-fns/locale';
 import { PaymentAddForm } from './payment-add-form';
 import { PaymentEditForm } from './payment-edit-form';
 import { PaymentDeleteForm } from './payment-delete-form';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
-export function BookingPaymentsManager({ bookingId, bookingCurrency }: { bookingId: string, bookingCurrency: 'ARS' | 'USD' }) {
+export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,10 +61,10 @@ export function BookingPaymentsManager({ bookingId, bookingCurrency }: { booking
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
   };
 
-  const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
-    return new Intl.NumberFormat('es-AR', {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency,
+      currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -83,11 +84,11 @@ export function BookingPaymentsManager({ bookingId, bookingCurrency }: { booking
         <DialogHeader>
           <DialogTitle>Pagos de la Reserva</DialogTitle>
           <DialogDescription>
-            Gestiona los pagos recibidos para esta reserva.
+            Gestiona los pagos recibidos para esta reserva. Todos los montos se muestran en USD.
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end">
-            <PaymentAddForm bookingId={bookingId} onPaymentAdded={handlePaymentAction} defaultCurrency={bookingCurrency} />
+            <PaymentAddForm bookingId={bookingId} onPaymentAdded={handlePaymentAction} />
         </div>
         {isLoading ? (
           <p>Cargando pagos...</p>
@@ -99,7 +100,8 @@ export function BookingPaymentsManager({ bookingId, bookingCurrency }: { booking
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
-                  <TableHead className="text-right">Monto</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead className="text-right">Monto (USD)</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -107,7 +109,19 @@ export function BookingPaymentsManager({ bookingId, bookingCurrency }: { booking
                 {payments.map((payment) => (
                   <TableRow key={payment.id}>
                     <TableCell>{formatDate(payment.date)}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(payment.amount, payment.currency)}</TableCell>
+                    <TableCell className="max-w-[300px] truncate">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <span className='block truncate'>{payment.description || '-'}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="whitespace-pre-wrap max-w-xs">{payment.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(payment.amount)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
@@ -119,8 +133,8 @@ export function BookingPaymentsManager({ bookingId, bookingCurrency }: { booking
               </TableBody>
               <TableFooter>
                   <TableRow>
-                      <TableCell className="font-bold text-right">Total</TableCell>
-                      <TableCell className="text-right font-bold">{formatCurrency(totalAmount, bookingCurrency)}</TableCell>
+                      <TableCell colSpan={2} className="font-bold text-right">Total (USD)</TableCell>
+                      <TableCell className="text-right font-bold">{formatCurrency(totalAmount)}</TableCell>
                       <TableCell></TableCell>
                   </TableRow>
               </TableFooter>

@@ -28,26 +28,36 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
+import { Textarea } from './ui/textarea';
 
 const initialState = {
   message: '',
   success: false,
 };
 
-export function PaymentAddForm({ bookingId, onPaymentAdded, defaultCurrency }: { bookingId: string, onPaymentAdded: () => void, defaultCurrency: 'ARS' | 'USD' }) {
+export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: string, onPaymentAdded: () => void }) {
   const [state, formAction] = useActionState(addPayment, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
       formRef.current?.reset();
       setDate(new Date());
-      onPaymentAdded(); // Callback to refresh the list
+      setCurrency('USD');
+      onPaymentAdded();
     }
   }, [state, onPaymentAdded]);
+
+  const resetForm = () => {
+      formRef.current?.reset();
+      setDate(new Date());
+      setCurrency('USD');
+      setIsOpen(false);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -96,28 +106,43 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, defaultCurrency }: {
                         </PopoverContent>
                     </Popover>
                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="currency" className="text-right">
+                    Moneda
+                    </Label>
+                    <Select name="currency" value={currency} onValueChange={(value) => setCurrency(value as 'ARS' | 'USD')} required>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="ARS">ARS</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="amount" className="text-right">
                     Monto
                     </Label>
                     <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="currency" className="text-right">
-                    Moneda
+                {currency === 'ARS' && (
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="exchangeRate" className="text-right">
+                        Valor USD
+                        </Label>
+                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" className="col-span-3" placeholder="Valor del USD en ARS" required />
+                    </div>
+                )}
+                 <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="description" className="text-right pt-2">
+                        Descripción
                     </Label>
-                    <Select name="currency" defaultValue={defaultCurrency || 'USD'} required>
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ARS">ARS</SelectItem>
-                            <SelectItem value="USD">USD</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <Textarea id="description" name="description" className="col-span-3" placeholder="Comentarios sobre el pago..."/>
                 </div>
             </div>
             <DialogFooter>
+                <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 <Button type="submit">Añadir Pago</Button>
             </DialogFooter>
         </form>

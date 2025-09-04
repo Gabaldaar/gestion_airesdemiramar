@@ -198,7 +198,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
         propertyId,
         tenantId,
         startDate,
-        endDate,
+endDate,
         amount,
         currency,
         notes,
@@ -389,28 +389,54 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
 
 export async function addPayment(previousState: any, formData: FormData) {
     const bookingId = formData.get("bookingId") as string;
-    const amount = parseFloat(formData.get("amount") as string);
+    const originalAmount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const date = formData.get("date") as string;
+    const description = formData.get("description") as string;
+    const exchangeRateStr = formData.get("exchangeRate") as string;
 
-    if (!bookingId || !amount || !currency || !date) {
+    if (!bookingId || !originalAmount || !currency || !date) {
         return { success: false, message: "Todos los campos son obligatorios." };
+    }
+
+    let amountUSD = originalAmount;
+    let finalDescription = description;
+    let exchangeRate: number | undefined = undefined;
+    let originalArsAmount: number | undefined = undefined;
+
+    if (currency === 'ARS') {
+        const rate = parseFloat(exchangeRateStr);
+        if (!rate || rate <= 0) {
+            return { success: false, message: "El valor del USD es obligatorio y debe ser mayor a cero para pagos en ARS." };
+        }
+        exchangeRate = rate;
+        amountUSD = originalAmount / exchangeRate;
+        originalArsAmount = originalAmount;
+        
+        const arsFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(originalAmount);
+        const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(exchangeRate);
+        const autoDescription = `El pago se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
+        finalDescription = description ? `${description} | ${autoDescription}` : autoDescription;
     }
 
     const newPayment = {
         bookingId,
-        amount,
-        currency,
+        amount: amountUSD,
+        currency: 'USD' as const,
         date,
+        description: finalDescription,
+        exchangeRate,
+        originalArsAmount,
     };
 
     try {
-        await dbAddPayment(newPayment);
+        await dbAddPayment(newPayment as Omit<Payment, 'id'>);
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath(`/reports`);
         return { success: true, message: "Pago añadido correctamente." };
     } catch (error) {
+        console.error(error)
         return { success: false, message: "Error al añadir el pago." };
     }
 }
@@ -418,20 +444,45 @@ export async function addPayment(previousState: any, formData: FormData) {
 export async function updatePayment(previousState: any, formData: FormData) {
     const id = formData.get("id") as string;
     const bookingId = formData.get("bookingId") as string;
-    const amount = parseFloat(formData.get("amount") as string);
+    const originalAmount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const date = formData.get("date") as string;
+    const description = formData.get("description") as string;
+    const exchangeRateStr = formData.get("exchangeRate") as string;
 
-    if (!id || !bookingId || !amount || !currency || !date) {
+    if (!id || !bookingId || !originalAmount || !currency || !date) {
         return { success: false, message: "Todos los campos son obligatorios." };
+    }
+
+    let amountUSD = originalAmount;
+    let finalDescription = description;
+    let exchangeRate: number | undefined = undefined;
+    let originalArsAmount: number | undefined = undefined;
+
+    if (currency === 'ARS') {
+        const rate = parseFloat(exchangeRateStr);
+        if (!rate || rate <= 0) {
+            return { success: false, message: "El valor del USD es obligatorio y debe ser mayor a cero para pagos en ARS." };
+        }
+        exchangeRate = rate;
+        amountUSD = originalAmount / exchangeRate;
+        originalArsAmount = originalAmount;
+
+        const arsFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(originalAmount);
+        const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(exchangeRate);
+        const autoDescription = `El pago se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
+        finalDescription = description ? `${description} | ${autoDescription}` : autoDescription;
     }
 
     const updatedPayment: Payment = {
         id,
         bookingId,
-        amount,
-        currency,
+        amount: amountUSD,
+        currency: 'USD' as const,
         date,
+        description: finalDescription,
+        exchangeRate,
+        originalArsAmount,
     };
 
     try {
