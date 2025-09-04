@@ -74,7 +74,7 @@ export function PropertyAddForm() {
                     <Label htmlFor="imageUrl" className="text-right">
                     URL de Foto
                     </Label>
-                    <Input id="imageUrl" name="imageUrl" defaultValue="/images/properties/placeholder.png" className="col-span-3" />
+                    <Input id="imageUrl" name="imageUrl" defaultValue="https://picsum.photos/600/400" className="col-span-3" />
                 </div>
                  <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="notes" className="text-right pt-2">

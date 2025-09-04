@@ -76,7 +76,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             <CardHeader className="p-0">
               <div className="relative aspect-video w-full">
                 <Image
-                  src={property.imageUrl || '/images/properties/placeholder.png'}
+                  src={property.imageUrl || 'https://picsum.photos/600/400'}
                   alt={`Foto de ${property.name}`}
                   fill
                   className="rounded-t-lg object-cover"
