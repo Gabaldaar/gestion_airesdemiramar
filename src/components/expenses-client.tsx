@@ -79,6 +79,14 @@ export default function ExpensesClient({ initialExpenses, properties, categories
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-lg bg-muted/50 flex-wrap">
         <div className="grid gap-2">
+            <Label>Desde</Label>
+            <DatePicker date={fromDate} onDateSelect={setFromDate} placeholder="Desde" />
+        </div>
+        <div className="grid gap-2">
+            <Label>Hasta</Label>
+            <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Hasta" />
+        </div>
+        <div className="grid gap-2">
             <Label>Propiedad</Label>
             <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
                 <SelectTrigger className="w-full sm:w-[180px]">
@@ -119,14 +127,6 @@ export default function ExpensesClient({ initialExpenses, properties, categories
                     ))}
                 </SelectContent>
             </Select>
-        </div>
-        <div className="grid gap-2">
-            <Label>Desde</Label>
-            <DatePicker date={fromDate} onDateSelect={setFromDate} placeholder="Desde" />
-        </div>
-        <div className="grid gap-2">
-            <Label>Hasta</Label>
-            <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Hasta" />
         </div>
        
         <div className="self-end">
