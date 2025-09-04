@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -153,7 +152,7 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories }:
                     <Label htmlFor="description" className="text-right pt-2">
                         Descripción
                     </Label>
-                    <Textarea id="description" name="description" className="col-span-3" required />
+                    <Textarea id="description" name="description" className="col-span-3" />
                 </div>
             </div>
             <DialogFooter>

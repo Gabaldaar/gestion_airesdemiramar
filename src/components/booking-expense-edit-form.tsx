@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
@@ -142,7 +141,7 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
                     <Label htmlFor="description" className="text-right pt-2">
                         Descripción
                     </Label>
-                    <Textarea id="description" name="description" defaultValue={expense.description?.split('|')[0].trim()} className="col-span-3" required/>
+                    <Textarea id="description" name="description" defaultValue={expense.description?.split('|')[0].trim()} className="col-span-3" />
                 </div>
             </div>
             <DialogFooter>
