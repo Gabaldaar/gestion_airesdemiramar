@@ -1,39 +1,23 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencias
+node_modules/
+.pnpm
+pnpm-lock.yaml
 
-# Dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Build
+.next/
+out/
 
-# Testing
-/coverage
-
-# Next.js build output
-/.next/
-/out/
-
-# Production
-/build
-
-# Misc
-.DS_Store
-*.pem
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Local .env file
-.env
+# Archivos de entorno locales
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Turborepo
-.turbo
+# Backups
+*.bak
 
-# Genkit
-.genkit/cache
+# Otros
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
