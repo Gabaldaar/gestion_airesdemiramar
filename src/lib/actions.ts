@@ -247,35 +247,41 @@ const handleExpenseData = (formData: FormData) => {
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const description = formData.get("description") as string;
     const exchangeRateStr = formData.get("exchangeRate") as string;
-    const categoryId = formData.get("categoryId") as string | undefined;
+    const categoryId = formData.get("categoryId") as string;
 
-    let amountARS = originalAmount;
-    let finalDescription = description;
-    let exchangeRate: number | undefined = undefined;
-    let originalUsdAmount: number | undefined = undefined;
+    const expensePayload: {
+        amount: number;
+        description: string;
+        exchangeRate?: number;
+        originalUsdAmount?: number;
+        categoryId?: string | null;
+    } = {
+        amount: originalAmount,
+        description: description,
+    };
 
     if (currency === 'USD') {
         const rate = parseFloat(exchangeRateStr);
         if (!rate || rate <= 0) {
             throw new Error("El valor del USD es obligatorio y debe ser mayor a cero para gastos en USD.");
         }
-        exchangeRate = rate;
-        amountARS = originalAmount * exchangeRate;
-        originalUsdAmount = originalAmount;
+        expensePayload.exchangeRate = rate;
+        expensePayload.amount = originalAmount * expensePayload.exchangeRate; // This is now amount in ARS
+        expensePayload.originalUsdAmount = originalAmount;
 
         const usdFormatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(originalAmount);
-        const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(exchangeRate);
+        const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(expensePayload.exchangeRate);
         const autoDescription = `Gasto en USD - Total: ${usdFormatted} - Valor USD: ${rateFormatted}`;
-        finalDescription = description ? `${description} | ${autoDescription}` : autoDescription;
+        expensePayload.description = description ? `${description} | ${autoDescription}` : autoDescription;
+    }
+
+    if (categoryId && categoryId !== 'none') {
+        expensePayload.categoryId = categoryId;
+    } else {
+        expensePayload.categoryId = null;
     }
     
-    return {
-        amount: amountARS,
-        description: finalDescription,
-        exchangeRate,
-        originalUsdAmount,
-        categoryId: categoryId || null,
-    }
+    return expensePayload;
 }
 
 
@@ -442,39 +448,41 @@ export async function addPayment(previousState: any, formData: FormData) {
     if (!bookingId || !originalAmount || !currency || !date) {
         return { success: false, message: "Todos los campos son obligatorios." };
     }
+    
+    const paymentPayload: {
+        bookingId: string;
+        amount: number;
+        currency: 'USD';
+        date: string;
+        description?: string;
+        exchangeRate?: number;
+        originalArsAmount?: number;
+    } = {
+        bookingId,
+        amount: originalAmount,
+        currency: 'USD',
+        date,
+        description,
+    };
 
-    let amountUSD = originalAmount;
-    let finalDescription = description;
-    let exchangeRate: number | undefined = undefined;
-    let originalArsAmount: number | undefined = undefined;
 
     if (currency === 'ARS') {
         const rate = parseFloat(exchangeRateStr);
         if (!rate || rate <= 0) {
             return { success: false, message: "El valor del USD es obligatorio y debe ser mayor a cero para pagos en ARS." };
         }
-        exchangeRate = rate;
-        amountUSD = originalAmount / exchangeRate;
-        originalArsAmount = originalAmount;
+        paymentPayload.exchangeRate = rate;
+        paymentPayload.amount = originalAmount / paymentPayload.exchangeRate;
+        paymentPayload.originalArsAmount = originalAmount;
         
         const arsFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(originalAmount);
-        const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(exchangeRate);
+        const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(paymentPayload.exchangeRate);
         const autoDescription = `El pago se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
-        finalDescription = description ? `${description} | ${autoDescription}` : autoDescription;
+        paymentPayload.description = description ? `${description} | ${autoDescription}` : autoDescription;
     }
 
-    const newPayment = {
-        bookingId,
-        amount: amountUSD,
-        currency: 'USD' as const,
-        date,
-        description: finalDescription,
-        exchangeRate,
-        originalArsAmount,
-    };
-
     try {
-        await dbAddPayment(newPayment as Omit<Payment, 'id'>);
+        await dbAddPayment(paymentPayload as Omit<Payment, 'id'>);
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath(`/reports`);
@@ -498,39 +506,42 @@ export async function updatePayment(previousState: any, formData: FormData) {
         return { success: false, message: "Todos los campos son obligatorios." };
     }
 
-    let amountUSD = originalAmount;
-    let finalDescription = description;
-    let exchangeRate: number | undefined = undefined;
-    let originalArsAmount: number | undefined = undefined;
+    const paymentPayload: {
+        id: string;
+        bookingId: string;
+        amount: number;
+        currency: 'USD';
+        date: string;
+        description?: string;
+        exchangeRate?: number;
+        originalArsAmount?: number;
+    } = {
+        id,
+        bookingId,
+        amount: originalAmount,
+        currency: 'USD',
+        date,
+        description
+    };
+
 
     if (currency === 'ARS') {
         const rate = parseFloat(exchangeRateStr);
         if (!rate || rate <= 0) {
             return { success: false, message: "El valor del USD es obligatorio y debe ser mayor a cero para pagos en ARS." };
         }
-        exchangeRate = rate;
-        amountUSD = originalAmount / exchangeRate;
-        originalArsAmount = originalAmount;
+        paymentPayload.exchangeRate = rate;
+        paymentPayload.amount = originalAmount / paymentPayload.exchangeRate;
+        paymentPayload.originalArsAmount = originalAmount;
 
         const arsFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(originalAmount);
-        const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(exchangeRate);
+        const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(paymentPayload.exchangeRate);
         const autoDescription = `El pago se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
-        finalDescription = description ? `${description} | ${autoDescription}` : autoDescription;
+        paymentPayload.description = description ? `${description} | ${autoDescription}` : autoDescription;
     }
 
-    const updatedPayment: Payment = {
-        id,
-        bookingId,
-        amount: amountUSD,
-        currency: 'USD' as const,
-        date,
-        description: finalDescription,
-        exchangeRate,
-        originalArsAmount,
-    };
-
     try {
-        await dbUpdatePayment(updatedPayment);
+        await dbUpdatePayment(paymentPayload as Payment);
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath(`/reports`);
