@@ -113,7 +113,16 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableRow key={booking.id}>
                 {showProperty && <TableCell>{booking.property?.name || 'N/A'}</TableCell>}
                 <TableCell className={cn("font-medium", getTenantNameColorClass(booking))}>
-                    {booking.tenant?.name || 'N/A'}
+                    {booking.tenant?.email ? (
+                        <a 
+                            href={`mailto:${booking.tenant.email}?subject=${encodeURIComponent(`Tu reserva en Miramar - ${booking.property?.name} - Check-in ${format(new Date(booking.startDate), 'dd/MM/yyyy')}`)}`}
+                            className="text-primary hover:underline"
+                        >
+                            {booking.tenant?.name || 'N/A'}
+                        </a>
+                    ) : (
+                        booking.tenant?.name || 'N/A'
+                    )}
                 </TableCell>
                 <TableCell>{formatDate(booking.startDate)}</TableCell>
                 <TableCell>{formatDate(booking.endDate)}</TableCell>
