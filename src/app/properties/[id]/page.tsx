@@ -90,7 +90,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Disponibilidad de la propiedad.
                   </CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                   {calendarSrc ? (
                     <div className="relative h-[600px] w-full">
@@ -116,7 +116,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Gestiona las reservas pasadas, presentes y futuras de esta propiedad.
                   </CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                   <BookingsList bookings={bookings} properties={properties} tenants={tenants} />
                 </CardContent>
@@ -129,7 +129,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Registra y consulta los gastos asociados a la propiedad.
                   </CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                   <ExpensesList expenses={expenses} />
                 </CardContent>
