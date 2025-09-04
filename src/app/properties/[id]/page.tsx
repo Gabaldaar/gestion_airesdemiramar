@@ -1,5 +1,6 @@
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
   Card,
@@ -20,6 +21,9 @@ import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   const propertyId = params.id;
@@ -39,12 +43,30 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     ? `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(property.googleCalendarId)}&ctz=America/Argentina/Buenos_Aires`
     : null;
 
+  const currentIndex = properties.findIndex(p => p.id === propertyId);
+  const prevProperty = currentIndex > 0 ? properties[currentIndex - 1] : null;
+  const nextProperty = currentIndex < properties.length - 1 ? properties[currentIndex + 1] : null;
+
   return (
     <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between space-y-2">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
-          <p className="text-muted-foreground">{property.address}</p>
+        <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="icon" disabled={!prevProperty}>
+              <Link href={prevProperty ? `/properties/${prevProperty.id}` : '#'}>
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Propiedad Anterior</span>
+              </Link>
+            </Button>
+            <div>
+                <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
+                <p className="text-muted-foreground">{property.address}</p>
+            </div>
+             <Button asChild variant="outline" size="icon" disabled={!nextProperty}>
+              <Link href={nextProperty ? `/properties/${nextProperty.id}` : '#'}>
+                <ChevronRight className="h-4 w-4" />
+                <span className="sr-only">Siguiente Propiedad</span>
+              </Link>
+            </Button>
         </div>
         <PropertyNotesForm property={property} />
       </div>
@@ -116,7 +138,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Gestiona las reservas pasadas, presentes y futuras de esta propiedad.
                   </CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                   <BookingsList bookings={bookings} properties={properties} tenants={tenants} />
                 </CardContent>
@@ -129,7 +151,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Registra y consulta los gastos asociados a la propiedad.
                   </CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                   <ExpensesList expenses={expenses} />
                 </CardContent>
