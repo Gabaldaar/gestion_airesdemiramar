@@ -26,9 +26,11 @@ export default function DashboardStats({
 }: DashboardStatsProps) {
 
   const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
-    return new Intl.NumberFormat('es-AR', {
+    const currencyCode = currency === 'ARS' ? 'ARS' : 'USD';
+    const locale = currency === 'ARS' ? 'es-AR' : 'en-US';
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: currency,
+      currency: currencyCode,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -44,10 +46,9 @@ export default function DashboardStats({
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(totalIncomeArs, 'ARS')}</div>
-          <div className="text-lg font-bold">{formatCurrency(totalIncomeUsd, 'USD')}</div>
+          <div className="text-2xl font-bold">{formatCurrency(totalIncomeUsd, 'USD')}</div>
           <p className="text-xs text-muted-foreground">
-            Suma de todas las reservas
+             {formatCurrency(totalIncomeArs, 'ARS')}
           </p>
         </CardContent>
       </Card>
@@ -59,10 +60,9 @@ export default function DashboardStats({
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className={`text-2xl font-bold ${totalNetResultArs >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalNetResultArs, 'ARS')}</div>
-          <div className={`text-lg font-bold ${totalNetResultUsd >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalNetResultUsd, 'USD')}</div>
-           <p className="text-xs text-muted-foreground">
-            Ingresos menos gastos
+          <div className={`text-2xl font-bold ${totalNetResultUsd >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalNetResultUsd, 'USD')}</div>
+           <p className={`text-xs ${totalNetResultArs >= 0 ? 'text-muted-foreground' : 'text-red-500'}`}>
+            {formatCurrency(totalNetResultArs, 'ARS')}
           </p>
         </CardContent>
       </Card>
@@ -93,3 +93,5 @@ export default function DashboardStats({
     </div>
   )
 }
+
+    
