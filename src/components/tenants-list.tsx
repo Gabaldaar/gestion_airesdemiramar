@@ -24,6 +24,13 @@ export default function TenantsList({ tenants }: TenantsListProps) {
     if (tenants.length === 0) {
         return <p className="text-sm text-center text-muted-foreground py-8">No hay inquilinos para mostrar con los filtros seleccionados.</p>;
     }
+
+    const formatWhatsAppLink = (phone: string) => {
+        // Remove non-numeric characters from the phone number
+        const cleanedPhone = phone.replace(/[^0-9]/g, '');
+        return `https://wa.me/${cleanedPhone}`;
+    }
+
   return (
         <Table>
           <TableHeader>
@@ -48,7 +55,13 @@ export default function TenantsList({ tenants }: TenantsListProps) {
                         </a>
                     ) : null}
                 </TableCell>
-                <TableCell>{tenant.phone}</TableCell>
+                <TableCell>
+                    {tenant.phone ? (
+                        <a href={formatWhatsAppLink(tenant.phone)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            {tenant.phone}
+                        </a>
+                    ) : null}
+                </TableCell>
                 <TableCell>{`${tenant.address}, ${tenant.city}, ${tenant.country}`}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -69,5 +82,6 @@ export default function TenantsList({ tenants }: TenantsListProps) {
         </Table>
   );
 }
+
 
 
