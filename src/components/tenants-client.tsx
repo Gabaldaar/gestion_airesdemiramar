@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import TenantsList from './tenants-list';
+import { Mail } from 'lucide-react';
 
 type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed';
 
@@ -52,10 +53,26 @@ export default function TenantsClient({ initialTenants, allBookings }: TenantsCl
   const handleClearFilters = () => {
     setStatusFilter('all');
   };
+  
+  const handleEmailAll = () => {
+    const recipients = filteredTenants
+      .map(tenant => tenant.email)
+      .filter((email): email is string => !!email);
+    
+    const uniqueRecipients = [...new Set(recipients)];
+
+    if (uniqueRecipients.length > 0) {
+        const bcc = uniqueRecipients.join(',');
+        const subject = encodeURIComponent("Miramar te espera");
+        window.location.href = `mailto:?bcc=${bcc}&subject=${subject}`;
+    } else {
+        alert("No hay inquilinos con email en la selección actual para enviar correos.");
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50 sm:flex-row sm:items-end">
         <div className="grid gap-2">
             <Label>Estado de la Reserva</Label>
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as BookingStatusFilter)}>
@@ -70,8 +87,12 @@ export default function TenantsClient({ initialTenants, allBookings }: TenantsCl
                 </SelectContent>
             </Select>
         </div>
-        <div className="self-end">
+        <div className="flex gap-2">
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
+            <Button onClick={handleEmailAll}>
+                <Mail className="mr-2 h-4 w-4"/>
+                Email a Todos
+            </Button>
         </div>
       </div>
       <TenantsList tenants={filteredTenants} />
