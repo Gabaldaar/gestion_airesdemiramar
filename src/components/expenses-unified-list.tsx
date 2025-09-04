@@ -15,6 +15,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ExpenseEditForm } from "./expense-edit-form";
 import { BookingExpenseEditForm } from "./booking-expense-edit-form";
+import { ExpenseDeleteForm } from "./expense-delete-form";
+import { BookingExpenseDeleteForm } from "./booking-expense-delete-form";
 
 interface ExpensesUnifiedListProps {
   expenses: UnifiedExpense[];
@@ -80,9 +82,15 @@ export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUn
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
                     {expense.type === 'Propiedad' ? (
-                        <ExpenseEditForm expense={expense as PropertyExpense} categories={categories} />
+                        <>
+                            <ExpenseEditForm expense={expense as PropertyExpense} categories={categories} />
+                            <ExpenseDeleteForm expenseId={expense.id} propertyId={(expense as PropertyExpense).propertyId} />
+                        </>
                     ) : (
-                        <BookingExpenseEditForm expense={expense as BookingExpense} categories={categories} />
+                        <>
+                            <BookingExpenseEditForm expense={expense as BookingExpense} categories={categories} />
+                            <BookingExpenseDeleteForm expenseId={expense.id} bookingId={(expense as BookingExpense).bookingId} />
+                        </>
                     )}
                 </div>
             </TableCell>
