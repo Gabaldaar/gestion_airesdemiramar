@@ -8,7 +8,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
-import { Download } from 'lucide-react';
+import { Download, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 
 type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt';
@@ -127,6 +127,22 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
     document.body.removeChild(link);
   };
 
+  const handleEmailAll = () => {
+    const recipients = filteredBookings
+      .map(booking => booking.tenant?.email)
+      .filter((email): email is string => !!email);
+    
+    const uniqueRecipients = [...new Set(recipients)];
+
+    if (uniqueRecipients.length > 0) {
+        const bcc = uniqueRecipients.join(',');
+        const subject = encodeURIComponent("Miramar te espera");
+        window.location.href = `mailto:?bcc=${bcc}&subject=${subject}`;
+    } else {
+        alert("No hay inquilinos con email en la selección actual para enviar correos.");
+    }
+  };
+
 
   return (
     <div className="space-y-4">
@@ -191,6 +207,10 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
               <Button onClick={handleDownloadCSV}>
                 <Download className="mr-2 h-4 w-4"/>
                 Descargar CSV
+              </Button>
+              <Button onClick={handleEmailAll}>
+                <Mail className="mr-2 h-4 w-4"/>
+                Email a Todos
               </Button>
           </div>
         </div>
