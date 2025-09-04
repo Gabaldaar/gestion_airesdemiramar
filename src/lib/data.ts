@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import {
   collection,
@@ -109,6 +110,20 @@ export type BookingExpense = {
     exchangeRate?: number; 
     originalUsdAmount?: number;
 }
+
+export type UnifiedExpense = {
+    id: string;
+    type: 'Propiedad' | 'Reserva';
+    date: string;
+    description: string;
+    amountARS: number;
+    amountUSD: number;
+    propertyId: string;
+    propertyName: string;
+    tenantName?: string;
+    bookingId?: string;
+}
+
 
 export type FinancialSummary = {
     propertyId: string;
@@ -247,6 +262,14 @@ export async function getBookingsByPropertyId(propertyId: string): Promise<Booki
     const allPayments = await getAllPayments();
     return Promise.all(propertyBookings.map(booking => getBookingDetails(booking, allPayments)));
 }
+
+export async function getBookingById(id: string): Promise<Booking | undefined> {
+    if (!id) return undefined;
+    const docRef = doc(db, 'bookings', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? processDoc(docSnap) as Booking : undefined;
+}
+
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
     const docRef = await addDoc(bookingsCollection, booking);
@@ -497,4 +520,65 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 }
 
 
+export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
+    const [properties, bookings, tenants, propertyExpenses, bookingExpenses] = await Promise.all([
+        getProperties(),
+        getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
+        getTenants(),
+        getAllPropertyExpenses(),
+        getAllBookingExpenses(),
+    ]);
+
+    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+    const tenantsMap = new Map(tenants.map(t => [t.id, t.name]));
+    const bookingsMap = new Map(bookings.map(b => [b.id, b]));
+
+    const getAverageExchangeRate = (): number => {
+        const allExpensesWithRate = [...propertyExpenses, ...bookingExpenses].filter(e => e.exchangeRate);
+        if (allExpensesWithRate.length === 0) return 1000; // Fallback
+        const totalRate = allExpensesWithRate.reduce((acc, e) => acc + e.exchangeRate!, 0);
+        return totalRate / allExpensesWithRate.length;
+    };
+    const avgExchangeRate = getAverageExchangeRate();
+
+    const unifiedList: UnifiedExpense[] = [];
+
+    propertyExpenses.forEach(expense => {
+        unifiedList.push({
+            id: expense.id,
+            type: 'Propiedad',
+            date: expense.date,
+            description: expense.description,
+            amountARS: expense.amount,
+            amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate)),
+            propertyId: expense.propertyId,
+            propertyName: propertiesMap.get(expense.propertyId) || 'N/A',
+        });
+    });
+
+    bookingExpenses.forEach(expense => {
+        const booking = bookingsMap.get(expense.bookingId);
+        if (booking) {
+            unifiedList.push({
+                id: expense.id,
+                type: 'Reserva',
+                date: expense.date,
+                description: expense.description,
+                amountARS: expense.amount,
+                amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate)),
+                propertyId: booking.propertyId,
+                propertyName: propertiesMap.get(booking.propertyId) || 'N/A',
+                tenantName: tenantsMap.get(booking.tenantId) || 'N/A',
+                bookingId: expense.bookingId,
+            });
+        }
+    });
+
+    // Sort by date descending
+    unifiedList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return unifiedList;
+}
+
     
+

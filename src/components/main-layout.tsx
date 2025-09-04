@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, Waves } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, Waves, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -17,6 +17,7 @@ const navItems = [
   { href: '/properties', label: 'Propiedades', icon: Building2 },
   { href: '/tenants', label: 'Inquilinos', icon: Users },
   { href: '/bookings', label: 'Reservas', icon: Calendar },
+  { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
   { href: '/reports', label: 'Reportes', icon: BarChart3 },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];

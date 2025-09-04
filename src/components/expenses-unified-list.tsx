@@ -1,0 +1,85 @@
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { UnifiedExpense } from "@/lib/data";
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+interface ExpensesUnifiedListProps {
+  expenses: UnifiedExpense[];
+}
+
+export default function ExpensesUnifiedList({ expenses }: ExpensesUnifiedListProps) {
+
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
+  };
+
+  const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
+    const options: Intl.NumberFormatOptions = {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }
+    if (currency === 'ARS') {
+        return new Intl.NumberFormat('es-AR', options).format(amount);
+    }
+    return new Intl.NumberFormat('en-US', options).format(amount);
+  }
+  
+  const totalAmountARS = expenses.reduce((acc, expense) => acc + expense.amountARS, 0);
+  const totalAmountUSD = expenses.reduce((acc, expense) => acc + expense.amountUSD, 0);
+
+  if (expenses.length === 0) {
+    return <p className="text-sm text-center text-muted-foreground py-8">No hay gastos para mostrar con los filtros seleccionados.</p>;
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Fecha</TableHead>
+          <TableHead>Propiedad</TableHead>
+          <TableHead>Tipo</TableHead>
+          <TableHead>Descripción</TableHead>
+          <TableHead>Inquilino</TableHead>
+          <TableHead className="text-right">Monto (ARS)</TableHead>
+          <TableHead className="text-right">Monto (USD)</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {expenses.map((expense) => (
+          <TableRow key={expense.id}>
+            <TableCell>{formatDate(expense.date)}</TableCell>
+            <TableCell>{expense.propertyName}</TableCell>
+            <TableCell>
+                <Badge variant={expense.type === 'Propiedad' ? 'secondary' : 'outline'}>
+                    {expense.type}
+                </Badge>
+            </TableCell>
+            <TableCell className="font-medium max-w-xs truncate">{expense.description}</TableCell>
+            <TableCell>{expense.tenantName || 'N/A'}</TableCell>
+            <TableCell className="text-right">{formatCurrency(expense.amountARS, 'ARS')}</TableCell>
+            <TableCell className="text-right">{formatCurrency(expense.amountUSD, 'USD')}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+      <TableFooter>
+        <TableRow className="font-bold bg-muted">
+          <TableCell colSpan={5} className="text-right">Total</TableCell>
+          <TableCell className="text-right">{formatCurrency(totalAmountARS, 'ARS')}</TableCell>
+          <TableCell className="text-right">{formatCurrency(totalAmountUSD, 'USD')}</TableCell>
+        </TableRow>
+      </TableFooter>
+    </Table>
+  );
+}
