@@ -22,6 +22,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
   
   // Apply the initial tenant filter if it exists
   const bookingsForTenant = useMemo(() => {
@@ -39,6 +40,11 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
     return bookingsForTenant.filter(booking => {
       const bookingStartDate = new Date(booking.startDate);
       const bookingEndDate = new Date(booking.endDate);
+
+      // Property Filter
+      if (propertyIdFilter !== 'all' && booking.propertyId !== propertyIdFilter) {
+        return false;
+      }
 
       // Date Range Filter
       if (fromDate && bookingStartDate < fromDate) {
@@ -63,17 +69,32 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
       
       return true;
     });
-  }, [bookingsForTenant, fromDate, toDate, statusFilter]);
+  }, [bookingsForTenant, fromDate, toDate, statusFilter, propertyIdFilter]);
 
   const handleClearFilters = () => {
     setFromDate(undefined);
     setToDate(undefined);
     setStatusFilter('all');
+    setPropertyIdFilter('all');
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-lg bg-muted/50">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-lg bg-muted/50 flex-wrap">
+        <div className="grid gap-2">
+            <Label>Propiedad</Label>
+            <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Propiedad" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {properties.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
         <div className="grid gap-2">
             <Label>Desde</Label>
             <DatePicker date={fromDate} onDateSelect={setFromDate} placeholder="Desde" />
@@ -85,7 +106,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
         <div className="grid gap-2">
             <Label>Estado</Label>
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
