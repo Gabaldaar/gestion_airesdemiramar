@@ -71,7 +71,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
 
         <div className="lg:col-span-2">
-           <Tabs defaultValue="calendar" className="space-y-4">
+           <Tabs defaultValue="bookings" className="space-y-4">
             <div className="flex justify-between items-center">
               <TabsList>
                 <TabsTrigger value="calendar">Calendario</TabsTrigger>
@@ -129,7 +129,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Registra y consulta los gastos asociados a la propiedad.
                   </CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                   <ExpensesList expenses={expenses} />
                 </CardContent>
