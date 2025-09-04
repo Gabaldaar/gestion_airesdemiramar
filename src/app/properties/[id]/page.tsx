@@ -90,7 +90,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <CardDescription>
                     Disponibilidad de la propiedad.
                   </CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                   {calendarSrc ? (
                     <div className="relative h-[600px] w-full">
