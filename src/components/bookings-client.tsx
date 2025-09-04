@@ -8,6 +8,8 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
+import { Download } from 'lucide-react';
+import { format } from 'date-fns';
 
 type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt';
 type ContractStatusFilter = 'all' | ContractStatus;
@@ -87,6 +89,45 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
     setContractStatusFilter('all');
   };
 
+  const handleDownloadCSV = () => {
+    const headers = [
+      "Propiedad",
+      "Inquilino",
+      "Check-in",
+      "Check-out",
+      "Teléfono",
+      "Observaciones"
+    ];
+
+    const escapeCSV = (str: string | undefined | null): string => {
+        if (!str) return '""';
+        const newStr = str.replace(/"/g, '""'); // Escape double quotes
+        return `"${newStr}"`; // Enclose in double quotes
+    };
+
+    const rows = filteredBookings.map(booking => [
+      escapeCSV(booking.property?.name),
+      escapeCSV(booking.tenant?.name),
+      format(new Date(booking.startDate), 'yyyy-MM-dd'),
+      format(new Date(booking.endDate), 'yyyy-MM-dd'),
+      escapeCSV(booking.tenant?.phone),
+      escapeCSV(booking.notes)
+    ].join(','));
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(',') + "\n" 
+      + rows.join("\n");
+      
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `reservas_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50">
@@ -145,8 +186,12 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
                   </SelectContent>
               </Select>
           </div>
-          <div className="self-end">
+          <div className="flex items-end gap-2 ml-auto">
               <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
+              <Button onClick={handleDownloadCSV}>
+                <Download className="mr-2 h-4 w-4"/>
+                Descargar CSV
+              </Button>
           </div>
         </div>
       </div>
