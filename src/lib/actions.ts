@@ -24,6 +24,9 @@ import {
     addExpenseCategory as dbAddExpenseCategory,
     updateExpenseCategory as dbUpdateExpenseCategory,
     deleteExpenseCategory as dbDeleteExpenseCategory,
+    getBookingById,
+    getPropertyById,
+    getTenantById,
     Tenant,
     Booking,
     PropertyExpense,
@@ -33,6 +36,7 @@ import {
     ContractStatus,
     ExpenseCategory,
 } from "./data";
+import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
 
 
 export async function addProperty(previousState: any, formData: FormData) {
@@ -161,7 +165,7 @@ export async function addBooking(previousState: any, formData: FormData) {
         return { success: false, message: "Todos los campos son obligatorios." };
     }
 
-    const newBooking = {
+    const newBookingData = {
         propertyId,
         tenantId,
         startDate,
@@ -173,7 +177,29 @@ export async function addBooking(previousState: any, formData: FormData) {
     };
 
     try {
-        await dbAddBooking(newBooking);
+        const newBooking = await dbAddBooking(newBookingData);
+        
+        // --- Google Calendar Integration ---
+        try {
+            const property = await getPropertyById(propertyId);
+            const tenant = await getTenantById(tenantId);
+            if (property && property.googleCalendarId && tenant) {
+                const eventId = await addEventToCalendar(property.googleCalendarId, {
+                    startDate,
+                    endDate,
+                    tenantName: tenant.name,
+                    notes,
+                });
+                if (eventId) {
+                    await dbUpdateBooking({ ...newBooking, googleCalendarEventId: eventId });
+                }
+            }
+        } catch (calendarError) {
+            console.error("Google Calendar Error (addBooking):", calendarError);
+            // Non-fatal error, we don't want to fail the whole booking if calendar fails
+        }
+        // --- End Google Calendar Integration ---
+
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
         revalidatePath('/'); // Revalidate dashboard
@@ -199,7 +225,9 @@ export async function updateBooking(previousState: any, formData: FormData) {
         return { success: false, message: "Todos los campos son obligatorios." };
     }
 
-    const updatedBooking: Booking = {
+    const oldBooking = await getBookingById(id);
+
+    const updatedBookingData: Booking = {
         id,
         propertyId,
         tenantId,
@@ -209,10 +237,35 @@ export async function updateBooking(previousState: any, formData: FormData) {
         currency,
         notes,
         contractStatus,
+        googleCalendarEventId: oldBooking?.googleCalendarEventId,
     };
 
     try {
-        await dbUpdateBooking(updatedBooking);
+        await dbUpdateBooking(updatedBookingData);
+        
+        // --- Google Calendar Integration ---
+        try {
+            const property = await getPropertyById(propertyId);
+            const tenant = await getTenantById(tenantId);
+
+            if (property && property.googleCalendarId && tenant && updatedBookingData.googleCalendarEventId) {
+                await updateEventInCalendar(
+                    property.googleCalendarId,
+                    updatedBookingData.googleCalendarEventId,
+                    {
+                        startDate,
+                        endDate,
+                        tenantName: tenant.name,
+                        notes,
+                    }
+                );
+            }
+        } catch (calendarError) {
+            console.error("Google Calendar Error (updateBooking):", calendarError);
+        }
+        // --- End Google Calendar Integration ---
+
+
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
         revalidatePath('/'); // Revalidate dashboard
@@ -230,8 +283,24 @@ export async function deleteBooking(previousState: any, formData: FormData) {
         return { success: false, message: "ID de reserva o propiedad no válido." };
     }
 
+    const bookingToDelete = await getBookingById(id);
+
     try {
         await dbDeleteBooking(id);
+
+        // --- Google Calendar Integration ---
+        try {
+            if (bookingToDelete && bookingToDelete.googleCalendarEventId) {
+                const property = await getPropertyById(bookingToDelete.propertyId);
+                if (property && property.googleCalendarId) {
+                    await deleteEventFromCalendar(property.googleCalendarId, bookingToDelete.googleCalendarEventId);
+                }
+            }
+        } catch(calendarError) {
+            console.error("Google Calendar Error (deleteBooking):", calendarError);
+        }
+        // --- End Google Calendar Integration ---
+
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
         revalidatePath('/'); // Revalidate dashboard
@@ -280,6 +349,10 @@ const handleExpenseData = (formData: FormData) => {
     } else {
         expensePayload.categoryId = null;
     }
+    
+    // Remove undefined fields
+    if (expensePayload.exchangeRate === undefined) delete expensePayload.exchangeRate;
+    if (expensePayload.originalUsdAmount === undefined) delete expensePayload.originalUsdAmount;
     
     return expensePayload;
 }
@@ -480,6 +553,11 @@ export async function addPayment(previousState: any, formData: FormData) {
         const autoDescription = `El pago se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
         paymentPayload.description = description ? `${description} | ${autoDescription}` : autoDescription;
     }
+    
+    // Remove undefined fields
+    if (paymentPayload.exchangeRate === undefined) delete paymentPayload.exchangeRate;
+    if (paymentPayload.originalArsAmount === undefined) delete paymentPayload.originalArsAmount;
+
 
     try {
         await dbAddPayment(paymentPayload as Omit<Payment, 'id'>);
@@ -539,6 +617,10 @@ export async function updatePayment(previousState: any, formData: FormData) {
         const autoDescription = `El pago se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
         paymentPayload.description = description ? `${description} | ${autoDescription}` : autoDescription;
     }
+    
+    // Remove undefined fields
+    if (paymentPayload.exchangeRate === undefined) delete paymentPayload.exchangeRate;
+    if (paymentPayload.originalArsAmount === undefined) delete paymentPayload.originalArsAmount;
 
     try {
         await dbUpdatePayment(paymentPayload as Payment);

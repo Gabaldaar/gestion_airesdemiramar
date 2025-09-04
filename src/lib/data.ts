@@ -65,6 +65,7 @@ export type Booking = {
   exchangeRate?: number;
   notes?: string;
   contractStatus?: ContractStatus;
+  googleCalendarEventId?: string;
 };
 
 export type BookingWithTenantAndProperty = Booking & {
@@ -594,7 +595,7 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
                 amountARS: expense.amount,
                 amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate)),
                 propertyName: propertiesMap.get(booking.propertyId) || 'N/A',
-                tenantName: tenantsMap.get(booking.tenantId) || 'N/A',
+                tenantName: tenantsMap.get(booking.tenantId) || 'N_A',
                 categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
             });
         }
