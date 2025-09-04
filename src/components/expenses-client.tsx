@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
-import { UnifiedExpense, Property } from '@/lib/data';
+import { UnifiedExpense, Property, ExpenseCategory } from '@/lib/data';
 import ExpensesUnifiedList from '@/components/expenses-unified-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -14,13 +15,16 @@ type ExpenseTypeFilter = 'all' | 'Propiedad' | 'Reserva';
 interface ExpensesClientProps {
   initialExpenses: UnifiedExpense[];
   properties: Property[];
+  categories: ExpenseCategory[];
 }
 
-export default function ExpensesClient({ initialExpenses, properties }: ExpensesClientProps) {
+export default function ExpensesClient({ initialExpenses, properties, categories }: ExpensesClientProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<ExpenseTypeFilter>('all');
+  const [categoryIdFilter, setCategoryIdFilter] = useState<string>('all');
+
 
   const filteredExpenses = useMemo(() => {
     return initialExpenses.filter(expense => {
@@ -36,6 +40,16 @@ export default function ExpensesClient({ initialExpenses, properties }: Expenses
           return false;
       }
 
+      // Category Filter
+      if (categoryIdFilter !== 'all' && (expense.categoryName || 'sin-categoria') !== categories.find(c => c.id === categoryIdFilter)?.name) {
+          if(categoryIdFilter === 'none' && expense.categoryName) return false;
+          if(categoryIdFilter !== 'none' && categoryIdFilter !== 'all') {
+             const category = categories.find(c => c.id === categoryIdFilter);
+             if(expense.categoryName !== category?.name) return false;
+          }
+      }
+
+
       // Date Range Filter
       if (fromDate && expenseDate < fromDate) {
         return false;
@@ -50,13 +64,14 @@ export default function ExpensesClient({ initialExpenses, properties }: Expenses
       
       return true;
     });
-  }, [initialExpenses, fromDate, toDate, propertyIdFilter, typeFilter]);
+  }, [initialExpenses, fromDate, toDate, propertyIdFilter, typeFilter, categoryIdFilter, categories]);
 
   const handleClearFilters = () => {
     setFromDate(undefined);
     setToDate(undefined);
     setPropertyIdFilter('all');
     setTypeFilter('all');
+    setCategoryIdFilter('all');
   };
 
   return (
@@ -86,6 +101,21 @@ export default function ExpensesClient({ initialExpenses, properties }: Expenses
                     <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="Propiedad">Propiedad</SelectItem>
                     <SelectItem value="Reserva">Reserva</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+         <div className="grid gap-2">
+            <Label>Categoría</Label>
+            <Select value={categoryIdFilter} onValueChange={setCategoryIdFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="none">Sin Categoría</SelectItem>
+                    {categories.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
                 </SelectContent>
             </Select>
         </div>

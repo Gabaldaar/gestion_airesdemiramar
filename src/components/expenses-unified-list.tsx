@@ -1,4 +1,5 @@
 
+
 import {
   Table,
   TableBody,
@@ -50,6 +51,7 @@ export default function ExpensesUnifiedList({ expenses }: ExpensesUnifiedListPro
           <TableHead>Fecha</TableHead>
           <TableHead>Propiedad</TableHead>
           <TableHead>Tipo</TableHead>
+          <TableHead>Categoría</TableHead>
           <TableHead>Descripción</TableHead>
           <TableHead>Inquilino</TableHead>
           <TableHead className="text-right">Monto (ARS)</TableHead>
@@ -66,6 +68,7 @@ export default function ExpensesUnifiedList({ expenses }: ExpensesUnifiedListPro
                     {expense.type}
                 </Badge>
             </TableCell>
+            <TableCell>{expense.categoryName || 'N/A'}</TableCell>
             <TableCell className="font-medium max-w-xs truncate">{expense.description}</TableCell>
             <TableCell>{expense.tenantName || 'N/A'}</TableCell>
             <TableCell className="text-right">{formatCurrency(expense.amountARS, 'ARS')}</TableCell>
@@ -75,7 +78,7 @@ export default function ExpensesUnifiedList({ expenses }: ExpensesUnifiedListPro
       </TableBody>
       <TableFooter>
         <TableRow className="font-bold bg-muted">
-          <TableCell colSpan={5} className="text-right">Total</TableCell>
+          <TableCell colSpan={6} className="text-right">Total</TableCell>
           <TableCell className="text-right">{formatCurrency(totalAmountARS, 'ARS')}</TableCell>
           <TableCell className="text-right">{formatCurrency(totalAmountUSD, 'USD')}</TableCell>
         </TableRow>

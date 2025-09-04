@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
@@ -15,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updatePropertyExpense } from '@/lib/actions';
-import { PropertyExpense } from '@/lib/data';
+import { PropertyExpense, ExpenseCategory } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
@@ -30,7 +31,7 @@ const initialState = {
   success: false,
 };
 
-export function ExpenseEditForm({ expense }: { expense: PropertyExpense }) {
+export function ExpenseEditForm({ expense, categories }: { expense: PropertyExpense, categories: ExpenseCategory[] }) {
   const [state, formAction] = useActionState(updatePropertyExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
@@ -89,6 +90,24 @@ export function ExpenseEditForm({ expense }: { expense: PropertyExpense }) {
                         />
                         </PopoverContent>
                     </Popover>
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="categoryId" className="text-right">
+                        Categoría
+                    </Label>
+                    <Select name="categoryId" defaultValue={expense.categoryId}>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Sin Categoría</SelectItem>
+                            {categories.map(category => (
+                                <SelectItem key={category.id} value={category.id}>
+                                    {category.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="currency" className="text-right">

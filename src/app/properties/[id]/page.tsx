@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import {
@@ -14,7 +15,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties } from "@/lib/data";
+import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
@@ -23,12 +24,13 @@ import { PropertyNotesForm } from '@/components/property-notes-form';
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   const propertyId = params.id;
-  const [property, properties, tenants, bookings, expenses] = await Promise.all([
+  const [property, properties, tenants, bookings, expenses, categories] = await Promise.all([
     getPropertyById(propertyId),
     getProperties(),
     getTenants(),
     getBookingsByPropertyId(propertyId),
     getPropertyExpensesByPropertyId(propertyId),
+    getExpenseCategories(),
   ]);
 
   if (!property) {
@@ -80,7 +82,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
               </TabsList>
               <div className="flex items-center space-x-2">
                 <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
-                <ExpenseAddForm propertyId={property.id} />
+                <ExpenseAddForm propertyId={property.id} categories={categories} />
               </div>
             </div>
             <TabsContent value="calendar" className="space-y-4">
@@ -131,7 +133,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ExpensesList expenses={expenses} />
+                  <ExpensesList expenses={expenses} categories={categories} />
                 </CardContent>
               </Card>
             </TabsContent>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -12,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import { getBookingExpensesByBookingId, BookingExpense } from '@/lib/data';
+import { getBookingExpensesByBookingId, BookingExpense, getExpenseCategories, ExpenseCategory } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -31,25 +32,31 @@ import { BookingExpenseDeleteForm } from './booking-expense-delete-form';
 export function BookingExpensesManager({ bookingId }: { bookingId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
+  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchExpenses = useCallback(async () => {
+  const fetchExpensesAndCategories = useCallback(async () => {
     setIsLoading(true);
-    const fetchedExpenses = await getBookingExpensesByBookingId(bookingId);
+    const [fetchedExpenses, fetchedCategories] = await Promise.all([
+        getBookingExpensesByBookingId(bookingId),
+        getExpenseCategories()
+    ]);
     setExpenses(fetchedExpenses);
+    setCategories(fetchedCategories);
     setIsLoading(false);
   }, [bookingId]);
 
+  const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
 
   useEffect(() => {
     if (isOpen) {
-      fetchExpenses();
+      fetchExpensesAndCategories();
     }
-  }, [isOpen, fetchExpenses]);
+  }, [isOpen, fetchExpensesAndCategories]);
 
-  const handleExpenseAdded = useCallback(() => {
-    fetchExpenses();
-  }, [fetchExpenses]);
+  const handleExpenseAction = useCallback(() => {
+    fetchExpensesAndCategories();
+  }, [fetchExpensesAndCategories]);
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
@@ -82,7 +89,7 @@ export function BookingExpensesManager({ bookingId }: { bookingId: string }) {
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end">
-            <BookingExpenseAddForm bookingId={bookingId} onExpenseAdded={handleExpenseAdded}/>
+            <BookingExpenseAddForm bookingId={bookingId} onExpenseAdded={handleExpenseAction} categories={categories}/>
         </div>
         {isLoading ? (
           <p>Cargando gastos...</p>
@@ -93,6 +100,7 @@ export function BookingExpensesManager({ bookingId }: { bookingId: string }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Fecha</TableHead>
+                <TableHead>Categoría</TableHead>
                 <TableHead>Descripción</TableHead>
                 <TableHead className="text-right">Monto</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
@@ -102,11 +110,12 @@ export function BookingExpensesManager({ bookingId }: { bookingId: string }) {
               {expenses.map((expense) => (
                 <TableRow key={expense.id}>
                   <TableCell>{formatDate(expense.date)}</TableCell>
+                  <TableCell>{expense.categoryId ? categoriesMap.get(expense.categoryId) : 'N/A'}</TableCell>
                   <TableCell className="font-medium">{expense.description}</TableCell>
                   <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <BookingExpenseEditForm expense={expense} />
+                      <BookingExpenseEditForm expense={expense} categories={categories} />
                       <BookingExpenseDeleteForm expenseId={expense.id} bookingId={bookingId} />
                     </div>
                   </TableCell>
@@ -115,7 +124,7 @@ export function BookingExpensesManager({ bookingId }: { bookingId: string }) {
             </TableBody>
              <TableFooter>
                 <TableRow>
-                    <TableCell colSpan={2} className="font-bold text-right">Total</TableCell>
+                    <TableCell colSpan={3} className="font-bold text-right">Total</TableCell>
                     <TableCell className="text-right font-bold">{formatCurrency(totalAmount)}</TableCell>
                     <TableCell></TableCell>
                 </TableRow>

@@ -89,6 +89,11 @@ export type Payment = {
   originalArsAmount?: number; // Stores the original amount if paid in ARS
 };
 
+export type ExpenseCategory = {
+    id: string;
+    name: string;
+};
+
 export type PropertyExpense = {
     id: string;
     propertyId: string;
@@ -98,6 +103,7 @@ export type PropertyExpense = {
     currency: 'ARS'; // Always ARS
     exchangeRate?: number; // Stores the USD to ARS rate if original expense was in USD
     originalUsdAmount?: number; // Stores the original amount if paid in USD
+    categoryId?: string;
 }
 
 export type BookingExpense = {
@@ -109,6 +115,7 @@ export type BookingExpense = {
     currency: 'ARS'; // Always ARS
     exchangeRate?: number; 
     originalUsdAmount?: number;
+    categoryId?: string;
 }
 
 export type UnifiedExpense = {
@@ -122,6 +129,7 @@ export type UnifiedExpense = {
     propertyName: string;
     tenantName?: string;
     bookingId?: string;
+    categoryName?: string;
 }
 
 
@@ -149,6 +157,7 @@ const bookingsCollection = collection(db, 'bookings');
 const propertyExpensesCollection = collection(db, 'propertyExpenses');
 const bookingExpensesCollection = collection(db, 'bookingExpenses');
 const paymentsCollection = collection(db, 'payments');
+const expenseCategoriesCollection = collection(db, 'expenseCategories');
 
 
 export async function getProperties(): Promise<Property[]> {
@@ -300,6 +309,30 @@ export async function deleteBooking(id: string): Promise<boolean> {
     await batch.commit();
     return true;
 }
+
+export async function getExpenseCategories(): Promise<ExpenseCategory[]> {
+    const snapshot = await getDocs(query(expenseCategoriesCollection, orderBy('name')));
+    return snapshot.docs.map(processDoc) as ExpenseCategory[];
+}
+
+export async function addExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
+    const docRef = await addDoc(expenseCategoriesCollection, category);
+    return { id: docRef.id, ...category };
+}
+
+export async function updateExpenseCategory(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
+    const { id, ...data } = updatedCategory;
+    const docRef = doc(db, 'expenseCategories', id);
+    await updateDoc(docRef, data);
+    return updatedCategory;
+}
+
+export async function deleteExpenseCategory(id: string): Promise<void> {
+    // TODO: We might need to handle what happens to expenses that have this categoryId
+    const docRef = doc(db, 'expenseCategories', id);
+    await deleteDoc(docRef);
+}
+
 
 export async function getAllPropertyExpenses(): Promise<PropertyExpense[]> {
     const snapshot = await getDocs(propertyExpensesCollection);
@@ -521,17 +554,19 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
 
 export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
-    const [properties, bookings, tenants, propertyExpenses, bookingExpenses] = await Promise.all([
+    const [properties, bookings, tenants, propertyExpenses, bookingExpenses, categories] = await Promise.all([
         getProperties(),
         getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
         getTenants(),
         getAllPropertyExpenses(),
         getAllBookingExpenses(),
+        getExpenseCategories(),
     ]);
 
     const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
     const tenantsMap = new Map(tenants.map(t => [t.id, t.name]));
     const bookingsMap = new Map(bookings.map(b => [b.id, b]));
+    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
 
     const getAverageExchangeRate = (): number => {
         const allExpensesWithRate = [...propertyExpenses, ...bookingExpenses].filter(e => e.exchangeRate);
@@ -553,6 +588,7 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
             amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate)),
             propertyId: expense.propertyId,
             propertyName: propertiesMap.get(expense.propertyId) || 'N/A',
+            categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
         });
     });
 
@@ -570,6 +606,7 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
                 propertyName: propertiesMap.get(booking.propertyId) || 'N/A',
                 tenantName: tenantsMap.get(booking.tenantId) || 'N/A',
                 bookingId: expense.bookingId,
+                categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
             });
         }
     });
@@ -581,4 +618,3 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
 }
 
     
-

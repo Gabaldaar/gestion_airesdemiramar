@@ -6,13 +6,14 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { getProperties, getAllExpensesUnified } from "@/lib/data";
+import { getProperties, getAllExpensesUnified, getExpenseCategories } from "@/lib/data";
 import ExpensesClient from "@/components/expenses-client";
 
 export default async function ExpensesPage() {
-  const [allExpenses, properties] = await Promise.all([
+  const [allExpenses, properties, categories] = await Promise.all([
     getAllExpensesUnified(),
     getProperties(),
+    getExpenseCategories(),
   ]);
 
   return (
@@ -25,6 +26,7 @@ export default async function ExpensesPage() {
         <ExpensesClient 
           initialExpenses={allExpenses} 
           properties={properties} 
+          categories={categories}
         />
       </CardContent>
     </Card>

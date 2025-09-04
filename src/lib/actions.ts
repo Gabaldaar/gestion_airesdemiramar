@@ -1,4 +1,5 @@
 
+
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -20,13 +21,17 @@ import {
     deletePayment as dbDeletePayment,
     addProperty as dbAddProperty,
     updateProperty as dbUpdateProperty,
+    addExpenseCategory as dbAddExpenseCategory,
+    updateExpenseCategory as dbUpdateExpenseCategory,
+    deleteExpenseCategory as dbDeleteExpenseCategory,
     Tenant,
     Booking,
     PropertyExpense,
     BookingExpense,
     Payment,
     Property,
-    ContractStatus
+    ContractStatus,
+    ExpenseCategory,
 } from "./data";
 
 
@@ -242,6 +247,7 @@ const handleExpenseData = (formData: FormData) => {
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const description = formData.get("description") as string;
     const exchangeRateStr = formData.get("exchangeRate") as string;
+    const categoryId = formData.get("categoryId") as string | undefined;
 
     let amountARS = originalAmount;
     let finalDescription = description;
@@ -267,7 +273,8 @@ const handleExpenseData = (formData: FormData) => {
         amount: amountARS,
         description: finalDescription,
         exchangeRate,
-        originalUsdAmount
+        originalUsdAmount,
+        categoryId: categoryId || null,
     }
 }
 
@@ -291,6 +298,7 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
         await dbAddPropertyExpense(newExpense as Omit<PropertyExpense, 'id'>);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
+        revalidatePath('/expenses');
         return { success: true, message: "Gasto añadido correctamente." };
     } catch (error: any) {
         return { success: false, message: error.message || "Error al añadir el gasto." };
@@ -319,6 +327,7 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
         await dbUpdatePropertyExpense(updatedExpense);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
+        revalidatePath('/expenses');
         return { success: true, message: "Gasto actualizado correctamente." };
     } catch (error: any) {
         return { success: false, message: error.message || "Error al actualizar el gasto." };
@@ -337,6 +346,7 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
         await dbDeletePropertyExpense(id);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
+        revalidatePath('/expenses');
         return { success: true, message: "Gasto eliminado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al eliminar el gasto." };
@@ -364,6 +374,7 @@ export async function addBookingExpense(previousState: any, formData: FormData) 
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath('/reports');
+        revalidatePath('/expenses');
         return { success: true, message: "Gasto de reserva añadido correctamente." };
     } catch (error: any) {
         return { success: false, message: error.message || "Error al añadir el gasto de reserva." };
@@ -393,6 +404,7 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath('/reports');
+        revalidatePath('/expenses');
         return { success: true, message: "Gasto de reserva actualizado correctamente." };
     } catch (error: any) {
         return { success: false, message: error.message || "Error al actualizar el gasto de reserva." };
@@ -411,6 +423,7 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath('/reports');
+        revalidatePath('/expenses');
         return { success: true, message: "Gasto de reserva eliminado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al eliminar el gasto de reserva." };
@@ -543,4 +556,49 @@ export async function deletePayment(previousState: any, formData: FormData) {
     } catch (error) {
         return { success: false, message: "Error al eliminar el pago." };
     }
+}
+
+
+export async function addExpenseCategory(previousState: any, formData: FormData) {
+  const name = formData.get('name') as string;
+  if (!name) {
+    return { success: false, message: 'El nombre de la categoría es obligatorio.' };
+  }
+  try {
+    await dbAddExpenseCategory({ name });
+    revalidatePath('/settings');
+    return { success: true, message: 'Categoría añadida.' };
+  } catch (error) {
+    return { success: false, message: 'Error al añadir la categoría.' };
+  }
+}
+
+export async function updateExpenseCategory(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const name = formData.get('name') as string;
+  if (!id || !name) {
+    return { success: false, message: 'Faltan datos para actualizar la categoría.' };
+  }
+  try {
+    await dbUpdateExpenseCategory({ id, name });
+    revalidatePath('/settings');
+    return { success: true, message: 'Categoría actualizada.' };
+  } catch (error) {
+    return { success: false, message: 'Error al actualizar la categoría.' };
+  }
+}
+
+export async function deleteExpenseCategory(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    return { success: false, message: 'ID de categoría no válido.' };
+  }
+  try {
+    await dbDeleteExpenseCategory(id);
+    revalidatePath('/settings');
+    revalidatePath('/expenses');
+    return { success: true, message: 'Categoría eliminada.' };
+  } catch (error) {
+    return { success: false, message: 'Error al eliminar la categoría.' };
+  }
 }

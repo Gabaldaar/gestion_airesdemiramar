@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -23,13 +24,14 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
+import { ExpenseCategory } from '@/lib/data';
 
 const initialState = {
   message: '',
   success: false,
 };
 
-export function BookingExpenseAddForm({ bookingId, onExpenseAdded }: { bookingId: string, onExpenseAdded: () => void }) {
+export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories }: { bookingId: string, onExpenseAdded: () => void, categories: ExpenseCategory[] }) {
   const [state, formAction] = useActionState(addBookingExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -100,6 +102,24 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded }: { bookingId
                         />
                         </PopoverContent>
                     </Popover>
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="categoryId" className="text-right">
+                        Categoría
+                    </Label>
+                    <Select name="categoryId">
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Sin Categoría</SelectItem>
+                            {categories.map(category => (
+                                <SelectItem key={category.id} value={category.id}>
+                                    {category.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="currency" className="text-right">
