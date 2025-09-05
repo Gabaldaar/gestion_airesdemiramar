@@ -226,54 +226,69 @@ export async function updateBooking(previousState: any, formData: FormData) {
     }
 
     const oldBooking = await getBookingById(id);
+    if (!oldBooking) {
+        return { success: false, message: "No se encontró la reserva para actualizar." };
+    }
 
-    const updatedBookingData: Booking = {
-        id,
-        propertyId,
-        tenantId,
-        startDate,
-        endDate,
-        amount,
-        currency,
-        notes,
-        contractStatus,
-        googleCalendarEventId: oldBooking?.googleCalendarEventId,
-    };
-
+    let updatedBookingData: Booking = { ...oldBooking };
+    
     try {
-        await dbUpdateBooking(updatedBookingData);
+        const eventDetails = { startDate, endDate, tenantName: '', notes };
         
         // --- Google Calendar Integration ---
         try {
             const property = await getPropertyById(propertyId);
             const tenant = await getTenantById(tenantId);
 
-            if (property && property.googleCalendarId && tenant && updatedBookingData.googleCalendarEventId) {
-                await updateEventInCalendar(
-                    property.googleCalendarId,
-                    updatedBookingData.googleCalendarEventId,
-                    {
-                        startDate,
-                        endDate,
-                        tenantName: tenant.name,
-                        notes,
+            if (property && property.googleCalendarId && tenant) {
+                eventDetails.tenantName = tenant.name;
+
+                if (oldBooking.googleCalendarEventId) {
+                    // Event exists, update it
+                    await updateEventInCalendar(
+                        property.googleCalendarId,
+                        oldBooking.googleCalendarEventId,
+                        eventDetails
+                    );
+                } else {
+                    // Event doesn't exist, create it and get the new ID
+                    const newEventId = await addEventToCalendar(property.googleCalendarId, eventDetails);
+                    if (newEventId) {
+                        updatedBookingData.googleCalendarEventId = newEventId;
                     }
-                );
+                }
             }
         } catch (calendarError) {
             console.error("Google Calendar Error (updateBooking):", calendarError);
+            // Non-fatal, but good to be aware of
         }
         // --- End Google Calendar Integration ---
+        
+        // Prepare final data and update DB
+        updatedBookingData = {
+            ...updatedBookingData,
+            propertyId,
+            tenantId,
+            startDate,
+            endDate,
+            amount,
+            currency,
+            notes,
+            contractStatus,
+        };
 
+        await dbUpdateBooking(updatedBookingData);
 
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
         revalidatePath('/'); // Revalidate dashboard
         return { success: true, message: "Reserva actualizada correctamente." };
     } catch (error) {
+        console.error("Error updating booking:", error);
         return { success: false, message: "Error al actualizar la reserva." };
     }
 }
+
 
 export async function deleteBooking(previousState: any, formData: FormData) {
     const id = formData.get("id") as string;
