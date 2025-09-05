@@ -179,7 +179,6 @@ export async function addBooking(previousState: any, formData: FormData) {
     try {
         const newBooking = await dbAddBooking(newBookingData);
         
-        // --- Google Calendar Integration ---
         const property = await getPropertyById(propertyId);
         const tenant = await getTenantById(tenantId);
         if (property && property.googleCalendarId && tenant) {
@@ -193,7 +192,6 @@ export async function addBooking(previousState: any, formData: FormData) {
                 await dbUpdateBooking({ ...newBooking, googleCalendarEventId: eventId });
             }
         }
-        // --- End Google Calendar Integration ---
 
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
@@ -201,7 +199,7 @@ export async function addBooking(previousState: any, formData: FormData) {
         return { success: true, message: "Reserva creada correctamente." };
     } catch (error: any) {
         console.error("Error adding booking:", error);
-        return { success: false, message: `Error en la reserva: ${error.message}` };
+        return { success: false, message: "Error al crear la reserva. Revise las credenciales y la configuración del calendario." };
     }
 }
 
@@ -225,10 +223,9 @@ export async function updateBooking(previousState: any, formData: FormData) {
         return { success: false, message: "No se encontró la reserva para actualizar." };
     }
     
-    try {
-        let updatedBookingData: Booking = { ...oldBooking };
+    let updatedBookingData: Booking = { ...oldBooking };
 
-        // --- Google Calendar Integration ---
+    try {
         const property = await getPropertyById(propertyId);
         const tenant = await getTenantById(tenantId);
         const eventDetails = { startDate, endDate, tenantName: tenant?.name || 'Inquilino', notes };
@@ -247,7 +244,6 @@ export async function updateBooking(previousState: any, formData: FormData) {
                 }
             }
         }
-        // --- End Google Calendar Integration ---
         
         updatedBookingData = {
             ...updatedBookingData,
@@ -269,7 +265,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
         return { success: true, message: "Reserva actualizada correctamente." };
     } catch (error: any) {
         console.error("Error updating booking:", error);
-        return { success: false, message: `Error al actualizar la reserva: ${error.message}` };
+        return { success: false, message: "Error al actualizar la reserva. Revise las credenciales y la configuración del calendario." };
     }
 }
 
@@ -287,21 +283,19 @@ export async function deleteBooking(previousState: any, formData: FormData) {
     try {
         await dbDeleteBooking(id);
 
-        // --- Google Calendar Integration ---
         if (bookingToDelete && bookingToDelete.googleCalendarEventId) {
             const property = await getPropertyById(bookingToDelete.propertyId);
             if (property && property.googleCalendarId) {
                 await deleteEventFromCalendar(property.googleCalendarId, bookingToDelete.googleCalendarEventId);
             }
         }
-        // --- End Google Calendar Integration ---
 
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
         revalidatePath('/'); // Revalidate dashboard
         return { success: true, message: "Reserva eliminada correctamente." };
     } catch (error: any) {
-        return { success: false, message: `Error al eliminar la reserva: ${error.message}` };
+        return { success: false, message: "Error al eliminar la reserva. Revise las credenciales y la configuración del calendario." };
     }
 }
 
@@ -345,7 +339,6 @@ const handleExpenseData = (formData: FormData) => {
         expensePayload.categoryId = null;
     }
     
-    // Remove undefined fields
     if (expensePayload.exchangeRate === undefined) delete expensePayload.exchangeRate;
     if (expensePayload.originalUsdAmount === undefined) delete expensePayload.originalUsdAmount;
     
