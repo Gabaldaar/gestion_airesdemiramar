@@ -216,13 +216,13 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                     </div>
                 </main>
 
-                <footer className="mt-12 flex justify-between items-end">
+                <footer className="mt-8 flex justify-between items-end">
                     <div className="text-center">
                          <div className="h-[108px]"></div>
                         <p className="pt-2 border-t w-48 text-center mt-[-6rem]">Firma Locatario</p>
                     </div>
                     <div className="text-center">
-                        <Image src={Firma} alt="Firma" width={212} height={195} placeholder="blur" />
+                        <Image src={Firma} alt="Firma" width={81} height={74} placeholder="blur" />
                         <p className="pt-2 border-t w-48 text-center mt-[-6rem]">Firma Locador</p>
                     </div>
                 </footer>
@@ -230,4 +230,3 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
         </div>
     );
 }
-
