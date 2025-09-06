@@ -36,17 +36,20 @@ function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnT
     }
     
     const replacements: { [key: string]: string } = {
-        '{{inquilino}}': tenant.name,
         '{{inquilino.nombre}}': tenant.name,
         '{{inquilino.dni}}': tenant.dni || 'N/A',
         '{{inquilino.direccion}}': `${tenant.address}, ${tenant.city}`.trim(),
-        '{{propiedad}}': property.name,
         '{{propiedad.nombre}}': property.name,
         '{{propiedad.direccion}}': property.address,
         '{{fechaCheckIn}}': format(new Date(booking.startDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
         '{{fechaCheckOut}}': format(new Date(booking.endDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
         '{{monto}}': formatCurrency(booking.amount, booking.currency)
     };
+    
+    // Add aliases
+    replacements['{{inquilino}}'] = replacements['{{inquilino.nombre}}'];
+    replacements['{{propiedad}}'] = replacements['{{propiedad.nombre}}'];
+
 
     let processedTemplate = property.contractTemplate || 'No hay plantilla de contrato definida para esta propiedad.';
 
@@ -82,37 +85,13 @@ function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnT
     );
 }
 
-// Wrapper component to handle data fetching on the server and pass to the client component
-function ContractPageLoader({ bookingId }: { bookingId: string }) {
-    const [booking, setBooking] = useState<NonNullable<Awaited<ReturnType<typeof getBookingWithDetails>>> | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchBooking = async () => {
-            const bookingData = await getBookingWithDetails(bookingId);
-            if (!bookingData) {
-                notFound();
-            } else {
-                setBooking(bookingData);
-            }
-            setIsLoading(false);
-        };
-
-        fetchBooking();
-    }, [bookingId]);
-
-    if (isLoading) {
-        return <div className="flex justify-center items-center h-screen"><p>Cargando contrato...</p></div>;
-    }
+export default async function ContractPage({ params }: { params: { id: string } }) {
+    const bookingId = params.id;
+    const booking = await getBookingWithDetails(bookingId);
 
     if (!booking) {
-        return notFound();
+        notFound();
     }
 
     return <ContractPageContent booking={booking} />;
-}
-
-
-export default function ContractPage({ params }: { params: { id: string } }) {
-    return <ContractPageLoader bookingId={params.id} />;
 }
