@@ -35,10 +35,13 @@ export function checkDateConflict(
     bookingStart.setHours(0, 0, 0, 0);
     
     const bookingEnd = new Date(booking.endDate);
-    bookingEnd.setHours(23, 59, 59, 999);
+    // For conflict checking, the end day is available for the next person's check-in.
+    // So we treat the booking as ending at the very start of the check-out day.
+    bookingEnd.setHours(0, 0, 0, 0);
 
     // Check for overlap:
-    // A conflict exists if (StartA <= EndB) and (EndA >= StartB)
+    // A conflict exists if the selected range starts *before* an existing one ends,
+    // AND the selected range ends *after* an existing one starts.
     if (selectedStart.getTime() < bookingEnd.getTime() && selectedEnd.getTime() > bookingStart.getTime()) {
        return booking; // Found a conflict
     }
