@@ -1,3 +1,4 @@
+
 import { getBookingWithDetails } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { format } from 'date-fns';
@@ -52,7 +53,8 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
         '{{propiedad.direccion}}': property.address,
         '{{fechaCheckIn}}': format(new Date(booking.startDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
         '{{fechaCheckOut}}': format(new Date(booking.endDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
-        '{{monto}}': formatCurrency(booking.amount, booking.currency)
+        '{{monto}}': formatCurrency(booking.amount, booking.currency),
+        '{{fechaActual}}': format(new Date(), "dd 'de' LLLL 'de' yyyy", { locale: es }),
     };
 
     let processedTemplate = property.contractTemplate || 'No hay plantilla de contrato definida para esta propiedad.';
@@ -68,7 +70,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
              <div className="max-w-4xl mx-auto bg-white p-8 print:p-0">
                 <header className="flex justify-between items-center pb-8 border-b">
                     <div>
-                        <Image src={LogoCont} alt="Logo" width={225} placeholder="blur" />
+                        <Image src={LogoCont} alt="Logo" width={225} height={60} placeholder="blur" />
                     </div>
                     <div className="print:hidden">
                         <h1 className="text-2xl font-bold text-right">Vista Previa del Contrato</h1>
@@ -90,7 +92,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locatario</p>
                     </div>
                     <div className="text-center">
-                        <Image src={Firma} alt="Firma" width={108} placeholder="blur" />
+                        <Image src={Firma} alt="Firma" width={65} height={60} placeholder="blur" />
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locador</p>
                     </div>
                 </footer>
