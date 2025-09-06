@@ -1,6 +1,7 @@
 
 import type {NextConfig} from 'next';
 
+// Forcing a server restart to recognize files in /public
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
