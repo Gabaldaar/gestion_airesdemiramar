@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import Logo from '@/assets/logocont.png';
-import Signature from '@/assets/firma.png';
 import ContractActions from "@/components/contract-actions";
 import { Suspense } from "react";
 
@@ -73,7 +71,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                     <ContractActions />
                 </header>
                  <header className="hidden print:flex justify-between items-center pb-8 border-b">
-                    {Logo && <Image src={Logo} alt="Logo" width={150} height={75} />}
+                    <Image src="/logocont.png" alt="Logo" width={150} height={75} />
                 </header>
 
                 <main className="mt-8">
@@ -90,7 +88,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locatario</p>
                     </div>
                     <div className="text-center">
-                        {Signature && <Image src={Signature} alt="Firma" width={120} height={60} style={{width: '60%', margin: '0 auto'}} />}
+                        <Image src="/firma.png" alt="Firma" width={120} height={60} style={{width: '60%', margin: '0 auto'}} />
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locador</p>
                     </div>
                 </footer>
