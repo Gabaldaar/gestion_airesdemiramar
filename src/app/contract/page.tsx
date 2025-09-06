@@ -216,13 +216,13 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                     </div>
                 </main>
 
-                <footer className="mt-8 flex justify-between items-end">
+                <footer className="mt-24 flex justify-between items-end">
                     <div className="text-center">
                          <div className="h-[108px]"></div>
                         <p className="pt-2 border-t w-48 text-center mt-[-6rem]">Firma Locatario</p>
                     </div>
                     <div className="text-center">
-                        <Image src={Firma} alt="Firma" width={65} height={59} placeholder="blur" />
+                        <Image src={Firma} alt="Firma" width={42} height={38} placeholder="blur" />
                         <p className="pt-2 border-t w-48 text-center mt-[-6rem]">Firma Locador</p>
                     </div>
                 </footer>
