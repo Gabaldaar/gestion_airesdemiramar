@@ -223,7 +223,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                     </div>
                     <div className="text-center">
                         <div className="h-20 flex items-center justify-center">
-                            <Image src={Firma} alt="Firma" width={84} height={76} placeholder="blur" />
+                            <Image src={Firma} alt="Firma" width={109} height={99} placeholder="blur" />
                         </div>
                         <p className="pt-2 border-t border-black w-48 text-center">Firma Locador</p>
                     </div>
