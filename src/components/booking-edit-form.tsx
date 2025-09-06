@@ -94,7 +94,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
             </DialogHeader>
 
             {conflict && (
-                <Alert variant="destructive" className='mb-4'>
+                <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
                     <AlertDescription>

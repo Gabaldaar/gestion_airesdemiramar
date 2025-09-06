@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -74,6 +74,15 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     }
   }, [date, existingBookings]);
 
+  const disabledDays = useMemo(() => {
+    // We disable the start date of each booking to prevent two bookings from starting on the same day.
+    // Day-picker range considers the start date inclusive and end date exclusive for disabling.
+    return existingBookings.map(booking => ({
+        from: new Date(booking.startDate),
+        to: new Date(booking.endDate)
+    }));
+  }, [existingBookings]);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; setIsOpen(open)}}>
@@ -92,11 +101,11 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
         </DialogHeader>
         
         {conflict && (
-            <Alert variant="destructive" className='mb-4'>
+            <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
                 <AlertDescription>
-                    El rango seleccionado se solapa con otra reserva.
+                    El rango seleccionado se solapa con otra reserva. Puedes continuar si lo deseas.
                 </AlertDescription>
             </Alert>
         )}
@@ -158,6 +167,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                             onSelect={setDate}
                             numberOfMonths={2}
                             locale={es}
+                            disabled={disabledDays}
                         />
                         </PopoverContent>
                     </Popover>

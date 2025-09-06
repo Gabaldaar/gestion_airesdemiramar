@@ -1,5 +1,5 @@
 
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { DateRange } from "react-day-picker";
 import { Booking } from "./data";
@@ -17,8 +17,13 @@ export function checkDateConflict(
     return null;
   }
 
-  const selectedStart = new Date(selectedRange.from).getTime();
-  const selectedEnd = new Date(selectedRange.to).getTime();
+  // Set time to beginning of the day for `from` and end for `to` for accurate comparison
+  const selectedStart = new Date(selectedRange.from);
+  selectedStart.setHours(0, 0, 0, 0);
+
+  const selectedEnd = new Date(selectedRange.to);
+  selectedEnd.setHours(23, 59, 59, 999);
+
 
   for (const booking of existingBookings) {
     // Ignore the booking we are currently editing
@@ -26,12 +31,16 @@ export function checkDateConflict(
       continue;
     }
 
-    const bookingStart = new Date(booking.startDate).getTime();
-    const bookingEnd = new Date(booking.endDate).getTime();
+    const bookingStart = new Date(booking.startDate);
+    bookingStart.setHours(0, 0, 0, 0);
+    
+    const bookingEnd = new Date(booking.endDate);
+    bookingEnd.setHours(23, 59, 59, 999);
 
-    // Check for overlap
-    if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
-      return booking; // Found a conflict
+    // Check for overlap:
+    // A conflict exists if (StartA <= EndB) and (EndA >= StartB)
+    if (selectedStart.getTime() < bookingEnd.getTime() && selectedEnd.getTime() > bookingStart.getTime()) {
+       return booking; // Found a conflict
     }
   }
 
