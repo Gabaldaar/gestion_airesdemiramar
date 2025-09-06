@@ -12,7 +12,7 @@ export default function ContractLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html>
+    <html lang="es">
       <body className="bg-gray-200 print:bg-white">
           {children}
       </body>

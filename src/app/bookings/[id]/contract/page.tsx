@@ -35,7 +35,7 @@ export default async function ContractPage({ params }: { params: { id: string } 
     const replacements: { [key: string]: string } = {
         '{{inquilino.nombre}}': tenant.name,
         '{{inquilino.dni}}': tenant.dni || 'N/A',
-        '{{inquilino.direccion}}': `${tenant.address}, ${tenant.city}`.trim(),
+        '{{inquilino.direccion}}': `${tenant.address || ''}, ${tenant.city || ''}`.trim().replace(/^,|,$/g, ''),
         '{{propiedad.nombre}}': property.name,
         '{{propiedad.direccion}}': property.address,
         '{{fechaCheckIn}}': format(new Date(booking.startDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
