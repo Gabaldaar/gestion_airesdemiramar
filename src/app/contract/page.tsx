@@ -1,14 +1,18 @@
 
+'use client';
+
 import { getBookingWithDetails } from "@/lib/data";
-import { notFound } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ContractActions from "@/components/contract-actions";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import LogoCont from "@/assets/logocont.png";
 import Firma from "@/assets/firma.png";
 import '../globals.css';
+import { BookingWithDetails } from "@/lib/data";
+
 
 // --- Number to Words Conversion Logic ---
 const Unidades = (num: number) => {
@@ -129,24 +133,69 @@ const numeroALetras = (num: number, currency: { plural: string; singular: string
 
 // --- End of Conversion Logic ---
 
-
-export default async function ContractPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-    const bookingId = typeof searchParams.id === 'string' ? searchParams.id : undefined;
+function ContractPageLoader() {
+    const searchParams = useSearchParams();
+    const bookingId = searchParams.get('id');
 
     if (!bookingId) {
         return <div className="p-8 text-red-500 text-center bg-white text-black">ID de reserva no proporcionado.</div>
     }
+    
+    return <ContractPage bookingId={bookingId} />;
+}
 
+
+export default function ContractPageWrapper() {
     return (
         <Suspense fallback={<div className="p-8 text-center bg-white text-black">Cargando contrato...</div>}>
-            <ContractPage bookingId={bookingId} />
+            <ContractPageLoader />
         </Suspense>
     );
 }
 
-async function ContractPage({ bookingId }: { bookingId: string }) {
-    const booking = await getBookingWithDetails(bookingId);
+function ContractPage({ bookingId }: { bookingId: string }) {
+    const [booking, setBooking] = useState<BookingWithDetails | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    
+    useEffect(() => {
+        const fetchBooking = async () => {
+            setIsLoading(true);
+            try {
+                const fetchedBooking = await getBookingWithDetails(bookingId);
+                if (!fetchedBooking) {
+                    setError('Reserva no encontrada.');
+                } else {
+                    setBooking(fetchedBooking);
+                }
+            } catch (e) {
+                console.error(e);
+                setError('Error al cargar la reserva.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
+        fetchBooking();
+    }, [bookingId]);
+    
+    useEffect(() => {
+        if (booking && booking.tenant?.name && booking.property?.name) {
+            const checkInDate = format(new Date(booking.startDate), 'yyyy-MM-dd');
+            const tenantName = booking.tenant.name.replace(/ /g, '_');
+            const propertyName = booking.property.name.replace(/ /g, '_');
+            document.title = `Contrato_${tenantName}-${propertyName}-${checkInDate}`;
+        }
+    }, [booking]);
+    
+    if (isLoading) {
+        return <div className="p-8 text-center bg-white text-black">Cargando datos del contrato...</div>;
+    }
+    
+    if (error) {
+        return <div className="p-8 text-red-500 text-center bg-white text-black">{error}</div>;
+    }
+    
     if (!booking) {
         notFound();
     }
