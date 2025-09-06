@@ -9,7 +9,8 @@ import Image from "next/image";
 import LogoCont from "@/assets/logocont.png";
 import Firma from "@/assets/firma.png";
 import '../globals.css';
-import NumerosALetras from 'numeros_a_letras';
+const { NumerosALetras } = require('numeros_a_letras');
+
 
 export default async function ContractPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const bookingId = typeof searchParams.id === 'string' ? searchParams.id : undefined;
@@ -46,13 +47,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
         }).format(amount);
     }
     
-    const amountInWords = booking.amount ? NumerosALetras(booking.amount, {
-        plural: booking.currency === 'ARS' ? 'PESOS' : 'DÓLARES ESTADOUNIDENSES',
-        singular: booking.currency === 'ARS' ? 'PESO' : 'DÓLAR ESTADOUNIDENSE',
-        centavos: true,
-        plural_centavos: 'CENTAVOS',
-        singular_centavos: 'CENTAVO'
-    }) : '';
+    const amountInWords = booking.amount ? NumerosALetras(booking.amount) : '';
 
 
     const replacements: { [key: string]: string } = {
