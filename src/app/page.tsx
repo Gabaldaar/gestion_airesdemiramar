@@ -1,4 +1,4 @@
-import MainLayout from "@/components/main-layout";
+
 import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings, BookingWithDetails } from "@/lib/data";
 import DashboardStats from "@/components/dashboard-stats";
 import DashboardRecentBookings from "@/components/dashboard-recent-bookings";
@@ -39,47 +39,45 @@ export default async function DashboardPage() {
 
 
   return (
-    <MainLayout>
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center justify-between space-y-2">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight text-primary">Dashboard</h2>
-                <p className="text-muted-foreground">Un resumen de tu negocio de alquileres.</p>
-            </div>
-          </div>
-          <DashboardStats
-            totalIncomeArs={totalIncomeArs}
-            totalNetResultArs={totalNetResultArs}
-            totalIncomeUsd={totalIncomeUsd}
-            totalNetResultUsd={totalNetResultUsd}
-            totalProperties={totalProperties}
-            totalTenants={totalTenants}
-          />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-1 lg:col-span-4">
-              <CardHeader>
-                <CardTitle>Reservas en Curso</CardTitle>
-                <CardDescription>
-                  Reservas activas en este momento.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DashboardCurrentBookings bookings={currentBookings} />
-              </CardContent>
-            </Card>
-            <Card className="col-span-1 lg:col-span-3">
-              <CardHeader>
-                <CardTitle>Próximas Reservas</CardTitle>
-                <CardDescription>
-                  Las próximas 5 reservas agendadas.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DashboardRecentBookings bookings={upcomingBookings} />
-              </CardContent>
-            </Card>
-          </div>
+    <div className="flex-1 space-y-4">
+      <div className="flex items-center justify-between space-y-2">
+        <div>
+            <h2 className="text-3xl font-bold tracking-tight text-primary">Dashboard</h2>
+            <p className="text-muted-foreground">Un resumen de tu negocio de alquileres.</p>
         </div>
-    </MainLayout>
+      </div>
+      <DashboardStats
+        totalIncomeArs={totalIncomeArs}
+        totalNetResultArs={totalNetResultArs}
+        totalIncomeUsd={totalIncomeUsd}
+        totalNetResultUsd={totalNetResultUsd}
+        totalProperties={totalProperties}
+        totalTenants={totalTenants}
+      />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-1 lg:col-span-4">
+          <CardHeader>
+            <CardTitle>Reservas en Curso</CardTitle>
+            <CardDescription>
+              Reservas activas en este momento.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DashboardCurrentBookings bookings={currentBookings} />
+          </CardContent>
+        </Card>
+        <Card className="col-span-1 lg:col-span-3">
+          <CardHeader>
+            <CardTitle>Próximas Reservas</CardTitle>
+            <CardDescription>
+              Las próximas 5 reservas agendadas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DashboardRecentBookings bookings={upcomingBookings} />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

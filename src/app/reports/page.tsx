@@ -2,7 +2,6 @@
 import { getFinancialSummaryByProperty } from "@/lib/data";
 import ReportsClient from "@/components/reports-client";
 import { Suspense } from "react";
-import MainLayout from "@/components/main-layout";
 
 function ReportsContent({ from, to }: { from?: string; to?: string }) {
   // This is now a temporary wrapper to show how data fetching works.
@@ -29,8 +28,6 @@ export default function ReportsPage({
   const to = searchParams?.to;
 
   return (
-    <MainLayout>
-        <ReportsContent from={from} to={to} />
-    </MainLayout>
+    <ReportsContent from={from} to={to} />
     )
 }

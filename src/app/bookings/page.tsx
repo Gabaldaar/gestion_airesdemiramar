@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/card";
 import { getBookings, getProperties, getTenants } from "@/lib/data";
 import BookingsClient from "@/components/bookings-client";
-import MainLayout from "@/components/main-layout";
 
 export default async function BookingsPage({
   searchParams,
@@ -34,21 +33,19 @@ export default async function BookingsPage({
 
 
   return (
-    <MainLayout>
-        <Card>
-        <CardHeader>
-            <CardTitle>{pageTitle}</CardTitle>
-            <CardDescription>{pageDescription}</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <BookingsClient 
-            initialBookings={allBookings} 
-            properties={properties} 
-            tenants={tenants} 
-            initialTenantIdFilter={tenantId}
-            />
-        </CardContent>
-        </Card>
-    </MainLayout>
+    <Card>
+    <CardHeader>
+        <CardTitle>{pageTitle}</CardTitle>
+        <CardDescription>{pageDescription}</CardDescription>
+    </CardHeader>
+    <CardContent>
+        <BookingsClient 
+        initialBookings={allBookings} 
+        properties={properties} 
+        tenants={tenants} 
+        initialTenantIdFilter={tenantId}
+        />
+    </CardContent>
+    </Card>
   );
 }
