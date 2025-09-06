@@ -1,4 +1,3 @@
-
 import { getBookingWithDetails } from "@/lib/data";
 import { notFound } from "next/navigation";
 import Image from 'next/image';
@@ -7,11 +6,26 @@ import { es } from 'date-fns/locale';
 import Logo from '@/assets/logocont.png';
 import Signature from '@/assets/firma.png';
 import ContractActions from "@/components/contract-actions";
+import { Suspense } from "react";
+
+// The main page is a Client Component to handle searchParams
+export default function ContractPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+    const bookingId = typeof searchParams.id === 'string' ? searchParams.id : undefined;
+
+    if (!bookingId) {
+        return <div className="p-8 text-red-500 text-center">ID de reserva no proporcionado.</div>
+    }
+
+    return (
+        <Suspense fallback={<div className="p-8 text-center">Cargando contrato...</div>}>
+            <ContractPage bookingId={bookingId} />
+        </Suspense>
+    );
+}
 
 
-// Main component that can be a server component
-export default async function ContractPage({ params }: { params: { id: string } }) {
-    const bookingId = params.id;
+// This is the Server Component that fetches data
+async function ContractPage({ bookingId }: { bookingId: string }) {
     const booking = await getBookingWithDetails(bookingId);
 
     if (!booking) {

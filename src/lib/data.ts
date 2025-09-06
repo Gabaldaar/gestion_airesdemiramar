@@ -261,14 +261,14 @@ export async function deleteTenant(id: string): Promise<boolean> {
 }
 
 
-async function getBookingDetails(booking: Booking, allPayments: Payment[]): Promise<BookingWithDetails> {
+async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> {
     const [tenant, property] = await Promise.all([
         getTenantById(booking.tenantId),
         getPropertyById(booking.propertyId)
     ]);
 
-    const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
-    const totalPaidInUSD = paymentsForBooking.reduce((acc, payment) => acc + payment.amount, 0);
+    const allPayments = await getPaymentsByBookingId(booking.id);
+    const totalPaidInUSD = allPayments.reduce((acc, payment) => acc + payment.amount, 0);
 
     const bookingAmountInUSD = booking.currency === 'ARS' ? (booking.amount / (booking.exchangeRate || 1)) : booking.amount;
     const balance = booking.currency === booking.currency ? booking.amount - totalPaidInUSD : bookingAmountInUSD - totalPaidInUSD;
@@ -313,8 +313,8 @@ export async function getBookingsByPropertyId(propertyId: string): Promise<Booki
     const q = query(bookingsCollection, where('propertyId', '==', propertyId), orderBy('startDate', 'desc'));
     const snapshot = await getDocs(q);
     const propertyBookings = snapshot.docs.map(processDoc) as Booking[];
-    const allPayments = await getAllPayments();
-    return Promise.all(propertyBookings.map(booking => getBookingDetails(booking, allPayments)));
+    
+    return Promise.all(propertyBookings.map(booking => getBookingDetails(booking)));
 }
 
 export async function getBookingById(id: string): Promise<Booking | undefined> {
@@ -696,6 +696,6 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
 export async function getBookingWithDetails(bookingId: string): Promise<BookingWithDetails | null> {
     const booking = await getBookingById(bookingId);
     if (!booking) return null;
-    const allPayments = await getPaymentsByBookingId(bookingId);
-    return getBookingDetails(booking, allPayments);
+    
+    return getBookingDetails(booking);
 }

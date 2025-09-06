@@ -144,7 +144,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     <div className="flex items-center justify-end gap-2">
                         {booking.notes && <NotesViewer notes={booking.notes} title={`Notas sobre la reserva`} />}
                         <Button asChild variant="ghost" size="icon">
-                            <Link href={`/bookings/${booking.id}/contract`} target="_blank">
+                            <Link href={`/contract?id=${booking.id}`} target="_blank">
                                 <NotebookPen className="h-4 w-4" />
                                 <span className="sr-only">Ver Contrato</span>
                             </Link>
