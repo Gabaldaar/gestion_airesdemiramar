@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -50,22 +51,6 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   );
 }
 
-function AppLogo() {
-    return (
-        <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
-            {/* El logo ahora es un componente de Imagen. Next.js lo buscará en la carpeta /public */}
-            <Image 
-                src="/logo.png" 
-                alt="Logo de la Aplicación" 
-                width={180} // Ajusta el ancho según sea necesario
-                height={40} // Ajusta la altura según sea necesario
-                priority // Carga el logo con prioridad
-            />
-        </Link>
-    );
-}
-
-
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -74,7 +59,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <div className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <AppLogo />
+             <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
+                <Image 
+                    src="/logo.png" 
+                    alt="Logo de la aplicación" 
+                    width={180}
+                    height={40}
+                />
+            </Link>
           </div>
           <div className="flex-1">
             <SidebarNav />
@@ -82,7 +74,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 md:hidden">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
@@ -96,7 +88,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                 <AppLogo />
+                 <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
+                    <Image 
+                        src="/logo.png" 
+                        alt="Logo de la aplicación" 
+                        width={180}
+                        height={40}
+                    />
+                </Link>
               </div>
               <SidebarNav onLinkClick={() => setIsSheetOpen(false)} />
             </SheetContent>
