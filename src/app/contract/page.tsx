@@ -68,7 +68,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
              <div className="max-w-4xl mx-auto bg-white p-8 print:p-0">
                 <header className="flex justify-between items-center pb-8 border-b">
                     <div>
-                        <Image src={LogoCont} alt="Logo" width={150} placeholder="blur" />
+                        <Image src={LogoCont} alt="Logo" width={225} placeholder="blur" />
                     </div>
                     <div className="print:hidden">
                         <h1 className="text-2xl font-bold text-right">Vista Previa del Contrato</h1>
@@ -90,7 +90,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locatario</p>
                     </div>
                     <div className="text-center">
-                        <Image src={Firma} alt="Firma" width={180} placeholder="blur" />
+                        <Image src={Firma} alt="Firma" width={108} placeholder="blur" />
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locador</p>
                     </div>
                 </footer>
