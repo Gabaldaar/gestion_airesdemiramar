@@ -6,17 +6,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Logo from '@/assets/logocont.png';
 import Signature from '@/assets/firma.png';
-import { Button } from "@/components/ui/button";
+import ContractActions from "@/components/contract-actions";
 
-// Client Component for interactive elements
-function ContractActions() {
-    'use client';
-    return (
-        <div className="print:hidden">
-            <Button onClick={() => window.print()}>Imprimir / Guardar como PDF</Button>
-        </div>
-    );
-}
 
 // Main component that can be a server component
 export default async function ContractPage({ params }: { params: { id: string } }) {
