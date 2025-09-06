@@ -552,6 +552,7 @@ export async function addPayment(previousState: any, formData: FormData) {
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath(`/reports`);
+        revalidatePath(`/payments`);
         return { success: true, message: "Pago añadido correctamente." };
     } catch (error) {
         console.error(error)
@@ -615,6 +616,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath(`/reports`);
+        revalidatePath(`/payments`);
         return { success: true, message: "Pago actualizado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al actualizar el pago." };
@@ -633,6 +635,7 @@ export async function deletePayment(previousState: any, formData: FormData) {
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath(`/reports`);
+        revalidatePath(`/payments`);
         return { success: true, message: "Pago eliminado correctamente." };
     } catch (error) {
         return { success: false, message: "Error al eliminar el pago." };

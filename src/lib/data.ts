@@ -90,6 +90,13 @@ export type Payment = {
   originalArsAmount?: number; // Stores the original amount if paid in ARS
 };
 
+export type PaymentWithDetails = Payment & {
+    propertyId?: string;
+    propertyName?: string;
+    tenantId?: string;
+    tenantName?: string;
+}
+
 export type ExpenseCategory = {
     id: string;
     name: string;
@@ -416,6 +423,44 @@ export async function deletePayment(id: string): Promise<boolean> {
 export async function getAllPayments(): Promise<Payment[]> {
     const snapshot = await getDocs(paymentsCollection);
     return snapshot.docs.map(processDoc) as Payment[];
+}
+
+export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]> {
+    const [payments, bookings, tenants, properties] = await Promise.all([
+        getAllPayments(),
+        getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
+        getTenants(),
+        getProperties(),
+    ]);
+
+    const bookingsMap = new Map(bookings.map(b => [b.id, b]));
+    const tenantsMap = new Map(tenants.map(t => [t.id, t.name]));
+    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+
+    const detailedPayments = payments.map(payment => {
+        const booking = bookingsMap.get(payment.bookingId);
+        if (!booking) {
+            return {
+                ...payment,
+                propertyName: 'Reserva eliminada',
+            };
+        }
+        const tenantName = tenantsMap.get(booking.tenantId);
+        const propertyName = propertiesMap.get(booking.propertyId);
+
+        return {
+            ...payment,
+            propertyId: booking.propertyId,
+            propertyName: propertyName || 'N/A',
+            tenantId: booking.tenantId,
+            tenantName: tenantName || 'N/A',
+        };
+    });
+
+    // Sort by date descending
+    detailedPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return detailedPayments;
 }
 
 
