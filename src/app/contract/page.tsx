@@ -4,9 +4,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ContractActions from "@/components/contract-actions";
 import { Suspense } from "react";
+import '../globals.css';
 
-// El componente principal maneja los parámetros de búsqueda y la carga de datos.
-// Es un Server Component.
 export default async function ContractPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const bookingId = typeof searchParams.id === 'string' ? searchParams.id : undefined;
 
@@ -14,7 +13,6 @@ export default async function ContractPageWrapper({ searchParams }: { searchPara
         return <div className="p-8 text-red-500 text-center bg-white text-black">ID de reserva no proporcionado.</div>
     }
 
-    // Usamos Suspense para mostrar un mensaje de carga mientras se obtienen los datos.
     return (
         <Suspense fallback={<div className="p-8 text-center bg-white text-black">Cargando contrato...</div>}>
             <ContractPage bookingId={bookingId} />
@@ -22,8 +20,6 @@ export default async function ContractPageWrapper({ searchParams }: { searchPara
     );
 }
 
-
-// Este es el componente de servidor que obtiene los datos y renderiza el contrato.
 async function ContractPage({ bookingId }: { bookingId: string }) {
     const booking = await getBookingWithDetails(bookingId);
 
