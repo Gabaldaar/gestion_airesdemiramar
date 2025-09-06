@@ -66,14 +66,16 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
     return (
         <div className="bg-white text-black p-4 sm:p-8 md:p-12 print:p-0">
              <div className="max-w-4xl mx-auto bg-white p-8 print:p-0">
-                <header className="flex justify-between items-center pb-8 border-b print:hidden">
-                    <h1 className="text-2xl font-bold">Vista Previa del Contrato</h1>
-                    <ContractActions />
+                <header className="flex justify-between items-center pb-8 border-b">
+                    <div>
+                        <Image src={LogoCont} alt="Logo" width={150} placeholder="blur" />
+                    </div>
+                    <div className="print:hidden">
+                        <h1 className="text-2xl font-bold text-right">Vista Previa del Contrato</h1>
+                        <ContractActions />
+                    </div>
                 </header>
-                 <header className="hidden print:flex justify-between items-center pb-8 border-b">
-                    <Image src={LogoCont} alt="Logo" width={150} placeholder="blur" />
-                </header>
-
+                
                 <main className="mt-8">
                     <div className="prose prose-sm sm:prose-base max-w-none text-justify space-y-4">
                         {paragraphs.map((p, index) => (
