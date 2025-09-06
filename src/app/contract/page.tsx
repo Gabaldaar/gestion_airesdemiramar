@@ -1,3 +1,4 @@
+
 import { getBookingWithDetails } from "@/lib/data";
 import { notFound } from "next/navigation";
 import Image from 'next/image';
@@ -6,23 +7,25 @@ import { es } from 'date-fns/locale';
 import ContractActions from "@/components/contract-actions";
 import { Suspense } from "react";
 
-// The main page is a Client Component to handle searchParams
-export default function ContractPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+// El componente principal maneja los parámetros de búsqueda y la carga de datos.
+// Es un Server Component.
+export default async function ContractPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const bookingId = typeof searchParams.id === 'string' ? searchParams.id : undefined;
 
     if (!bookingId) {
         return <div className="p-8 text-red-500 text-center">ID de reserva no proporcionado.</div>
     }
 
+    // Usamos Suspense para mostrar un mensaje de carga mientras se obtienen los datos.
     return (
-        <Suspense fallback={<div className="p-8 text-center">Cargando contrato...</div>}>
+        <Suspense fallback={<div className="p-8 text-center bg-white text-black">Cargando contrato...</div>}>
             <ContractPage bookingId={bookingId} />
         </Suspense>
     );
 }
 
 
-// This is the Server Component that fetches data
+// Este es el componente de servidor que obtiene los datos y renderiza el contrato.
 async function ContractPage({ bookingId }: { bookingId: string }) {
     const booking = await getBookingWithDetails(bookingId);
 
@@ -32,7 +35,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
     
     const { tenant, property } = booking;
     if (!tenant || !property) {
-        return <div className="p-8 text-red-500">Faltan datos del inquilino o la propiedad para generar el contrato.</div>
+        return <div className="p-8 text-red-500 bg-white">Faltan datos del inquilino o la propiedad para generar el contrato.</div>
     }
 
     const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
@@ -71,6 +74,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                     <ContractActions />
                 </header>
                  <header className="hidden print:flex justify-between items-center pb-8 border-b">
+                    {/* Las imágenes se cargan desde la carpeta /public */}
                     <Image src="/logocont.png" alt="Logo" width={150} height={75} />
                 </header>
 
@@ -88,6 +92,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locatario</p>
                     </div>
                     <div className="text-center">
+                        {/* Las imágenes se cargan desde la carpeta /public */}
                         <Image src="/firma.png" alt="Firma" width={120} height={60} style={{width: '60%', margin: '0 auto'}} />
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locador</p>
                     </div>
@@ -96,3 +101,4 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
         </div>
     );
 }
+
