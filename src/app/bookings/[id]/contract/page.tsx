@@ -18,7 +18,7 @@ function ContractActions() {
     );
 }
 
-
+// Main component that can be a server component
 function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnType<typeof getBookingWithDetails>>> }) {
     
     const { tenant, property } = booking;
@@ -45,11 +45,6 @@ function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnT
         '{{fechaCheckOut}}': format(new Date(booking.endDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
         '{{monto}}': formatCurrency(booking.amount, booking.currency)
     };
-    
-    // Add aliases
-    replacements['{{inquilino}}'] = replacements['{{inquilino.nombre}}'];
-    replacements['{{propiedad}}'] = replacements['{{propiedad.nombre}}'];
-
 
     let processedTemplate = property.contractTemplate || 'No hay plantilla de contrato definida para esta propiedad.';
 
@@ -57,6 +52,10 @@ function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnT
         processedTemplate = processedTemplate.replace(new RegExp(key, 'g'), replacements[key]);
     }
     
+    const paragraphs = processedTemplate.split('\n').filter(p => p.trim() !== '').map((p, index) => (
+        `<p key=${index}>${p}</p>`
+    )).join('');
+
     return (
         <div className="bg-white text-black p-4 sm:p-8 md:p-12 print:p-0">
              <div className="max-w-4xl mx-auto bg-white p-8 print:p-0">
@@ -70,27 +69,66 @@ function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnT
 
                 <main className="mt-8">
                     <div 
-                        className="prose prose-sm sm:prose-base max-w-none"
-                        dangerouslySetInnerHTML={{ __html: processedTemplate.replace(/\n/g, '<br />') }}
+                        className="prose prose-sm sm:prose-base max-w-none text-justify space-y-4"
+                        dangerouslySetInnerHTML={{ __html: paragraphs }}
                     >
                     </div>
                 </main>
 
-                <footer className="mt-16">
-                   {Signature && <Image src={Signature} alt="Firma" width={200} height={100} />}
-                    <p className="pt-2 border-t mt-2">Firma</p>
+                <footer className="mt-16 flex justify-between items-end">
+                    <div className="text-center">
+                         <div className="h-[60px]"></div>
+                        <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locatario</p>
+                    </div>
+                    <div className="text-center">
+                        {Signature && <Image src={Signature} alt="Firma" width={120} height={60} />}
+                        <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locador</p>
+                    </div>
                 </footer>
             </div>
         </div>
     );
 }
 
-export default async function ContractPage({ params }: { params: { id: string } }) {
-    const bookingId = params.id;
-    const booking = await getBookingWithDetails(bookingId);
 
+export default function ContractPageLoader({ params }: { params: { id: string } }) {
+    const [booking, setBooking] = useState<NonNullable<Awaited<ReturnType<typeof getBookingWithDetails>>> | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const bookingId = params.id;
+        if (!bookingId) {
+            setError("No se proporcionó un ID de reserva.");
+            setLoading(false);
+            return;
+        }
+
+        getBookingWithDetails(bookingId)
+            .then(data => {
+                if (data) {
+                    setBooking(data);
+                } else {
+                    notFound();
+                }
+            })
+            .catch(err => {
+                console.error("Error fetching booking:", err);
+                setError("No se pudo cargar la reserva.");
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, [params.id]);
+
+    if (loading) {
+        return <div className="p-8">Cargando contrato...</div>;
+    }
+    if (error) {
+        return <div className="p-8 text-red-500">{error}</div>;
+    }
     if (!booking) {
-        notFound();
+        return notFound();
     }
 
     return <ContractPageContent booking={booking} />;
