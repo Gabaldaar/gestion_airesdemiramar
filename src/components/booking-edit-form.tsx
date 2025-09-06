@@ -109,7 +109,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
                     <AlertDescription>
-                        El rango seleccionado se solapa con otra reserva.
+                        El rango seleccionado se solapa con una reserva existente. La aplicación te permitirá guardarla, pero revisa las fechas.
                     </AlertDescription>
                 </Alert>
             )}
