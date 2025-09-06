@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useActionState } from 'react';
@@ -11,6 +10,7 @@ import { updateProperty } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Card, CardContent } from './ui/card';
+import { PropertyDeleteForm } from './property-delete-form';
 
 const initialState = {
   message: '',
@@ -48,7 +48,8 @@ export function PropertyEditForm({ property }: { property: Property }) {
                     <Textarea id={`notes-${property.id}`} name="notes" defaultValue={property.notes} />
                 </div>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center">
+                <PropertyDeleteForm propertyId={property.id} propertyName={property.name} />
                 <Button type="submit">Guardar Cambios</Button>
             </div>
              {state.message && !state.success && (

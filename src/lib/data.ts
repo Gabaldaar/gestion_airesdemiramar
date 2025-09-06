@@ -188,6 +188,44 @@ export async function updateProperty(updatedProperty: Property): Promise<Propert
     return updatedProperty;
 }
 
+export async function deleteProperty(propertyId: string): Promise<void> {
+    const batch = writeBatch(db);
+
+    // 1. Delete the property itself
+    const propertyRef = doc(db, 'properties', propertyId);
+    batch.delete(propertyRef);
+
+    // 2. Find and delete all bookings for the property
+    const bookingsQuery = query(bookingsCollection, where('propertyId', '==', propertyId));
+    const bookingsSnapshot = await getDocs(bookingsQuery);
+    
+    const bookingIds = bookingsSnapshot.docs.map(d => d.id);
+
+    if (bookingIds.length > 0) {
+        // 3. Find and delete all payments for those bookings
+        const paymentsQuery = query(paymentsCollection, where('bookingId', 'in', bookingIds));
+        const paymentsSnapshot = await getDocs(paymentsQuery);
+        paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        // 4. Find and delete all booking expenses for those bookings
+        const bookingExpensesQuery = query(bookingExpensesCollection, where('bookingId', 'in', bookingIds));
+        const bookingExpensesSnapshot = await getDocs(bookingExpensesQuery);
+        bookingExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
+    }
+
+    // Delete the bookings themselves
+    bookingsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+    // 5. Find and delete all property expenses
+    const propertyExpensesQuery = query(propertyExpensesCollection, where('propertyId', '==', propertyId));
+    const propertyExpensesSnapshot = await getDocs(propertyExpensesQuery);
+    propertyExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
+
+    // Commit the batch
+    await batch.commit();
+}
+
+
 
 export async function getTenants(): Promise<Tenant[]> {
     const snapshot = await getDocs(query(tenantsCollection, orderBy('name')));
@@ -651,5 +689,3 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
 
     return unifiedList;
 }
-
-    
