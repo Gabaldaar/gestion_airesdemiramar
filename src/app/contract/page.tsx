@@ -4,6 +4,9 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ContractActions from "@/components/contract-actions";
 import { Suspense } from "react";
+import Image from "next/image";
+import LogoCont from "@/assets/logocont.png";
+import Firma from "@/assets/firma.png";
 import '../globals.css';
 
 export default async function ContractPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
@@ -68,8 +71,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                     <ContractActions />
                 </header>
                  <header className="hidden print:flex justify-between items-center pb-8 border-b">
-                    {/* Las imágenes se cargan desde la carpeta /public */}
-                    <img src="/logocont.png" alt="Logo" style={{width: '150px', height: 'auto'}} />
+                    <Image src={LogoCont} alt="Logo" width={150} placeholder="blur" />
                 </header>
 
                 <main className="mt-8">
@@ -86,8 +88,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locatario</p>
                     </div>
                     <div className="text-center">
-                        {/* Las imágenes se cargan desde la carpeta /public */}
-                        <img src="/firma.png" alt="Firma" style={{width: '60%', margin: '0 auto'}} />
+                        <Image src={Firma} alt="Firma" width={180} placeholder="blur" />
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locador</p>
                     </div>
                 </footer>
