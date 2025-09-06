@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,12 +15,28 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { deleteBookingExpense } from '@/lib/actions';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 
 const initialState = {
   message: '',
   success: false,
 };
+
+function DeleteButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" variant="destructive" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Borrando...
+                </>
+            ) : (
+                'Continuar'
+            )}
+        </Button>
+    )
+}
 
 export function BookingExpenseDeleteForm({ expenseId, bookingId }: { expenseId: string; bookingId: string }) {
   const [state, formAction] = useActionState(deleteBookingExpense, initialState);
@@ -46,7 +62,7 @@ export function BookingExpenseDeleteForm({ expenseId, bookingId }: { expenseId: 
             <input type="hidden" name="id" value={expenseId} />
             <input type="hidden" name="bookingId" value={bookingId} />
             <AlertDialogAction asChild>
-               <Button type="submit" variant="destructive">Continuar</Button>
+               <DeleteButton />
             </AlertDialogAction>
           </form>
         </AlertDialogFooter>

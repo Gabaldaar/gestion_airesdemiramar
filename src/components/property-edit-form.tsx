@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,28 @@ import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Card, CardContent } from './ui/card';
 import { PropertyDeleteForm } from './property-delete-form';
+import { Loader2 } from 'lucide-react';
 
 const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+         <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                'Guardar Cambios'
+            )}
+        </Button>
+    )
+}
 
 export function PropertyEditForm({ property }: { property: Property }) {
   const [state, formAction] = useActionState(updateProperty, initialState);
@@ -50,7 +67,7 @@ export function PropertyEditForm({ property }: { property: Property }) {
             </div>
             <div className="flex justify-between items-center">
                 <PropertyDeleteForm propertyId={property.id} propertyName={property.name} />
-                <Button type="submit">Guardar Cambios</Button>
+                <SubmitButton />
             </div>
              {state.message && !state.success && (
                 <p className="text-red-500 text-sm">{state.message}</p>

@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -15,13 +15,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addProperty } from '@/lib/actions';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 
 const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                'Guardar Propiedad'
+            )}
+        </Button>
+    )
+}
 
 export function PropertyAddForm() {
   const [state, formAction] = useActionState(addProperty, initialState);
@@ -84,7 +100,7 @@ export function PropertyAddForm() {
                 </div>
             </div>
             <DialogFooter>
-                <Button type="submit">Guardar Propiedad</Button>
+                <SubmitButton />
             </DialogFooter>
         </form>
          {state.message && !state.success && (

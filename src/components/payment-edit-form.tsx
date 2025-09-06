@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select"
 import { updatePayment } from '@/lib/actions';
 import { Payment } from '@/lib/data';
-import { Pencil, Calendar as CalendarIcon } from 'lucide-react';
+import { Pencil, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -36,6 +36,22 @@ const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                'Guardar Cambios'
+            )}
+        </Button>
+    )
+}
 
 export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Payment, onPaymentUpdated: () => void }) {
   const [state, formAction] = useActionState(updatePayment, initialState);
@@ -135,7 +151,7 @@ export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Paymen
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                <Button type="submit">Guardar Cambios</Button>
+                <SubmitButton />
             </DialogFooter>
         </form>
          {state.message && !state.success && (

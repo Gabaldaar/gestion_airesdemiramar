@@ -1,8 +1,7 @@
-
-
 'use client';
 
 import { useState, useRef, useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { ExpenseCategory } from '@/lib/data';
 import { addExpenseCategory, updateExpenseCategory, deleteExpenseCategory } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Save, Trash2, Pencil, X } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Pencil, X, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +32,15 @@ const initialState = {
   success: false,
 };
 
+function AddCategoryButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" size="icon" disabled={pending}>
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+        </Button>
+    )
+}
+
 function CategoryAddRow({ onCategoryAdded }: { onCategoryAdded: () => void }) {
   const [state, formAction] = useActionState(addExpenseCategory, initialState);
   const formRef = useRef<HTMLFormElement>(null);
@@ -47,11 +55,23 @@ function CategoryAddRow({ onCategoryAdded }: { onCategoryAdded: () => void }) {
   return (
     <form action={formAction} ref={formRef} className="flex items-center gap-2 p-2 border-t">
         <Input name="name" placeholder="Nombre de la nueva categoría" className="flex-grow" required />
-        <Button type="submit" size="icon">
-          <PlusCircle className="h-4 w-4" />
-        </Button>
+        <AddCategoryButton />
     </form>
   );
+}
+
+function EditCategoryButtons({ onCancel }: { onCancel: () => void }) {
+    const { pending } = useFormStatus();
+    return (
+        <>
+            <Button type="submit" variant="ghost" size="icon" disabled={pending}>
+                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 text-green-600" />}
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={onCancel} disabled={pending}>
+                <X className="h-4 w-4 text-red-600" />
+            </Button>
+        </>
+    )
 }
 
 function CategoryEditRow({ category, onCancel, onUpdated }: { category: ExpenseCategory, onCancel: () => void, onUpdated: () => void }) {
@@ -70,15 +90,26 @@ function CategoryEditRow({ category, onCancel, onUpdated }: { category: ExpenseC
                 <form action={formAction} ref={formRef} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={category.id} />
                     <Input name="name" defaultValue={category.name} className="flex-grow" required />
-                    <Button type="submit" variant="ghost" size="icon">
-                        <Save className="h-4 w-4 text-green-600" />
-                    </Button>
-                    <Button type="button" variant="ghost" size="icon" onClick={onCancel}>
-                        <X className="h-4 w-4 text-red-600" />
-                    </Button>
+                    <EditCategoryButtons onCancel={onCancel} />
                 </form>
             </TableCell>
         </TableRow>
+    )
+}
+
+function DeleteCategoryButton() {
+    const { pending } = useFormStatus();
+    return (
+         <Button type="submit" variant="destructive" disabled={pending}>
+             {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Eliminando...
+                </>
+            ) : (
+                'Continuar'
+            )}
+        </Button>
     )
 }
 
@@ -110,7 +141,7 @@ function CategoryDeleteAction({ categoryId, onDeleted }: { categoryId: string, o
                     <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction asChild>
-                        <Button type="submit" variant="destructive">Continuar</Button>
+                        <DeleteCategoryButton />
                     </AlertDialogAction>
                     </AlertDialogFooter>
                 </form>

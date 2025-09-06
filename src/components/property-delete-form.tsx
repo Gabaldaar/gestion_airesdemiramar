@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState, useState, useEffect, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { deleteProperty } from '@/lib/actions';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
@@ -22,6 +22,22 @@ const initialState = {
   message: '',
   success: false,
 };
+
+function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" variant="destructive" disabled={isDisabled || pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Eliminando...
+                </>
+            ) : (
+                'Entiendo las consecuencias, eliminar esta propiedad'
+            )}
+        </Button>
+    )
+}
 
 export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: string; propertyName: string }) {
   const [state, formAction] = useActionState(deleteProperty, initialState);
@@ -80,9 +96,7 @@ export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: s
             </div>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <Button type="submit" variant="destructive" disabled={isButtonDisabled}>
-                    Entiendo las consecuencias, eliminar esta propiedad
-                </Button>
+                <DeleteButton isDisabled={isButtonDisabled} />
             </AlertDialogFooter>
         </form>
       </AlertDialogContent>

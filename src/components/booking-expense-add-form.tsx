@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addBookingExpense } from '@/lib/actions';
-import { PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -29,6 +29,22 @@ const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Añadiendo...
+                </>
+            ) : (
+                'Añadir Gasto'
+            )}
+        </Button>
+    )
+}
 
 export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories }: { bookingId: string, onExpenseAdded: () => void, categories: ExpenseCategory[] }) {
   const [state, formAction] = useActionState(addBookingExpense, initialState);
@@ -157,7 +173,7 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories }:
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button type="submit">Añadir Gasto</Button>
+                <SubmitButton />
             </DialogFooter>
         </form>
          {state.message && !state.success && (

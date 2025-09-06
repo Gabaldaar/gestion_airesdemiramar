@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -16,13 +16,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateTenant } from '@/lib/actions';
 import { Tenant } from '@/lib/data';
-import { Pencil } from 'lucide-react';
+import { Pencil, Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 
 const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton({formId}: {formId: string}) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" form={formId} disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                'Guardar Cambios'
+            )}
+        </Button>
+    )
+}
 
 export function TenantEditForm({ tenant }: { tenant: Tenant }) {
   const [state, formAction] = useActionState(updateTenant, initialState);
@@ -105,7 +121,7 @@ export function TenantEditForm({ tenant }: { tenant: Tenant }) {
               </div>
           </form>
           <DialogFooter>
-              <Button type="submit" form={formId}>Guardar Cambios</Button>
+              <SubmitButton formId={formId}/>
           </DialogFooter>
           {state.message && !state.success && (
               <p className="text-red-500 text-sm mt-2">{state.message}</p>

@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateBookingExpense } from '@/lib/actions';
 import { BookingExpense, ExpenseCategory } from '@/lib/data';
-import { Pencil, Calendar as CalendarIcon } from 'lucide-react';
+import { Pencil, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -30,6 +30,22 @@ const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                'Guardar Cambios'
+            )}
+        </Button>
+    )
+}
 
 export function BookingExpenseEditForm({ expense, categories }: { expense: BookingExpense, categories: ExpenseCategory[] }) {
   const [state, formAction] = useActionState(updateBookingExpense, initialState);
@@ -146,7 +162,7 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                <Button type="submit">Guardar Cambios</Button>
+                <SubmitButton />
             </DialogFooter>
         </form>
          {state.message && !state.success && (

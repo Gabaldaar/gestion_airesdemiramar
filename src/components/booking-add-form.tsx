@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useMemo } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -24,8 +24,7 @@ import {
 } from "@/components/ui/select"
 import { addBooking } from '@/lib/actions';
 import { Tenant, Booking } from '@/lib/data';
-import { PlusCircle, AlertTriangle } from 'lucide-react';
-import { Calendar as CalendarIcon } from "lucide-react"
+import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
@@ -44,6 +43,22 @@ const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={isDisabled || pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creando...
+                </>
+            ) : (
+                'Crear Reserva'
+            )}
+        </Button>
+    )
+}
 
 export function BookingAddForm({ propertyId, tenants, existingBookings }: { propertyId: string, tenants: Tenant[], existingBookings: Booking[] }) {
   const [state, formAction] = useActionState(addBooking, initialState);
@@ -77,41 +92,22 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   const disabledDays = useMemo(() => {
     return existingBookings.flatMap(booking => {
         const startDate = new Date(booking.startDate);
-        // The last night of the stay is the day before the end date.
-        // The end date itself (checkout) should be available for the next check-in.
         const lastNight = subDays(new Date(booking.endDate), 1);
-        
-        // If start and end are the same day (e.g., a non-booking event), just return that day
-        if (isSameDay(startDate, lastNight)) {
-             return [{ from: startDate, to: startDate }];
-        }
-
-        // Handle cases where start date might be after last night (shouldn't happen in valid bookings)
-        if (startDate > lastNight) {
-            return [];
-        }
-        
+        if (startDate > lastNight) return [];
         return [{ from: startDate, to: lastNight }];
     });
   }, [existingBookings]);
   
   const getConflictMessage = (): string => {
-    if (!conflict || !date?.from || !date?.to) return "";
+    if (!conflict || !date?.from) return "";
     
     const conflictEndDate = new Date(conflict.endDate);
     
-    // Check if it's a same-day changeover
     if (isSameDay(date.from, conflictEndDate)) {
         return "Atención: La fecha de check-in coincide con un check-out el mismo día.";
     }
 
-    // Check if the end date of the new booking is the same as the start date of the conflict
-    const conflictStartDate = new Date(conflict.startDate);
-    if(isSameDay(date.to, conflictStartDate)) {
-        return "Atención: La fecha de check-out coincide con un check-in el mismo día.";
-    }
-
-    return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente. Revisa las fechas.";
+    return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
 
@@ -238,7 +234,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 <DialogClose asChild>
                     <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 </DialogClose>
-                <Button type="submit" disabled={!date?.from || !date?.to}>Crear Reserva</Button>
+                <SubmitButton isDisabled={!date?.from || !date?.to} />
             </DialogFooter>
         </form>
          {state.message && !state.success && (

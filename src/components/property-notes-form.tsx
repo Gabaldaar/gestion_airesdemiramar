@@ -1,11 +1,11 @@
-
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { updateProperty } from '@/lib/actions';
 import { Property } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { NotebookPen } from 'lucide-react';
+import { NotebookPen, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from './ui/textarea';
 
@@ -13,6 +13,22 @@ const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                'Guardar Notas'
+            )}
+        </Button>
+    )
+}
 
 export function PropertyNotesForm({ property }: { property: Property }) {
   const [state, formAction] = useActionState(updateProperty, initialState);
@@ -55,7 +71,7 @@ export function PropertyNotesForm({ property }: { property: Property }) {
           />
            <DialogFooter>
               <Button variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-              <Button type="submit">Guardar Notas</Button>
+              <SubmitButton />
           </DialogFooter>
            {state.message && !state.success && (
               <p className="text-red-500 text-sm mt-2">{state.message}</p>

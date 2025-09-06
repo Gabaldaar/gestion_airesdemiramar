@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useMemo } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select"
 import { updateBooking } from '@/lib/actions';
 import { Booking, Tenant, Property, ContractStatus } from '@/lib/data';
-import { Pencil, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
+import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
@@ -43,6 +43,22 @@ const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton({ formId, isDisabled }: { formId: string, isDisabled: boolean }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" form={formId} disabled={isDisabled || pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                'Guardar Cambios'
+            )}
+        </Button>
+    )
+}
 
 export function BookingEditForm({ booking, tenants, properties, allBookings }: { booking: Booking, tenants: Tenant[], properties: Property[], allBookings?: Booking[] }) {
   const [state, formAction] = useActionState(updateBooking, initialState);
@@ -78,7 +94,6 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
   const disabledDays = useMemo(() => {
     if (!allBookings) return [];
     
-    // We only want to disable dates from *other* bookings on the same property
     const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId);
     
     return otherBookings.flatMap(otherBooking => {
@@ -90,19 +105,14 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
   }, [allBookings, booking.id, booking.propertyId]);
 
   const getConflictMessage = (): string => {
-    if (!conflict || !date?.from || !date?.to) return "";
+    if (!conflict || !date?.from) return "";
     
     const conflictEndDate = new Date(conflict.endDate);
     if (isSameDay(date.from, conflictEndDate)) {
         return "Atención: La fecha de check-in coincide con un check-out el mismo día.";
     }
 
-    const conflictStartDate = new Date(conflict.startDate);
-    if(isSameDay(date.to, conflictStartDate)) {
-        return "Atención: La fecha de check-out coincide con un check-in el mismo día.";
-    }
-
-    return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente. Revisa las fechas.";
+    return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
 
@@ -265,7 +275,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                 <DialogClose asChild>
                     <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 </DialogClose>
-                <Button type="submit" form={formId} disabled={!date?.from || !date?.to}>Guardar Cambios</Button>
+                <SubmitButton formId={formId} isDisabled={!date?.from || !date?.to} />
             </DialogFooter>
             {state.message && !state.success && (
                 <p className="text-red-500 text-sm mt-2">{state.message}</p>

@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { addPayment } from '@/lib/actions';
-import { PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -34,6 +34,22 @@ const initialState = {
   message: '',
   success: false,
 };
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Añadiendo...
+                </>
+            ) : (
+                'Añadir Pago'
+            )}
+        </Button>
+    )
+}
 
 export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: string, onPaymentAdded: () => void }) {
   const [state, formAction] = useActionState(addPayment, initialState);
@@ -143,7 +159,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button type="submit">Añadir Pago</Button>
+                <SubmitButton />
             </DialogFooter>
         </form>
          {state.message && !state.success && (
