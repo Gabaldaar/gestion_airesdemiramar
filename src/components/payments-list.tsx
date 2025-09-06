@@ -16,7 +16,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PaymentEditForm } from "./payment-edit-form";
 import { PaymentDeleteForm } from "./payment-delete-form";
-import { revalidatePath } from "next/cache";
+import { useRouter } from "next/navigation";
+
 
 interface PaymentsListProps {
   payments: PaymentWithDetails[];
@@ -27,10 +28,8 @@ export default function PaymentsList({ payments }: PaymentsListProps) {
     return <p className="text-sm text-center text-muted-foreground py-8">No hay ingresos para mostrar con los filtros seleccionados.</p>;
   }
 
+  // A simple page refresh is enough when server actions handle revalidation
   const handleAction = () => {
-    // This is a placeholder. In a real client-side app, you might re-fetch data.
-    // With server actions, Next.js handles revalidation.
-    // Forcing a reload might be an option if revalidation is not quick enough.
     window.location.reload();
   };
 

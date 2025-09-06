@@ -8,7 +8,6 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
-import { revalidatePath } from 'next/cache';
 
 interface PaymentsClientProps {
   initialPayments: PaymentWithDetails[];
