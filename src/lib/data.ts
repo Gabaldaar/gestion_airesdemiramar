@@ -260,12 +260,10 @@ export async function deleteTenant(id: string): Promise<boolean> {
     return true;
 }
 
-
 async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> {
-    const [tenant, property] = await Promise.all([
-        getTenantById(booking.tenantId),
-        getPropertyById(booking.propertyId)
-    ]);
+    // Fetch tenant and property, providing default fallback objects if not found.
+    const tenant = await getTenantById(booking.tenantId);
+    const property = await getPropertyById(booking.propertyId);
 
     const allPayments = await getPaymentsByBookingId(booking.id);
     const totalPaidInUSD = allPayments.reduce((acc, payment) => acc + payment.amount, 0);
@@ -273,8 +271,13 @@ async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> 
     const bookingAmountInUSD = booking.currency === 'ARS' ? (booking.amount / (booking.exchangeRate || 1)) : booking.amount;
     const balance = booking.currency === booking.currency ? booking.amount - totalPaidInUSD : bookingAmountInUSD - totalPaidInUSD;
 
-
-    return { ...booking, tenant, property, totalPaid: totalPaidInUSD, balance };
+    return { 
+        ...booking, 
+        tenant: tenant, 
+        property: property,
+        totalPaid: totalPaidInUSD, 
+        balance 
+    };
 }
 
 
@@ -697,5 +700,6 @@ export async function getBookingWithDetails(bookingId: string): Promise<BookingW
     const booking = await getBookingById(bookingId);
     if (!booking) return null;
     
+    // This now returns a more robust object, preventing crashes.
     return getBookingDetails(booking);
 }

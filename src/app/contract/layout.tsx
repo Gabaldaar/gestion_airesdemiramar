@@ -17,7 +17,9 @@ export async function generateMetadata({ searchParams }: { searchParams: { [key:
 
   const booking = await getBookingWithDetails(bookingId);
 
-  if (!booking || !booking.tenant || !booking.property) {
+  // Verificación robusta: nos aseguramos de que booking, tenant y property existan
+  // y tengan las propiedades que necesitamos (name).
+  if (!booking || !booking.tenant?.name || !booking.property?.name) {
     return {
       title: "Contrato de Alquiler",
       description: "Visualización de contrato para imprimir",
