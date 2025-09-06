@@ -1,4 +1,3 @@
-
 import { getBookingWithDetails } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { format } from 'date-fns';
