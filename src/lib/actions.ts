@@ -82,9 +82,13 @@ export async function updateProperty(previousState: any, formData: FormData) {
   try {
     await dbUpdateProperty(propertyData);
     revalidatePath("/settings");
-    revalidatePath(`/properties/${propertyData.id}`);
     revalidatePath("/properties");
+    revalidatePath(`/properties/${propertyData.id}`);
     revalidatePath("/");
+    revalidatePath("/bookings");
+    revalidatePath("/expenses");
+    revalidatePath("/payments");
+    revalidatePath("/reports");
     return { success: true, message: "Propiedad actualizada." };
   } catch (error) {
      console.error("Error updating property:", error);
@@ -110,6 +114,10 @@ export async function deleteProperty(previousState: any, formData: FormData) {
         revalidatePath("/settings");
         revalidatePath("/properties");
         revalidatePath("/");
+        revalidatePath("/bookings");
+        revalidatePath("/expenses");
+        revalidatePath("/payments");
+        revalidatePath("/reports");
         return { success: true, message: "Propiedad eliminada correctamente." };
     } catch (error) {
         console.error("Error deleting property:", error);
@@ -155,6 +163,8 @@ export async function updateTenant(previousState: any, formData: FormData) {
   try {
     await dbUpdateTenant(updatedTenant);
     revalidatePath("/tenants");
+    revalidatePath("/bookings");
+    revalidatePath("/");
     return { success: true, message: "Inquilino actualizado correctamente." };
   } catch (error) {
     return { success: false, message: "Error al actualizar inquilino." };
@@ -306,6 +316,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
 
         // Revalidate paths to update the UI.
         revalidatePath(`/properties/${propertyId}`);
+        revalidatePath(`/properties`);
         revalidatePath('/bookings');
         revalidatePath('/');
         return { success: true, message: "Reserva actualizada correctamente." };
