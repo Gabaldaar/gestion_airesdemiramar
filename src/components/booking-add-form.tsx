@@ -75,9 +75,10 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   }, [date, existingBookings]);
 
   const disabledDays = useMemo(() => {
-    // We disable the start date of each booking to prevent two bookings from starting on the same day.
-    // Day-picker range considers the start date inclusive and end date exclusive for disabling.
-    // We want to disable all days *within* a booking, but allow check-in on the check-out day.
+    // Disable all days that are part of an existing booking range.
+    // The `to` date is exclusive, so `react-day-picker` will disable
+    // days *up to* but not including the checkout day.
+    // This allows a new check-in on the same day as a previous check-out.
     return existingBookings.map(booking => ({
         from: new Date(booking.startDate),
         to: new Date(booking.endDate)
@@ -208,7 +209,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 <DialogClose asChild>
                     <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 </DialogClose>
-                <Button type="submit" disabled={!date?.from || !date?.to}>Crear Reserva</Button>
+                <Button type="submit" disabled={!date?.from || !date?.to || !!conflict}>Crear Reserva</Button>
             </DialogFooter>
         </form>
          {state.message && !state.success && (
