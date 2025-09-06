@@ -20,7 +20,9 @@ import { BookingPaymentsManager } from "./booking-payments-manager";
 import { NotesViewer } from "./notes-viewer";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { NotebookPen } from "lucide-react";
+import { FileText, NotebookPen } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+
 
 interface BookingsListProps {
   bookings: BookingWithDetails[];
@@ -141,19 +143,80 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     {formatCurrency(booking.balance, booking.currency)}
                 </TableCell>
                 <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                        {booking.notes && <NotesViewer notes={booking.notes} title={`Notas sobre la reserva`} />}
-                        <Button asChild variant="ghost" size="icon">
-                            <Link href={`/contract?id=${booking.id}`} target="_blank">
-                                <NotebookPen className="h-4 w-4" />
-                                <span className="sr-only">Ver Contrato</span>
-                            </Link>
-                        </Button>
-                        <BookingPaymentsManager bookingId={booking.id} />
-                        <BookingExpensesManager bookingId={booking.id} />
-                        <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
-                        <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />
-                    </div>
+                    <TooltipProvider>
+                        <div className="flex items-center justify-end gap-1">
+                            {booking.notes && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div>
+                                            <NotesViewer notes={booking.notes} title={`Notas sobre la reserva`} />
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Ver Notas</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button asChild variant="ghost" size="icon">
+                                        <Link href={`/contract?id=${booking.id}`} target="_blank">
+                                            <NotebookPen className="h-4 w-4" />
+                                            <span className="sr-only">Ver Contrato</span>
+                                        </Link>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Ver Contrato</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        <BookingPaymentsManager bookingId={booking.id} />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Gestionar Pagos</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        <BookingExpensesManager bookingId={booking.id} />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Gestionar Gastos</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Editar Reserva</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                       <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Eliminar Reserva</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
+                    </TooltipProvider>
                 </TableCell>
               </TableRow>
             )})}
