@@ -1,7 +1,6 @@
 
 import { getBookingWithDetails } from "@/lib/data";
 import { notFound } from "next/navigation";
-import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ContractActions from "@/components/contract-actions";
@@ -13,7 +12,7 @@ export default async function ContractPageWrapper({ searchParams }: { searchPara
     const bookingId = typeof searchParams.id === 'string' ? searchParams.id : undefined;
 
     if (!bookingId) {
-        return <div className="p-8 text-red-500 text-center">ID de reserva no proporcionado.</div>
+        return <div className="p-8 text-red-500 text-center bg-white text-black">ID de reserva no proporcionado.</div>
     }
 
     // Usamos Suspense para mostrar un mensaje de carga mientras se obtienen los datos.
@@ -75,7 +74,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                 </header>
                  <header className="hidden print:flex justify-between items-center pb-8 border-b">
                     {/* Las imágenes se cargan desde la carpeta /public */}
-                    <Image src="/logocont.png" alt="Logo" width={150} height={75} />
+                    <img src="/logocont.png" alt="Logo" style={{width: '150px', height: 'auto'}} />
                 </header>
 
                 <main className="mt-8">
@@ -93,7 +92,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                     </div>
                     <div className="text-center">
                         {/* Las imágenes se cargan desde la carpeta /public */}
-                        <Image src="/firma.png" alt="Firma" width={120} height={60} style={{width: '60%', margin: '0 auto'}} />
+                        <img src="/firma.png" alt="Firma" style={{width: '60%', margin: '0 auto'}} />
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locador</p>
                     </div>
                 </footer>
@@ -101,4 +100,3 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
         </div>
     );
 }
-
