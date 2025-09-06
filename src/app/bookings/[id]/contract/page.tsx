@@ -14,7 +14,9 @@ import { useEffect, useState } from "react";
 // Client Component for interactive elements
 function ContractActions() {
     return (
-        <Button onClick={() => window.print()}>Imprimir / Guardar como PDF</Button>
+        <div className="print:hidden">
+            <Button onClick={() => window.print()}>Imprimir / Guardar como PDF</Button>
+        </div>
     );
 }
 
@@ -81,7 +83,7 @@ function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnT
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locatario</p>
                     </div>
                     <div className="text-center">
-                        {Signature && <Image src={Signature} alt="Firma" width={120} height={60} />}
+                        {Signature && <Image src={Signature} alt="Firma" width={120} height={60} style={{width: '60%'}} />}
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locador</p>
                     </div>
                 </footer>
@@ -122,10 +124,10 @@ export default function ContractPageLoader({ params }: { params: { id: string } 
     }, [params.id]);
 
     if (loading) {
-        return <div className="p-8">Cargando contrato...</div>;
+        return <div className="flex justify-center items-center h-screen">Cargando contrato...</div>;
     }
     if (error) {
-        return <div className="p-8 text-red-500">{error}</div>;
+        return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
     }
     if (!booking) {
         return notFound();
