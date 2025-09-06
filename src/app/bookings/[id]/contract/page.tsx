@@ -1,6 +1,4 @@
 
-'use client';
-
 import { getBookingWithDetails } from "@/lib/data";
 import { notFound } from "next/navigation";
 import Image from 'next/image';
@@ -9,10 +7,10 @@ import { es } from 'date-fns/locale';
 import Logo from '@/assets/logocont.png';
 import Signature from '@/assets/firma.png';
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
 
 // Client Component for interactive elements
 function ContractActions() {
+    'use client';
     return (
         <div className="print:hidden">
             <Button onClick={() => window.print()}>Imprimir / Guardar como PDF</Button>
@@ -21,7 +19,13 @@ function ContractActions() {
 }
 
 // Main component that can be a server component
-function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnType<typeof getBookingWithDetails>>> }) {
+export default async function ContractPage({ params }: { params: { id: string } }) {
+    const bookingId = params.id;
+    const booking = await getBookingWithDetails(bookingId);
+
+    if (!booking) {
+        notFound();
+    }
     
     const { tenant, property } = booking;
     if (!tenant || !property) {
@@ -54,9 +58,7 @@ function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnT
         processedTemplate = processedTemplate.replace(new RegExp(key, 'g'), replacements[key]);
     }
     
-    const paragraphs = processedTemplate.split('\n').filter(p => p.trim() !== '').map((p, index) => (
-        `<p key=${index}>${p}</p>`
-    )).join('');
+    const paragraphs = processedTemplate.split('\n').filter(p => p.trim() !== '');
 
     return (
         <div className="bg-white text-black p-4 sm:p-8 md:p-12 print:p-0">
@@ -70,10 +72,10 @@ function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnT
                 </header>
 
                 <main className="mt-8">
-                    <div 
-                        className="prose prose-sm sm:prose-base max-w-none text-justify space-y-4"
-                        dangerouslySetInnerHTML={{ __html: paragraphs }}
-                    >
+                    <div className="prose prose-sm sm:prose-base max-w-none text-justify space-y-4">
+                        {paragraphs.map((p, index) => (
+                            <p key={index}>{p}</p>
+                        ))}
                     </div>
                 </main>
 
@@ -83,55 +85,11 @@ function ContractPageContent({ booking }: { booking: NonNullable<Awaited<ReturnT
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locatario</p>
                     </div>
                     <div className="text-center">
-                        {Signature && <Image src={Signature} alt="Firma" width={120} height={60} style={{width: '60%'}} />}
+                        {Signature && <Image src={Signature} alt="Firma" width={120} height={60} style={{width: '60%', margin: '0 auto'}} />}
                         <p className="pt-2 border-t mt-2 w-48 text-center">Firma Locador</p>
                     </div>
                 </footer>
             </div>
         </div>
     );
-}
-
-
-export default function ContractPageLoader({ params }: { params: { id: string } }) {
-    const [booking, setBooking] = useState<NonNullable<Awaited<ReturnType<typeof getBookingWithDetails>>> | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const bookingId = params.id;
-        if (!bookingId) {
-            setError("No se proporcionó un ID de reserva.");
-            setLoading(false);
-            return;
-        }
-
-        getBookingWithDetails(bookingId)
-            .then(data => {
-                if (data) {
-                    setBooking(data);
-                } else {
-                    notFound();
-                }
-            })
-            .catch(err => {
-                console.error("Error fetching booking:", err);
-                setError("No se pudo cargar la reserva.");
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [params.id]);
-
-    if (loading) {
-        return <div className="flex justify-center items-center h-screen">Cargando contrato...</div>;
-    }
-    if (error) {
-        return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
-    }
-    if (!booking) {
-        return notFound();
-    }
-
-    return <ContractPageContent booking={booking} />;
 }
