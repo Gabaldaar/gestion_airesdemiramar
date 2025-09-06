@@ -25,7 +25,7 @@ import {
 import { updateBooking } from '@/lib/actions';
 import { Booking, Tenant, Property, ContractStatus } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
-import { format, subDays } from "date-fns"
+import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
@@ -86,6 +86,16 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
     });
   }, [allBookings, booking.id, booking.propertyId]);
 
+  const getConflictMessage = (): string => {
+    if (!conflict || !date?.from) return "";
+    
+    const conflictEndDate = new Date(conflict.endDate);
+    if (isSameDay(date.from, conflictEndDate)) {
+        return "Atención: La fecha de check-in coincide con un check-out el mismo día.";
+    }
+    return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente. Revisa las fechas.";
+  }
+
 
   return (
     <>
@@ -107,9 +117,9 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
             {conflict && (
                 <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>¡Conflicto de Fechas!</AlertTitle>
+                    <AlertTitle>Alerta de Fechas</AlertTitle>
                     <AlertDescription>
-                        El rango seleccionado se solapa con una reserva existente. La aplicación te permitirá guardarla, pero revisa las fechas.
+                        {getConflictMessage()}
                     </AlertDescription>
                 </Alert>
             )}

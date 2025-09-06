@@ -37,10 +37,9 @@ export function checkDateConflict(
 
     // A conflict exists if the selected range starts BEFORE an existing one ends,
     // AND the selected range ends AFTER an existing one starts.
-    // The check-in day of a new booking cannot be the same as the check-out day of an old one.
-    // A new booking can start on the same day an old one ends.
+    // This will now correctly flag overlaps and same-day check-in/check-outs for notification.
     if (selectedStart.getTime() < bookingEnd.getTime() && selectedEnd.getTime() > bookingStart.getTime()) {
-       return booking; // Found a conflict
+       return booking; // Found a conflict or a contiguous booking
     }
   }
 
