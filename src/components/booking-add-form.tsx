@@ -26,7 +26,7 @@ import { addBooking } from '@/lib/actions';
 import { Tenant, Booking } from '@/lib/data';
 import { PlusCircle, AlertTriangle } from 'lucide-react';
 import { Calendar as CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
+import { format, subDays } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
@@ -75,14 +75,13 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   }, [date, existingBookings]);
 
   const disabledDays = useMemo(() => {
-    // Disable all days that are part of an existing booking range.
-    // The `to` date is exclusive, so `react-day-picker` will disable
-    // days *up to* but not including the checkout day.
-    // This allows a new check-in on the same day as a previous check-out.
-    return existingBookings.map(booking => ({
-        from: new Date(booking.startDate),
-        to: new Date(booking.endDate)
-    }));
+    return existingBookings.map(booking => {
+      const startDate = new Date(booking.startDate);
+      // The day before the end date is the last night of the stay.
+      // The end date itself (checkout) should be available.
+      const lastNight = subDays(new Date(booking.endDate), 1);
+      return { from: startDate, to: lastNight };
+    });
   }, [existingBookings]);
 
 
@@ -209,7 +208,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 <DialogClose asChild>
                     <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 </DialogClose>
-                <Button type="submit" disabled={!date?.from || !date?.to || !!conflict}>Crear Reserva</Button>
+                <Button type="submit" disabled={!date?.from || !date?.to}>Crear Reserva</Button>
             </DialogFooter>
         </form>
          {state.message && !state.success && (

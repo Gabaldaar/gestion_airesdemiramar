@@ -25,7 +25,7 @@ import {
 import { updateBooking } from '@/lib/actions';
 import { Booking, Tenant, Property, ContractStatus } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
-import { format } from "date-fns"
+import { format, subDays } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
@@ -77,13 +77,13 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
 
   const disabledDays = useMemo(() => {
     if (!allBookings) return [];
-    // We want to disable dates from *other* bookings, but not the current one.
     const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId);
     
-    return otherBookings.map(b => ({
-        from: new Date(b.startDate),
-        to: new Date(b.endDate)
-    }));
+    return otherBookings.map(b => {
+      const startDate = new Date(b.startDate);
+      const lastNight = subDays(new Date(b.endDate), 1);
+      return { from: startDate, to: lastNight };
+    });
   }, [allBookings, booking.id, booking.propertyId]);
 
 
@@ -246,7 +246,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                 <DialogClose asChild>
                     <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 </DialogClose>
-                <Button type="submit" form={formId} disabled={!date?.from || !date?.to || !!conflict}>Guardar Cambios</Button>
+                <Button type="submit" form={formId} disabled={!date?.from || !date?.to}>Guardar Cambios</Button>
             </DialogFooter>
             {state.message && !state.success && (
                 <p className="text-red-500 text-sm mt-2">{state.message}</p>
