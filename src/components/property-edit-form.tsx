@@ -36,11 +36,10 @@ function SubmitButton() {
 
 export function PropertyEditForm({ property }: { property: Property }) {
   const [state, formAction] = useActionState(updateProperty, initialState);
-  const formId = `property-edit-form-${property.id}`;
 
   return (
     <div className="py-4">
-        <form id={formId} action={formAction} className="space-y-4">
+        <form action={formAction} className="space-y-4">
             <input type="hidden" name="id" value={property.id} />
              <h4 className="text-lg font-semibold text-primary">{property.name}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -24,10 +24,10 @@ const initialState = {
   success: false,
 };
 
-function SubmitButton({formId}: {formId: string}) {
+function SubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" form={formId} disabled={pending}>
+        <Button type="submit" disabled={pending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -43,7 +43,6 @@ function SubmitButton({formId}: {formId: string}) {
 export function TenantEditForm({ tenant }: { tenant: Tenant }) {
   const [state, formAction] = useActionState(updateTenant, initialState);
   const [isOpen, setIsOpen] = useState(false);
-  const formId = `tenant-edit-form-${tenant.id}`;
 
   useEffect(() => {
     if (state.success) {
@@ -67,7 +66,7 @@ export function TenantEditForm({ tenant }: { tenant: Tenant }) {
               Modifica los datos del inquilino. Haz clic en guardar cuando termines.
           </DialogDescription>
           </DialogHeader>
-          <form id={formId} action={formAction}>
+          <form action={formAction}>
               <input type="hidden" name="id" value={tenant.id} />
               <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -119,10 +118,10 @@ export function TenantEditForm({ tenant }: { tenant: Tenant }) {
                     <Textarea id="notes" name="notes" defaultValue={tenant.notes} className="col-span-3" />
                 </div>
               </div>
+              <DialogFooter>
+                  <SubmitButton />
+              </DialogFooter>
           </form>
-          <DialogFooter>
-              <SubmitButton formId={formId}/>
-          </DialogFooter>
           {state.message && !state.success && (
               <p className="text-red-500 text-sm mt-2">{state.message}</p>
           )}

@@ -44,10 +44,10 @@ const initialState = {
   success: false,
 };
 
-function SubmitButton({ formId, isDisabled }: { formId: string, isDisabled: boolean }) {
+function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" form={formId} disabled={isDisabled || pending}>
+        <Button type="submit" disabled={isDisabled || pending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -68,7 +68,6 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
       to: new Date(booking.endDate)
   });
   const [conflict, setConflict] = useState<Booking | null>(null);
-  const formId = `booking-edit-form-${booking.id}`;
 
   const resetForm = () => {
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
@@ -143,7 +142,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                 </Alert>
             )}
 
-            <form id={formId} action={formAction}>
+            <form action={formAction}>
                 <input type="hidden" name="id" value={booking.id} />
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -270,13 +269,13 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
                     </div>
 
                 </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
+                    </DialogClose>
+                    <SubmitButton isDisabled={!date?.from || !date?.to} />
+                </DialogFooter>
             </form>
-             <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
-                </DialogClose>
-                <SubmitButton formId={formId} isDisabled={!date?.from || !date?.to} />
-            </DialogFooter>
             {state.message && !state.success && (
                 <p className="text-red-500 text-sm mt-2">{state.message}</p>
             )}
