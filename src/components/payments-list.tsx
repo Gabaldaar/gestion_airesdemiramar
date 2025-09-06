@@ -1,6 +1,6 @@
-
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -16,14 +16,18 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PaymentEditForm } from "./payment-edit-form";
 import { PaymentDeleteForm } from "./payment-delete-form";
-import { useRouter } from "next/navigation";
-
 
 interface PaymentsListProps {
   payments: PaymentWithDetails[];
 }
 
 export default function PaymentsList({ payments }: PaymentsListProps) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   if (payments.length === 0) {
     return <p className="text-sm text-center text-muted-foreground py-8">No hay ingresos para mostrar con los filtros seleccionados.</p>;
   }
@@ -34,6 +38,9 @@ export default function PaymentsList({ payments }: PaymentsListProps) {
   };
 
   const formatDate = (dateString: string) => {
+    if (!isClient) {
+      return ''; // Render nothing on the server to avoid mismatch
+    }
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
   };
 
