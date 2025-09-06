@@ -46,6 +46,7 @@ export async function addProperty(previousState: any, formData: FormData) {
     googleCalendarId: formData.get("googleCalendarId") as string,
     imageUrl: formData.get("imageUrl") as string,
     notes: formData.get("notes") as string || "",
+    contractTemplate: formData.get("contractTemplate") as string || "",
   };
 
   if (!newPropertyData.name || !newPropertyData.address) {
@@ -73,6 +74,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
     googleCalendarId: formData.get("googleCalendarId") as string,
     imageUrl: formData.get("imageUrl") as string,
     notes: formData.get("notes") as string,
+    contractTemplate: formData.get("contractTemplate") as string,
   };
 
    if (!propertyData.id || !propertyData.name || !propertyData.address) {
@@ -753,3 +755,4 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'Error al eliminar la categoría.' };
   }
 }
+

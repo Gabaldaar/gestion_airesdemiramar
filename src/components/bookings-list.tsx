@@ -1,5 +1,6 @@
 
 
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -18,6 +19,8 @@ import { BookingExpensesManager } from "./booking-expenses-manager";
 import { BookingPaymentsManager } from "./booking-payments-manager";
 import { NotesViewer } from "./notes-viewer";
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
+import { NotebookPen } from "lucide-react";
 
 interface BookingsListProps {
   bookings: BookingWithDetails[];
@@ -140,6 +143,12 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                         {booking.notes && <NotesViewer notes={booking.notes} title={`Notas sobre la reserva`} />}
+                        <Button asChild variant="ghost" size="icon">
+                            <Link href={`/bookings/${booking.id}/contract`} target="_blank">
+                                <NotebookPen className="h-4 w-4" />
+                                <span className="sr-only">Ver Contrato</span>
+                            </Link>
+                        </Button>
                         <BookingPaymentsManager bookingId={booking.id} />
                         <BookingExpensesManager bookingId={booking.id} />
                         <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />

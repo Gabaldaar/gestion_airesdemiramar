@@ -59,7 +59,7 @@ export function PropertyAddForm() {
           Nueva Propiedad
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Añadir Nueva Propiedad</DialogTitle>
           <DialogDescription>
@@ -97,6 +97,12 @@ export function PropertyAddForm() {
                         Notas
                     </Label>
                     <Textarea id="notes" name="notes" className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="contractTemplate" className="text-right pt-2">
+                        Plantilla de Contrato
+                    </Label>
+                    <Textarea id="contractTemplate" name="contractTemplate" className="col-span-3 h-32" />
                 </div>
             </div>
             <DialogFooter>

@@ -38,6 +38,9 @@ export type Property = {
   googleCalendarId: string;
   imageUrl: string;
   notes?: string;
+  contractTemplate?: string;
+  contractLogoUrl?: string;
+  contractSignatureUrl?: string;
 };
 
 export type Tenant = {
@@ -688,4 +691,11 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
     unifiedList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return unifiedList;
+}
+
+export async function getBookingWithDetails(bookingId: string): Promise<BookingWithDetails | null> {
+    const booking = await getBookingById(bookingId);
+    if (!booking) return null;
+    const allPayments = await getPaymentsByBookingId(bookingId);
+    return getBookingDetails(booking, allPayments);
 }

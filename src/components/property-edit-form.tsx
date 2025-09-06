@@ -63,6 +63,10 @@ export function PropertyEditForm({ property }: { property: Property }) {
                     <Label htmlFor={`notes-${property.id}`}>Notas</Label>
                     <Textarea id={`notes-${property.id}`} name="notes" defaultValue={property.notes} />
                 </div>
+                <div className="md:col-span-2">
+                    <Label htmlFor={`contractTemplate-${property.id}`}>Plantilla de Contrato</Label>
+                    <Textarea id={`contractTemplate-${property.id}`} name="contractTemplate" defaultValue={property.contractTemplate} className="h-40" />
+                </div>
             </div>
             <div className="flex justify-between items-center">
                 <PropertyDeleteForm propertyId={property.id} propertyName={property.name} />
