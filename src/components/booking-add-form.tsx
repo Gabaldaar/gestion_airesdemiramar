@@ -75,22 +75,42 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   }, [date, existingBookings]);
 
   const disabledDays = useMemo(() => {
-    return existingBookings.map(booking => {
-      const startDate = new Date(booking.startDate);
-      // The day before the end date is the last night of the stay.
-      // The end date itself (checkout) should be available.
-      const lastNight = subDays(new Date(booking.endDate), 1);
-      return { from: startDate, to: lastNight };
+    return existingBookings.flatMap(booking => {
+        const startDate = new Date(booking.startDate);
+        // The last night of the stay is the day before the end date.
+        // The end date itself (checkout) should be available for the next check-in.
+        const lastNight = subDays(new Date(booking.endDate), 1);
+        
+        // If start and end are the same day (e.g., a non-booking event), just return that day
+        if (isSameDay(startDate, lastNight)) {
+             return [{ from: startDate, to: startDate }];
+        }
+
+        // Handle cases where start date might be after last night (shouldn't happen in valid bookings)
+        if (startDate > lastNight) {
+            return [];
+        }
+        
+        return [{ from: startDate, to: lastNight }];
     });
   }, [existingBookings]);
   
   const getConflictMessage = (): string => {
-    if (!conflict || !date?.from) return "";
+    if (!conflict || !date?.from || !date?.to) return "";
     
     const conflictEndDate = new Date(conflict.endDate);
+    
+    // Check if it's a same-day changeover
     if (isSameDay(date.from, conflictEndDate)) {
         return "Atención: La fecha de check-in coincide con un check-out el mismo día.";
     }
+
+    // Check if the end date of the new booking is the same as the start date of the conflict
+    const conflictStartDate = new Date(conflict.startDate);
+    if(isSameDay(date.to, conflictStartDate)) {
+        return "Atención: La fecha de check-out coincide con un check-in el mismo día.";
+    }
+
     return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente. Revisa las fechas.";
   }
 
