@@ -45,7 +45,7 @@ export default function DashboardCurrentBookings({ bookings }: { bookings: Booki
       <TableBody>
         {bookings.map((booking) => (
           <TableRow key={booking.id}>
-            <TableCell>{booking.property?.name || 'N/A'}</TableCell>
+            <TableCell className="font-bold text-green-600">{booking.property?.name || 'N/A'}</TableCell>
             <TableCell className="font-medium">{booking.tenant?.name || 'N/A'}</TableCell>
             <TableCell>{formatDate(booking.endDate)}</TableCell>
             <TableCell>
