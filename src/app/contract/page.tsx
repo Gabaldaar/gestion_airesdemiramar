@@ -9,7 +9,7 @@ import Image from "next/image";
 import LogoCont from "@/assets/logocont.png";
 import Firma from "@/assets/firma.png";
 import '../globals.css';
-import { NumerosALetras } from 'numeros_a_letras';
+import NumerosALetras from 'numeros_a_letras';
 
 export default async function ContractPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const bookingId = typeof searchParams.id === 'string' ? searchParams.id : undefined;
