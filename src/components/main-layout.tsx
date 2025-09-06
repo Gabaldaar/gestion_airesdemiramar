@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/sheet';
 import { useState } from 'react';
 import Image from 'next/image';
+import Logo from '@/assets/logo.png';
+
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: Home },
@@ -60,8 +62,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
              <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
-                <Building2 className="h-6 w-6" />
-                <span>Aires de Miramar</span>
+                <Image src={Logo} alt="Logo de la aplicacion" width={180} height={40} />
             </Link>
           </div>
           <div className="flex-1">
@@ -85,8 +86,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <SheetContent side="left" className="flex flex-col p-0">
                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                  <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
-                    <Building2 className="h-6 w-6" />
-                    <span>Aires de Miramar</span>
+                    <Image src={Logo} alt="Logo de la aplicacion" width={180} height={40} />
                 </Link>
               </div>
               <SidebarNav onLinkClick={() => setIsSheetOpen(false)} />
