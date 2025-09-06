@@ -9,6 +9,7 @@ import Image from "next/image";
 import LogoCont from "@/assets/logocont.png";
 import Firma from "@/assets/firma.png";
 import '../globals.css';
+import { NumerosALetras } from 'numeros_a_letras';
 
 export default async function ContractPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const bookingId = typeof searchParams.id === 'string' ? searchParams.id : undefined;
@@ -45,6 +46,15 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
         }).format(amount);
     }
     
+    const amountInWords = booking.amount ? NumerosALetras(booking.amount, {
+        plural: booking.currency === 'ARS' ? 'PESOS' : 'DÓLARES ESTADOUNIDENSES',
+        singular: booking.currency === 'ARS' ? 'PESO' : 'DÓLAR ESTADOUNIDENSE',
+        centavos: true,
+        plural_centavos: 'CENTAVOS',
+        singular_centavos: 'CENTAVO'
+    }) : '';
+
+
     const replacements: { [key: string]: string } = {
         '{{inquilino.nombre}}': tenant.name,
         '{{inquilino.dni}}': tenant.dni || 'N/A',
@@ -54,6 +64,7 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
         '{{fechaCheckIn}}': format(new Date(booking.startDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
         '{{fechaCheckOut}}': format(new Date(booking.endDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
         '{{monto}}': formatCurrency(booking.amount, booking.currency),
+        '{{montoEnLetras}}': amountInWords,
         '{{fechaActual}}': format(new Date(), "dd 'de' LLLL 'de' yyyy", { locale: es }),
     };
 
@@ -89,11 +100,11 @@ async function ContractPage({ bookingId }: { bookingId: string }) {
                 <footer className="mt-12 flex justify-between items-end">
                     <div className="text-center">
                          <div className="h-[108px]"></div>
-                        <p className="pt-2 border-t w-48 text-center">Firma Locatario</p>
+                        <p className="pt-2 border-t w-48 text-center mt-[-2rem]">Firma Locatario</p>
                     </div>
                     <div className="text-center">
-                        <Image src={Firma} alt="Firma" width={118} height={108} placeholder="blur" />
-                        <p className="pt-2 border-t w-48 text-center">Firma Locador</p>
+                        <Image src={Firma} alt="Firma" width={141} height={129} placeholder="blur" />
+                        <p className="pt-2 border-t w-48 text-center mt-[-2rem]">Firma Locador</p>
                     </div>
                 </footer>
             </div>
