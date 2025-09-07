@@ -90,7 +90,7 @@ function AddTemplateDialog() {
                     <DialogHeader>
                         <DialogTitle>Añadir Nueva Plantilla</DialogTitle>
                         <DialogDescription>
-                            Completa los detalles de la plantilla. Usa marcadores como `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`.
+                            Completa los detalles de la plantilla. Usa marcadores como {'`{{inquilino.nombre}}`'}.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -107,7 +107,7 @@ function AddTemplateDialog() {
                             <Textarea id="body" name="body" required className="h-40" />
                         </div>
                          <p className="text-xs text-muted-foreground">
-                            Marcadores: `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`, `{{'{'}}{'{'}propiedad.nombre{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckIn{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckOut{'}'}{'}'}`, `{{'{'}}{'{'}montoReserva{'}'}{'}'}`, `{{'{'}}{'{'}saldoReserva{'}'}{'}'}`, `{{'{'}}{'{'}montoGarantia{'}'}{'}'}`
+                            Marcadores: {'`{{inquilino.nombre}}`'}, {'`{{propiedad.nombre}}`'}, {'`{{fechaCheckIn}}`'}, {'`{{fechaCheckOut}}`'}, {'`{{montoReserva}}`'}, {'`{{saldoReserva}}`'}, {'`{{montoGarantia}}`'}
                         </p>
                     </div>
                     <DialogFooter>
@@ -165,7 +165,7 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
                             <Textarea id="body" name="body" defaultValue={template.body} required className="h-40" />
                         </div>
                          <p className="text-xs text-muted-foreground">
-                           Marcadores: `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`, `{{'{'}}{'{'}propiedad.nombre{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckIn{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckOut{'}'}{'}'}`, `{{'{'}}{'{'}montoReserva{'}'}{'}'}`, `{{'{'}}{'{'}saldoReserva{'}'}{'}'}`, `{{'{'}}{'{'}montoGarantia{'}'}{'}'}`
+                           Marcadores: {'`{{inquilino.nombre}}`'}, {'`{{propiedad.nombre}}`'}, {'`{{fechaCheckIn}}`'}, {'`{{fechaCheckOut}}`'}, {'`{{montoReserva}}`'}, {'`{{saldoReserva}}`'}, {'`{{montoGarantia}}`'}
                         </p>
                     </div>
                     <DialogFooter>
