@@ -5,31 +5,6 @@ import { google } from 'googleapis';
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.send'];
 
-// Function to get the Google Auth client for Gmail, specifically for impersonation.
-const getGoogleAuthForGmail = () => {
-    const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    const serviceAccountPrivateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-    const userEmailToImpersonate = process.env.GOOGLE_ADMIN_EMAIL; // The user email to send 'from'
-
-    if (!serviceAccountEmail || !serviceAccountPrivateKey) {
-        throw new Error("Google service account credentials are not set in environment variables.");
-    }
-    if (!userEmailToImpersonate) {
-        throw new Error("GOOGLE_ADMIN_EMAIL to impersonate for sending email is not set.");
-    }
-    
-    // Create a new JWT client with the service account credentials, specifying the user to impersonate.
-    const auth = new google.auth.JWT(
-        serviceAccountEmail,
-        undefined, // keyFile is not used when private_key is provided directly.
-        serviceAccountPrivateKey,
-        SCOPES,
-        userEmailToImpersonate // The email address of the user to impersonate.
-    );
-    
-    return auth;
-};
-
 interface EmailDetails {
     to: string;
     subject: string;
@@ -37,17 +12,32 @@ interface EmailDetails {
 }
 
 /**
- * Sends an email using the Gmail API with a service account.
- * Note: This requires the service account to have domain-wide delegation
+ * Sends an email using the Gmail API with a service account impersonating a user.
+ * This requires the service account to have domain-wide delegation
  * enabled in the Google Workspace Admin console for the specified scope.
  * The service account must be authorized to act on behalf of the `GOOGLE_ADMIN_EMAIL` user.
  */
 export async function sendEmail({ to, subject, body }: EmailDetails): Promise<void> {
-    const auth = getGoogleAuthForGmail();
+    const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const serviceAccountPrivateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const userEmailToImpersonate = process.env.GOOGLE_ADMIN_EMAIL;
+
+    if (!serviceAccountEmail || !serviceAccountPrivateKey || !userEmailToImpersonate) {
+        throw new Error("Google service account credentials or user to impersonate are not set in environment variables.");
+    }
+    
+    // Create a new JWT client with the service account credentials, specifying the user to impersonate.
+    const auth = new google.auth.JWT({
+        email: serviceAccountEmail,
+        key: serviceAccountPrivateKey,
+        scopes: SCOPES,
+        subject: userEmailToImpersonate, // The email address of the user to impersonate.
+    });
+    
     const gmail = google.gmail({ version: 'v1', auth });
 
-    // The from address must be the same as the impersonated user
-    const fromAddress = process.env.GOOGLE_ADMIN_EMAIL;
+    // The from address must be the same as the impersonated user's email.
+    const fromAddress = userEmailToImpersonate;
 
     // Create a raw email string following RFC 2822 format.
     const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
@@ -57,12 +47,13 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
       `Subject: ${utf8Subject}`,
       'MIME-Version: 1.0',
       'Content-Type: text/html; charset=utf-8',
+      'Content-Transfer-Encoding: 7bit', // Can be 7bit for HTML with UTF-8
       '',
       body
     ];
     const emailContent = messageParts.join('\n');
 
-    // The email needs to be base64url encoded
+    // The email needs to be base64url encoded for the Gmail API's raw field.
     const encodedMessage = Buffer.from(emailContent)
         .toString('base64')
         .replace(/\+/g, '-')
@@ -71,7 +62,7 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
 
     try {
         await gmail.users.messages.send({
-            userId: 'me', // 'me' refers to the impersonated user
+            userId: 'me', // 'me' refers to the impersonated user (subject of the JWT)
             requestBody: {
                 raw: encodedMessage,
             },

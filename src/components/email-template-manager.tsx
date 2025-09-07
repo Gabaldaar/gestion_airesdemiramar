@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState, useRef, useActionState, useEffect, useTransition } from 'react';
-import { useFormStatus } from 'react-dom';
 import { EmailTemplate, getEmailTemplates } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -40,13 +39,6 @@ import {
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useQuill } from 'react-quilljs';
 import 'quill/dist/quill.snow.css';
-import Quill from 'quill';
-
-if (typeof window !== 'undefined') {
-    const Indent = Quill.import('attributors/style/indent');
-    Quill.register(Indent, true);
-}
-
 
 const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}";
 
@@ -90,6 +82,8 @@ const Editor = ({ value, onChange }: { value: string, onChange: (val: string) =>
     }, [quill, onChange]);
     
     useEffect(() => {
+        // This effect syncs the editor with external changes to the 'value' prop.
+        // It checks to avoid an infinite loop by not setting the contents if it's already the same.
         if (quill && value !== quill.root.innerHTML) {
             const delta = quill.clipboard.convert(value);
             quill.setContents(delta, 'silent');
@@ -118,6 +112,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
         }
     }, [state, onActionComplete]);
     
+    // Reset form when dialog closes
     useEffect(() => {
         if (!isOpen) {
             formRef.current?.reset();
@@ -173,6 +168,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
 function EditTemplateDialog({ template, onActionComplete }: { template: EmailTemplate, onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
+    // Initialize body state with the template's body, but allow it to be updated.
     const [body, setBody] = useState(template.body);
     const [state, formAction, isPending] = useActionState(updateEmailTemplate, { success: false, message: '' });
 
@@ -183,7 +179,8 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
         }
     }, [state, onActionComplete]);
     
-    // This is the fix: Sync state when the dialog is opened or the template prop changes.
+    // This is the crucial part: When the dialog is opened, we sync the `body` state
+    // with the content of the template prop that was passed in.
     useEffect(() => {
         if (isOpen) {
             setBody(template.body);
