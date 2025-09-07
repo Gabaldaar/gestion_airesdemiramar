@@ -5,7 +5,7 @@ import { google } from 'googleapis';
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.send'];
 
-// Function to get the Google Auth client for Gmail, aligned with the calendar auth method.
+// Function to get the Google Auth client for Gmail, specifically for impersonation.
 const getGoogleAuthForGmail = () => {
     const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
     const serviceAccountPrivateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -18,23 +18,16 @@ const getGoogleAuthForGmail = () => {
         throw new Error("GOOGLE_ADMIN_EMAIL to impersonate for sending email is not set.");
     }
     
-    // Use GoogleAuth with impersonation, which is the modern and correct way.
-    const auth = new google.auth.GoogleAuth({
-        credentials: {
-            client_email: serviceAccountEmail,
-            private_key: serviceAccountPrivateKey,
-        },
-        scopes: SCOPES,
-    });
-
-    return auth.fromJSON({
-        type: 'service_account',
-        client_email: serviceAccountEmail,
-        private_key: serviceAccountPrivateKey,
-        client_id: '', // Not strictly needed for JWT-like flow with GoogleAuth
-        token_url: 'https://oauth2.googleapis.com/token',
-        universe_domain: 'googleapis.com',
-    }).createScoped(SCOPES).createImpersonated(userEmailToImpersonate);
+    // Create a new JWT client with the service account credentials, specifying the user to impersonate.
+    const auth = new google.auth.JWT(
+        serviceAccountEmail,
+        undefined, // keyFile is not used when private_key is provided directly.
+        serviceAccountPrivateKey,
+        SCOPES,
+        userEmailToImpersonate // The email address of the user to impersonate.
+    );
+    
+    return auth;
 };
 
 interface EmailDetails {
@@ -72,6 +65,7 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
         .replace(/=+$/, '');
 
     try {
+        await auth.authorize(); // Authorize the client before making the API call
         await gmail.users.messages.send({
             userId: 'me', // 'me' refers to the impersonated user
             requestBody: {
