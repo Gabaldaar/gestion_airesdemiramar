@@ -24,11 +24,18 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
   }));
 
   const formatCurrency = (value: number) => {
+    if (currency === 'USD') {
+        return `USD ${new Intl.NumberFormat('en-US', {
+            style: 'decimal',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(value)}`;
+    }
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   }
 

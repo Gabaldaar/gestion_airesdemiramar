@@ -46,15 +46,14 @@ export default function PaymentsList({ payments }: PaymentsListProps) {
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
     const options: Intl.NumberFormatOptions = {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+        style: 'decimal',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
     };
     if (currency === 'ARS') {
-      return new Intl.NumberFormat('es-AR', options).format(amount);
+        return new Intl.NumberFormat('es-AR', { ...options, style: 'currency', currency: 'ARS'}).format(amount);
     }
-    return new Intl.NumberFormat('en-US', options).format(amount);
+    return `USD ${new Intl.NumberFormat('en-US', options).format(amount)}`;
   };
   
   const totalAmountUSD = payments.reduce((acc, payment) => acc + payment.amount, 0);

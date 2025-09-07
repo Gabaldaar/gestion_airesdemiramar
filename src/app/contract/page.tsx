@@ -206,6 +206,13 @@ function ContractPage({ bookingId }: { bookingId: string }) {
     }
 
     const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
+        if (currency === 'USD') {
+             return `USD ${new Intl.NumberFormat('en-US', {
+                style: 'decimal',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(amount)}`;
+        }
         return new Intl.NumberFormat('es-AR', {
             style: 'currency',
             currency: currency,

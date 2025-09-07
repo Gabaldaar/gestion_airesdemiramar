@@ -69,12 +69,11 @@ export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
+    return `USD ${new Intl.NumberFormat('en-US', {
+        style: 'decimal',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(amount)}`;
   };
 
   const totalAmount = payments.reduce((acc, payment) => acc + payment.amount, 0);
