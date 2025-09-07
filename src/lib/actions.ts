@@ -269,70 +269,67 @@ export async function updateBooking(previousState: any, formData: FormData) {
             return { success: false, message: "No se encontró la reserva para actualizar." };
         }
         
-        const updatedBookingData: Partial<Booking> = { id };
-        
-        const getFormValue = (key: string): string | null => formData.has(key) ? formData.get(key) as string : null;
-        
-        const formValues: { [key in keyof Booking]?: any } = {
+        // This is a special case to handle the full form data from the Guarantee Manager.
+        const updatedBookingData: Partial<Booking> = {
             id,
-            propertyId: getFormValue("propertyId"),
-            tenantId: getFormValue("tenantId"),
-            startDate: getFormValue("startDate"),
-            endDate: getFormValue("endDate"),
-            amount: getFormValue("amount") ? parseFloat(getFormValue("amount")!) : null,
-            currency: getFormValue("currency") as 'USD' | 'ARS' | null,
-            notes: getFormValue("notes"),
-            contractStatus: getFormValue("contractStatus") as ContractStatus | null,
-            googleCalendarEventId: getFormValue("googleCalendarEventId"),
-            guaranteeStatus: getFormValue("guaranteeStatus") as GuaranteeStatus | null,
-            guaranteeAmount: getFormValue("guaranteeAmount") ? parseFloat(getFormValue("guaranteeAmount")!) : null,
-            guaranteeCurrency: getFormValue("guaranteeCurrency") as 'USD' | 'ARS' | null,
-            guaranteeReceivedDate: getFormValue("guaranteeReceivedDate"),
-            guaranteeReturnedDate: getFormValue("guaranteeReturnedDate"),
+            propertyId: formData.get("propertyId") as string || oldBooking.propertyId,
+            tenantId: formData.get("tenantId") as string || oldBooking.tenantId,
+            startDate: formData.get("startDate") as string || oldBooking.startDate,
+            endDate: formData.get("endDate") as string || oldBooking.endDate,
+            amount: parseFloat(formData.get("amount") as string) || oldBooking.amount,
+            currency: formData.get("currency") as 'USD' | 'ARS' || oldBooking.currency,
+            notes: formData.get("notes") as string ?? oldBooking.notes,
+            contractStatus: formData.get("contractStatus") as ContractStatus || oldBooking.contractStatus,
+            googleCalendarEventId: formData.get("googleCalendarEventId") as string ?? oldBooking.googleCalendarEventId,
+            guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus || oldBooking.guaranteeStatus,
+            guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS' || oldBooking.guaranteeCurrency,
         };
 
-        const guaranteeStatus = formValues.guaranteeStatus || oldBooking.guaranteeStatus;
-        const guaranteeAmount = formValues.guaranteeAmount ?? oldBooking.guaranteeAmount;
-        
         // --- Server-side Validation for Guarantees ---
-        if ((guaranteeStatus === 'solicited' || guaranteeStatus === 'received' || guaranteeStatus === 'returned') && (!guaranteeAmount || guaranteeAmount <= 0)) {
-            return { success: false, message: "El 'Monto' de la garantía es obligatorio para el estado seleccionado." };
+        const guaranteeStatus = updatedBookingData.guaranteeStatus;
+        const guaranteeAmountStr = formData.get("guaranteeAmount") as string;
+        const guaranteeReceivedDateStr = formData.get("guaranteeReceivedDate") as string;
+        const guaranteeReturnedDateStr = formData.get("guaranteeReturnedDate") as string;
+
+        if (guaranteeAmountStr && guaranteeAmountStr !== '') {
+            updatedBookingData.guaranteeAmount = parseFloat(guaranteeAmountStr);
+        } else {
+            updatedBookingData.guaranteeAmount = null;
         }
-        if (guaranteeStatus === 'received' && !formValues.guaranteeReceivedDate) {
-            return { success: false, message: "La 'Fecha Recibida' es obligatoria para el estado 'Recibida'." };
-        }
-        if (guaranteeStatus === 'returned' && !formValues.guaranteeReturnedDate) {
-            return { success: false, message: "La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'." };
-        }
-        
-        // Build the final update object, only including fields that were actually in the form
-        for (const key in formValues) {
-            const K = key as keyof Booking;
-            if (formValues[K] !== null) {
-                (updatedBookingData as any)[K] = formValues[K];
-            }
-        }
-        
-        // Explicitly handle unsetting optional fields
-        if (formData.has('guaranteeAmount') && getFormValue('guaranteeAmount') === '') {
-            updatedBookingData.guaranteeAmount = null; 
-        }
-        if (formData.has('guaranteeReceivedDate') && getFormValue('guaranteeReceivedDate') === '') {
+
+        if (guaranteeReceivedDateStr && guaranteeReceivedDateStr !== '') {
+            updatedBookingData.guaranteeReceivedDate = guaranteeReceivedDateStr;
+        } else {
             updatedBookingData.guaranteeReceivedDate = null;
         }
-        if (formData.has('guaranteeReturnedDate') && getFormValue('guaranteeReturnedDate') === '') {
+
+        if (guaranteeReturnedDateStr && guaranteeReturnedDateStr !== '') {
+            updatedBookingData.guaranteeReturnedDate = guaranteeReturnedDateStr;
+        } else {
             updatedBookingData.guaranteeReturnedDate = null;
         }
 
 
-        // First, update the booking in our database.
+        if ((guaranteeStatus === 'solicited' || guaranteeStatus === 'received' || guaranteeStatus === 'returned') && !updatedBookingData.guaranteeAmount) {
+            return { success: false, message: "El 'Monto' de la garantía es obligatorio para el estado seleccionado." };
+        }
+        if (guaranteeStatus === 'received' && !updatedBookingData.guaranteeReceivedDate) {
+            return { success: false, message: "La 'Fecha Recibida' es obligatoria para el estado 'Recibida'." };
+        }
+        if (guaranteeStatus === 'returned' && !updatedBookingData.guaranteeReturnedDate) {
+            return { success: false, message: "La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'." };
+        }
+
         await dbUpdateBooking(updatedBookingData as Booking);
         
         const finalBookingState = await getBookingById(id);
         if (!finalBookingState) throw new Error("Booking disappeared after update.");
 
-        // Then, try to sync with Google Calendar, if relevant data changed.
-        const calendarFieldsChanged = formValues.startDate || formValues.endDate || formValues.tenantId || formValues.notes;
+        const calendarFieldsChanged = updatedBookingData.startDate !== oldBooking.startDate || 
+                                     updatedBookingData.endDate !== oldBooking.endDate || 
+                                     updatedBookingData.tenantId !== oldBooking.tenantId ||
+                                     updatedBookingData.notes !== oldBooking.notes;
+
         if (calendarFieldsChanged) {
             const property = await getPropertyById(finalBookingState.propertyId);
             const tenant = await getTenantById(finalBookingState.tenantId);
@@ -361,7 +358,6 @@ export async function updateBooking(previousState: any, formData: FormData) {
             }
         }
 
-        // Revalidate paths to update the UI.
         revalidatePath(`/properties/${finalBookingState.propertyId}`);
         revalidatePath(`/properties`);
         revalidatePath('/bookings');
@@ -801,3 +797,5 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'Error al eliminar la categoría.' };
   }
 }
+
+    

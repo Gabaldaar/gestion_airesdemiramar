@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useActionState, useEffect, useState, useRef, useTransition } from 'react';
+import { useEffect, useState, useRef, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -28,23 +27,14 @@ import { Shield, Loader2 } from 'lucide-react';
 import { DatePicker } from './ui/date-picker';
 import { Alert, AlertDescription } from './ui/alert';
 
-
 const initialState: { message: string; success: boolean, error?: string } = {
   message: '',
   success: false,
 };
 
-function SubmitButton({ onClick, isDisabled }: { onClick: () => void, isDisabled: boolean }) {
-    const [isPending, startTransition] = useTransition();
-
-    const handleClick = () => {
-        startTransition(() => {
-            onClick();
-        });
-    };
-
+function SubmitButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button onClick={handleClick} disabled={isDisabled || isPending}>
+        <Button type="submit" disabled={isPending}>
             {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -58,8 +48,9 @@ function SubmitButton({ onClick, isDisabled }: { onClick: () => void, isDisabled
 }
 
 export function GuaranteeManager({ booking }: { booking: Booking }) {
-  const [state, formAction] = useActionState(updateBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [formState, setFormState] = useState(initialState);
   const formRef = useRef<HTMLFormElement>(null);
   
   const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
@@ -89,12 +80,6 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
     return true;
   };
 
-  useEffect(() => {
-    validateForm();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, receivedDate, returnedDate, amount]);
-
-
   // Effect to reset form fields when dialog opens or booking data changes
   useEffect(() => {
     if (isOpen) {
@@ -103,29 +88,24 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
+      setFormState(initialState); // Crucial: Reset server state on open
     }
   }, [isOpen, booking]);
   
-  // This is the key change: Handle form submission manually to control dialog closing.
-  const handleFormSubmit = () => {
-    if (formRef.current) {
-        const formData = new FormData(formRef.current);
-        // The formAction will trigger the server action.
-        // We no longer need to check the result here to close the dialog.
-        // The `revalidatePath` in the action will refresh the data.
-        formAction(formData); 
-    }
+  const handleSubmit = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await updateBooking(formState, formData);
+        setFormState(result);
+        if (result.success) {
+            setIsOpen(false);
+        }
+    });
   };
 
-  // Effect to close the dialog ONLY when the action is successful.
   useEffect(() => {
-      // We only want to close the dialog if the state indicates success AND the dialog is currently open.
-      // This prevents it from trying to close a dialog that's already closed.
-      if (state.success && isOpen) {
-          setIsOpen(false);
-      }
-  }, [state, isOpen]);
-
+    validateForm();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, receivedDate, returnedDate, amount]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -143,10 +123,19 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form ref={formRef} action={formAction}>
+        <form ref={formRef} action={handleSubmit}>
             <input type="hidden" name="id" value={booking.id} />
-            <input type="hidden" name="guaranteeReceivedDate" value={receivedDate?.toISOString().split('T')[0] || ''} />
-            <input type="hidden" name="guaranteeReturnedDate" value={returnedDate?.toISOString().split('T')[0] || ''} />
+            <input type="hidden" name="guaranteeReceivedDate" value={receivedDate ? receivedDate.toISOString().split('T')[0] : ''} />
+            <input type="hidden" name="guaranteeReturnedDate" value={returnedDate ? returnedDate.toISOString().split('T')[0] : ''} />
+            {/* Pass through all other booking fields to avoid them being overwritten */}
+            <input type="hidden" name="propertyId" value={booking.propertyId} />
+            <input type="hidden" name="tenantId" value={booking.tenantId} />
+            <input type="hidden" name="startDate" value={booking.startDate} />
+            <input type="hidden" name="endDate" value={booking.endDate} />
+            <input type="hidden" name="amount" value={booking.amount} />
+            <input type="hidden" name="currency" value={booking.currency} />
+            <input type="hidden" name="notes" value={booking.notes} />
+            <input type="hidden" name="contractStatus" value={booking.contractStatus} />
             <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
 
             <div className="grid gap-4 py-4">
@@ -219,14 +208,13 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
 
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                 {/* This button no longer submits the form directly. */}
-                <SubmitButton onClick={handleFormSubmit} isDisabled={!!clientError} />
+                <SubmitButton isPending={isPending} />
             </DialogFooter>
         </form>
-         {(clientError || (state.message && !state.success)) && (
+         {(clientError || (formState.message && !formState.success)) && (
             <Alert variant="destructive" className="mt-4">
                 <AlertDescription>
-                   {clientError || state.message}
+                   {clientError || formState.message}
                 </AlertDescription>
             </Alert>
         )}
@@ -234,3 +222,5 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
     </Dialog>
   );
 }
+
+    
