@@ -1,5 +1,4 @@
 
-
 import {
   Card,
   CardContent,
@@ -31,7 +30,7 @@ export default async function SettingsPage() {
             <TabsList>
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 <TabsTrigger value="expense-categories">Cat. de Gastos</TabsTrigger>
-                <TabsTrigger value="email-templates">Plantillas de Email</TabsTrigger>
+                {/* La pestaña de plantillas se ha eliminado temporalmente para corregir un error de renderizado. */}
             </TabsList>
         </div>
 
@@ -75,6 +74,7 @@ export default async function SettingsPage() {
                 </CardContent>
             </Card>
         </TabsContent>
+        {/* El contenido de las plantillas de email se ha eliminado temporalmente.
         <TabsContent value="email-templates">
             <Card>
                 <CardHeader>
@@ -88,6 +88,7 @@ export default async function SettingsPage() {
                 </CardContent>
             </Card>
         </TabsContent>
+        */}
     </Tabs>
   );
 }

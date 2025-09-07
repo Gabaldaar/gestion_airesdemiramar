@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useRef, useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -42,73 +42,57 @@ import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 
 const initialState = { success: false, message: '' };
 
-// --- Action Buttons ---
-function SubmitButton({ isPending, text = "Guardar" }: { isPending: boolean, text?: string }) {
-    return (
-        <Button type="submit" disabled={isPending}>
-            {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Guardando...</> : text}
-        </Button>
-    )
-}
+const handleActionComplete = () => {
+    // Reload the page to ensure the latest data is shown and state is reset.
+    window.location.reload();
+};
 
-function DeleteButton({ isPending }: { isPending: boolean }) {
-    return (
-        <Button type="submit" variant="destructive" disabled={isPending}>
-            {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Eliminando...</> : 'Continuar'}
-        </Button>
-    )
-}
 
-// --- Add/Edit Dialog Component ---
-function TemplateFormDialog({ template, onActionComplete }: { template?: EmailTemplate, onActionComplete: () => void }) {
+function AddTemplateDialog() {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
-    const [state, formAction] = useActionState(template ? updateEmailTemplate : addEmailTemplate, initialState);
+    const [state, formAction] = useActionState(addEmailTemplate, initialState);
+
+    const { pending } = useFormStatus();
 
     useEffect(() => {
         if (state.success) {
             setIsOpen(false);
-            onActionComplete();
+            handleActionComplete();
         }
-    }, [state, onActionComplete]);
+    }, [state]);
     
-    // Reset form when dialog closes
     useEffect(() => {
         if (!isOpen) {
             formRef.current?.reset();
         }
     }, [isOpen]);
 
-    const triggerButton = template ? (
-        <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
-    ) : (
-        <Button><PlusCircle className="mr-2 h-4 w-4" /> Nueva Plantilla</Button>
-    );
-
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>{triggerButton}</DialogTrigger>
+            <DialogTrigger asChild>
+                <Button><PlusCircle className="mr-2 h-4 w-4" /> Nueva Plantilla</Button>
+            </DialogTrigger>
             <DialogContent className="sm:max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>{template ? 'Editar Plantilla' : 'Añadir Nueva Plantilla'}</DialogTitle>
-                    <DialogDescription>
-                        Completa los detalles de la plantilla. Usa marcadores como `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`.
-                    </DialogDescription>
-                </DialogHeader>
                 <form action={formAction} ref={formRef}>
-                    {template && <input type="hidden" name="id" value={template.id} />}
+                    <DialogHeader>
+                        <DialogTitle>Añadir Nueva Plantilla</DialogTitle>
+                        <DialogDescription>
+                            Completa los detalles de la plantilla. Usa marcadores como `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`.
+                        </DialogDescription>
+                    </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Nombre</Label>
-                            <Input id="name" name="name" defaultValue={template?.name} required />
+                            <Input id="name" name="name" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="subject">Asunto</Label>
-                            <Input id="subject" name="subject" defaultValue={template?.subject} required />
+                            <Input id="subject" name="subject" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="body">Cuerpo del Email</Label>
-                            <Textarea id="body" name="body" defaultValue={template?.body} required className="h-40" />
+                            <Textarea id="body" name="body" required className="h-40" />
                         </div>
                          <p className="text-xs text-muted-foreground">
                             Marcadores: `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`, `{{'{'}}{'{'}propiedad.nombre{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckIn{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckOut{'}'}{'}'}`, `{{'{'}}{'{'}montoReserva{'}'}{'}'}`, `{{'{'}}{'{'}saldoReserva{'}'}{'}'}`, `{{'{'}}{'{'}montoGarantia{'}'}{'}'}`
@@ -116,7 +100,9 @@ function TemplateFormDialog({ template, onActionComplete }: { template?: EmailTe
                     </div>
                     <DialogFooter>
                         <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                        <SubmitButton isPending={false} text={template ? "Guardar Cambios" : "Añadir Plantilla"}/>
+                        <Button type="submit" disabled={pending}>
+                            {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creando...</> : 'Crear Plantilla'}
+                        </Button>
                     </DialogFooter>
                     {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
                 </form>
@@ -125,16 +111,73 @@ function TemplateFormDialog({ template, onActionComplete }: { template?: EmailTe
     );
 }
 
-// --- Delete Dialog Component ---
-function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: string, onActionComplete: () => void }) {
-    const [state, formAction] = useActionState(deleteEmailTemplate, initialState);
+function EditTemplateDialog({ template }: { template: EmailTemplate }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const formRef = useRef<HTMLFormElement>(null);
+    const [state, formAction] = useActionState(updateEmailTemplate, initialState);
+    const { pending } = useFormStatus();
 
     useEffect(() => {
         if (state.success) {
-            onActionComplete();
+            setIsOpen(false);
+            handleActionComplete();
         }
-    }, [state, onActionComplete]);
-    
+    }, [state]);
+
+    return (
+         <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                 <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xl">
+                <form action={formAction} ref={formRef}>
+                    <DialogHeader>
+                        <DialogTitle>Editar Plantilla</DialogTitle>
+                         <DialogDescription>
+                            Modifica los detalles de la plantilla.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <input type="hidden" name="id" value={template.id} />
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Nombre</Label>
+                            <Input id="name" name="name" defaultValue={template.name} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="subject">Asunto</Label>
+                            <Input id="subject" name="subject" defaultValue={template.subject} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="body">Cuerpo del Email</Label>
+                            <Textarea id="body" name="body" defaultValue={template.body} required className="h-40" />
+                        </div>
+                         <p className="text-xs text-muted-foreground">
+                           Marcadores: `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`, `{{'{'}}{'{'}propiedad.nombre{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckIn{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckOut{'}'}{'}'}`, `{{'{'}}{'{'}montoReserva{'}'}{'}'}`, `{{'{'}}{'{'}saldoReserva{'}'}{'}'}`, `{{'{'}}{'{'}montoGarantia{'}'}{'}'}`
+                        </p>
+                    </div>
+                    <DialogFooter>
+                         <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
+                        <Button type="submit" disabled={pending}>
+                            {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Guardando...</> : 'Guardar Cambios'}
+                        </Button>
+                    </DialogFooter>
+                    {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
+                </form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function DeleteTemplateDialog({ templateId }: { templateId: string }) {
+    const [state, formAction] = useActionState(deleteEmailTemplate, initialState);
+    const { pending } = useFormStatus();
+
+    useEffect(() => {
+        if (state.success) {
+            handleActionComplete();
+        }
+    }, [state]);
+
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -152,7 +195,9 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
                     <AlertDialogFooter className='mt-4'>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction asChild>
-                            <DeleteButton isPending={false} />
+                            <Button type="submit" variant="destructive" disabled={pending}>
+                                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Eliminando...</> : 'Continuar'}
+                            </Button>
                         </AlertDialogAction>
                     </AlertDialogFooter>
                     {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
@@ -162,18 +207,12 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
     );
 }
 
-
-// --- Main Component ---
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
     
-    const handleActionComplete = () => {
-        window.location.reload();
-    };
-
     return (
         <div className="w-full space-y-4">
             <div className="flex justify-end">
-                <TemplateFormDialog onActionComplete={handleActionComplete} />
+                <AddTemplateDialog />
             </div>
             <div className="border rounded-lg">
                 <Table>
@@ -192,8 +231,8 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                                     <TableCell>{template.subject}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end">
-                                            <TemplateFormDialog template={template} onActionComplete={handleActionComplete} />
-                                            <DeleteTemplateDialog templateId={template.id} onActionComplete={handleActionComplete} />
+                                            <EditTemplateDialog template={template} />
+                                            <DeleteTemplateDialog templateId={template.id} />
                                         </div>
                                     </TableCell>
                                 </TableRow>
