@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useActionState, useEffect, useTransition } from 'react';
@@ -58,7 +57,7 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
     );
 }
 
-function AddTemplateDialog() {
+function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [state, formAction] = useActionState(addEmailTemplate, initialState);
@@ -67,9 +66,9 @@ function AddTemplateDialog() {
     useEffect(() => {
         if (state.success) {
             setIsOpen(false);
-            window.location.reload();
+            onActionComplete();
         }
-    }, [state]);
+    }, [state, onActionComplete]);
     
     useEffect(() => {
         if (!isOpen) {
@@ -90,7 +89,7 @@ function AddTemplateDialog() {
                     <DialogHeader>
                         <DialogTitle>Añadir Nueva Plantilla</DialogTitle>
                         <DialogDescription>
-                            Completa los detalles de la plantilla. Usa marcadores como {'`{{inquilino.nombre}}`'}.
+                            Completa los detalles de la plantilla. Usa los marcadores disponibles para insertar datos dinámicos.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -107,7 +106,7 @@ function AddTemplateDialog() {
                             <Textarea id="body" name="body" required className="h-40" />
                         </div>
                          <p className="text-xs text-muted-foreground">
-                            Marcadores: {'`{{inquilino.nombre}}`'}, {'`{{propiedad.nombre}}`'}, {'`{{fechaCheckIn}}`'}, {'`{{fechaCheckOut}}`'}, {'`{{montoReserva}}`'}, {'`{{saldoReserva}}`'}, {'`{{montoGarantia}}`'}
+                            Marcadores: {'`{{inquilino.nombre}}`'}, {'`{{propiedad.nombre}}`'}, {'`{{fechaCheckIn}}`'}, {'`{{fechaCheckOut}}`'}, {'`{{montoReserva}}`'}, {'`{{saldoReserva}}`'}, {'`{{montoGarantia}}`'}, {'`{{montoPago}}`'}, {'`{{fechaPago}}`'}
                         </p>
                     </div>
                     <DialogFooter>
@@ -121,7 +120,7 @@ function AddTemplateDialog() {
     );
 }
 
-function EditTemplateDialog({ template }: { template: EmailTemplate }) {
+function EditTemplateDialog({ template, onActionComplete }: { template: EmailTemplate, onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [state, formAction] = useActionState(updateEmailTemplate, initialState);
@@ -130,9 +129,9 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
     useEffect(() => {
         if (state.success) {
             setIsOpen(false);
-            window.location.reload();
+            onActionComplete();
         }
-    }, [state]);
+    }, [state, onActionComplete]);
 
     return (
          <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -165,7 +164,7 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
                             <Textarea id="body" name="body" defaultValue={template.body} required className="h-40" />
                         </div>
                          <p className="text-xs text-muted-foreground">
-                           Marcadores: {'`{{inquilino.nombre}}`'}, {'`{{propiedad.nombre}}`'}, {'`{{fechaCheckIn}}`'}, {'`{{fechaCheckOut}}`'}, {'`{{montoReserva}}`'}, {'`{{saldoReserva}}`'}, {'`{{montoGarantia}}`'}
+                           Marcadores: {'`{{inquilino.nombre}}`'}, {'`{{propiedad.nombre}}`'}, {'`{{fechaCheckIn}}`'}, {'`{{fechaCheckOut}}`'}, {'`{{montoReserva}}`'}, {'`{{saldoReserva}}`'}, {'`{{montoGarantia}}`'}, {'`{{montoPago}}`'}, {'`{{fechaPago}}`'}
                         </p>
                     </div>
                     <DialogFooter>
@@ -179,16 +178,15 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
     );
 }
 
-function DeleteTemplateDialog({ templateId }: { templateId: string }) {
+function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: string, onActionComplete: () => void }) {
     const [state, formAction] = useActionState(deleteEmailTemplate, initialState);
     const [isPending, startTransition] = useTransition();
-    const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
         if (state.success) {
-            window.location.reload();
+            onActionComplete();
         }
-    }, [state]);
+    }, [state, onActionComplete]);
 
     return (
         <AlertDialog>
@@ -196,10 +194,7 @@ function DeleteTemplateDialog({ templateId }: { templateId: string }) {
                 <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <form 
-                    ref={formRef}
-                    action={(formData) => startTransition(() => formAction(formData))}
-                >
+                <form action={(formData) => startTransition(() => formAction(formData))}>
                     <input type="hidden" name="id" value={templateId} />
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
@@ -221,10 +216,17 @@ function DeleteTemplateDialog({ templateId }: { templateId: string }) {
 }
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
+    // We use a key to force re-render on actions, simpler than optimistic UI
+    const [renderKey, setRenderKey] = useState(0);
+
+    const handleActionComplete = () => {
+        window.location.reload();
+    };
+
     return (
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-4" key={renderKey}>
             <div className="flex justify-end">
-                <AddTemplateDialog />
+                <AddTemplateDialog onActionComplete={handleActionComplete} />
             </div>
             <div className="border rounded-lg">
                 <Table>
@@ -243,8 +245,8 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                                     <TableCell>{template.subject}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end">
-                                            <EditTemplateDialog template={template} />
-                                            <DeleteTemplateDialog templateId={template.id} />
+                                            <EditTemplateDialog template={template} onActionComplete={handleActionComplete} />
+                                            <DeleteTemplateDialog templateId={template.id} onActionComplete={handleActionComplete} />
                                         </div>
                                     </TableCell>
                                 </TableRow>
