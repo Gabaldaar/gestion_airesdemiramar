@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { BookingWithDetails, Property, Tenant, ContractStatus } from "@/lib/data";
+import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus } from "@/lib/data";
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BookingEditForm } from "./booking-edit-form";
@@ -20,8 +20,9 @@ import { BookingPaymentsManager } from "./booking-payments-manager";
 import { NotesViewer } from "./notes-viewer";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { FileText, NotebookPen } from "lucide-react";
+import { FileText, NotebookPen, Shield } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { GuaranteeManager } from "./guarantee-manager";
 
 
 interface BookingsListProps {
@@ -36,6 +37,14 @@ const contractStatusMap: Record<ContractStatus, { text: string, className: strin
     sent: { text: 'Enviado', className: 'bg-blue-500 hover:bg-blue-600' },
     signed: { text: 'Firmado', className: 'bg-green-600 hover:bg-green-700' },
     not_required: { text: 'N/A', className: 'bg-yellow-600 text-black hover:bg-yellow-700' }
+};
+
+const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: string }> = {
+    not_solicited: { text: 'No Solicitada', className: 'bg-gray-400 hover:bg-gray-500' },
+    solicited: { text: 'Solicitada', className: 'bg-blue-400 hover:bg-blue-500' },
+    received: { text: 'Recibida', className: 'bg-green-500 hover:bg-green-600' },
+    returned: { text: 'Devuelta', className: 'bg-purple-500 hover:bg-purple-600' },
+    not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
 export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
@@ -105,6 +114,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableHead>Check-in</TableHead>
               <TableHead>Check-out</TableHead>
               <TableHead>Contrato</TableHead>
+              <TableHead>Garantía</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Saldo</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
@@ -112,8 +122,8 @@ export default function BookingsList({ bookings, properties, tenants, showProper
           </TableHeader>
           <TableBody>
             {bookings.map((booking) => {
-              const status = booking.contractStatus || 'not_sent';
-              const contractInfo = contractStatusMap[status];
+              const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
+              const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
@@ -134,6 +144,11 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 <TableCell>
                     <Badge className={contractInfo.className}>
                         {contractInfo.text}
+                    </Badge>
+                </TableCell>
+                <TableCell>
+                    <Badge className={guaranteeInfo.className}>
+                        {guaranteeInfo.text}
                     </Badge>
                 </TableCell>
                 <TableCell>
@@ -197,6 +212,17 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div>
+                                        <GuaranteeManager booking={booking} />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Gestionar Garantía</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
                                         <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
                                     </div>
                                 </TooltipTrigger>
@@ -225,3 +251,5 @@ export default function BookingsList({ bookings, properties, tenants, showProper
     </div>
   );
 }
+
+    

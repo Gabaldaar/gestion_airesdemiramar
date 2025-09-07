@@ -1,4 +1,5 @@
 
+
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -35,6 +36,7 @@ import {
     Property,
     ContractStatus,
     ExpenseCategory,
+    GuaranteeStatus,
 } from "./data";
 import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
 
@@ -212,6 +214,7 @@ export async function addBooking(previousState: any, formData: FormData) {
         currency,
         notes,
         contractStatus: 'not_sent' as ContractStatus,
+        guaranteeStatus: 'not_solicited' as GuaranteeStatus,
     };
     
     try {
@@ -264,6 +267,14 @@ export async function updateBooking(previousState: any, formData: FormData) {
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const notes = formData.get("notes") as string;
     const contractStatus = formData.get("contractStatus") as ContractStatus;
+    
+    // --- Guarantee Fields ---
+    const guaranteeStatus = formData.get("guaranteeStatus") as GuaranteeStatus | undefined;
+    const guaranteeAmountStr = formData.get("guaranteeAmount") as string | undefined;
+    const guaranteeCurrency = formData.get("guaranteeCurrency") as 'USD' | 'ARS' | undefined;
+    const guaranteeReceivedDate = formData.get("guaranteeReceivedDate") as string | undefined;
+    const guaranteeReturnedDate = formData.get("guaranteeReturnedDate") as string | undefined;
+
 
     if (!id || !propertyId || !tenantId || !startDate || !endDate || !amount || !currency) {
         return { success: false, message: "Todos los campos son obligatorios." };
@@ -285,6 +296,11 @@ export async function updateBooking(previousState: any, formData: FormData) {
             currency,
             notes,
             contractStatus,
+            guaranteeStatus: guaranteeStatus || oldBooking.guaranteeStatus,
+            guaranteeAmount: guaranteeAmountStr ? parseFloat(guaranteeAmountStr) : undefined,
+            guaranteeCurrency: guaranteeCurrency || undefined,
+            guaranteeReceivedDate: guaranteeReceivedDate || undefined,
+            guaranteeReturnedDate: guaranteeReturnedDate || undefined,
         };
 
         // First, update the booking in our database.
@@ -756,3 +772,4 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
   }
 }
 
+    

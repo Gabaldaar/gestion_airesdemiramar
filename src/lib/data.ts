@@ -56,6 +56,7 @@ export type Tenant = {
 };
 
 export type ContractStatus = 'not_sent' | 'sent' | 'signed' | 'not_required';
+export type GuaranteeStatus = 'not_solicited' | 'solicited' | 'received' | 'returned' | 'not_applicable';
 
 export type Booking = {
   id: string;
@@ -69,6 +70,12 @@ export type Booking = {
   notes?: string;
   contractStatus?: ContractStatus;
   googleCalendarEventId?: string;
+  // New Guarantee Fields
+  guaranteeStatus?: GuaranteeStatus;
+  guaranteeAmount?: number;
+  guaranteeCurrency?: 'USD' | 'ARS';
+  guaranteeReceivedDate?: string;
+  guaranteeReturnedDate?: string;
 };
 
 export type BookingWithTenantAndProperty = Booking & {
@@ -528,7 +535,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
 
   const isWithinDateRange = (dateStr: string) => {
-      if (!fromDate && !toDate) return true;
+      if (!dateStr || (!fromDate && !toDate)) return true;
       const itemDate = new Date(dateStr);
       if (fromDate && itemDate < fromDate) return false;
       if (toDate && itemDate > toDate) return false;
@@ -703,3 +710,5 @@ export async function getBookingWithDetails(bookingId: string): Promise<BookingW
     // This now returns a more robust object, preventing crashes.
     return getBookingDetails(booking);
 }
+
+    
