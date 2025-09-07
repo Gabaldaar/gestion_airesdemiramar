@@ -48,12 +48,27 @@ const handleActionComplete = () => {
 };
 
 
+function SubmitButton({ isPending, text, pendingText }: { isPending: boolean, text: string, pendingText: string }) {
+    return (
+        <Button type="submit" disabled={isPending}>
+            {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {pendingText}</> : text}
+        </Button>
+    )
+}
+
+function DeleteButton({ isPending }: { isPending: boolean }) {
+     return (
+        <Button type="submit" variant="destructive" disabled={isPending}>
+            {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Eliminando...</> : 'Continuar'}
+        </Button>
+    )
+}
+
 function AddTemplateDialog() {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [state, formAction] = useActionState(addEmailTemplate, initialState);
-
-    const { pending } = useFormStatus();
+    const [isPending, startTransition] = React.useTransition();
 
     useEffect(() => {
         if (state.success) {
@@ -74,7 +89,7 @@ function AddTemplateDialog() {
                 <Button><PlusCircle className="mr-2 h-4 w-4" /> Nueva Plantilla</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-xl">
-                <form action={formAction} ref={formRef}>
+                <form action={formAction} ref={formRef} onSubmit={(e) => { e.preventDefault(); startTransition(() => formAction(new FormData(formRef.current!)))}}>
                     <DialogHeader>
                         <DialogTitle>Añadir Nueva Plantilla</DialogTitle>
                         <DialogDescription>
@@ -100,9 +115,7 @@ function AddTemplateDialog() {
                     </div>
                     <DialogFooter>
                         <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                        <Button type="submit" disabled={pending}>
-                            {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creando...</> : 'Crear Plantilla'}
-                        </Button>
+                        <SubmitButton isPending={isPending} text="Crear Plantilla" pendingText="Creando..." />
                     </DialogFooter>
                     {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
                 </form>
@@ -115,7 +128,7 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [state, formAction] = useActionState(updateEmailTemplate, initialState);
-    const { pending } = useFormStatus();
+    const [isPending, startTransition] = React.useTransition();
 
     useEffect(() => {
         if (state.success) {
@@ -130,7 +143,7 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
                  <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-xl">
-                <form action={formAction} ref={formRef}>
+                <form action={formAction} ref={formRef} onSubmit={(e) => { e.preventDefault(); startTransition(() => formAction(new FormData(formRef.current!)))}}>
                     <DialogHeader>
                         <DialogTitle>Editar Plantilla</DialogTitle>
                          <DialogDescription>
@@ -157,9 +170,7 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
                     </div>
                     <DialogFooter>
                          <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                        <Button type="submit" disabled={pending}>
-                            {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Guardando...</> : 'Guardar Cambios'}
-                        </Button>
+                         <SubmitButton isPending={isPending} text="Guardar Cambios" pendingText="Guardando..." />
                     </DialogFooter>
                     {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
                 </form>
@@ -170,7 +181,9 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
 
 function DeleteTemplateDialog({ templateId }: { templateId: string }) {
     const [state, formAction] = useActionState(deleteEmailTemplate, initialState);
-    const { pending } = useFormStatus();
+    const [isPending, startTransition] = React.useTransition();
+    const formRef = useRef<HTMLFormElement>(null);
+
 
     useEffect(() => {
         if (state.success) {
@@ -184,7 +197,7 @@ function DeleteTemplateDialog({ templateId }: { templateId: string }) {
                 <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <form action={formAction}>
+                <form action={formAction} ref={formRef} onSubmit={(e) => { e.preventDefault(); startTransition(() => formAction(new FormData(formRef.current!)))}}>
                     <input type="hidden" name="id" value={templateId} />
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
@@ -195,9 +208,7 @@ function DeleteTemplateDialog({ templateId }: { templateId: string }) {
                     <AlertDialogFooter className='mt-4'>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction asChild>
-                            <Button type="submit" variant="destructive" disabled={pending}>
-                                {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Eliminando...</> : 'Continuar'}
-                            </Button>
+                            <DeleteButton isPending={isPending} />
                         </AlertDialogAction>
                     </AlertDialogFooter>
                     {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
