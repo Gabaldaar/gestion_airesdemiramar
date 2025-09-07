@@ -185,8 +185,8 @@ const emailTemplatesCollection = collection(db, 'emailTemplates');
 
 // Helper function to add default data only if the collection is empty
 const addDefaultData = async (collRef: any, data: any[]) => {
-    const snapshot = await getDocs(query(collRef, where('name', 'in', data.map(d => d.name))));
-    if (snapshot.empty) {
+    const querySnapshot = await getDocs(collRef);
+    if (querySnapshot.empty) {
         const batch = writeBatch(db);
         data.forEach(item => {
             const docRef = doc(collRef);
@@ -199,13 +199,14 @@ const addDefaultData = async (collRef: any, data: any[]) => {
     }
 };
 
+
 // Function to initialize default data for the app
 const initializeDefaultData = async () => {
     const defaultTemplates = [
         {
             name: 'Confirmación de Pago',
             subject: 'Confirmación de tu pago para la reserva en {{propiedad.nombre}}',
-            body: `Hola {{inquilino.nombre}},\n\nTe escribimos para confirmar que hemos recibido tu pago para la reserva en {{propiedad.nombre}}.\n\nDetalles de la reserva:\n- Check-in: {{fechaCheckIn}}\n- Check-out: {{fechaCheckOut}}\n- Monto total: {{montoReserva}}\n- Saldo pendiente: {{saldoReserva}}\n\n¡Muchas gracias por tu pago!\n\nSaludos cordiales.`
+            body: `Hola {{inquilino.nombre}},\n\nTe escribimos para confirmar que hemos recibido tu pago de {{montoPago}} con fecha {{fechaPago}} para la reserva en {{propiedad.nombre}}.\n\nDetalles de la reserva:\n- Check-in: {{fechaCheckIn}}\n- Check-out: {{fechaCheckOut}}\n- Monto total: {{montoReserva}}\n- Saldo pendiente actualizado: {{saldoReserva}}\n\n¡Muchas gracias por tu pago!\n\nSaludos cordiales.`
         },
         {
             name: 'Confirmación de Garantía',

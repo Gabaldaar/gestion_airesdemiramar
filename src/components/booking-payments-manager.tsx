@@ -11,8 +11,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Landmark, NotebookPen } from 'lucide-react';
-import { getPaymentsByBookingId, Payment } from '@/lib/data';
+import { Landmark } from 'lucide-react';
+import { getPaymentsByBookingId, Payment, getBookingWithDetails, BookingWithDetails } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -28,21 +28,28 @@ import { PaymentAddForm } from './payment-add-form';
 import { PaymentEditForm } from './payment-edit-form';
 import { PaymentDeleteForm } from './payment-delete-form';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { EmailSender } from './email-sender';
 
 export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchPayments = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!isOpen) return;
     setIsLoading(true);
     try {
-      const fetchedPayments = await getPaymentsByBookingId(bookingId);
+      const [fetchedPayments, fetchedBooking] = await Promise.all([
+        getPaymentsByBookingId(bookingId),
+        getBookingWithDetails(bookingId)
+      ]);
       setPayments(fetchedPayments);
+      setBooking(fetchedBooking);
     } catch (error) {
-      console.error("Failed to fetch payments:", error);
-      setPayments([]); // Clear payments on error
+      console.error("Failed to fetch payments or booking:", error);
+      setPayments([]);
+      setBooking(null);
     } finally {
       setIsLoading(false);
     }
@@ -50,12 +57,12 @@ export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
 
 
   useEffect(() => {
-    fetchPayments();
-  }, [fetchPayments]);
+    fetchData();
+  }, [fetchData]);
 
   const handlePaymentAction = useCallback(() => {
-    fetchPayments();
-  }, [fetchPayments]);
+    fetchData();
+  }, [fetchData]);
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
@@ -90,7 +97,7 @@ export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
         <div className="flex justify-end">
             <PaymentAddForm bookingId={bookingId} onPaymentAdded={handlePaymentAction} />
         </div>
-        {isLoading ? (
+        {isLoading || !booking ? (
           <p>Cargando pagos...</p>
         ) : payments.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">No hay pagos para mostrar.</p>
@@ -123,7 +130,8 @@ export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
                     </TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(payment.amount)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
+                        <EmailSender booking={booking} payment={payment} />
                         <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
                         <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handlePaymentAction} />
                       </div>

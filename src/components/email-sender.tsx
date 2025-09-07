@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { BookingWithDetails, EmailTemplate, getEmailTemplates } from '@/lib/data';
+import { BookingWithDetails, EmailTemplate, getEmailTemplates, Payment } from '@/lib/data';
 import { Mail } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { format } from 'date-fns';
@@ -29,20 +29,34 @@ import { es } from 'date-fns/locale';
 
 const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
-    return format(new Date(dateString), "dd 'de' LLLL 'de' yyyy", { locale: es });
+    // Ensure we parse the string as UTC to avoid timezone shifts
+    const date = new Date(dateString);
+    return format(date, "dd 'de' LLLL 'de' yyyy", { locale: es });
 };
 
 const formatCurrency = (amount: number | null | undefined, currency: 'USD' | 'ARS' = 'USD') => {
     if (amount === null || typeof amount === 'undefined') return 'N/A';
-    return new Intl.NumberFormat('es-AR', {
+    
+    const options: Intl.NumberFormatOptions = {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-    }).format(amount);
+    };
+    
+    if (currency === 'ARS') {
+        return new Intl.NumberFormat('es-AR', options).format(amount);
+    }
+    return new Intl.NumberFormat('en-US', options).format(amount);
 };
 
-export function EmailSender({ booking }: { booking: BookingWithDetails }) {
+
+interface EmailSenderProps {
+    booking: BookingWithDetails;
+    payment?: Payment;
+}
+
+export function EmailSender({ booking, payment }: EmailSenderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -52,17 +66,27 @@ export function EmailSender({ booking }: { booking: BookingWithDetails }) {
   useEffect(() => {
     if (isOpen) {
       getEmailTemplates().then(setTemplates);
+      // Auto-select "Confirmación de Pago" template if a payment is provided
+      if (payment) {
+        getEmailTemplates().then(templates => {
+            const paymentTemplate = templates.find(t => t.name === 'Confirmación de Pago');
+            if (paymentTemplate) {
+                setSelectedTemplateId(paymentTemplate.id);
+            }
+        });
+      }
     } else {
         // Reset state when closed
         setSelectedTemplateId('');
         setProcessedBody('');
         setProcessedSubject('');
     }
-  }, [isOpen]);
+  }, [isOpen, payment]);
 
   const replacements = useMemo(() => {
       if (!booking) return {};
-      return {
+      
+      const baseReplacements: { [key: string]: string } = {
         '{{inquilino.nombre}}': booking.tenant?.name || 'N/A',
         '{{propiedad.nombre}}': booking.property?.name || 'N/A',
         '{{fechaCheckIn}}': formatDate(booking.startDate),
@@ -72,11 +96,19 @@ export function EmailSender({ booking }: { booking: BookingWithDetails }) {
         '{{montoGarantia}}': formatCurrency(booking.guaranteeAmount, booking.guaranteeCurrency),
         '{{fechaGarantiaRecibida}}': formatDate(booking.guaranteeReceivedDate),
         '{{fechaGarantiaDevuelta}}': formatDate(booking.guaranteeReturnedDate),
-        // Simple placeholders for last payment, could be enhanced
-        // '{{montoUltimoPago}}': formatCurrency(booking.lastPaymentAmount, booking.currency),
-        // '{{fechaUltimoPago}}': formatDate(booking.lastPaymentDate),
       };
-  }, [booking]);
+
+      if (payment) {
+          const paymentCurrency = payment.originalArsAmount ? 'ARS' : 'USD';
+          const paymentAmount = payment.originalArsAmount || payment.amount;
+          
+          baseReplacements['{{montoPago}}'] = formatCurrency(paymentAmount, paymentCurrency);
+          baseReplacements['{{fechaPago}}'] = formatDate(payment.date);
+      }
+
+      return baseReplacements;
+
+  }, [booking, payment]);
 
 
   useEffect(() => {
