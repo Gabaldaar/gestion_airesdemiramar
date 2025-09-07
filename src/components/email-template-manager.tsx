@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useActionState } from 'react';
@@ -45,14 +44,29 @@ const initialState = {
   success: false,
 };
 
-// --- Separate Component for the Form Dialog (Add/Edit) ---
+// --- Submit Button Component ---
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                isEditing ? 'Guardar Cambios' : 'Crear Plantilla'
+            )}
+        </Button>
+    );
+};
+
+// --- Form Dialog (for Add/Edit) ---
 function TemplateFormDialog({
   template,
-  onSuccess,
   trigger,
 }: {
   template?: EmailTemplate;
-  onSuccess: () => void;
   trigger: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,9 +77,9 @@ function TemplateFormDialog({
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
-      onSuccess();
+      window.location.reload();
     }
-  }, [state, onSuccess]);
+  }, [state]);
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -73,22 +87,6 @@ function TemplateFormDialog({
         formRef.current?.reset();
     }
   }, [isOpen]);
-
-  const SubmitButton = () => {
-    const { pending } = useFormStatus();
-    return (
-      <Button type="submit" disabled={pending}>
-        {pending ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Guardando...
-          </>
-        ) : (
-          template ? 'Guardar Cambios' : 'Crear Plantilla'
-        )}
-      </Button>
-    );
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -122,7 +120,7 @@ function TemplateFormDialog({
             )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-            <SubmitButton />
+            <SubmitButton isEditing={!!template} />
           </DialogFooter>
         </form>
       </DialogContent>
@@ -130,33 +128,34 @@ function TemplateFormDialog({
   );
 }
 
-// --- Separate Component for the Delete Dialog ---
-function TemplateDeleteDialog({ templateId, onSuccess }: { templateId: string, onSuccess: () => void }) {
+// --- Delete Button Component ---
+function DeleteButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" variant="destructive" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Eliminando...
+                </>
+            ) : (
+                'Continuar'
+            )}
+        </Button>
+    );
+};
+
+// --- Delete Dialog ---
+function TemplateDeleteDialog({ templateId }: { templateId: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const [state, formAction] = useActionState(deleteEmailTemplate, initialState);
 
     useEffect(() => {
         if (state.success) {
             setIsOpen(false);
-            onSuccess();
+            window.location.reload();
         }
-    }, [state, onSuccess]);
-
-    const DeleteButton = () => {
-        const { pending } = useFormStatus();
-        return (
-            <Button type="submit" variant="destructive" disabled={pending}>
-                {pending ? (
-                    <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Eliminando...
-                    </>
-                ) : (
-                    'Continuar'
-                )}
-            </Button>
-        );
-    };
+    }, [state]);
 
     return (
         <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
@@ -193,10 +192,6 @@ function TemplateDeleteDialog({ templateId, onSuccess }: { templateId: string, o
 
 // --- Main Component ---
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
-  // Simplest way to refresh data is to reload the page on successful action.
-  const handleActionComplete = () => {
-    window.location.reload();
-  };
 
   return (
     <div className="w-full">
@@ -208,7 +203,6 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
               Nueva Plantilla
             </Button>
           }
-          onSuccess={handleActionComplete}
         />
       </div>
       <div className="border rounded-lg">
@@ -235,9 +229,8 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                                         </Button>
                                     }
                                     template={template}
-                                    onSuccess={handleActionComplete}
                                 />
-                                <TemplateDeleteDialog templateId={template.id} onSuccess={handleActionComplete} />
+                                <TemplateDeleteDialog templateId={template.id} />
                             </div>
                         </TableCell>
                     </TableRow>
