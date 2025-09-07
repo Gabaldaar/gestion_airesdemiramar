@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
@@ -78,6 +79,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
 
   useEffect(() => {
     validateForm();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, receivedDate, returnedDate]);
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
       setClientError(null);
       state.message = ''; // Clear server error on open
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, booking]);
 
 
@@ -118,6 +121,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
             <input type="hidden" name="id" value={booking.id} />
             <input type="hidden" name="guaranteeReceivedDate" value={receivedDate?.toISOString().split('T')[0] || ''} />
             <input type="hidden" name="guaranteeReturnedDate" value={returnedDate?.toISOString().split('T')[0] || ''} />
+            <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
 
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -129,7 +133,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="not_solicited">No Solicitada</SelectItem>
+                            <SelectItem value="not_solicited">S/Solicitar</SelectItem>
                             <SelectItem value="solicited">Solicitada</SelectItem>
                             <SelectItem value="received">Recibida</SelectItem>
                             <SelectItem value="returned">Devuelta</SelectItem>

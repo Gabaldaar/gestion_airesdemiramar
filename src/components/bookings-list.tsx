@@ -40,7 +40,7 @@ const contractStatusMap: Record<ContractStatus, { text: string, className: strin
 };
 
 const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: string }> = {
-    not_solicited: { text: 'No Solicitada', className: 'bg-gray-400 hover:bg-gray-500' },
+    not_solicited: { text: 'S/Solicitar', className: 'bg-gray-400 hover:bg-gray-500' },
     solicited: { text: 'Solicitada', className: 'bg-blue-400 hover:bg-blue-500' },
     received: { text: 'Recibida', className: 'bg-green-500 hover:bg-green-600' },
     returned: { text: 'Devuelta', className: 'bg-purple-500 hover:bg-purple-600' },
