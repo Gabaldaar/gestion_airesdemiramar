@@ -39,22 +39,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
-import 'react-quill/dist/quill.snow.css';
 
-// Dynamically import ReactQuill to avoid SSR issues
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-
-const quillModules = {
-    toolbar: [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-        [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-        ['link'],
-        ['clean']
-    ],
-};
-
-const initialState = { success: false, message: '' };
+// Use react-quilljs which is compatible with React 18
+import { useQuill } from 'react-quilljs';
+import 'quill/dist/quill.snow.css'; // Import styles
 
 const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}";
 
@@ -73,6 +61,31 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
         </Button>
     );
 }
+
+const Editor = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+    const { quill, quillRef } = useQuill();
+
+    useEffect(() => {
+        if (quill) {
+            quill.on('text-change', () => {
+                onChange(quill.root.innerHTML);
+            });
+
+            // Set initial value only if it's different
+            if(quill.root.innerHTML !== value) {
+                const delta = quill.clipboard.convert(value);
+                quill.setContents(delta, 'silent');
+            }
+        }
+    }, [quill, value, onChange]);
+
+    return (
+        <div className='bg-white'>
+            <div ref={quillRef} />
+        </div>
+    );
+}
+
 
 function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -125,13 +138,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="body">Cuerpo del Email</Label>
-                            <ReactQuill 
-                                theme="snow" 
-                                value={body} 
-                                onChange={setBody}
-                                modules={quillModules}
-                                className="bg-white"
-                            />
+                            <Editor value={body} onChange={setBody} />
                         </div>
                          <p className="text-xs text-muted-foreground">{placeholderHelpText}</p>
                     </div>
@@ -197,13 +204,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="body">Cuerpo del Email</Label>
-                             <ReactQuill 
-                                theme="snow" 
-                                value={body} 
-                                onChange={setBody}
-                                modules={quillModules}
-                                className="bg-white"
-                            />
+                             <Editor value={body} onChange={setBody} />
                         </div>
                          <p className="text-xs text-muted-foreground">{placeholderHelpText}</p>
                     </div>
@@ -254,9 +255,12 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
         </AlertDialog>
     );
 }
+const initialState = { success: false, message: '' };
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
     const handleActionComplete = () => {
+        // This is a dummy function to force a re-render by updating state.
+        // The actual data revalidation happens on the server via revalidatePath.
         window.location.reload();
     };
 
