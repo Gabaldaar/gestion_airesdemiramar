@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,9 @@ function TemplateFormDialog({
     const formData = new FormData(event.currentTarget);
     
     const action = template ? updateEmailTemplate : addEmailTemplate;
+    
+    // We can't use useActionState here easily because the action function is dynamic.
+    // So, we call it directly.
     const result = await action(initialState, formData);
 
     setIsPending(false);
@@ -127,26 +131,32 @@ function TemplateFormDialog({
 
 
 // --- Delete Dialog ---
-function TemplateDeleteDialog({ templateId, onSuccess }: { templateId: string, onSuccess: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isPending, setIsPending] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+function DeleteButton() {
+    const { pending } = useFormStatus();
+    return (
+         <Button type="submit" variant="destructive" disabled={pending}>
+             {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Eliminando...
+                </>
+            ) : (
+                'Continuar'
+            )}
+        </Button>
+    )
+}
 
-    const handleDelete = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setError(null);
-        setIsPending(true);
-        const formData = new FormData(event.currentTarget);
-        
-        const result = await deleteEmailTemplate(initialState, formData);
-        setIsPending(false);
-        if (result.success) {
+function TemplateDeleteDialog({ templateId, onSuccess }: { templateId: string, onSuccess: () => void }) {
+    const [state, formAction] = useActionState(deleteEmailTemplate, initialState);
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if(state.success) {
             setIsOpen(false);
             onSuccess();
-        } else {
-            setError(result.message);
         }
-    };
+    }, [state, onSuccess]);
     
     return (
         <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
@@ -156,7 +166,7 @@ function TemplateDeleteDialog({ templateId, onSuccess }: { templateId: string, o
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <form onSubmit={handleDelete}>
+                <form action={formAction}>
                     <input type="hidden" name="id" value={templateId} />
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
@@ -164,17 +174,16 @@ function TemplateDeleteDialog({ templateId, onSuccess }: { templateId: string, o
                             Esta acción no se puede deshacer. La plantilla será eliminada permanentemente.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    {error && <Alert variant="destructive" className="mt-4"><AlertDescription>{error}</AlertDescription></Alert>}
+                    {state.message && !state.success && (
+                        <Alert variant="destructive" className="mt-4">
+                            <AlertDescription>{state.message}</AlertDescription>
+                        </Alert>
+                    )}
                     <AlertDialogFooter className="mt-4">
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <Button type="submit" variant="destructive" disabled={isPending}>
-                            {isPending ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Eliminando...
-                                </>
-                            ) : 'Continuar'}
-                        </Button>
+                        <AlertDialogAction asChild>
+                            <DeleteButton/>
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </form>
             </AlertDialogContent>
