@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useTransition } from 'react';
+import { useState, useRef } from 'react';
 import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -59,25 +59,26 @@ function TemplateFormDialog({
   onSuccess: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setIsPending(true);
     const formData = new FormData(event.currentTarget);
     
-    startTransition(async () => {
-      const action = template ? updateEmailTemplate : addEmailTemplate;
-      const result = await action(initialState, formData);
-      if (result.success) {
-        setIsOpen(false);
-        onSuccess();
-      } else {
-        setError(result.message);
-      }
-    });
+    const action = template ? updateEmailTemplate : addEmailTemplate;
+    const result = await action(initialState, formData);
+
+    setIsPending(false);
+    if (result.success) {
+      setIsOpen(false);
+      onSuccess();
+    } else {
+      setError(result.message);
+    }
   };
 
   return (
@@ -129,23 +130,23 @@ function TemplateFormDialog({
 // --- Delete Dialog ---
 function TemplateDeleteDialog({ templateId, onSuccess }: { templateId: string, onSuccess: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [isPending, startTransition] = useTransition();
+    const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleDelete = async () => {
         setError(null);
+        setIsPending(true);
         const formData = new FormData();
         formData.append('id', templateId);
         
-        startTransition(async () => {
-            const result = await deleteEmailTemplate(initialState, formData);
-            if (result.success) {
-                setIsOpen(false);
-                onSuccess();
-            } else {
-                setError(result.message);
-            }
-        });
+        const result = await deleteEmailTemplate(initialState, formData);
+        setIsPending(false);
+        if (result.success) {
+            setIsOpen(false);
+            onSuccess();
+        } else {
+            setError(result.message);
+        }
     };
     
     return (
