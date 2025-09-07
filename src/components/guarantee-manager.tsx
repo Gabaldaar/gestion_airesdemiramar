@@ -94,13 +94,18 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
   }, [state.success]);
 
   useEffect(() => {
+    // This effect now resets everything when the dialog is opened
     if (isOpen) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
       setAmount(booking.guaranteeAmount || undefined);
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
-      state.message = ''; // Clear server error on open
+      // Explicitly reset the server state message when opening the dialog
+      if (state.message || state.success) {
+        initialState.message = '';
+        initialState.success = false;
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, booking]);
