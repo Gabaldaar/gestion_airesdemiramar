@@ -87,28 +87,24 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, receivedDate, returnedDate, amount]);
 
-  useEffect(() => {
-    if (state.success) {
-      setIsOpen(false);
-    }
-  }, [state.success]);
 
+  // Effect to reset form fields when dialog opens
   useEffect(() => {
-    // This effect now resets everything when the dialog is opened
     if (isOpen) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
       setAmount(booking.guaranteeAmount || undefined);
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
-      // Explicitly reset the server state message when opening the dialog
-      if (state.message || state.success) {
-        initialState.message = '';
-        initialState.success = false;
-      }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, booking]);
+  
+  const handleFormSubmit = async (formData: FormData) => {
+    const result = await formAction(formData);
+    if (result.success) {
+      setIsOpen(false);
+    }
+  };
 
 
   return (
@@ -127,7 +123,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form action={formAction}>
+        <form action={handleFormSubmit}>
             <input type="hidden" name="id" value={booking.id} />
             <input type="hidden" name="guaranteeReceivedDate" value={receivedDate?.toISOString().split('T')[0] || ''} />
             <input type="hidden" name="guaranteeReturnedDate" value={returnedDate?.toISOString().split('T')[0] || ''} />
