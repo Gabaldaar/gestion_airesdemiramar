@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
+import { Calendar as CalendarIcon, X } from "lucide-react"
 import { es } from 'date-fns/locale';
 
 import { cn } from "@/lib/utils"
@@ -30,28 +30,41 @@ export function DatePicker({ date, onDateSelect, placeholder = "Selecciona una f
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "w-[280px] justify-start text-left font-normal",
-            !date && "text-muted-foreground"
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP", { locale: es }) : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={handleDateSelect}
-          initialFocus
-          locale={es}
-        />
-      </PopoverContent>
-    </Popover>
+    <div className="relative w-[280px]">
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+            <Button
+            variant={"outline"}
+            className={cn(
+                "w-full justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+            )}
+            >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {date ? format(date, "PPP", { locale: es }) : <span>{placeholder}</span>}
+            </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+            <Calendar
+            mode="single"
+            selected={date}
+            onSelect={handleDateSelect}
+            initialFocus
+            locale={es}
+            />
+        </PopoverContent>
+        </Popover>
+         {date && (
+            <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                onClick={() => onDateSelect(undefined)}
+            >
+                <X className="h-4 w-4 text-muted-foreground" />
+                <span className="sr-only">Limpiar fecha</span>
+            </Button>
+        )}
+    </div>
   )
 }

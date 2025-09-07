@@ -26,17 +26,18 @@ import { updateBooking } from '@/lib/actions';
 import { Booking, GuaranteeStatus } from '@/lib/data';
 import { Shield, Loader2 } from 'lucide-react';
 import { DatePicker } from './ui/date-picker';
+import { Alert, AlertDescription } from './ui/alert';
 
 
-const initialState = {
+const initialState: { message: string; success: boolean, error?: string } = {
   message: '',
   success: false,
 };
 
-function SubmitButton() {
+function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={isDisabled || pending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -50,32 +51,51 @@ function SubmitButton() {
 }
 
 export function GuaranteeManager({ booking }: { booking: Booking }) {
-  // We pass the full booking to updateBooking, so we need to set all fields.
-  // The guarantee manager only edits guarantee fields.
   const [state, formAction] = useActionState(updateBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
   
+  const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
   const [receivedDate, setReceivedDate] = useState<Date | undefined>(
     booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined
   );
   const [returnedDate, setReturnedDate] = useState<Date | undefined>(
     booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined
   );
-  
+  const [clientError, setClientError] = useState<string | null>(null);
+
+  const validateForm = () => {
+    if (status === 'received' && !receivedDate) {
+        setClientError("La 'Fecha Recibida' es obligatoria para el estado 'Recibida'.");
+        return false;
+    }
+     if (status === 'returned' && !returnedDate) {
+        setClientError("La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'.");
+        return false;
+    }
+    setClientError(null);
+    return true;
+  };
+
+  useEffect(() => {
+    validateForm();
+  }, [status, receivedDate, returnedDate]);
+
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
       window.location.reload();
     }
-  }, [state]);
+  }, [state.success]);
 
-  // When opening, sync the date pickers' state with the booking data
   useEffect(() => {
     if (isOpen) {
+      setStatus(booking.guaranteeStatus || 'not_solicited');
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
+      setClientError(null);
+      state.message = ''; // Clear server error on open
     }
-  }, [isOpen, booking.guaranteeReceivedDate, booking.guaranteeReturnedDate]);
+  }, [isOpen, booking]);
 
 
   return (
@@ -95,17 +115,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
         </DialogHeader>
 
         <form action={formAction}>
-            {/* Hidden fields to pass the full booking data to the server action */}
             <input type="hidden" name="id" value={booking.id} />
-            <input type="hidden" name="propertyId" value={booking.propertyId} />
-            <input type="hidden" name="tenantId" value={booking.tenantId} />
-            <input type="hidden" name="startDate" value={booking.startDate} />
-            <input type="hidden" name="endDate" value={booking.endDate} />
-            <input type="hidden" name="amount" value={booking.amount} />
-            <input type="hidden" name="currency" value={booking.currency} />
-            <input type="hidden" name="notes" value={booking.notes || ''} />
-            <input type="hidden" name="contractStatus" value={booking.contractStatus || 'not_sent'} />
-            <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
             <input type="hidden" name="guaranteeReceivedDate" value={receivedDate?.toISOString().split('T')[0] || ''} />
             <input type="hidden" name="guaranteeReturnedDate" value={returnedDate?.toISOString().split('T')[0] || ''} />
 
@@ -114,7 +124,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
                     <Label htmlFor="guaranteeStatus" className="text-right">
                     Estado
                     </Label>
-                    <Select name="guaranteeStatus" defaultValue={booking.guaranteeStatus || 'not_solicited'}>
+                    <Select name="guaranteeStatus" value={status} onValueChange={(val) => setStatus(val as GuaranteeStatus)}>
                         <SelectTrigger className="col-span-3">
                             <SelectValue />
                         </SelectTrigger>
@@ -151,7 +161,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeReceivedDate" className="text-right">
+                    <Label htmlFor="guaranteeReceivedDate-picker" className="text-right">
                         Fecha Recibida
                     </Label>
                     <div className="col-span-3">
@@ -160,7 +170,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeReturnedDate" className="text-right">
+                    <Label htmlFor="guaranteeReturnedDate-picker" className="text-right">
                         Fecha Devuelta
                     </Label>
                     <div className="col-span-3">
@@ -171,11 +181,15 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
 
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                <SubmitButton />
+                <SubmitButton isDisabled={!!clientError} />
             </DialogFooter>
         </form>
-        {state.message && !state.success && (
-            <p className="text-red-500 text-sm mt-2 text-center">{state.message}</p>
+         {(clientError || (state.message && !state.success)) && (
+            <Alert variant="destructive" className="mt-4">
+                <AlertDescription>
+                   {clientError || state.message}
+                </AlertDescription>
+            </Alert>
         )}
       </DialogContent>
     </Dialog>
