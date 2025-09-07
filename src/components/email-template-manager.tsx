@@ -114,15 +114,8 @@ function TemplateDialog({
         <form
           ref={formRef}
           action={formAction}
-          onSubmit={(e) => {
-             e.preventDefault();
-             const formData = new FormData(e.currentTarget);
-             if (template) {
-                formData.set('id', template.id);
-             }
-             formAction(formData);
-          }}
         >
+          {template && <input type="hidden" name="id" value={template.id} />}
           <DialogHeader>
             <DialogTitle>{template ? 'Editar' : 'Añadir Nueva'} Plantilla</DialogTitle>
             <DialogDescription>
@@ -251,5 +244,3 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
         </div>
     );
 }
-
-    
