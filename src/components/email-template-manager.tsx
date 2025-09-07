@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { PlusCircle, Save, Trash2, Pencil, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Pencil, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,33 +44,9 @@ const initialState = {
   success: false,
 };
 
-function TemplateDialog({
-  trigger,
-  title,
-  description,
-  template,
-  action,
-  buttonText
-}: {
-  trigger: React.ReactNode;
-  title: string;
-  description: string;
-  template?: EmailTemplate;
-  action: (state: any, formData: FormData) => Promise<any>;
-  buttonText: string;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction] = useActionState(action, initialState);
+// --- Botones con estado de pendiente ---
 
-  useEffect(() => {
-    if (state?.success) {
-      setIsOpen(false);
-      formRef.current?.reset();
-    }
-  }, [state, isOpen]);
-  
-  function SubmitButton() {
+function SubmitButton({ buttonText }: { buttonText: string }) {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" disabled={pending}>
@@ -83,9 +59,56 @@ function TemplateDialog({
                 buttonText
             )}
         </Button>
-    )
-  }
+    );
+}
 
+function DeleteTemplateButton() {
+    const { pending } = useFormStatus();
+    return (
+         <Button type="submit" variant="destructive" disabled={pending}>
+             {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Eliminando...
+                </>
+            ) : (
+                'Continuar'
+            )}
+        </Button>
+    );
+}
+
+// --- Componentes de Diálogo ---
+
+function TemplateDialog({
+  trigger,
+  title,
+  description,
+  template,
+  action,
+  buttonText,
+  onActionComplete
+}: {
+  trigger: React.ReactNode;
+  title: string;
+  description: string;
+  template?: EmailTemplate;
+  action: (state: any, formData: FormData) => Promise<any>;
+  buttonText: string;
+  onActionComplete: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [state, formAction] = useActionState(action, initialState);
+
+  useEffect(() => {
+    if (state?.success) {
+      setIsOpen(false);
+      formRef.current?.reset();
+      onActionComplete();
+    }
+  }, [state, onActionComplete]);
+  
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -113,7 +136,7 @@ function TemplateDialog({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-            <SubmitButton />
+            <SubmitButton buttonText={buttonText} />
           </DialogFooter>
           {state?.message && !state?.success && <p className="text-sm text-red-500">{state.message}</p>}
         </form>
@@ -122,27 +145,19 @@ function TemplateDialog({
   );
 }
 
-function DeleteTemplateButton() {
-    const { pending } = useFormStatus();
-    return (
-         <Button type="submit" variant="destructive" disabled={pending}>
-             {pending ? (
-                <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Eliminando...
-                </>
-            ) : (
-                'Continuar'
-            )}
-        </Button>
-    )
-}
-
-function TemplateDeleteAction({ templateId }: { templateId: string }) {
+function TemplateDeleteAction({ templateId, onActionComplete }: { templateId: string, onActionComplete: () => void }) {
     const [state, formAction] = useActionState(deleteEmailTemplate, initialState);
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if (state.success) {
+            setIsOpen(false);
+            onActionComplete();
+        }
+    }, [state, onActionComplete]);
     
     return (
-        <AlertDialog>
+        <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
             <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="icon">
                     <Trash2 className="h-4 w-4 text-destructive" />
@@ -166,14 +181,21 @@ function TemplateDeleteAction({ templateId }: { templateId: string }) {
                 </form>
             </AlertDialogContent>
         </AlertDialog>
-    )
+    );
 }
 
+// --- Componente Principal ---
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
-  
+  // We use a key to force re-render of the component list when an action is completed.
+  const [key, setKey] = useState(Date.now());
+  const handleActionComplete = () => {
+    // A page reload is simpler and ensures all server data is fresh.
+    window.location.reload();
+  };
+
   return (
-    <div className="w-full">
+    <div className="w-full" key={key}>
         <div className="flex justify-end mb-4">
             <TemplateDialog
                 trigger={
@@ -186,6 +208,7 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                 description="Define el contenido para tus comunicaciones."
                 action={addEmailTemplate}
                 buttonText="Crear Plantilla"
+                onActionComplete={handleActionComplete}
             />
         </div>
         <div className="border rounded-lg">
@@ -215,8 +238,9 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                                         template={template}
                                         action={updateEmailTemplate}
                                         buttonText="Guardar Cambios"
+                                        onActionComplete={handleActionComplete}
                                     />
-                                    <TemplateDeleteAction templateId={template.id} />
+                                    <TemplateDeleteAction templateId={template.id} onActionComplete={handleActionComplete} />
                                 </div>
                             </TableCell>
                         </TableRow>
