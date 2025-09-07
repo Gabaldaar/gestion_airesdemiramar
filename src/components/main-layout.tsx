@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -24,6 +24,7 @@ const navItems = [
   { href: '/payments', label: 'Ingresos', icon: CreditCard },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
   { href: '/reports', label: 'Reportes', icon: BarChart3 },
+  { href: '/templates', label: 'Plantillas', icon: Mail },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
 
@@ -33,7 +34,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
       {navItems.map(({ href, label, icon: Icon }) => {
-        const isActive = pathname === href;
+        const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
         return (
           <Link
             key={href}
@@ -109,4 +110,3 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
-

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useActionState, useEffect } from 'react';
+import React, { useState, useRef, useActionState, useEffect, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
@@ -42,18 +42,12 @@ import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 
 const initialState = { success: false, message: '' };
 
-const handleActionComplete = () => {
-    // Reload the page to ensure the latest data is shown and state is reset.
-    window.location.reload();
-};
-
-
 function SubmitButton({ isPending, text, pendingText }: { isPending: boolean, text: string, pendingText: string }) {
     return (
         <Button type="submit" disabled={isPending}>
             {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {pendingText}</> : text}
         </Button>
-    )
+    );
 }
 
 function DeleteButton({ isPending }: { isPending: boolean }) {
@@ -61,19 +55,19 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
         <Button type="submit" variant="destructive" disabled={isPending}>
             {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Eliminando...</> : 'Continuar'}
         </Button>
-    )
+    );
 }
 
 function AddTemplateDialog() {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [state, formAction] = useActionState(addEmailTemplate, initialState);
-    const [isPending, startTransition] = React.useTransition();
+    const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
         if (state.success) {
             setIsOpen(false);
-            handleActionComplete();
+            window.location.reload();
         }
     }, [state]);
     
@@ -89,7 +83,10 @@ function AddTemplateDialog() {
                 <Button><PlusCircle className="mr-2 h-4 w-4" /> Nueva Plantilla</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-xl">
-                <form action={formAction} ref={formRef} onSubmit={(e) => { e.preventDefault(); startTransition(() => formAction(new FormData(formRef.current!)))}}>
+                <form 
+                    ref={formRef} 
+                    action={(formData) => startTransition(() => formAction(formData))}
+                >
                     <DialogHeader>
                         <DialogTitle>Añadir Nueva Plantilla</DialogTitle>
                         <DialogDescription>
@@ -128,12 +125,12 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [state, formAction] = useActionState(updateEmailTemplate, initialState);
-    const [isPending, startTransition] = React.useTransition();
+    const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
         if (state.success) {
             setIsOpen(false);
-            handleActionComplete();
+            window.location.reload();
         }
     }, [state]);
 
@@ -143,7 +140,10 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
                  <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-xl">
-                <form action={formAction} ref={formRef} onSubmit={(e) => { e.preventDefault(); startTransition(() => formAction(new FormData(formRef.current!)))}}>
+                <form 
+                    ref={formRef} 
+                    action={(formData) => startTransition(() => formAction(formData))}
+                >
                     <DialogHeader>
                         <DialogTitle>Editar Plantilla</DialogTitle>
                          <DialogDescription>
@@ -176,18 +176,17 @@ function EditTemplateDialog({ template }: { template: EmailTemplate }) {
                 </form>
             </DialogContent>
         </Dialog>
-    )
+    );
 }
 
 function DeleteTemplateDialog({ templateId }: { templateId: string }) {
     const [state, formAction] = useActionState(deleteEmailTemplate, initialState);
-    const [isPending, startTransition] = React.useTransition();
+    const [isPending, startTransition] = useTransition();
     const formRef = useRef<HTMLFormElement>(null);
-
 
     useEffect(() => {
         if (state.success) {
-            handleActionComplete();
+            window.location.reload();
         }
     }, [state]);
 
@@ -197,7 +196,10 @@ function DeleteTemplateDialog({ templateId }: { templateId: string }) {
                 <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <form action={formAction} ref={formRef} onSubmit={(e) => { e.preventDefault(); startTransition(() => formAction(new FormData(formRef.current!)))}}>
+                <form 
+                    ref={formRef}
+                    action={(formData) => startTransition(() => formAction(formData))}
+                >
                     <input type="hidden" name="id" value={templateId} />
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
@@ -219,7 +221,6 @@ function DeleteTemplateDialog({ templateId }: { templateId: string }) {
 }
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
-    
     return (
         <div className="w-full space-y-4">
             <div className="flex justify-end">
