@@ -272,9 +272,8 @@ export async function updateBooking(previousState: any, formData: FormData) {
         const updatedBookingData: Partial<Booking> = { id };
         
         const getFormValue = (key: string) => formData.has(key) ? formData.get(key) as string : null;
-
-        // Collect all possible fields from the form
-        const formValues: { [key in keyof Omit<Booking, 'id'>]?: any } = {
+        
+        const formValues: { [key in keyof Omit<Booking, 'id' | 'googleCalendarEventId'>]?: any } & { googleCalendarEventId?: string | null } = {
             propertyId: getFormValue("propertyId"),
             tenantId: getFormValue("tenantId"),
             startDate: getFormValue("startDate"),
@@ -306,20 +305,19 @@ export async function updateBooking(previousState: any, formData: FormData) {
             }
         }
         
-        // Handle cases where a value might be cleared
         if (formData.has('guaranteeAmount') && getFormValue('guaranteeAmount') === '') {
-            updatedBookingData.guaranteeAmount = undefined; 
+            updatedBookingData.guaranteeAmount = null; 
         }
         if (formData.has('guaranteeReceivedDate') && getFormValue('guaranteeReceivedDate') === '') {
-            updatedBookingData.guaranteeReceivedDate = undefined;
+            updatedBookingData.guaranteeReceivedDate = null;
         }
         if (formData.has('guaranteeReturnedDate') && getFormValue('guaranteeReturnedDate') === '') {
-            updatedBookingData.guaranteeReturnedDate = undefined;
+            updatedBookingData.guaranteeReturnedDate = null;
         }
 
 
         // First, update the booking in our database.
-        await dbUpdateBooking(updatedBookingData);
+        await dbUpdateBooking(updatedBookingData as Booking);
         
         const finalBookingState = await getBookingById(id);
         if (!finalBookingState) throw new Error("Booking disappeared after update.");
@@ -794,3 +792,5 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'Error al eliminar la categoría.' };
   }
 }
+
+    
