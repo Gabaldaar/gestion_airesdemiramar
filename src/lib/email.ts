@@ -58,13 +58,6 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
       `Subject: ${utf8Subject}`,
       '',
       '--boundary_string_12345',
-      'Content-Type: text/plain; charset="UTF-8"',
-      'MIME-Version: 1.0',
-      'Content-Transfer-Encoding: 7bit',
-      '',
-      body.replace(/<[^>]*>?/gm, ''), // Plain text version
-      '',
-      '--boundary_string_12345',
       'Content-Type: text/html; charset="UTF-8"',
       'MIME-Version: 1.0',
       'Content-Transfer-Encoding: 7bit',

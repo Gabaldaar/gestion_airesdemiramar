@@ -74,22 +74,15 @@ const Editor = ({ value, onChange }: { value: string, onChange: (val: string) =>
 
     useEffect(() => {
         if (quill) {
-            // Set initial content only if it's different and not just empty paragraphs
+            // Set initial content only if it's different
             if (quill.root.innerHTML !== value) {
                 const delta = quill.clipboard.convert(value);
                 quill.setContents(delta, 'silent');
             }
 
-            // Listen for changes
             const handleChange = (delta: any, oldDelta: any, source: string) => {
                  if (source === 'user') {
-                    // Check for empty editor state
-                    const editorText = quill.getText().trim();
-                    if (editorText === '') {
-                        onChange('');
-                    } else {
-                        onChange(quill.root.innerHTML);
-                    }
+                    onChange(quill.root.innerHTML);
                 }
             };
             quill.on('text-change', handleChange);
