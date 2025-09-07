@@ -40,6 +40,12 @@ import {
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useQuill } from 'react-quilljs';
 import 'quill/dist/quill.snow.css';
+import Quill from 'quill';
+
+if (typeof window !== 'undefined') {
+    const Indent = Quill.import('attributors/style/indent');
+    Quill.register(Indent, true);
+}
 
 
 const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}";
@@ -177,7 +183,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
         }
     }, [state, onActionComplete]);
     
-    // When the dialog opens, sync the body state with the provided template
+    // This is the fix: Sync state when the dialog is opened or the template prop changes.
     useEffect(() => {
         if (isOpen) {
             setBody(template.body);
