@@ -44,19 +44,36 @@ interface EmailDetails {
  */
 export async function sendEmail({ to, subject, body }: EmailDetails): Promise<void> {
     const auth = getGoogleAuthForGmail();
-    // This was the critical missing piece: passing the auth object to the gmail client.
     const gmail = google.gmail({ version: 'v1', auth });
 
-    const emailContent = [
-        `Content-Type: text/html; charset="UTF-8"`,
-        `MIME-Version: 1.0`,
-        `Content-Transfer-Encoding: 7bit`,
-        `to: ${to}`,
-        `from: ${process.env.GOOGLE_ADMIN_EMAIL}`, // This will show as sent from this user
-        `subject: =?utf-8?B?${Buffer.from(subject).toString('base64')}?=`,
-        ``,
-        body,
-    ].join('\n');
+    // The from address must be the same as the impersonated user
+    const fromAddress = process.env.GOOGLE_ADMIN_EMAIL;
+
+    // Create a multipart email body
+    const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+    const messageParts = [
+      `From: ${fromAddress}`,
+      `To: ${to}`,
+      'Content-Type: multipart/alternative; boundary="boundary_string_12345"',
+      `Subject: ${utf8Subject}`,
+      '',
+      '--boundary_string_12345',
+      'Content-Type: text/plain; charset="UTF-8"',
+      'MIME-Version: 1.0',
+      'Content-Transfer-Encoding: 7bit',
+      '',
+      body.replace(/<[^>]*>?/gm, ''), // Plain text version
+      '',
+      '--boundary_string_12345',
+      'Content-Type: text/html; charset="UTF-8"',
+      'MIME-Version: 1.0',
+      'Content-Transfer-Encoding: 7bit',
+      '',
+      body,
+      '',
+      '--boundary_string_12345--',
+    ];
+    const emailContent = messageParts.join('\n');
 
     // The email needs to be base64url encoded
     const encodedMessage = Buffer.from(emailContent)

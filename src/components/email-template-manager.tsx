@@ -74,7 +74,7 @@ const Editor = ({ value, onChange }: { value: string, onChange: (val: string) =>
 
     useEffect(() => {
         if (quill) {
-            // Set initial content only if it's different
+            // Set initial content only if it's different and not just empty paragraphs
             if (quill.root.innerHTML !== value) {
                 const delta = quill.clipboard.convert(value);
                 quill.setContents(delta, 'silent');
@@ -83,7 +83,13 @@ const Editor = ({ value, onChange }: { value: string, onChange: (val: string) =>
             // Listen for changes
             const handleChange = (delta: any, oldDelta: any, source: string) => {
                  if (source === 'user') {
-                    onChange(quill.root.innerHTML);
+                    // Check for empty editor state
+                    const editorText = quill.getText().trim();
+                    if (editorText === '') {
+                        onChange('');
+                    } else {
+                        onChange(quill.root.innerHTML);
+                    }
                 }
             };
             quill.on('text-change', handleChange);
@@ -95,7 +101,7 @@ const Editor = ({ value, onChange }: { value: string, onChange: (val: string) =>
     }, [quill, value, onChange]);
 
     return (
-        <div className='bg-white'>
+        <div className='bg-white text-black'>
             <div ref={quillRef} style={{ minHeight: '200px' }} />
         </div>
     );
@@ -182,7 +188,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
         }
     }, [state, onActionComplete]);
     
-    // This effect ensures the body is correctly set when the dialog opens
+    // This effect ensures the body is correctly set when the dialog opens or template data changes
     useEffect(() => {
         if (isOpen) {
             setBody(template.body);
