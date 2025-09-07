@@ -77,7 +77,6 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
-      window.location.reload();
     }
   }, [state]);
 

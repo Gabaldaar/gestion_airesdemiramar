@@ -85,7 +85,6 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
-      window.location.reload();
     }
   }, [state.success]);
 
