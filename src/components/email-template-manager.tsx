@@ -1,12 +1,13 @@
+
 'use client';
 
 import React, { useState, useRef, useActionState, useEffect, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
+import dynamic from 'next/dynamic';
 import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Table,
@@ -38,8 +39,24 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
+import 'react-quill/dist/quill.snow.css';
+
+// Dynamically import ReactQuill to avoid SSR issues
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+
+const quillModules = {
+    toolbar: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+        ['link'],
+        ['clean']
+    ],
+};
 
 const initialState = { success: false, message: '' };
+
+const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}";
 
 function SubmitButton({ isPending, text, pendingText }: { isPending: boolean, text: string, pendingText: string }) {
     return (
@@ -60,6 +77,7 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
 function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
+    const [body, setBody] = useState('');
     const [state, formAction] = useActionState(addEmailTemplate, initialState);
     const [isPending, startTransition] = useTransition();
 
@@ -73,6 +91,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
     useEffect(() => {
         if (!isOpen) {
             formRef.current?.reset();
+            setBody('');
         }
     }, [isOpen]);
 
@@ -81,15 +100,18 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
             <DialogTrigger asChild>
                 <Button><PlusCircle className="mr-2 h-4 w-4" /> Nueva Plantilla</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-xl">
+            <DialogContent className="sm:max-w-3xl">
                 <form 
                     ref={formRef} 
-                    action={(formData) => startTransition(() => formAction(formData))}
+                    action={(formData) => {
+                        formData.set('body', body);
+                        startTransition(() => formAction(formData))
+                    }}
                 >
                     <DialogHeader>
                         <DialogTitle>Añadir Nueva Plantilla</DialogTitle>
                         <DialogDescription>
-                            Completa los detalles de la plantilla. Usa los marcadores disponibles para insertar datos dinámicos.
+                            Completa los detalles de la plantilla. Usa el editor para dar formato y los marcadores para insertar datos dinámicos.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -103,11 +125,15 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="body">Cuerpo del Email</Label>
-                            <Textarea id="body" name="body" required className="h-40" />
+                            <ReactQuill 
+                                theme="snow" 
+                                value={body} 
+                                onChange={setBody}
+                                modules={quillModules}
+                                className="bg-white"
+                            />
                         </div>
-                         <p className="text-xs text-muted-foreground">
-                            Marcadores: {'`{{inquilino.nombre}}`'}, {'`{{propiedad.nombre}}`'}, {'`{{fechaCheckIn}}`'}, {'`{{fechaCheckOut}}`'}, {'`{{montoReserva}}`'}, {'`{{saldoReserva}}`'}, {'`{{montoGarantia}}`'}, {'`{{montoPago}}`'}, {'`{{fechaPago}}`'}
-                        </p>
+                         <p className="text-xs text-muted-foreground">{placeholderHelpText}</p>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
@@ -123,6 +149,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
 function EditTemplateDialog({ template, onActionComplete }: { template: EmailTemplate, onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
+    const [body, setBody] = useState(template.body);
     const [state, formAction] = useActionState(updateEmailTemplate, initialState);
     const [isPending, startTransition] = useTransition();
 
@@ -132,16 +159,25 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
             onActionComplete();
         }
     }, [state, onActionComplete]);
+    
+    useEffect(() => {
+        if (isOpen) {
+            setBody(template.body);
+        }
+    }, [isOpen, template.body]);
 
     return (
          <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                  <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-xl">
+            <DialogContent className="sm:max-w-3xl">
                 <form 
                     ref={formRef} 
-                    action={(formData) => startTransition(() => formAction(formData))}
+                    action={(formData) => {
+                        formData.set('body', body);
+                        startTransition(() => formAction(formData))
+                    }}
                 >
                     <DialogHeader>
                         <DialogTitle>Editar Plantilla</DialogTitle>
@@ -161,11 +197,15 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="body">Cuerpo del Email</Label>
-                            <Textarea id="body" name="body" defaultValue={template.body} required className="h-40" />
+                             <ReactQuill 
+                                theme="snow" 
+                                value={body} 
+                                onChange={setBody}
+                                modules={quillModules}
+                                className="bg-white"
+                            />
                         </div>
-                         <p className="text-xs text-muted-foreground">
-                           Marcadores: {'`{{inquilino.nombre}}`'}, {'`{{propiedad.nombre}}`'}, {'`{{fechaCheckIn}}`'}, {'`{{fechaCheckOut}}`'}, {'`{{montoReserva}}`'}, {'`{{saldoReserva}}`'}, {'`{{montoGarantia}}`'}, {'`{{montoPago}}`'}, {'`{{fechaPago}}`'}
-                        </p>
+                         <p className="text-xs text-muted-foreground">{placeholderHelpText}</p>
                     </div>
                     <DialogFooter>
                          <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
@@ -216,15 +256,12 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
 }
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
-    // We use a key to force re-render on actions, simpler than optimistic UI
-    const [renderKey, setRenderKey] = useState(0);
-
     const handleActionComplete = () => {
         window.location.reload();
     };
 
     return (
-        <div className="w-full space-y-4" key={renderKey}>
+        <div className="w-full space-y-4">
             <div className="flex justify-end">
                 <AddTemplateDialog onActionComplete={handleActionComplete} />
             </div>

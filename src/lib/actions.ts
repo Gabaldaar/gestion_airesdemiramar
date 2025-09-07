@@ -43,6 +43,7 @@ import {
     EmailTemplate,
 } from "./data";
 import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
+import { sendEmail } from "./email";
 
 
 export async function addProperty(previousState: any, formData: FormData) {
@@ -761,6 +762,7 @@ export async function addExpenseCategory(previousState: any, formData: FormData)
   try {
     await dbAddExpenseCategory({ name });
     revalidatePath('/settings');
+    revalidatePath('/expenses');
     return { success: true, message: 'Categoría añadida.' };
   } catch (error) {
     return { success: false, message: 'Error al añadir la categoría.' };
@@ -776,6 +778,7 @@ export async function updateExpenseCategory(previousState: any, formData: FormDa
   try {
     await dbUpdateExpenseCategory({ id, name });
     revalidatePath('/settings');
+     revalidatePath('/expenses');
     return { success: true, message: 'Categoría actualizada.' };
   } catch (error) {
     return { success: false, message: 'Error al actualizar la categoría.' };
@@ -808,7 +811,7 @@ export async function addEmailTemplate(previousState: any, formData: FormData) {
   }
   try {
     await dbAddEmailTemplate({ name, subject, body });
-    revalidatePath('/settings');
+    revalidatePath('/templates');
     return { success: true, message: 'Plantilla añadida.' };
   } catch (error) {
     return { success: false, message: 'Error al añadir la plantilla.' };
@@ -826,7 +829,7 @@ export async function updateEmailTemplate(previousState: any, formData: FormData
   }
   try {
     await dbUpdateEmailTemplate({ id, name, subject, body });
-    revalidatePath('/settings');
+    revalidatePath('/templates');
     return { success: true, message: 'Plantilla actualizada.' };
   } catch (error) {
     return { success: false, message: 'Error al actualizar la plantilla.' };
@@ -840,11 +843,27 @@ export async function deleteEmailTemplate(previousState: any, formData: FormData
   }
   try {
     await dbDeleteEmailTemplate(id);
-    revalidatePath('/settings');
+    revalidatePath('/templates');
     return { success: true, message: 'Plantilla eliminada.' };
   } catch (error) {
     return { success: false, message: 'Error al eliminar la plantilla.' };
   }
 }
 
-    
+export async function sendEmailAction(previousState: any, formData: FormData): Promise<{ success: boolean; message: string; }> {
+    const to = formData.get('to') as string;
+    const subject = formData.get('subject') as string;
+    const body = formData.get('body') as string;
+
+    if (!to || !subject || !body) {
+        return { success: false, message: 'Faltan datos para enviar el email.' };
+    }
+
+    try {
+        await sendEmail({ to, subject, body });
+        return { success: true, message: 'Email enviado correctamente.' };
+    } catch (error) {
+        console.error("Error sending email:", error);
+        return { success: false, message: 'Error al enviar el email. Revise las credenciales del servicio.' };
+    }
+}
