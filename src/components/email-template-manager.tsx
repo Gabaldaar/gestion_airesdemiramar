@@ -74,7 +74,6 @@ function AddTemplateForm() {
 
   useEffect(() => {
     if (addState.success) {
-      formRef.current?.reset();
       window.location.reload();
     }
   }, [addState]);
@@ -103,10 +102,9 @@ function EditTemplateRow({ template, onCancel }: { template: EmailTemplate, onCa
 
     useEffect(() => {
         if (updateState.success) {
-            onCancel(); // Exit edit mode
             window.location.reload();
         }
-    }, [updateState, onCancel]);
+    }, [updateState]);
 
     return (
          <TableRow className="bg-muted/50">
@@ -180,7 +178,7 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
             </TableRow>
           </TableHeader>
           <TableBody>
-            {initialTemplates.length > 0 ? (
+            {initialTemplates && initialTemplates.length > 0 ? (
               initialTemplates.map((template) => (
                 editingTemplateId === template.id 
                 ? <EditTemplateRow key={template.id} template={template} onCancel={() => setEditingTemplateId(null)} />

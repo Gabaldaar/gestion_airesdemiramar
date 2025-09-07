@@ -183,6 +183,45 @@ const expenseCategoriesCollection = collection(db, 'expenseCategories');
 const emailTemplatesCollection = collection(db, 'emailTemplates');
 
 
+// Helper function to add default data only if the collection is empty
+const addDefaultData = async (collRef: any, data: any[]) => {
+    const snapshot = await getDocs(query(collRef, where('name', 'in', data.map(d => d.name))));
+    if (snapshot.empty) {
+        const batch = writeBatch(db);
+        data.forEach(item => {
+            const docRef = doc(collRef);
+            batch.set(docRef, item);
+        });
+        await batch.commit();
+        console.log(`Default data added to ${collRef.path}.`);
+    } else {
+        console.log(`Collection ${collRef.path} already has data. Skipping default data.`);
+    }
+};
+
+// Function to initialize default data for the app
+const initializeDefaultData = async () => {
+    const defaultTemplates = [
+        {
+            name: 'Confirmación de Pago',
+            subject: 'Confirmación de tu pago para la reserva en {{propiedad.nombre}}',
+            body: `Hola {{inquilino.nombre}},\n\nTe escribimos para confirmar que hemos recibido tu pago para la reserva en {{propiedad.nombre}}.\n\nDetalles de la reserva:\n- Check-in: {{fechaCheckIn}}\n- Check-out: {{fechaCheckOut}}\n- Monto total: {{montoReserva}}\n- Saldo pendiente: {{saldoReserva}}\n\n¡Muchas gracias por tu pago!\n\nSaludos cordiales.`
+        },
+        {
+            name: 'Confirmación de Garantía',
+            subject: 'Confirmación de recepción de garantía para {{propiedad.nombre}}',
+            body: `Hola {{inquilino.nombre}},\n\nConfirmamos que hemos recibido el depósito de garantía de {{montoGarantia}} con fecha {{fechaGarantiaRecibida}} para tu reserva en {{propiedad.nombre}}.\n\nEste depósito será reembolsado al finalizar tu estancia, sujeto a la inspección de la propiedad.\n\n¡Gracias!\n\nSaludos cordiales.`
+        }
+    ];
+
+    try {
+        await addDefaultData(emailTemplatesCollection, defaultTemplates);
+    } catch (error) {
+        console.error("Error adding default email templates:", error);
+    }
+};
+
+
 export async function getProperties(): Promise<Property[]> {
   const snapshot = await getDocs(query(propertiesCollection, orderBy('name')));
   return snapshot.docs.map(processDoc) as Property[];
@@ -726,6 +765,8 @@ export async function getBookingWithDetails(bookingId: string): Promise<BookingW
 // --- Email Template Functions ---
 
 export async function getEmailTemplates(): Promise<EmailTemplate[]> {
+  // Try to add default templates if they don't exist
+  await initializeDefaultData();
   const snapshot = await getDocs(query(emailTemplatesCollection, orderBy('name')));
   return snapshot.docs.map(processDoc) as EmailTemplate[];
 }
