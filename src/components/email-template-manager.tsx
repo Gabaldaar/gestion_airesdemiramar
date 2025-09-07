@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useActionState, useEffect } from 'react';
@@ -57,120 +58,103 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
     );
 }
 
-function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const formRef = useRef<HTMLFormElement>(null);
-    const [state, formAction, isPending] = useActionState(addEmailTemplate, { success: false, message: '' });
+function TemplateDialog({
+  isOpen,
+  setIsOpen,
+  template,
+  onActionComplete,
+}: {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  template?: EmailTemplate;
+  onActionComplete: () => void;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const action = template ? updateEmailTemplate : addEmailTemplate;
+  const [state, formAction, isPending] = useActionState(action, { success: false, message: '' });
 
-    useEffect(() => {
-        if (state.success) {
-            setIsOpen(false);
-            onActionComplete();
-        }
-    }, [state, onActionComplete]);
-    
-    useEffect(() => {
-        if (!isOpen) {
-            formRef.current?.reset();
-        }
-    }, [isOpen]);
+  const [name, setName] = useState(template?.name || '');
+  const [subject, setSubject] = useState(template?.subject || '');
+  const [body, setBody] = useState(template?.body || '');
+  
+  useEffect(() => {
+    if (template) {
+      setName(template.name);
+      setSubject(template.subject);
+      setBody(template.body);
+    } else {
+      setName('');
+      setSubject('');
+      setBody('');
+    }
+  }, [template, isOpen]);
 
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button><PlusCircle className="mr-2 h-4 w-4" /> Nueva Plantilla</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
-                <form 
-                    ref={formRef} 
-                    action={formAction}
-                >
-                    <DialogHeader>
-                        <DialogTitle>Añadir Nueva Plantilla</DialogTitle>
-                        <DialogDescription>
-                            Completa los detalles de la plantilla. Usa los marcadores para insertar datos dinámicos.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Nombre</Label>
-                            <Input id="name" name="name" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="subject">Asunto</Label>
-                            <Input id="subject" name="subject" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="body">Cuerpo del Email</Label>
-                            <Textarea id="body" name="body" className="h-40" required/>
-                        </div>
-                         <p className="text-xs text-muted-foreground">{placeholderHelpText}</p>
-                    </div>
-                    <DialogFooter>
-                        <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                        <SubmitButton isPending={isPending} text="Crear Plantilla" pendingText="Creando..." />
-                    </DialogFooter>
-                    {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
-                </form>
-            </DialogContent>
-        </Dialog>
-    );
+
+  useEffect(() => {
+    if (state.success) {
+      setIsOpen(false);
+      onActionComplete();
+    }
+  }, [state, setIsOpen, onActionComplete]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {template ? (
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(true)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button onClick={() => setIsOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Nueva Plantilla
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl">
+        <form
+          ref={formRef}
+          action={formAction}
+          onSubmit={(e) => {
+             e.preventDefault();
+             const formData = new FormData(e.currentTarget);
+             if (template) {
+                formData.set('id', template.id);
+             }
+             formAction(formData);
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{template ? 'Editar' : 'Añadir Nueva'} Plantilla</DialogTitle>
+            <DialogDescription>
+              Completa los detalles. Usa los marcadores para insertar datos dinámicos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre</Label>
+              <Input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="subject">Asunto</Label>
+              <Input id="subject" name="subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="body">Cuerpo del Email</Label>
+              <Textarea id="body" name="body" value={body} onChange={(e) => setBody(e.target.value)} className="h-40" required />
+            </div>
+            <p className="text-xs text-muted-foreground">{placeholderHelpText}</p>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
+            <SubmitButton isPending={isPending} text={template ? 'Guardar Cambios' : 'Crear Plantilla'} pendingText={template ? 'Guardando...' : 'Creando...'} />
+          </DialogFooter>
+          {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
-function EditTemplateDialog({ template, onActionComplete }: { template: EmailTemplate, onActionComplete: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const formRef = useRef<HTMLFormElement>(null);
-    const [state, formAction, isPending] = useActionState(updateEmailTemplate, { success: false, message: '' });
-
-    useEffect(() => {
-        if (state.success) {
-            setIsOpen(false);
-            onActionComplete();
-        }
-    }, [state, onActionComplete]);
-    
-    return (
-         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                 <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
-                <form 
-                    ref={formRef} 
-                    action={formAction}
-                >
-                    <DialogHeader>
-                        <DialogTitle>Editar Plantilla</DialogTitle>
-                         <DialogDescription>
-                            Modifica los detalles de la plantilla.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <input type="hidden" name="id" value={template.id} />
-                    <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Nombre</Label>
-                            <Input id="name" name="name" defaultValue={template.name} required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="subject">Asunto</Label>
-                            <Input id="subject" name="subject" defaultValue={template.subject} required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="body">Cuerpo del Email</Label>
-                             <Textarea id="body" name="body" defaultValue={template.body} className="h-40" required/>
-                        </div>
-                         <p className="text-xs text-muted-foreground">{placeholderHelpText}</p>
-                    </div>
-                    <DialogFooter>
-                         <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                         <SubmitButton isPending={isPending} text="Guardar Cambios" pendingText="Guardando..." />
-                    </DialogFooter>
-                    {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
-                </form>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: string, onActionComplete: () => void }) {
     const [state, formAction, isPending] = useActionState(deleteEmailTemplate, { success: false, message: '' });
@@ -210,16 +194,26 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
     const [templates, setTemplates] = useState(initialTemplates);
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [editTemplate, setEditTemplate] = useState<EmailTemplate | undefined>(undefined);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
 
     const refreshTemplates = async () => {
         const updatedTemplates = await getEmailTemplates();
         setTemplates(updatedTemplates);
     };
 
+    const handleEditClick = (template: EmailTemplate) => {
+        setEditTemplate(template);
+        setIsEditDialogOpen(true);
+    }
+
     return (
         <div className="w-full space-y-4">
             <div className="flex justify-end">
-                <AddTemplateDialog onActionComplete={refreshTemplates} />
+                 <TemplateDialog isOpen={isAddDialogOpen} setIsOpen={setIsAddDialogOpen} onActionComplete={refreshTemplates} />
+                 {editTemplate && <TemplateDialog isOpen={isEditDialogOpen} setIsOpen={setIsEditDialogOpen} template={editTemplate} onActionComplete={refreshTemplates} />}
             </div>
             <div className="border rounded-lg">
                 <Table>
@@ -238,7 +232,7 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                                     <TableCell>{template.subject}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end">
-                                            <EditTemplateDialog template={template} onActionComplete={refreshTemplates} />
+                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(template)}><Pencil className="h-4 w-4" /></Button>
                                             <DeleteTemplateDialog templateId={template.id} onActionComplete={refreshTemplates} />
                                         </div>
                                     </TableCell>
@@ -257,3 +251,5 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
         </div>
     );
 }
+
+    

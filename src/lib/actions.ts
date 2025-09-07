@@ -42,7 +42,6 @@ import {
     EmailTemplate,
 } from "./data";
 import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
-import { sendEmail } from "./email";
 
 
 export async function addProperty(previousState: any, formData: FormData) {
@@ -849,20 +848,4 @@ export async function deleteEmailTemplate(previousState: any, formData: FormData
   }
 }
 
-export async function sendEmailAction(previousState: any, formData: FormData): Promise<{ success: boolean; message: string; }> {
-    const to = formData.get('to') as string;
-    const subject = formData.get('subject') as string;
-    const body = formData.get('body') as string;
-
-    if (!to || !subject || !body) {
-        return { success: false, message: 'Faltan datos para enviar el email.' };
-    }
-
-    try {
-        await sendEmail({ to, subject, body });
-        return { success: true, message: 'Email enviado correctamente.' };
-    } catch (error) {
-        console.error("Error sending email:", error);
-        return { success: false, message: 'Error al enviar el email. Revise las credenciales del servicio.' };
-    }
-}
+    

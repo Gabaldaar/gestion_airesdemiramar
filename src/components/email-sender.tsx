@@ -1,7 +1,7 @@
+
 'use client';
 
-import { useEffect, useState, useMemo, useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,9 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { BookingWithDetails, EmailTemplate, getEmailTemplates, Payment } from '@/lib/data';
-import { sendEmailAction } from '@/lib/actions';
-import { Mail, Loader2, Send, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Mail, Send } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -50,38 +48,12 @@ interface EmailSenderProps {
     payment?: Payment;
 }
 
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" disabled={pending}>
-            {pending ? (
-                <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                </>
-            ) : (
-                <>
-                    <Send className="mr-2 h-4 w-4" />
-                    Enviar Email
-                </>
-            )}
-        </Button>
-    )
-}
-
 export function EmailSender({ booking, payment }: EmailSenderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [processedBody, setProcessedBody] = useState('');
   const [processedSubject, setProcessedSubject] = useState('');
-
-  const [state, formAction] = useActionState(sendEmailAction, initialState);
 
   useEffect(() => {
     if (isOpen) {
@@ -152,13 +124,13 @@ export function EmailSender({ booking, payment }: EmailSenderProps) {
     }
   }, [selectedTemplateId, templates, replacements]);
   
-   useEffect(() => {
-    if (state.success) {
-      // Close the dialog after a short delay to show the success message
-      setTimeout(() => setIsOpen(false), 2000);
-    }
-  }, [state.success]);
+  const handleOpenMailClient = () => {
+    if (!booking.tenant?.email) return;
 
+    const mailtoLink = `mailto:${booking.tenant.email}?subject=${encodeURIComponent(processedSubject)}&body=${encodeURIComponent(processedBody)}`;
+    window.location.href = mailtoLink;
+    setIsOpen(false);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -170,66 +142,56 @@ export function EmailSender({ booking, payment }: EmailSenderProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Enviar Email al Inquilino</DialogTitle>
+          <DialogTitle>Preparar Email para el Inquilino</DialogTitle>
           <DialogDescription>
-            Selecciona una plantilla para componer el email. El envío se realizará desde el servidor.
+            Selecciona una plantilla y revisa el contenido. El email se abrirá en tu cliente de correo.
           </DialogDescription>
         </DialogHeader>
         
-        <form action={formAction}>
-            <input type="hidden" name="to" value={booking.tenant?.email || ''} />
-            <input type="hidden" name="subject" value={processedSubject} />
-            <input type="hidden" name="body" value={processedBody} />
-
-            <div className="space-y-4 py-4">
-                <div>
-                    <label htmlFor="template" className='block text-sm font-medium mb-1'>Plantilla</label>
-                    <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una plantilla..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {templates.map(template => (
-                                <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                
-                {selectedTemplateId && (
-                     <div className="space-y-4 border rounded-lg p-4">
-                        <div>
-                            <label htmlFor="subject-preview" className='block text-sm font-medium mb-1'>Asunto</label>
-                            <div id="subject-preview" className="w-full p-2 border rounded-md bg-muted text-sm">{processedSubject}</div>
-                        </div>
-                         <div>
-                            <label htmlFor="body-preview" className='block text-sm font-medium mb-1'>Vista Previa del Email</label>
-                             <Textarea 
-                                id="body-preview" 
-                                className="w-full p-2 border rounded-md bg-muted text-sm h-60"
-                                value={processedBody}
-                                readOnly
-                            />
-                        </div>
-                     </div>
-                )}
+        <div className="space-y-4 py-4">
+            <div>
+                <label htmlFor="template" className='block text-sm font-medium mb-1'>Plantilla</label>
+                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una plantilla..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {templates.map(template => (
+                            <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
+            
+            {selectedTemplateId && (
+                 <div className="space-y-4 border rounded-lg p-4">
+                    <div>
+                        <label htmlFor="subject-preview" className='block text-sm font-medium mb-1'>Asunto</label>
+                        <div id="subject-preview" className="w-full p-2 border rounded-md bg-muted text-sm">{processedSubject}</div>
+                    </div>
+                     <div>
+                        <label htmlFor="body-preview" className='block text-sm font-medium mb-1'>Vista Previa del Email</label>
+                         <Textarea 
+                            id="body-preview" 
+                            className="w-full p-2 border rounded-md bg-muted text-sm h-60"
+                            value={processedBody}
+                            readOnly
+                        />
+                    </div>
+                 </div>
+            )}
+        </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-              <SubmitButton />
-            </DialogFooter>
-        </form>
-         {state.message && (
-            <Alert variant={state.success ? 'default' : 'destructive'} className="mt-4 bg-opacity-90">
-                <AlertTriangle className={`h-4 w-4 ${state.success ? 'text-green-500' : 'text-destructive'}`} />
-                <AlertTitle>{state.success ? 'Éxito' : 'Error'}</AlertTitle>
-                <AlertDescription>
-                   {state.message}
-                </AlertDescription>
-            </Alert>
-        )}
+        <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+            <Button onClick={handleOpenMailClient} disabled={!selectedTemplateId}>
+                <Send className="mr-2 h-4 w-4" />
+                Abrir en Cliente de Correo
+            </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+    
