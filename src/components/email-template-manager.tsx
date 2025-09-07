@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { EmailTemplate } from '@/lib/data';
+import { EmailTemplate, getEmailTemplates } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,7 +70,6 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
         }
     }, [state, onActionComplete]);
     
-    // Reset form when dialog closes
     useEffect(() => {
         if (!isOpen) {
             formRef.current?.reset();
@@ -211,17 +210,18 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
 }
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
-    // This function is a placeholder for re-fetching or optimistic updates.
-    // In this app, server actions with revalidatePath handle data updates,
-    // so a simple page reload is sufficient for now.
-    const handleActionComplete = () => {
-        window.location.reload();
+    const [templates, setTemplates] = useState(initialTemplates);
+
+    // This function will be called by the dialogs to refresh the list
+    const refreshTemplates = async () => {
+        const updatedTemplates = await getEmailTemplates();
+        setTemplates(updatedTemplates);
     };
 
     return (
         <div className="w-full space-y-4">
             <div className="flex justify-end">
-                <AddTemplateDialog onActionComplete={handleActionComplete} />
+                <AddTemplateDialog onActionComplete={refreshTemplates} />
             </div>
             <div className="border rounded-lg">
                 <Table>
@@ -233,15 +233,15 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {initialTemplates && initialTemplates.length > 0 ? (
-                            initialTemplates.map((template) => (
+                        {templates && templates.length > 0 ? (
+                            templates.map((template) => (
                                 <TableRow key={template.id}>
                                     <TableCell className="font-medium">{template.name}</TableCell>
                                     <TableCell>{template.subject}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end">
-                                            <EditTemplateDialog template={template} onActionComplete={handleActionComplete} />
-                                            <DeleteTemplateDialog templateId={template.id} onActionComplete={handleActionComplete} />
+                                            <EditTemplateDialog template={template} onActionComplete={refreshTemplates} />
+                                            <DeleteTemplateDialog templateId={template.id} onActionComplete={refreshTemplates} />
                                         </div>
                                     </TableCell>
                                 </TableRow>
