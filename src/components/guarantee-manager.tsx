@@ -104,6 +104,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
             <input type="hidden" name="currency" value={booking.currency} />
             <input type="hidden" name="notes" value={booking.notes || ''} />
             <input type="hidden" name="contractStatus" value={booking.contractStatus || 'not_sent'} />
+            <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
             <input type="hidden" name="guaranteeReceivedDate" value={receivedDate?.toISOString().split('T')[0] || ''} />
             <input type="hidden" name="guaranteeReturnedDate" value={returnedDate?.toISOString().split('T')[0] || ''} />
 
@@ -179,5 +180,3 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
     </Dialog>
   );
 }
-
-    
