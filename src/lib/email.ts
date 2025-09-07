@@ -8,7 +8,7 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.send'];
 interface EmailDetails {
     to: string;
     subject: string;
-    body: string; // HTML body
+    body: string;
 }
 
 /**
@@ -46,8 +46,8 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
       `To: ${to}`,
       `Subject: ${utf8Subject}`,
       'MIME-Version: 1.0',
-      'Content-Type: text/html; charset=utf-8',
-      'Content-Transfer-Encoding: 7bit', // Can be 7bit for HTML with UTF-8
+      'Content-Type: text/plain; charset=utf-8',
+      'Content-Transfer-Encoding: 7bit',
       '',
       body
     ];
