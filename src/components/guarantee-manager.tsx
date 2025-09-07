@@ -50,7 +50,6 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
 export function GuaranteeManager({ booking }: { booking: Booking }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [formState, setFormState] = useState(initialState);
   const formRef = useRef<HTMLFormElement>(null);
   
   const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
@@ -88,14 +87,14 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
-      setFormState(initialState); // Crucial: Reset server state on open
     }
   }, [isOpen, booking]);
   
-  const handleSubmit = (formData: FormData) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     startTransition(async () => {
-        const result = await updateBooking(formState, formData);
-        setFormState(result);
+        const result = await updateBooking(initialState, formData);
         if (result.success) {
             setIsOpen(false);
         }
@@ -123,7 +122,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form ref={formRef} action={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
             <input type="hidden" name="id" value={booking.id} />
             <input type="hidden" name="guaranteeReceivedDate" value={receivedDate ? receivedDate.toISOString().split('T')[0] : ''} />
             <input type="hidden" name="guaranteeReturnedDate" value={returnedDate ? returnedDate.toISOString().split('T')[0] : ''} />
@@ -211,10 +210,10 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
                 <SubmitButton isPending={isPending} />
             </DialogFooter>
         </form>
-         {(clientError || (formState.message && !formState.success)) && (
+         {(clientError) && (
             <Alert variant="destructive" className="mt-4">
                 <AlertDescription>
-                   {clientError || formState.message}
+                   {clientError}
                 </AlertDescription>
             </Alert>
         )}
@@ -222,5 +221,3 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
     </Dialog>
   );
 }
-
-    
