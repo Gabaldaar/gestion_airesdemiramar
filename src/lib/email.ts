@@ -44,6 +44,7 @@ interface EmailDetails {
  */
 export async function sendEmail({ to, subject, body }: EmailDetails): Promise<void> {
     const auth = getGoogleAuthForGmail();
+    // This was the critical missing piece: passing the auth object to the gmail client.
     const gmail = google.gmail({ version: 'v1', auth });
 
     const emailContent = [
@@ -52,7 +53,7 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
         `Content-Transfer-Encoding: 7bit`,
         `to: ${to}`,
         `from: ${process.env.GOOGLE_ADMIN_EMAIL}`, // This will show as sent from this user
-        `subject: ${subject}`,
+        `subject: =?utf-8?B?${Buffer.from(subject).toString('base64')}?=`,
         ``,
         body,
     ].join('\n');

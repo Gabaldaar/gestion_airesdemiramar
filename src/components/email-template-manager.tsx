@@ -3,7 +3,6 @@
 
 import React, { useState, useRef, useActionState, useEffect, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
-import dynamic from 'next/dynamic';
 import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -39,10 +38,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
-
-// Use react-quilljs which is compatible with React 18
 import { useQuill } from 'react-quilljs';
-import 'quill/dist/quill.snow.css'; // Import styles
+import 'quill/dist/quill.snow.css';
 
 const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}";
 
@@ -62,26 +59,43 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
     );
 }
 
+// Corrected Editor component
 const Editor = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
-    const { quill, quillRef } = useQuill();
+    const { quill, quillRef } = useQuill({
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link', 'clean']
+            ]
+        },
+        formats: ['bold', 'italic', 'underline', 'strike', 'list', 'bullet', 'link'],
+        placeholder: 'Escribe el cuerpo del email aquí...'
+    });
 
     useEffect(() => {
         if (quill) {
-            quill.on('text-change', () => {
-                onChange(quill.root.innerHTML);
-            });
-
-            // Set initial value only if it's different
-            if(quill.root.innerHTML !== value) {
+            // Set initial content
+            if (quill.root.innerHTML !== value) {
                 const delta = quill.clipboard.convert(value);
                 quill.setContents(delta, 'silent');
             }
+
+            // Listen for changes
+            const handleChange = () => {
+                onChange(quill.root.innerHTML);
+            };
+            quill.on('text-change', handleChange);
+
+            return () => {
+                quill.off('text-change', handleChange);
+            };
         }
     }, [quill, value, onChange]);
 
     return (
         <div className='bg-white'>
-            <div ref={quillRef} />
+            <div ref={quillRef} style={{ minHeight: '200px' }} />
         </div>
     );
 }
@@ -91,7 +105,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [body, setBody] = useState('');
-    const [state, formAction] = useActionState(addEmailTemplate, initialState);
+    const [state, formAction] = useActionState(addEmailTemplate, { success: false, message: '' });
     const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
@@ -157,7 +171,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [body, setBody] = useState(template.body);
-    const [state, formAction] = useActionState(updateEmailTemplate, initialState);
+    const [state, formAction] = useActionState(updateEmailTemplate, { success: false, message: '' });
     const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
@@ -167,6 +181,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
         }
     }, [state, onActionComplete]);
     
+    // This effect ensures the body is correctly set when the dialog opens
     useEffect(() => {
         if (isOpen) {
             setBody(template.body);
@@ -220,7 +235,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
 }
 
 function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: string, onActionComplete: () => void }) {
-    const [state, formAction] = useActionState(deleteEmailTemplate, initialState);
+    const [state, formAction] = useActionState(deleteEmailTemplate, { success: false, message: '' });
     const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
@@ -255,12 +270,11 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
         </AlertDialog>
     );
 }
-const initialState = { success: false, message: '' };
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
     const handleActionComplete = () => {
-        // This is a dummy function to force a re-render by updating state.
-        // The actual data revalidation happens on the server via revalidatePath.
+        // We rely on server action revalidation, which reloads the page data.
+        // Forcing a full reload is a simple way to ensure UI is in sync.
         window.location.reload();
     };
 
