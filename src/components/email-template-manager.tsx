@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useActionState } from 'react';
+import { useState, useRef, useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
@@ -16,16 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { PlusCircle, Trash2, Pencil, Loader2 } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Pencil, X, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,107 +28,149 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Label } from './ui/label';
-import { Alert, AlertDescription } from './ui/alert';
 
 const initialState = {
   message: '',
   success: false,
 };
 
-// --- Separate Button Components ---
-
-function FormSubmitButton({ isEditing }: { isEditing: boolean }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Guardando...
-        </>
-      ) : isEditing ? (
-        'Guardar Cambios'
-      ) : (
-        'Crear Plantilla'
-      )}
-    </Button>
-  );
+// --- Action Buttons ---
+function AddButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending} className="col-span-2 md:col-span-1">
+            {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Añadiendo...</> : <><PlusCircle className="mr-2 h-4 w-4" />Añadir Plantilla</>}
+        </Button>
+    )
 }
 
-function FormDeleteButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" variant="destructive" disabled={pending}>
-      {pending ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Eliminando...
-        </>
-      ) : (
-        'Continuar'
-      )}
-    </Button>
-  );
+function EditButtons({ onCancel }: { onCancel: () => void }) {
+    const { pending } = useFormStatus();
+    return (
+        <div className="flex items-center justify-end">
+            <Button type="submit" variant="ghost" size="icon" disabled={pending}>
+                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 text-green-600" />}
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={onCancel} disabled={pending}>
+                <X className="h-4 w-4 text-red-600" />
+            </Button>
+        </div>
+    )
+}
+
+function DeleteButton() {
+    const { pending } = useFormStatus();
+    return (
+         <Button type="submit" variant="destructive" disabled={pending}>
+             {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Eliminando...</> : 'Continuar'}
+        </Button>
+    )
 }
 
 
-// --- Main Manager Component ---
-
-export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
-
+// --- Form/Row Components ---
+function AddTemplateForm() {
   const [addState, addAction] = useActionState(addEmailTemplate, initialState);
-  const [updateState, updateAction] = useActionState(updateEmailTemplate, initialState);
-  const [deleteState, deleteAction] = useActionState(deleteEmailTemplate, initialState);
-  
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Effect to handle form submission success
   useEffect(() => {
-    if (addState.success || updateState.success) {
-      setIsFormOpen(false);
+    if (addState.success) {
+      formRef.current?.reset();
       window.location.reload();
     }
-  }, [addState, updateState]);
+  }, [addState]);
   
-  useEffect(() => {
-    if (deleteState.success) {
-      setIsDeleteOpen(false);
-      window.location.reload();
-    }
-  }, [deleteState]);
+  return (
+    <form ref={formRef} action={addAction} className="p-4 border-t space-y-4">
+        <h3 className="font-medium">Añadir Nueva Plantilla</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+             <Input name="name" placeholder="Nombre de la plantilla" className="md:col-span-1" required />
+             <Input name="subject" placeholder="Asunto del email" className="md:col-span-3" required />
+             <Textarea name="body" placeholder="Cuerpo del email. Usa marcadores como {{inquilino.nombre}}..." className="md:col-span-4" required />
+        </div>
+        <p className="text-xs text-muted-foreground">
+            Marcadores: `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`, `{{'{'}}{'{'}propiedad.nombre{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckIn{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckOut{'}'}{'}'}`, `{{'{'}}{'{'}montoReserva{'}'}{'}'}`, `{{'{'}}{'{'}saldoReserva{'}'}{'}'}`, `{{'{'}}{'{'}montoGarantia{'}'}{'}'}`, `{{'{'}}{'{'}fechaGarantiaRecibida{'}'}{'}'}`, `{{'{'}}{'{'}fechaGarantiaDevuelta{'}'}{'}'}`
+        </p>
+        <div className="flex justify-end">
+            <AddButton />
+        </div>
+         {addState.message && !addState.success && <p className="text-red-500 text-sm">{addState.message}</p>}
+    </form>
+  );
+}
 
-  const handleAddNew = () => {
-    setSelectedTemplate(null);
-    setIsFormOpen(true);
-  };
+function EditTemplateRow({ template, onCancel }: { template: EmailTemplate, onCancel: () => void }) {
+    const [updateState, updateAction] = useActionState(updateEmailTemplate, initialState);
 
-  const handleEdit = (template: EmailTemplate) => {
-    setSelectedTemplate(template);
-    setIsFormOpen(true);
-  };
-  
-  const handleDelete = (template: EmailTemplate) => {
-    setSelectedTemplate(template);
-    setIsDeleteOpen(true);
-  }
+    useEffect(() => {
+        if (updateState.success) {
+            onCancel(); // Exit edit mode
+            window.location.reload();
+        }
+    }, [updateState, onCancel]);
 
-  const formAction = selectedTemplate ? updateAction : addAction;
-  const formState = selectedTemplate ? updateState : addState;
+    return (
+         <TableRow className="bg-muted/50">
+            <TableCell colSpan={3}>
+                <form action={updateAction}>
+                    <input type="hidden" name="id" value={template.id} />
+                    <div className="space-y-2">
+                        <Input name="name" defaultValue={template.name} required />
+                        <Input name="subject" defaultValue={template.subject} required />
+                        <Textarea name="body" defaultValue={template.body} required />
+                        <EditButtons onCancel={onCancel} />
+                    </div>
+                    {updateState.message && !updateState.success && <p className="text-red-500 text-sm pt-2">{updateState.message}</p>}
+                </form>
+            </TableCell>
+        </TableRow>
+    )
+}
+
+function DeleteTemplateAction({ templateId }: { templateId: string }) {
+    const [deleteState, deleteAction] = useActionState(deleteEmailTemplate, initialState);
+
+    useEffect(() => {
+        if (deleteState.success) {
+            window.location.reload();
+        }
+    }, [deleteState]);
+    
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                 <form action={deleteAction}>
+                    <input type="hidden" name="id" value={templateId} />
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción no se puede deshacer. La plantilla será eliminada permanentemente.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    {deleteState.message && !deleteState.success && <p className="text-red-500 text-sm pt-2">{deleteState.message}</p>}
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction asChild>
+                            <DeleteButton />
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </form>
+            </AlertDialogContent>
+        </AlertDialog>
+    )
+}
+
+// --- Main Component ---
+export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
 
   return (
     <div className="w-full">
-      <div className="flex justify-end mb-4">
-        <Button onClick={handleAddNew}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nueva Plantilla
-        </Button>
-      </div>
-
-      {/* Templates Table */}
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
@@ -150,20 +183,22 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
           <TableBody>
             {initialTemplates.length > 0 ? (
               initialTemplates.map((template) => (
-                <TableRow key={template.id}>
-                  <TableCell className="font-medium">{template.name}</TableCell>
-                  <TableCell>{template.subject}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(template)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(template)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                editingTemplateId === template.id 
+                ? <EditTemplateRow key={template.id} template={template} onCancel={() => setEditingTemplateId(null)} />
+                : (
+                    <TableRow key={template.id}>
+                        <TableCell className="font-medium">{template.name}</TableCell>
+                        <TableCell>{template.subject}</TableCell>
+                        <TableCell className="text-right">
+                            <div className="flex items-center justify-end">
+                                <Button variant="ghost" size="icon" onClick={() => setEditingTemplateId(template.id)}>
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                                <DeleteTemplateAction templateId={template.id} />
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                )
               ))
             ) : (
               <TableRow>
@@ -174,72 +209,8 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
             )}
           </TableBody>
         </Table>
+        <AddTemplateForm />
       </div>
-
-      {/* Add/Edit Form Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedTemplate ? 'Editar Plantilla' : 'Crear Nueva Plantilla'}</DialogTitle>
-            <DialogDescription>
-              {selectedTemplate ? 'Modifica los detalles de la plantilla.' : 'Define el contenido para tus comunicaciones.'}
-            </DialogDescription>
-          </DialogHeader>
-          <form ref={formRef} action={formAction} className="space-y-4">
-            {selectedTemplate && <input type="hidden" name="id" value={selectedTemplate.id} />}
-            <div>
-              <Label htmlFor="name">Nombre de la Plantilla</Label>
-              <Input id="name" name="name" defaultValue={selectedTemplate?.name} placeholder="Ej: Recibo de Pago de Reserva" required />
-            </div>
-            <div>
-              <Label htmlFor="subject">Asunto del Email</Label>
-              <Input id="subject" name="subject" defaultValue={selectedTemplate?.subject} placeholder="Ej: Confirmación de pago para tu reserva" required />
-            </div>
-            <div>
-              <Label htmlFor="body">Cuerpo del Email</Label>
-              <Textarea id="body" name="body" defaultValue={selectedTemplate?.body} className="h-48" placeholder="Escribe el cuerpo del email. Usa marcadores como {{inquilino.nombre}}." required />
-              <p className="text-xs text-muted-foreground mt-2">
-                Marcadores disponibles: `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`, `{{'{'}}{'{'}propiedad.nombre{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckIn{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckOut{'}'}{'}'}`, `{{'{'}}{'{'}montoReserva{'}'}{'}'}`, `{{'{'}}{'{'}saldoReserva{'}'}{'}'}`, `{{'{'}}{'{'}montoGarantia{'}'}{'}'}`, `{{'{'}}{'{'}fechaGarantiaRecibida{'}'}{'}'}`, `{{'{'}}{'{'}fechaGarantiaDevuelta{'}'}{'}'}`
-              </p>
-            </div>
-            {formState.message && !formState.success && (
-              <Alert variant="destructive"><AlertDescription>{formState.message}</AlertDescription></Alert>
-            )}
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
-              <FormSubmitButton isEditing={!!selectedTemplate} />
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <AlertDialogContent>
-          <form action={deleteAction}>
-            <input type="hidden" name="id" value={selectedTemplate?.id || ''} />
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta acción no se puede deshacer. La plantilla será eliminada permanentemente.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            {deleteState.message && !deleteState.success && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertDescription>{deleteState.message}</AlertDescription>
-              </Alert>
-            )}
-            <AlertDialogFooter className="mt-4">
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction asChild>
-                <FormDeleteButton />
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </form>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
-
-    
