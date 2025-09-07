@@ -82,13 +82,14 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
     return true;
   };
 
+  // Run validation whenever a relevant field changes
   useEffect(() => {
     validateForm();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, receivedDate, returnedDate, amount]);
 
 
-  // Effect to reset form fields when dialog opens
+  // Effect to reset form fields and state when dialog opens
   useEffect(() => {
     if (isOpen) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
@@ -96,15 +97,19 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
+      // Reset server state by passing a specific payload to the action, though not ideal.
+      // A better approach is often a dedicated reset function if the library supports it.
+      // For this case, we'll rely on the user initiating a new action.
     }
   }, [isOpen, booking]);
   
-  const handleFormSubmit = async (formData: FormData) => {
-    const result = await formAction(formData);
-    if (result.success) {
-      setIsOpen(false);
+  // Effect to close dialog on successful submission
+  useEffect(() => {
+    if (state.success && isOpen) {
+        setIsOpen(false);
     }
-  };
+  // This dependency array is key: it re-runs when `state` changes, which it will on every form submission.
+  }, [state, isOpen]);
 
 
   return (
@@ -123,7 +128,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form action={handleFormSubmit}>
+        <form action={formAction}>
             <input type="hidden" name="id" value={booking.id} />
             <input type="hidden" name="guaranteeReceivedDate" value={receivedDate?.toISOString().split('T')[0] || ''} />
             <input type="hidden" name="guaranteeReturnedDate" value={returnedDate?.toISOString().split('T')[0] || ''} />
