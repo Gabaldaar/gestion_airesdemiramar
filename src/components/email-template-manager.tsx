@@ -40,19 +40,8 @@ import {
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useQuill } from 'react-quilljs';
 import 'quill/dist/quill.snow.css';
-import Quill from 'quill';
-
 
 const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}";
-
-// Register the formats we need to avoid errors
-if (typeof window !== 'undefined') {
-    const List = Quill.import('formats/list');
-    const Indent = Quill.import('attributors/style/indent');
-    Quill.register(List, true);
-    Quill.register(Indent, true);
-}
-
 
 function SubmitButton({ isPending, text, pendingText }: { isPending: boolean, text: string, pendingText: string }) {
     return (
@@ -76,10 +65,10 @@ const Editor = ({ value, onChange }: { value: string, onChange: (val: string) =>
             toolbar: [
                 ['bold', 'italic', 'underline', 'strike'],
                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
                 ['link', 'clean']
             ]
         },
-        formats: ['bold', 'italic', 'underline', 'strike', 'link'],
         placeholder: 'Escribe el cuerpo del email aquí...'
     });
 
