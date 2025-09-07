@@ -40,8 +40,19 @@ import {
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useQuill } from 'react-quilljs';
 import 'quill/dist/quill.snow.css';
+import Quill from 'quill';
 
-const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}";
+
+const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}";
+
+// Register the formats we need to avoid errors
+if (typeof window !== 'undefined') {
+    const List = Quill.import('formats/list');
+    const Indent = Quill.import('attributors/style/indent');
+    Quill.register(List, true);
+    Quill.register(Indent, true);
+}
+
 
 function SubmitButton({ isPending, text, pendingText }: { isPending: boolean, text: string, pendingText: string }) {
     return (
@@ -59,7 +70,6 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
     );
 }
 
-// Corrected Editor component
 const Editor = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
     const { quill, quillRef } = useQuill({
         modules: {
@@ -69,21 +79,23 @@ const Editor = ({ value, onChange }: { value: string, onChange: (val: string) =>
                 ['link', 'clean']
             ]
         },
-        formats: ['bold', 'italic', 'underline', 'strike', 'list', 'bullet', 'link'],
+        formats: ['bold', 'italic', 'underline', 'strike', 'link'],
         placeholder: 'Escribe el cuerpo del email aquí...'
     });
 
     useEffect(() => {
         if (quill) {
-            // Set initial content
+            // Set initial content only if it's different
             if (quill.root.innerHTML !== value) {
                 const delta = quill.clipboard.convert(value);
                 quill.setContents(delta, 'silent');
             }
 
             // Listen for changes
-            const handleChange = () => {
-                onChange(quill.root.innerHTML);
+            const handleChange = (delta: any, oldDelta: any, source: string) => {
+                 if (source === 'user') {
+                    onChange(quill.root.innerHTML);
+                }
             };
             quill.on('text-change', handleChange);
 
