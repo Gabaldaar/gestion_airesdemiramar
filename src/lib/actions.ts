@@ -1,5 +1,4 @@
 
-
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -262,7 +261,7 @@ export async function addBooking(previousState: any, formData: FormData) {
     }
 }
 
-export async function updateBooking(formData: FormData): Promise<{ success: boolean; message: string; }> {
+export async function updateBooking(previousState: any, formData: FormData): Promise<{ success: boolean; message: string; }> {
     const id = formData.get("id") as string;
     if (!id) {
         return { success: false, message: "ID de reserva no proporcionado." };

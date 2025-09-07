@@ -1,5 +1,4 @@
 
-
 import { db } from './firebase';
 import {
   collection,
@@ -206,12 +205,12 @@ const initializeDefaultData = async () => {
         {
             name: 'Confirmación de Pago',
             subject: 'Confirmación de tu pago para la reserva en {{propiedad.nombre}}',
-            body: `<p>Hola {{inquilino.nombre}},</p><p>Te escribimos para confirmar que hemos recibido tu pago de <b>{{montoPago}}</b> con fecha {{fechaPago}} para la reserva en <i>{{propiedad.nombre}}</i>.</p><p><b>Detalles de la reserva:</b></p><ul><li>Check-in: {{fechaCheckIn}}</li><li>Check-out: {{fechaCheckOut}}</li><li>Monto total: {{montoReserva}}</li><li><b>Saldo pendiente actualizado: {{saldoReserva}}</b></li></ul><p>¡Muchas gracias por tu pago!</p><p>Saludos cordiales.</p>`
+            body: `Hola {{inquilino.nombre}},\n\nTe escribimos para confirmar que hemos recibido tu pago de {{montoPago}} con fecha {{fechaPago}} para la reserva en {{propiedad.nombre}}.\n\nDetalles de la reserva:\n- Check-in: {{fechaCheckIn}}\n- Check-out: {{fechaCheckOut}}\n- Monto total: {{montoReserva}}\n- Saldo pendiente actualizado: {{saldoReserva}}\n\n¡Muchas gracias por tu pago!\n\nSaludos cordiales.`
         },
         {
             name: 'Confirmación de Garantía',
             subject: 'Confirmación de recepción de garantía para {{propiedad.nombre}}',
-            body: `<p>Hola {{inquilino.nombre}},</p><p>Confirmamos que hemos recibido el depósito de garantía de <b>{{montoGarantia}}</b> con fecha {{fechaGarantiaRecibida}} para tu reserva en <i>{{propiedad.nombre}}</i>.</p><p>Este depósito será reembolsado al finalizar tu estancia, sujeto a la inspección de la propiedad.</p><p>¡Gracias!</p><p>Saludos cordiales.</p>`
+            body: `Hola {{inquilino.nombre}},\n\nConfirmamos que hemos recibido el depósito de garantía de {{montoGarantia}} con fecha {{fechaGarantiaRecibida}} para tu reserva en {{propiedad.nombre}}.\n\nEste depósito será reembolsado al finalizar tu estancia, sujeto a la inspección de la propiedad.\n\n¡Gracias!\n\nSaludos cordiales.`
         }
     ];
 

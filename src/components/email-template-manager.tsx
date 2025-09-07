@@ -1,12 +1,14 @@
 
 'use client';
 
-import React, { useState, useRef, useActionState, useEffect, useTransition } from 'react';
-import { EmailTemplate, getEmailTemplates } from '@/lib/data';
+import React, { useState, useRef, useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
+import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -37,8 +39,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
-import { useQuill } from 'react-quilljs';
-import 'quill/dist/quill.snow.css';
 
 const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}";
 
@@ -58,51 +58,9 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
     );
 }
 
-const Editor = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
-    const { quill, quillRef } = useQuill({
-        modules: {
-            toolbar: [
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                [{ 'indent': '-1'}, { 'indent': '+1' }],
-                ['link', 'clean']
-            ]
-        },
-        placeholder: 'Escribe el cuerpo del email aquí...'
-    });
-
-    useEffect(() => {
-        if (quill) {
-            quill.on('text-change', (delta, oldDelta, source) => {
-                 if (source === 'user') {
-                    onChange(quill.root.innerHTML);
-                }
-            });
-        }
-    }, [quill, onChange]);
-    
-    useEffect(() => {
-        // This effect syncs the editor with external changes to the 'value' prop.
-        // It checks to avoid an infinite loop by not setting the contents if it's already the same.
-        if (quill && value !== quill.root.innerHTML) {
-            const delta = quill.clipboard.convert(value);
-            quill.setContents(delta, 'silent');
-        }
-    }, [quill, value]);
-
-
-    return (
-        <div className='bg-white text-black'>
-            <div ref={quillRef} style={{ minHeight: '200px' }} />
-        </div>
-    );
-}
-
-
 function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
-    const [body, setBody] = useState('');
     const [state, formAction, isPending] = useActionState(addEmailTemplate, { success: false, message: '' });
 
     useEffect(() => {
@@ -116,7 +74,6 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
     useEffect(() => {
         if (!isOpen) {
             formRef.current?.reset();
-            setBody('');
         }
     }, [isOpen]);
 
@@ -125,18 +82,15 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
             <DialogTrigger asChild>
                 <Button><PlusCircle className="mr-2 h-4 w-4" /> Nueva Plantilla</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-3xl">
+            <DialogContent className="sm:max-w-2xl">
                 <form 
                     ref={formRef} 
-                    action={(formData) => {
-                        formData.set('body', body);
-                        formAction(formData);
-                    }}
+                    action={formAction}
                 >
                     <DialogHeader>
                         <DialogTitle>Añadir Nueva Plantilla</DialogTitle>
                         <DialogDescription>
-                            Completa los detalles de la plantilla. Usa el editor para dar formato y los marcadores para insertar datos dinámicos.
+                            Completa los detalles de la plantilla. Usa los marcadores para insertar datos dinámicos.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -150,7 +104,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="body">Cuerpo del Email</Label>
-                            <Editor value={body} onChange={setBody} />
+                            <Textarea id="body" name="body" className="h-40" required/>
                         </div>
                          <p className="text-xs text-muted-foreground">{placeholderHelpText}</p>
                     </div>
@@ -168,8 +122,6 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
 function EditTemplateDialog({ template, onActionComplete }: { template: EmailTemplate, onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
-    // Initialize body state with the template's body, but allow it to be updated.
-    const [body, setBody] = useState(template.body);
     const [state, formAction, isPending] = useActionState(updateEmailTemplate, { success: false, message: '' });
 
     useEffect(() => {
@@ -179,26 +131,15 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
         }
     }, [state, onActionComplete]);
     
-    // This is the crucial part: When the dialog is opened, we sync the `body` state
-    // with the content of the template prop that was passed in.
-    useEffect(() => {
-        if (isOpen) {
-            setBody(template.body);
-        }
-    }, [isOpen, template.body]);
-
     return (
          <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                  <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-3xl">
+            <DialogContent className="sm:max-w-2xl">
                 <form 
                     ref={formRef} 
-                    action={(formData) => {
-                        formData.set('body', body);
-                        formAction(formData);
-                    }}
+                    action={formAction}
                 >
                     <DialogHeader>
                         <DialogTitle>Editar Plantilla</DialogTitle>
@@ -218,7 +159,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="body">Cuerpo del Email</Label>
-                             <Editor value={body} onChange={setBody} />
+                             <Textarea id="body" name="body" defaultValue={template.body} className="h-40" required/>
                         </div>
                          <p className="text-xs text-muted-foreground">{placeholderHelpText}</p>
                     </div>
@@ -270,20 +211,17 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
 }
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
-    const [templates, setTemplates] = useState(initialTemplates);
-    const [isPending, startTransition] = useTransition();
-
-    const refreshTemplates = () => {
-        startTransition(async () => {
-            const freshTemplates = await getEmailTemplates();
-            setTemplates(freshTemplates);
-        });
+    // This function is a placeholder for re-fetching or optimistic updates.
+    // In this app, server actions with revalidatePath handle data updates,
+    // so a simple page reload is sufficient for now.
+    const handleActionComplete = () => {
+        window.location.reload();
     };
 
     return (
         <div className="w-full space-y-4">
             <div className="flex justify-end">
-                <AddTemplateDialog onActionComplete={refreshTemplates} />
+                <AddTemplateDialog onActionComplete={handleActionComplete} />
             </div>
             <div className="border rounded-lg">
                 <Table>
@@ -295,21 +233,15 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isPending ? (
-                             <TableRow>
-                                <TableCell colSpan={3} className="text-center text-sm text-muted-foreground p-8">
-                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                                </TableCell>
-                            </TableRow>
-                        ) : templates && templates.length > 0 ? (
-                            templates.map((template) => (
+                        {initialTemplates && initialTemplates.length > 0 ? (
+                            initialTemplates.map((template) => (
                                 <TableRow key={template.id}>
                                     <TableCell className="font-medium">{template.name}</TableCell>
                                     <TableCell>{template.subject}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end">
-                                            <EditTemplateDialog template={template} onActionComplete={refreshTemplates} />
-                                            <DeleteTemplateDialog templateId={template.id} onActionComplete={refreshTemplates} />
+                                            <EditTemplateDialog template={template} onActionComplete={handleActionComplete} />
+                                            <DeleteTemplateDialog templateId={template.id} onActionComplete={handleActionComplete} />
                                         </div>
                                     </TableCell>
                                 </TableRow>

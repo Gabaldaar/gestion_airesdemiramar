@@ -24,6 +24,7 @@ import { BookingWithDetails, EmailTemplate, getEmailTemplates, Payment } from '@
 import { sendEmailAction } from '@/lib/actions';
 import { Mail, Loader2, Send, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Textarea } from './ui/textarea';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -36,26 +37,12 @@ const formatDate = (dateString: string | null | undefined) => {
 
 const formatCurrency = (amount: number | null | undefined, currency: 'USD' | 'ARS' = 'USD') => {
     if (amount === null || typeof amount === 'undefined') return 'N/A';
-    
-    // Use a format that displays the currency code (USD, ARS) to avoid ambiguity.
-    const options: Intl.NumberFormatOptions = {
+    return new Intl.NumberFormat('es-AR', {
         style: 'currency',
         currency: currency,
-        currencyDisplay: 'code', // This is the key change
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-    };
-    
-    // Using a specific locale like 'es-AR' or 'en-US' can still sometimes default to symbols.
-    // By splitting and rebuilding, we enforce the "USD 1,234.56" format.
-    const formatter = new Intl.NumberFormat('en-US', options);
-    const parts = formatter.formatToParts(amount);
-    
-    const currencyPart = parts.find(p => p.type === 'currency');
-    const literalPart = parts.find(p => p.type === 'literal');
-    const valuePart = parts.filter(p => p.type !== 'currency' && p.type !== 'literal').map(p => p.value).join('');
-
-    return `${currencyPart?.value} ${valuePart}`;
+    }).format(amount);
 };
 
 
@@ -92,8 +79,8 @@ export function EmailSender({ booking, payment }: EmailSenderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [processedSubject, setProcessedSubject] = useState('');
   const [processedBody, setProcessedBody] = useState('');
+  const [processedSubject, setProcessedSubject] = useState('');
 
   const [state, formAction] = useActionState(sendEmailAction, initialState);
 
@@ -161,8 +148,8 @@ export function EmailSender({ booking, payment }: EmailSenderProps) {
         setProcessedSubject(subject);
         setProcessedBody(body);
     } else {
-        setProcessedSubject('');
         setProcessedBody('');
+        setProcessedSubject('');
     }
   }, [selectedTemplateId, templates, replacements]);
   
@@ -182,7 +169,7 @@ export function EmailSender({ booking, payment }: EmailSenderProps) {
           <span className="sr-only">Enviar Email</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Enviar Email al Inquilino</DialogTitle>
           <DialogDescription>
@@ -218,10 +205,11 @@ export function EmailSender({ booking, payment }: EmailSenderProps) {
                         </div>
                          <div>
                             <label htmlFor="body-preview" className='block text-sm font-medium mb-1'>Vista Previa del Email</label>
-                             <div 
+                             <Textarea 
                                 id="body-preview" 
-                                className="w-full p-4 border rounded-md bg-white text-black text-sm h-80 overflow-y-auto"
-                                dangerouslySetInnerHTML={{ __html: processedBody }}
+                                className="w-full p-2 border rounded-md bg-muted text-sm h-60"
+                                value={processedBody}
+                                readOnly
                             />
                         </div>
                      </div>
