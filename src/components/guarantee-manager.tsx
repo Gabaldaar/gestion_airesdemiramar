@@ -56,6 +56,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
   const [isOpen, setIsOpen] = useState(false);
   
   const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
+  const [amount, setAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
   const [receivedDate, setReceivedDate] = useState<Date | undefined>(
     booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined
   );
@@ -65,6 +66,10 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
   const [clientError, setClientError] = useState<string | null>(null);
 
   const validateForm = () => {
+    if ((status === 'solicited' || status === 'received' || status === 'returned') && (!amount || amount <= 0)) {
+        setClientError("El 'Monto' es obligatorio para este estado.");
+        return false;
+    }
     if (status === 'received' && !receivedDate) {
         setClientError("La 'Fecha Recibida' es obligatoria para el estado 'Recibida'.");
         return false;
@@ -80,7 +85,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
   useEffect(() => {
     validateForm();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, receivedDate, returnedDate]);
+  }, [status, receivedDate, returnedDate, amount]);
 
   useEffect(() => {
     if (state.success) {
@@ -91,6 +96,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
   useEffect(() => {
     if (isOpen) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
+      setAmount(booking.guaranteeAmount || undefined);
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
@@ -145,7 +151,15 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
                     <Label htmlFor="guaranteeAmount" className="text-right">
                         Monto
                     </Label>
-                    <Input id="guaranteeAmount" name="guaranteeAmount" type="number" step="0.01" defaultValue={booking.guaranteeAmount || ''} className="col-span-3" />
+                    <Input 
+                      id="guaranteeAmount" 
+                      name="guaranteeAmount" 
+                      type="number" 
+                      step="0.01" 
+                      value={amount || ''}
+                      onChange={(e) => setAmount(e.target.value ? parseFloat(e.target.value) : undefined)}
+                      className="col-span-3" 
+                    />
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">

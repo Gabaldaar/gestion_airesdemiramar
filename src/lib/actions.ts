@@ -271,9 +271,10 @@ export async function updateBooking(previousState: any, formData: FormData) {
         
         const updatedBookingData: Partial<Booking> = { id };
         
-        const getFormValue = (key: string) => formData.has(key) ? formData.get(key) as string : null;
+        const getFormValue = (key: string): string | null => formData.has(key) ? formData.get(key) as string : null;
         
-        const formValues: { [key in keyof Omit<Booking, 'id' | 'googleCalendarEventId'>]?: any } & { googleCalendarEventId?: string | null } = {
+        const formValues: { [key in keyof Booking]?: any } = {
+            id,
             propertyId: getFormValue("propertyId"),
             tenantId: getFormValue("tenantId"),
             startDate: getFormValue("startDate"),
@@ -289,22 +290,30 @@ export async function updateBooking(previousState: any, formData: FormData) {
             guaranteeReceivedDate: getFormValue("guaranteeReceivedDate"),
             guaranteeReturnedDate: getFormValue("guaranteeReturnedDate"),
         };
+
+        const guaranteeStatus = formValues.guaranteeStatus || oldBooking.guaranteeStatus;
+        const guaranteeAmount = formValues.guaranteeAmount ?? oldBooking.guaranteeAmount;
         
         // --- Server-side Validation for Guarantees ---
-        if (formValues.guaranteeStatus === 'received' && !formValues.guaranteeReceivedDate) {
+        if ((guaranteeStatus === 'solicited' || guaranteeStatus === 'received' || guaranteeStatus === 'returned') && (!guaranteeAmount || guaranteeAmount <= 0)) {
+            return { success: false, message: "El 'Monto' de la garantía es obligatorio para el estado seleccionado." };
+        }
+        if (guaranteeStatus === 'received' && !formValues.guaranteeReceivedDate) {
             return { success: false, message: "La 'Fecha Recibida' es obligatoria para el estado 'Recibida'." };
         }
-        if (formValues.guaranteeStatus === 'returned' && !formValues.guaranteeReturnedDate) {
+        if (guaranteeStatus === 'returned' && !formValues.guaranteeReturnedDate) {
             return { success: false, message: "La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'." };
         }
         
         // Build the final update object, only including fields that were actually in the form
         for (const key in formValues) {
-            if (formValues[key as keyof typeof formValues] !== null) {
-                (updatedBookingData as any)[key] = formValues[key as keyof typeof formValues];
+            const K = key as keyof Booking;
+            if (formValues[K] !== null) {
+                (updatedBookingData as any)[K] = formValues[K];
             }
         }
         
+        // Explicitly handle unsetting optional fields
         if (formData.has('guaranteeAmount') && getFormValue('guaranteeAmount') === '') {
             updatedBookingData.guaranteeAmount = null; 
         }
@@ -792,5 +801,3 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'Error al eliminar la categoría.' };
   }
 }
-
-    
