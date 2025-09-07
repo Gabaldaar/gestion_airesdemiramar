@@ -73,19 +73,21 @@ function TemplateDialog({
   const action = template ? updateEmailTemplate : addEmailTemplate;
   const [state, formAction, isPending] = useActionState(action, { success: false, message: '' });
 
-  const [name, setName] = useState(template?.name || '');
-  const [subject, setSubject] = useState(template?.subject || '');
-  const [body, setBody] = useState(template?.body || '');
+  const [name, setName] = useState('');
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
   
   useEffect(() => {
-    if (template) {
-      setName(template.name);
-      setSubject(template.subject);
-      setBody(template.body);
-    } else {
-      setName('');
-      setSubject('');
-      setBody('');
+    if (isOpen) {
+        if (template) {
+            setName(template.name);
+            setSubject(template.subject);
+            setBody(template.body);
+        } else {
+            setName('');
+            setSubject('');
+            setBody('');
+        }
     }
   }, [template, isOpen]);
 
@@ -201,12 +203,24 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
         setEditTemplate(template);
         setIsEditDialogOpen(true);
     }
+    
+    const handleAddDialogChange = (open: boolean) => {
+        setIsAddDialogOpen(open);
+    }
+
+    const handleEditDialogChange = (open: boolean) => {
+        setIsEditDialogOpen(open);
+        if (!open) {
+            setEditTemplate(undefined);
+        }
+    }
+
 
     return (
         <div className="w-full space-y-4">
             <div className="flex justify-end">
-                 <TemplateDialog isOpen={isAddDialogOpen} setIsOpen={setIsAddDialogOpen} onActionComplete={refreshTemplates} />
-                 {editTemplate && <TemplateDialog isOpen={isEditDialogOpen} setIsOpen={setIsEditDialogOpen} template={editTemplate} onActionComplete={refreshTemplates} />}
+                 <TemplateDialog isOpen={isAddDialogOpen} setIsOpen={handleAddDialogChange} onActionComplete={refreshTemplates} />
+                 {editTemplate && <TemplateDialog isOpen={isEditDialogOpen} setIsOpen={handleEditDialogChange} template={editTemplate} onActionComplete={refreshTemplates} />}
             </div>
             <div className="border rounded-lg">
                 <Table>
