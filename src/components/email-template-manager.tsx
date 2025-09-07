@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useActionState, useEffect } from 'react';
@@ -40,7 +39,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 
-const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}";
+const placeholderHelpText = "Marcadores disponibles: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}";
 
 function SubmitButton({ isPending, text, pendingText }: { isPending: boolean, text: string, pendingText: string }) {
     return (
@@ -212,7 +211,6 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
     const [templates, setTemplates] = useState(initialTemplates);
 
-    // This function will be called by the dialogs to refresh the list
     const refreshTemplates = async () => {
         const updatedTemplates = await getEmailTemplates();
         setTemplates(updatedTemplates);
