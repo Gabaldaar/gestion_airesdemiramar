@@ -44,21 +44,6 @@ const initialState = {
   success: false,
 };
 
-function SubmitButton({ text, isPending }: { text: string; isPending: boolean }) {
-    return (
-        <Button type="submit" disabled={isPending}>
-            {isPending ? (
-                <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Guardando...
-                </>
-            ) : (
-                text
-            )}
-        </Button>
-    )
-}
-
 function TemplateDialog({
   trigger,
   title,
@@ -74,17 +59,32 @@ function TemplateDialog({
   action: (state: any, formData: FormData) => Promise<any>;
   buttonText: string;
 }) {
-  const [state, formAction] = useActionState(action, initialState);
-  const { pending } = useFormStatus();
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const [state, formAction] = useActionState(action, initialState);
 
   useEffect(() => {
-    if (state.success) {
+    if (state?.success) {
       setIsOpen(false);
       formRef.current?.reset();
     }
-  }, [state.success]);
+  }, [state, isOpen]);
+  
+  function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                buttonText
+            )}
+        </Button>
+    )
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -108,14 +108,14 @@ function TemplateDialog({
             <Label htmlFor="body">Cuerpo del Email</Label>
             <Textarea id="body" name="body" defaultValue={template?.body} className="h-48" placeholder="Escribe el cuerpo del email. Usa marcadores como {{inquilino.nombre}}." required />
              <p className="text-xs text-muted-foreground mt-2">
-              Marcadores disponibles: `{{inquilino.nombre}}`, `{{propiedad.nombre}}`, `{{fechaCheckIn}}`, `{{fechaCheckOut}}`, `{{montoReserva}}`, `{{saldoReserva}}`, `{{montoGarantia}}`
+              Marcadores disponibles: `{{'{'}}{'{'}inquilino.nombre{'}'}{'}'}`, `{{'{'}}{'{'}propiedad.nombre{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckIn{'}'}{'}'}`, `{{'{'}}{'{'}fechaCheckOut{'}'}{'}'}`, `{{'{'}}{'{'}montoReserva{'}'}{'}'}`, `{{'{'}}{'{'}saldoReserva{'}'}{'}'}`, `{{'{'}}{'{'}montoGarantia{'}'}{'}'}`, `{{'{'}}{'{'}fechaGarantiaRecibida{'}'}{'}'}`, `{{'{'}}{'{'}fechaGarantiaDevuelta{'}'}{'}'}`
             </p>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-            <SubmitButton text={buttonText} isPending={pending} />
+            <SubmitButton />
           </DialogFooter>
-          {state.message && !state.success && <p className="text-sm text-red-500">{state.message}</p>}
+          {state?.message && !state?.success && <p className="text-sm text-red-500">{state.message}</p>}
         </form>
       </DialogContent>
     </Dialog>
