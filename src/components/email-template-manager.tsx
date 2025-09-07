@@ -75,24 +75,21 @@ const Editor = ({ value, onChange }: { value: string, onChange: (val: string) =>
 
     useEffect(() => {
         if (quill) {
-            // Set initial content when quill is ready
-            if (value && quill.root.innerHTML !== value) {
-                const delta = quill.clipboard.convert(value);
-                quill.setContents(delta, 'silent');
-            }
-            
-            const handleChange = (delta: any, oldDelta: any, source: string) => {
+            quill.on('text-change', (delta, oldDelta, source) => {
                  if (source === 'user') {
                     onChange(quill.root.innerHTML);
                 }
-            };
-            quill.on('text-change', handleChange);
-
-            return () => {
-                quill.off('text-change', handleChange);
-            };
+            });
         }
-    }, [quill, value, onChange]);
+    }, [quill, onChange]);
+    
+    useEffect(() => {
+        if (quill && value !== quill.root.innerHTML) {
+            const delta = quill.clipboard.convert(value);
+            quill.setContents(delta, 'silent');
+        }
+    }, [quill, value]);
+
 
     return (
         <div className='bg-white text-black'>
