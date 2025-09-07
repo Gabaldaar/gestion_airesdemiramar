@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -133,11 +132,11 @@ function TemplateDeleteDialog({ templateId, onSuccess }: { templateId: string, o
     const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleDelete = async () => {
+    const handleDelete = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         setError(null);
         setIsPending(true);
-        const formData = new FormData();
-        formData.append('id', templateId);
+        const formData = new FormData(event.currentTarget);
         
         const result = await deleteEmailTemplate(initialState, formData);
         setIsPending(false);
@@ -157,24 +156,27 @@ function TemplateDeleteDialog({ templateId, onSuccess }: { templateId: string, o
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Esta acción no se puede deshacer. La plantilla será eliminada permanentemente.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-                        {isPending ? (
-                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Eliminando...
-                            </>
-                        ) : 'Continuar'}
-                    </Button>
-                </AlertDialogFooter>
-                 {error && <Alert variant="destructive" className="mt-4"><AlertDescription>{error}</AlertDescription></Alert>}
+                <form onSubmit={handleDelete}>
+                    <input type="hidden" name="id" value={templateId} />
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción no se puede deshacer. La plantilla será eliminada permanentemente.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    {error && <Alert variant="destructive" className="mt-4"><AlertDescription>{error}</AlertDescription></Alert>}
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <Button type="submit" variant="destructive" disabled={isPending}>
+                            {isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Eliminando...
+                                </>
+                            ) : 'Continuar'}
+                        </Button>
+                    </AlertDialogFooter>
+                </form>
             </AlertDialogContent>
         </AlertDialog>
     );
