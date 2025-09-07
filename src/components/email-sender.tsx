@@ -37,17 +37,25 @@ const formatDate = (dateString: string | null | undefined) => {
 const formatCurrency = (amount: number | null | undefined, currency: 'USD' | 'ARS' = 'USD') => {
     if (amount === null || typeof amount === 'undefined') return 'N/A';
     
+    // Use a format that displays the currency code (USD, ARS) to avoid ambiguity.
     const options: Intl.NumberFormatOptions = {
         style: 'currency',
         currency: currency,
+        currencyDisplay: 'code', // This is the key change
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     };
     
-    if (currency === 'ARS') {
-        return new Intl.NumberFormat('es-AR', options).format(amount);
-    }
-    return new Intl.NumberFormat('en-US', options).format(amount);
+    // Using a specific locale like 'es-AR' or 'en-US' can still sometimes default to symbols.
+    // By splitting and rebuilding, we enforce the "USD 1,234.56" format.
+    const formatter = new Intl.NumberFormat('en-US', options);
+    const parts = formatter.formatToParts(amount);
+    
+    const currencyPart = parts.find(p => p.type === 'currency');
+    const literalPart = parts.find(p => p.type === 'literal');
+    const valuePart = parts.filter(p => p.type !== 'currency' && p.type !== 'literal').map(p => p.value).join('');
+
+    return `${currencyPart?.value} ${valuePart}`;
 };
 
 
