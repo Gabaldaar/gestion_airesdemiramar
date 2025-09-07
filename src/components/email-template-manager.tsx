@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useActionState, useEffect } from 'react';
@@ -38,7 +37,7 @@ const initialState = {
 function AddButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="col-span-2 md:col-span-1">
+        <Button type="submit" disabled={pending}>
             {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Añadiendo...</> : <><PlusCircle className="mr-2 h-4 w-4" />Añadir Plantilla</>}
         </Button>
     )
