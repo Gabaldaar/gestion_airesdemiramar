@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useState, useRef, useActionState, useEffect } from 'react';
+import React, { useState, useRef, useActionState, useEffect, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
-import { EmailTemplate } from '@/lib/data';
+import { EmailTemplate, getEmailTemplates } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -177,7 +177,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
         }
     }, [state, onActionComplete]);
     
-    // When the dialog opens, sync the state with the provided template
+    // When the dialog opens, sync the body state with the provided template
     useEffect(() => {
         if (isOpen) {
             setBody(template.body);
@@ -267,14 +267,20 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
 }
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
-    const handleActionComplete = () => {
-        window.location.reload();
+    const [templates, setTemplates] = useState(initialTemplates);
+    const [isPending, startTransition] = useTransition();
+
+    const refreshTemplates = () => {
+        startTransition(async () => {
+            const freshTemplates = await getEmailTemplates();
+            setTemplates(freshTemplates);
+        });
     };
 
     return (
         <div className="w-full space-y-4">
             <div className="flex justify-end">
-                <AddTemplateDialog onActionComplete={handleActionComplete} />
+                <AddTemplateDialog onActionComplete={refreshTemplates} />
             </div>
             <div className="border rounded-lg">
                 <Table>
@@ -286,15 +292,21 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {initialTemplates && initialTemplates.length > 0 ? (
-                            initialTemplates.map((template) => (
+                        {isPending ? (
+                             <TableRow>
+                                <TableCell colSpan={3} className="text-center text-sm text-muted-foreground p-8">
+                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                </TableCell>
+                            </TableRow>
+                        ) : templates && templates.length > 0 ? (
+                            templates.map((template) => (
                                 <TableRow key={template.id}>
                                     <TableCell className="font-medium">{template.name}</TableCell>
                                     <TableCell>{template.subject}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end">
-                                            <EditTemplateDialog template={template} onActionComplete={handleActionComplete} />
-                                            <DeleteTemplateDialog templateId={template.id} onActionComplete={handleActionComplete} />
+                                            <EditTemplateDialog template={template} onActionComplete={refreshTemplates} />
+                                            <DeleteTemplateDialog templateId={template.id} onActionComplete={refreshTemplates} />
                                         </div>
                                     </TableCell>
                                 </TableRow>
