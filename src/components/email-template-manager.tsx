@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useRef, useActionState, useEffect, useTransition } from 'react';
+import React, { useState, useRef, useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { EmailTemplate } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
@@ -41,6 +41,7 @@ import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useQuill } from 'react-quilljs';
 import 'quill/dist/quill.snow.css';
 
+
 const placeholderHelpText = "Marcadores: {{inquilino.nombre}}, {{propiedad.nombre}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}";
 
 function SubmitButton({ isPending, text, pendingText }: { isPending: boolean, text: string, pendingText: string }) {
@@ -74,12 +75,12 @@ const Editor = ({ value, onChange }: { value: string, onChange: (val: string) =>
 
     useEffect(() => {
         if (quill) {
-            // Set initial content only if it's different
-            if (quill.root.innerHTML !== value) {
+            // Set initial content when quill is ready
+            if (value && quill.root.innerHTML !== value) {
                 const delta = quill.clipboard.convert(value);
                 quill.setContents(delta, 'silent');
             }
-
+            
             const handleChange = (delta: any, oldDelta: any, source: string) => {
                  if (source === 'user') {
                     onChange(quill.root.innerHTML);
@@ -105,8 +106,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [body, setBody] = useState('');
-    const [state, formAction] = useActionState(addEmailTemplate, { success: false, message: '' });
-    const [isPending, startTransition] = useTransition();
+    const [state, formAction, isPending] = useActionState(addEmailTemplate, { success: false, message: '' });
 
     useEffect(() => {
         if (state.success) {
@@ -132,7 +132,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
                     ref={formRef} 
                     action={(formData) => {
                         formData.set('body', body);
-                        startTransition(() => formAction(formData))
+                        formAction(formData);
                     }}
                 >
                     <DialogHeader>
@@ -170,9 +170,8 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
 function EditTemplateDialog({ template, onActionComplete }: { template: EmailTemplate, onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
-    const [body, setBody] = useState(template.body);
-    const [state, formAction] = useActionState(updateEmailTemplate, { success: false, message: '' });
-    const [isPending, startTransition] = useTransition();
+    const [body, setBody] = useState('');
+    const [state, formAction, isPending] = useActionState(updateEmailTemplate, { success: false, message: '' });
 
     useEffect(() => {
         if (state.success) {
@@ -181,7 +180,6 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
         }
     }, [state, onActionComplete]);
     
-    // This effect ensures the body is correctly set when the dialog opens or template data changes
     useEffect(() => {
         if (isOpen) {
             setBody(template.body);
@@ -198,7 +196,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
                     ref={formRef} 
                     action={(formData) => {
                         formData.set('body', body);
-                        startTransition(() => formAction(formData))
+                        formAction(formData);
                     }}
                 >
                     <DialogHeader>
@@ -235,8 +233,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
 }
 
 function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: string, onActionComplete: () => void }) {
-    const [state, formAction] = useActionState(deleteEmailTemplate, { success: false, message: '' });
-    const [isPending, startTransition] = useTransition();
+    const [state, formAction, isPending] = useActionState(deleteEmailTemplate, { success: false, message: '' });
 
     useEffect(() => {
         if (state.success) {
@@ -250,7 +247,7 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
                 <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <form action={(formData) => startTransition(() => formAction(formData))}>
+                <form action={formAction}>
                     <input type="hidden" name="id" value={templateId} />
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
@@ -273,8 +270,6 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
 
 export default function EmailTemplateManager({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
     const handleActionComplete = () => {
-        // We rely on server action revalidation, which reloads the page data.
-        // Forcing a full reload is a simple way to ensure UI is in sync.
         window.location.reload();
     };
 

@@ -52,19 +52,13 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
     // Create a multipart email body
     const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
     const messageParts = [
-      `From: ${fromAddress}`,
+      `From: "Aires de Miramar" <${fromAddress}>`,
       `To: ${to}`,
-      'Content-Type: multipart/alternative; boundary="boundary_string_12345"',
+      'Content-Type: text/html; charset=utf-8',
+      'MIME-Version: 1.0',
       `Subject: ${utf8Subject}`,
       '',
-      '--boundary_string_12345',
-      'Content-Type: text/html; charset="UTF-8"',
-      'MIME-Version: 1.0',
-      'Content-Transfer-Encoding: 7bit',
-      '',
-      body,
-      '',
-      '--boundary_string_12345--',
+      body
     ];
     const emailContent = messageParts.join('\n');
 
