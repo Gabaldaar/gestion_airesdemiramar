@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -52,7 +52,7 @@ function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
 }
 
 export function GuaranteeManager({ booking }: { booking: Booking }) {
-  const [state, formAction] = useActionState(updateBooking, initialState);
+  const [state, formAction, isPending] = useActionState(updateBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
   
   const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
@@ -89,7 +89,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
   }, [status, receivedDate, returnedDate, amount]);
 
 
-  // Effect to reset form fields and state when dialog opens
+  // Effect to reset form fields when dialog opens
   useEffect(() => {
     if (isOpen) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
@@ -97,19 +97,15 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
-      // Reset server state by passing a specific payload to the action, though not ideal.
-      // A better approach is often a dedicated reset function if the library supports it.
-      // For this case, we'll rely on the user initiating a new action.
     }
   }, [isOpen, booking]);
   
   // Effect to close dialog on successful submission
   useEffect(() => {
-    if (state.success && isOpen) {
-        setIsOpen(false);
+    if (state.success && !isPending && isOpen) {
+      setIsOpen(false);
     }
-  // This dependency array is key: it re-runs when `state` changes, which it will on every form submission.
-  }, [state, isOpen]);
+  }, [state.success, isPending, isOpen]);
 
 
   return (
