@@ -12,10 +12,9 @@ interface EmailDetails {
 }
 
 /**
- * Sends an email using the Gmail API with a service account impersonating a user.
+ * Sends an email using the Gmail API with a service account.
  * This requires the service account to have domain-wide delegation
  * enabled in the Google Workspace Admin console for the specified scope.
- * The service account must be authorized to act on behalf of the `GOOGLE_ADMIN_EMAIL` user.
  */
 export async function sendEmail({ to, subject, body }: EmailDetails): Promise<void> {
     const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -27,12 +26,13 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
     }
     
     // Create a new JWT client with the service account credentials, specifying the user to impersonate.
-    const auth = new google.auth.JWT({
-        email: serviceAccountEmail,
-        key: serviceAccountPrivateKey,
-        scopes: SCOPES,
-        subject: userEmailToImpersonate, // The email address of the user to impersonate.
-    });
+    const auth = new google.auth.JWT(
+        serviceAccountEmail,
+        undefined,
+        serviceAccountPrivateKey,
+        SCOPES,
+        userEmailToImpersonate // The email address of the user to impersonate.
+    );
     
     const gmail = google.gmail({ version: 'v1', auth });
 
