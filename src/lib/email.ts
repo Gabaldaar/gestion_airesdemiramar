@@ -49,14 +49,14 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
     // The from address must be the same as the impersonated user
     const fromAddress = process.env.GOOGLE_ADMIN_EMAIL;
 
-    // Create a multipart email body
+    // Create a raw email string following RFC 2822 format.
     const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
     const messageParts = [
       `From: "Aires de Miramar" <${fromAddress}>`,
       `To: ${to}`,
-      'Content-Type: text/html; charset=utf-8',
-      'MIME-Version: 1.0',
       `Subject: ${utf8Subject}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=utf-8',
       '',
       body
     ];
@@ -70,7 +70,6 @@ export async function sendEmail({ to, subject, body }: EmailDetails): Promise<vo
         .replace(/=+$/, '');
 
     try {
-        await auth.authorize(); // Authorize the client before making the API call
         await gmail.users.messages.send({
             userId: 'me', // 'me' refers to the impersonated user
             requestBody: {

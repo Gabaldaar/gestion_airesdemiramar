@@ -170,7 +170,7 @@ function AddTemplateDialog({ onActionComplete }: { onActionComplete: () => void 
 function EditTemplateDialog({ template, onActionComplete }: { template: EmailTemplate, onActionComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
-    const [body, setBody] = useState('');
+    const [body, setBody] = useState(template.body);
     const [state, formAction, isPending] = useActionState(updateEmailTemplate, { success: false, message: '' });
 
     useEffect(() => {
@@ -180,6 +180,7 @@ function EditTemplateDialog({ template, onActionComplete }: { template: EmailTem
         }
     }, [state, onActionComplete]);
     
+    // When the dialog opens, sync the state with the provided template
     useEffect(() => {
         if (isOpen) {
             setBody(template.body);
