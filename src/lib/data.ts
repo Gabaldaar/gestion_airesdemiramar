@@ -163,6 +163,14 @@ export type FinancialSummaryByCurrency = {
     usd: FinancialSummary[];
 }
 
+export type EmailTemplate = {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+};
+
+
 // --- DATA ACCESS FUNCTIONS ---
 
 const propertiesCollection = collection(db, 'properties');
@@ -172,6 +180,7 @@ const propertyExpensesCollection = collection(db, 'propertyExpenses');
 const bookingExpensesCollection = collection(db, 'bookingExpenses');
 const paymentsCollection = collection(db, 'payments');
 const expenseCategoriesCollection = collection(db, 'expenseCategories');
+const emailTemplatesCollection = collection(db, 'emailTemplates');
 
 
 export async function getProperties(): Promise<Property[]> {
@@ -340,11 +349,13 @@ export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking>
     return { id: docRef.id, ...booking };
 }
 
-export async function updateBooking(updatedBooking: Booking): Promise<Booking | null> {
+export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
     const { id, ...data } = updatedBooking;
+    if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
     await updateDoc(docRef, data);
-    return updatedBooking;
+    const newDoc = await getDoc(docRef);
+    return newDoc.exists() ? processDoc(newDoc) as Booking : null;
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {
@@ -709,6 +720,31 @@ export async function getBookingWithDetails(bookingId: string): Promise<BookingW
     
     // This now returns a more robust object, preventing crashes.
     return getBookingDetails(booking);
+}
+
+
+// --- Email Template Functions ---
+
+export async function getEmailTemplates(): Promise<EmailTemplate[]> {
+  const snapshot = await getDocs(query(emailTemplatesCollection, orderBy('name')));
+  return snapshot.docs.map(processDoc) as EmailTemplate[];
+}
+
+export async function addEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
+  const docRef = await addDoc(emailTemplatesCollection, template);
+  return { id: docRef.id, ...template };
+}
+
+export async function updateEmailTemplate(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
+  const { id, ...data } = updatedTemplate;
+  const docRef = doc(db, 'emailTemplates', id);
+  await updateDoc(docRef, data);
+  return updatedTemplate;
+}
+
+export async function deleteEmailTemplate(id: string): Promise<void> {
+  const docRef = doc(db, 'emailTemplates', id);
+  await deleteDoc(docRef);
 }
 
     

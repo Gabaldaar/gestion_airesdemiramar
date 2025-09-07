@@ -20,9 +20,10 @@ import { BookingPaymentsManager } from "./booking-payments-manager";
 import { NotesViewer } from "./notes-viewer";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { FileText, NotebookPen, Shield } from "lucide-react";
+import { FileText, NotebookPen, Shield, Mail } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { GuaranteeManager } from "./guarantee-manager";
+import { EmailSender } from "./email-sender";
 
 
 interface BookingsListProps {
@@ -172,6 +173,17 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                                     </TooltipContent>
                                 </Tooltip>
                             )}
+                            
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        <EmailSender booking={booking} />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Enviar Email</p>
+                                </TooltipContent>
+                            </Tooltip>
 
                             <Tooltip>
                                 <TooltipTrigger asChild>

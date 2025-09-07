@@ -25,6 +25,9 @@ import {
     addExpenseCategory as dbAddExpenseCategory,
     updateExpenseCategory as dbUpdateExpenseCategory,
     deleteExpenseCategory as dbDeleteExpenseCategory,
+    addEmailTemplate as dbAddEmailTemplate,
+    updateEmailTemplate as dbUpdateEmailTemplate,
+    deleteEmailTemplate as dbDeleteEmailTemplate,
     getBookingById,
     getPropertyById,
     getTenantById,
@@ -37,6 +40,7 @@ import {
     ContractStatus,
     ExpenseCategory,
     GuaranteeStatus,
+    EmailTemplate,
 } from "./data";
 import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
 
@@ -257,7 +261,7 @@ export async function addBooking(previousState: any, formData: FormData) {
     }
 }
 
-export async function updateBooking(previousState: any, formData: FormData) {
+export async function updateBooking(formData: FormData): Promise<{ success: boolean; message: string; }> {
     const id = formData.get("id") as string;
     if (!id) {
         return { success: false, message: "ID de reserva no proporcionado." };
@@ -269,7 +273,6 @@ export async function updateBooking(previousState: any, formData: FormData) {
             return { success: false, message: "No se encontró la reserva para actualizar." };
         }
         
-        // This is a special case to handle the full form data from the Guarantee Manager.
         const updatedBookingData: Partial<Booking> = {
             id,
             propertyId: formData.get("propertyId") as string || oldBooking.propertyId,
@@ -285,7 +288,6 @@ export async function updateBooking(previousState: any, formData: FormData) {
             guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS' || oldBooking.guaranteeCurrency,
         };
 
-        // --- Server-side Validation for Guarantees ---
         const guaranteeStatus = updatedBookingData.guaranteeStatus;
         const guaranteeAmountStr = formData.get("guaranteeAmount") as string;
         const guaranteeReceivedDateStr = formData.get("guaranteeReceivedDate") as string;
@@ -309,9 +311,8 @@ export async function updateBooking(previousState: any, formData: FormData) {
             updatedBookingData.guaranteeReturnedDate = null;
         }
 
-
-        if ((guaranteeStatus === 'solicited' || guaranteeStatus === 'received' || guaranteeStatus === 'returned') && !updatedBookingData.guaranteeAmount) {
-            return { success: false, message: "El 'Monto' de la garantía es obligatorio para el estado seleccionado." };
+        if ((guaranteeStatus === 'solicited' || guaranteeStatus === 'received' || guaranteeStatus === 'returned') && (updatedBookingData.guaranteeAmount === null || updatedBookingData.guaranteeAmount <= 0)) {
+            return { success: false, message: "El 'Monto' de la garantía es obligatorio y debe ser mayor a 0 para el estado seleccionado." };
         }
         if (guaranteeStatus === 'received' && !updatedBookingData.guaranteeReceivedDate) {
             return { success: false, message: "La 'Fecha Recibida' es obligatoria para el estado 'Recibida'." };
@@ -320,9 +321,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
             return { success: false, message: "La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'." };
         }
 
-        await dbUpdateBooking(updatedBookingData as Booking);
-        
-        const finalBookingState = await getBookingById(id);
+        const finalBookingState = await dbUpdateBooking(updatedBookingData);
         if (!finalBookingState) throw new Error("Booking disappeared after update.");
 
         const calendarFieldsChanged = updatedBookingData.startDate !== oldBooking.startDate || 
@@ -795,6 +794,56 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
     return { success: true, message: 'Categoría eliminada.' };
   } catch (error) {
     return { success: false, message: 'Error al eliminar la categoría.' };
+  }
+}
+
+
+export async function addEmailTemplate(previousState: any, formData: FormData) {
+  const name = formData.get('name') as string;
+  const subject = formData.get('subject') as string;
+  const body = formData.get('body') as string;
+  
+  if (!name || !subject || !body) {
+    return { success: false, message: 'Todos los campos son obligatorios.' };
+  }
+  try {
+    await dbAddEmailTemplate({ name, subject, body });
+    revalidatePath('/settings');
+    return { success: true, message: 'Plantilla añadida.' };
+  } catch (error) {
+    return { success: false, message: 'Error al añadir la plantilla.' };
+  }
+}
+
+export async function updateEmailTemplate(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const name = formData.get('name') as string;
+  const subject = formData.get('subject') as string;
+  const body = formData.get('body') as string;
+
+  if (!id || !name || !subject || !body) {
+    return { success: false, message: 'Faltan datos para actualizar la plantilla.' };
+  }
+  try {
+    await dbUpdateEmailTemplate({ id, name, subject, body });
+    revalidatePath('/settings');
+    return { success: true, message: 'Plantilla actualizada.' };
+  } catch (error) {
+    return { success: false, message: 'Error al actualizar la plantilla.' };
+  }
+}
+
+export async function deleteEmailTemplate(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    return { success: false, message: 'ID de plantilla no válido.' };
+  }
+  try {
+    await dbDeleteEmailTemplate(id);
+    revalidatePath('/settings');
+    return { success: true, message: 'Plantilla eliminada.' };
+  } catch (error) {
+    return { success: false, message: 'Error al eliminar la plantilla.' };
   }
 }
 

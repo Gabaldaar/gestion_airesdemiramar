@@ -8,15 +8,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProperties, Property, getExpenseCategories } from "@/lib/data";
+import { getProperties, Property, getExpenseCategories, getEmailTemplates } from "@/lib/data";
 import { PropertyEditForm } from "@/components/property-edit-form";
 import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
+import EmailTemplateManager from "@/components/email-template-manager";
 
 export default async function SettingsPage() {
-  const [properties, expenseCategories] = await Promise.all([
+  const [properties, expenseCategories, emailTemplates] = await Promise.all([
       getProperties(),
-      getExpenseCategories()
+      getExpenseCategories(),
+      getEmailTemplates()
   ]);
 
   return (
@@ -29,6 +31,7 @@ export default async function SettingsPage() {
             <TabsList>
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 <TabsTrigger value="expense-categories">Cat. de Gastos</TabsTrigger>
+                <TabsTrigger value="email-templates">Plantillas de Email</TabsTrigger>
             </TabsList>
         </div>
 
@@ -72,7 +75,19 @@ export default async function SettingsPage() {
                 </CardContent>
             </Card>
         </TabsContent>
-
+        <TabsContent value="email-templates">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Plantillas de Email</CardTitle>
+                    <CardDescription>
+                        Crea y gestiona las plantillas para enviar emails a tus inquilinos.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <EmailTemplateManager initialTemplates={emailTemplates} />
+                </CardContent>
+            </Card>
+        </TabsContent>
     </Tabs>
   );
 }
