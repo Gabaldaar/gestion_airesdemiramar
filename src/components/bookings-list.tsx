@@ -20,7 +20,6 @@ import { BookingPaymentsManager } from "./booking-payments-manager";
 import { NotesViewer } from "./notes-viewer";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { FileText, NotebookPen } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { GuaranteeManager } from "./guarantee-manager";
 import { EmailSender } from "./email-sender";
@@ -136,30 +135,57 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
                 <TableCell className="font-medium">
-                  <EmailSender booking={booking} asChild>
-                      <button 
-                        className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
-                        disabled={!booking.tenant?.email}
-                      >
-                          {booking.tenant?.name || 'N/A'}
-                      </button>
-                  </EmailSender>
+                  <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                           <EmailSender booking={booking} asChild>
+                              <button 
+                                className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
+                                disabled={!booking.tenant?.email}
+                              >
+                                  {booking.tenant?.name || 'N/A'}
+                              </button>
+                          </EmailSender>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                           <p>Enviar Email</p>
+                        </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </TableCell>
                 <TableCell>{formatDate(booking.startDate)}</TableCell>
                 <TableCell>{formatDate(booking.endDate)}</TableCell>
                 <TableCell>
-                    <Link href={`/contract?id=${booking.id}`} target="_blank">
-                        <Badge className={cn("cursor-pointer", contractInfo.className)}>
-                            {contractInfo.text}
-                        </Badge>
-                    </Link>
+                  <TooltipProvider>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Link href={`/contract?id=${booking.id}`} target="_blank">
+                              <Badge className={cn("cursor-pointer", contractInfo.className)}>
+                                  {contractInfo.text}
+                              </Badge>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                           <p>Ver Contrato</p>
+                        </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </TableCell>
                 <TableCell>
-                    <GuaranteeManager booking={booking} asChild>
-                        <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
-                            {guaranteeInfo.text}
-                        </Badge>
-                    </GuaranteeManager>
+                  <TooltipProvider>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
+                           <GuaranteeManager booking={booking} asChild>
+                              <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
+                                  {guaranteeInfo.text}
+                              </Badge>
+                          </GuaranteeManager>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                           <p>Gestionar Garantía</p>
+                        </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </TableCell>
                 <TableCell>
                     <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
