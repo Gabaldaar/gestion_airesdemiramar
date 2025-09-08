@@ -9,12 +9,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Landmark, Wallet, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Landmark, Wallet, Pencil, Trash2, FileText } from 'lucide-react';
 import { BookingWithDetails, Property, Tenant } from '@/lib/data';
 import { BookingPaymentsManager } from './booking-payments-manager';
 import { BookingExpensesManager } from './booking-expenses-manager';
 import { BookingEditForm } from './booking-edit-form';
 import { BookingDeleteForm } from './booking-delete-form';
+import { NotesViewer } from './notes-viewer';
 
 interface BookingActionsMenuProps {
   booking: BookingWithDetails;
@@ -28,6 +29,8 @@ export function BookingActionsMenu({ booking, properties, tenants, allBookings }
   const [isExpensesOpen, setIsExpensesOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
+
 
   return (
     <>
@@ -39,6 +42,12 @@ export function BookingActionsMenu({ booking, properties, tenants, allBookings }
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+           {booking.notes && (
+            <DropdownMenuItem onSelect={() => setIsNotesOpen(true)}>
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Notas</span>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onSelect={() => setIsPaymentsOpen(true)}>
             <Landmark className="mr-2 h-4 w-4" />
             <span>Pagos</span>
@@ -59,6 +68,7 @@ export function BookingActionsMenu({ booking, properties, tenants, allBookings }
       </DropdownMenu>
 
       {/* Dialogs controlled by state */}
+      {booking.notes && <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`} />}
       <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id} />
       <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id} />
       <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={allBookings} />
