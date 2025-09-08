@@ -107,7 +107,7 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        {children}
+        <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Pagos de la Reserva</DialogTitle>

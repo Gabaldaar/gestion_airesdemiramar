@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, ReactNode } from 'react';
@@ -141,15 +140,22 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
   const handleOpenMailClient = () => {
     if (!booking.tenant?.email) return;
 
-    const params = new URLSearchParams();
-    params.append('subject', processedSubject);
-    params.append('body', processedBody);
-
-    if (replyToEmail) {
-        params.append('reply-to', replyToEmail);
-    }
+    let mailtoLink = `mailto:${booking.tenant.email}`;
+    const params = [];
     
-    const mailtoLink = `mailto:${booking.tenant.email}?${params.toString()}`;
+    if (processedSubject) {
+        params.push(`subject=${encodeURIComponent(processedSubject)}`);
+    }
+    if (processedBody) {
+        params.push(`body=${encodeURIComponent(processedBody)}`);
+    }
+    if (replyToEmail) {
+        params.push(`reply-to=${encodeURIComponent(replyToEmail)}`);
+    }
+
+    if (params.length > 0) {
+        mailtoLink += `?${params.join('&')}`;
+    }
 
     window.location.href = mailtoLink;
     onOpenChange(false);
@@ -157,7 +163,7 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      {children}
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Preparar Email para {booking.tenant?.name}</DialogTitle>
