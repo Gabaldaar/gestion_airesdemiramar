@@ -25,7 +25,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
 
   const formatCurrency = (value: number) => {
     if (currency === 'USD') {
-        return `USD ${new Intl.NumberFormat('en-US', {
+        return `USD ${new Intl.NumberFormat('es-AR', {
             style: 'decimal',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,

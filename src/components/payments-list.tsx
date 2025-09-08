@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -53,7 +54,7 @@ export default function PaymentsList({ payments }: PaymentsListProps) {
     if (currency === 'ARS') {
         return new Intl.NumberFormat('es-AR', { ...options, style: 'currency', currency: 'ARS'}).format(amount);
     }
-    return `USD ${new Intl.NumberFormat('en-US', options).format(amount)}`;
+    return `USD ${new Intl.NumberFormat('es-AR', options).format(amount)}`;
   };
   
   const totalAmountUSD = payments.reduce((acc, payment) => acc + payment.amount, 0);

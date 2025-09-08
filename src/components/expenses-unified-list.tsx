@@ -38,7 +38,7 @@ export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUn
     if (currency === 'ARS') {
       return new Intl.NumberFormat('es-AR', { ...options, style: 'currency', currency: 'ARS'}).format(amount);
     }
-    return `USD ${new Intl.NumberFormat('en-US', options).format(amount)}`;
+    return `USD ${new Intl.NumberFormat('es-AR', options).format(amount)}`;
   }
   
   const totalAmountARS = expenses.reduce((acc, expense) => acc + expense.amountARS, 0);

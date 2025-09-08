@@ -22,7 +22,7 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
 
   const formatCurrency = (amount: number) => {
     if (currency === 'USD') {
-        return `USD ${new Intl.NumberFormat('en-US', {
+        return `USD ${new Intl.NumberFormat('es-AR', {
             style: 'decimal',
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,

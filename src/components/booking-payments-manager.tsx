@@ -69,7 +69,7 @@ export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
   };
 
   const formatCurrency = (amount: number) => {
-    return `USD ${new Intl.NumberFormat('en-US', {
+    return `USD ${new Intl.NumberFormat('es-AR', {
         style: 'decimal',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
