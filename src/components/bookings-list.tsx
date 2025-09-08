@@ -50,7 +50,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
   }
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
+    return format(new Date(dateString), "dd-LLL-yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
@@ -177,13 +177,13 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     {formatCurrency(booking.balance, booking.currency)}
                 </TableCell>
                 <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                        <NotesViewer notes={booking.notes} title={`Notas sobre ${booking.tenant?.name}`} />
-                        <BookingPaymentsManager bookingId={booking.id} />
-                        <BookingExpensesManager bookingId={booking.id} />
-                        <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
-                        <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />
-                    </div>
+                  <div className="flex items-center justify-end">
+                      <NotesViewer notes={booking.notes} title={`Notas sobre ${booking.tenant?.name}`} />
+                      <BookingPaymentsManager bookingId={booking.id} />
+                      <BookingExpensesManager bookingId={booking.id} />
+                      <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
+                      <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />
+                  </div>
                 </TableCell>
               </TableRow>
             )})}
