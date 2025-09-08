@@ -59,17 +59,17 @@ export default function BookingsList({ bookings, properties, tenants, showProper
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
     if (currency === 'USD') {
-        return `USD ${new Intl.NumberFormat('es-AR', {
+         return `USD ${new Intl.NumberFormat('es-AR', {
             style: 'decimal',
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         }).format(amount)}`;
     }
     return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
     }).format(amount);
   }
   
@@ -160,7 +160,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     </Badge>
                 </TableCell>
                 <TableCell>
-                    <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
+                    {formatCurrency(booking.amount, booking.currency)}
                 </TableCell>
                 <TableCell className={`font-bold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                     {formatCurrency(booking.balance, booking.currency)}
