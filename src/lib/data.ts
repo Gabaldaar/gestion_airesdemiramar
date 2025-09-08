@@ -819,3 +819,5 @@ export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): 
     await setDoc(docRef, settings, { merge: true });
     return { id: 'email', ...settings };
 }
+
+    
