@@ -127,7 +127,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="font-medium">{booking.tenant?.name || 'N/A'}</TableCell>
+                <TableCell className="font-medium max-w-[150px] truncate">{booking.tenant?.name || 'N/A'}</TableCell>
                 <TableCell>
                     <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
                         <span>{formatDate(booking.startDate)}</span>
