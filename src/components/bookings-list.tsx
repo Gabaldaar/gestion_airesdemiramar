@@ -148,9 +148,11 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 <TableCell>{formatDate(booking.startDate)}</TableCell>
                 <TableCell>{formatDate(booking.endDate)}</TableCell>
                 <TableCell>
-                    <Badge className={contractInfo.className}>
-                        {contractInfo.text}
-                    </Badge>
+                    <Link href={`/contract?id=${booking.id}`} target="_blank">
+                        <Badge className={cn("cursor-pointer", contractInfo.className)}>
+                            {contractInfo.text}
+                        </Badge>
+                    </Link>
                 </TableCell>
                 <TableCell>
                     <GuaranteeManager booking={booking} asChild>
@@ -181,20 +183,6 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                                 </Tooltip>
                             )}
                             
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button asChild variant="ghost" size="icon">
-                                        <Link href={`/contract?id=${booking.id}`} target="_blank">
-                                            <NotebookPen className="h-4 w-4" />
-                                            <span className="sr-only">Ver Contrato</span>
-                                        </Link>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Ver Contrato</p>
-                                </TooltipContent>
-                            </Tooltip>
-
                              <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div>
