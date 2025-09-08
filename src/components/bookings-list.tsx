@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -50,12 +49,13 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
+function BookingRow({ booking, properties, tenants, showProperty }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[], showProperty: boolean }) {
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
 
-  if (bookings.length === 0) {
-    return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
-  }
-
+  const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
+  const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
+  const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
+  
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd-LLL-yyyy", { locale: es });
   };
@@ -106,7 +106,171 @@ export default function BookingsList({ bookings, properties, tenants, showProper
     }
     return "";
   };
+  
+  return (
+    <TableRow key={booking.id}>
+      {showProperty && <TableCell className={cn("font-bold align-middle", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
+      <TableCell className="align-middle">
+          <EmailSender booking={booking}>
+            <button 
+              className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2 max-w-[150px]"
+              disabled={!booking.tenant?.email}
+            >
+              {booking.tenant?.name || 'N/A'}
+            </button>
+          </EmailSender>
+      </TableCell>
+      <TableCell className="align-middle">
+          <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
+              <span>{formatDate(booking.startDate)}</span>
+              <span className="hidden md:inline">→</span>
+              <span>{formatDate(booking.endDate)}</span>
+          </div>
+          <span className="block text-xs text-muted-foreground">{nights} noches</span>
+      </TableCell>
+      <TableCell className="align-middle">
+        <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                  <Link href={`/contract?id=${booking.id}`} target="_blank">
+                    <Badge className={cn("cursor-pointer", contractInfo.className)}>
+                        {contractInfo.text}
+                    </Badge>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                  <p>Ver Contrato</p>
+              </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </TableCell>
+      <TableCell className="align-middle">
+        <GuaranteeManager booking={booking}>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge 
+                  className={cn("cursor-pointer", guaranteeInfo.className)}
+                >
+                  {guaranteeInfo.text}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                  <p>Gestionar Garantía</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </GuaranteeManager>
+      </TableCell>
+      <TableCell className="align-middle">
+          <TooltipProvider>
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                      <Badge variant="secondary" className="cursor-default">{formatCurrency(booking.amount, booking.currency)}</Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                      <p>Valor del Alquiler</p>
+                  </TooltipContent>
+              </Tooltip>
+          </TooltipProvider>
+      </TableCell>
+      <TableCell className="align-middle">
+          <TooltipProvider>
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                      <Badge variant={booking.balance > 0 ? "destructive" : "default"} className={cn('cursor-default', booking.balance <= 0 && 'bg-green-600 hover:bg-green-700')}>
+                          {formatCurrency(booking.balance, booking.currency)}
+                      </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                      <p>Saldo a pagar</p>
+                  </TooltipContent>
+              </Tooltip>
+          </TooltipProvider>
+      </TableCell>
+      <TableCell className="align-middle text-right">
+          <div className="grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
+              <NotesViewer booking={booking} isOpen={isNotesOpen} onOpenChange={setIsNotesOpen}>
+                  <TooltipProvider>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsNotesOpen(true)} disabled={!booking.notes}>
+                                  <FileText className="h-4 w-4" />
+                                  <span className="sr-only">Ver Notas</span>
+                              </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Ver Notas</p></TooltipContent>
+                      </Tooltip>
+                  </TooltipProvider>
+              </NotesViewer>
+              
+              <BookingPaymentsManager bookingId={booking.id}>
+                  <TooltipProvider>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Landmark className="h-4 w-4" />
+                                  <span className="sr-only">Gestionar Pagos</span>
+                              </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
+                      </Tooltip>
+                  </TooltipProvider>
+              </BookingPaymentsManager>
+              
+              <BookingExpensesManager bookingId={booking.id}>
+                  <TooltipProvider>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Wallet className="h-4 w-4" />
+                                  <span className="sr-only">Gestionar Gastos</span>
+                              </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
+                      </Tooltip>
+                  </TooltipProvider>
+              </BookingExpensesManager>
 
+              <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
+                  <TooltipProvider>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Pencil className="h-4 w-4" />
+                                  <span className="sr-only">Editar Reserva</span>
+                              </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Editar Reserva</p></TooltipContent>
+                      </Tooltip>
+                  </TooltipProvider>
+              </BookingEditForm>
+              
+              <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId}>
+                  <TooltipProvider>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Eliminar Reserva</span>
+                              </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
+                      </Tooltip>
+                  </TooltipProvider>
+              </BookingDeleteForm>
+          </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+
+export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
+
+  if (bookings.length === 0) {
+    return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
+  }
 
   return (
     <div>
@@ -131,166 +295,15 @@ export default function BookingsList({ bookings, properties, tenants, showProper
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bookings.map((booking) => {
-              const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
-              const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
-              const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
-              return (
-              <TableRow key={booking.id}>
-                {showProperty && <TableCell className={cn("font-bold align-middle", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="align-middle">
-                    <EmailSender booking={booking}>
-                      <button 
-                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2 max-w-[150px]"
-                        disabled={!booking.tenant?.email}
-                      >
-                        {booking.tenant?.name || 'N/A'}
-                      </button>
-                    </EmailSender>
-                </TableCell>
-                <TableCell className="align-middle">
-                    <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
-                        <span>{formatDate(booking.startDate)}</span>
-                        <span className="hidden md:inline">→</span>
-                        <span>{formatDate(booking.endDate)}</span>
-                    </div>
-                    <span className="block text-xs text-muted-foreground">{nights} noches</span>
-                </TableCell>
-                <TableCell className="align-middle">
-                  <TooltipProvider>
-                     <Tooltip>
-                        <TooltipTrigger asChild>
-                           <Link href={`/contract?id=${booking.id}`} target="_blank">
-                              <Badge className={cn("cursor-pointer", contractInfo.className)}>
-                                  {contractInfo.text}
-                              </Badge>
-                          </Link>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                           <p>Ver Contrato</p>
-                        </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableCell>
-                <TableCell className="align-middle">
-                  <GuaranteeManager booking={booking}>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge 
-                            className={cn("cursor-pointer", guaranteeInfo.className)}
-                          >
-                            {guaranteeInfo.text}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                           <p>Gestionar Garantía</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </GuaranteeManager>
-                </TableCell>
-                <TableCell className="align-middle">
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Badge variant="secondary" className="cursor-default">{formatCurrency(booking.amount, booking.currency)}</Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Valor del Alquiler</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </TableCell>
-                <TableCell className="align-middle">
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Badge variant={booking.balance > 0 ? "destructive" : "default"} className={cn('cursor-default', booking.balance <= 0 && 'bg-green-600 hover:bg-green-700')}>
-                                    {formatCurrency(booking.balance, booking.currency)}
-                                </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Saldo a pagar</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </TableCell>
-                <TableCell className="align-middle text-right">
-                    <div className="grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
-                       <NotesViewer booking={booking}>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!booking.notes}>
-                                            <FileText className="h-4 w-4" />
-                                            <span className="sr-only">Ver Notas</span>
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Ver Notas</p></TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </NotesViewer>
-                        
-                        <BookingPaymentsManager bookingId={booking.id}>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Landmark className="h-4 w-4" />
-                                            <span className="sr-only">Gestionar Pagos</span>
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </BookingPaymentsManager>
-                        
-                        <BookingExpensesManager bookingId={booking.id}>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Wallet className="h-4 w-4" />
-                                            <span className="sr-only">Gestionar Gastos</span>
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </BookingExpensesManager>
-
-                        <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Pencil className="h-4 w-4" />
-                                            <span className="sr-only">Editar Reserva</span>
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Editar Reserva</p></TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </BookingEditForm>
-                        
-                        <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId}>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Trash2 className="h-4 w-4" />
-                                            <span className="sr-only">Eliminar Reserva</span>
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </BookingDeleteForm>
-                    </div>
-                </TableCell>
-              </TableRow>
-            )})}
+            {bookings.map((booking) => (
+                <BookingRow 
+                    key={booking.id}
+                    booking={booking} 
+                    properties={properties} 
+                    tenants={tenants} 
+                    showProperty={showProperty} 
+                />
+            ))}
           </TableBody>
         </Table>
     </div>
