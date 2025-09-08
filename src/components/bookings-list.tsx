@@ -160,7 +160,9 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     </Badge>
                 </TableCell>
                 <TableCell>
-                    {formatCurrency(booking.amount, booking.currency)}
+                    <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs">
+                        {formatCurrency(booking.amount, booking.currency)}
+                    </span>
                 </TableCell>
                 <TableCell className={`font-bold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                     {formatCurrency(booking.balance, booking.currency)}
