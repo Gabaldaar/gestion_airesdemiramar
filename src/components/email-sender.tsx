@@ -53,19 +53,20 @@ const formatCurrency = (amount: number | null | undefined, currency: 'USD' | 'AR
 interface EmailSenderProps {
     booking: BookingWithDetails;
     payment?: Payment;
-    children?: ReactNode;
+    children: ReactNode;
     asChild?: boolean;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
 }
 
-export function EmailSender({ booking, payment, children, asChild }: EmailSenderProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function EmailSender({ booking, payment, children, asChild, open, onOpenChange }: EmailSenderProps) {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [processedBody, setProcessedBody] = useState('');
   const [processedSubject, setProcessedSubject] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       getEmailTemplates().then(setTemplates);
       // Auto-select "Confirmación de Pago" template if a payment is provided
       if (payment) {
@@ -82,7 +83,7 @@ export function EmailSender({ booking, payment, children, asChild }: EmailSender
         setProcessedBody('');
         setProcessedSubject('');
     }
-  }, [isOpen, payment]);
+  }, [open, payment]);
 
   const replacements = useMemo(() => {
       if (!booking) return {};
@@ -138,22 +139,17 @@ export function EmailSender({ booking, payment, children, asChild }: EmailSender
 
     const mailtoLink = `mailto:${booking.tenant.email}?subject=${encodeURIComponent(processedSubject)}&body=${encodeURIComponent(processedBody)}`;
     window.location.href = mailtoLink;
-    setIsOpen(false);
+    onOpenChange(false);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild={asChild}>
-        {children ?? (
-            <Button variant="ghost" size="icon" disabled={!booking.tenant?.email}>
-              <Mail className="h-4 w-4" />
-              <span className="sr-only">Enviar Email</span>
-            </Button>
-        )}
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Preparar Email para el Inquilino</DialogTitle>
+          <DialogTitle>Preparar Email para {booking.tenant?.name}</DialogTitle>
           <DialogDescription>
             Selecciona una plantilla y revisa el contenido. El email se abrirá en tu cliente de correo.
           </DialogDescription>
@@ -194,7 +190,7 @@ export function EmailSender({ booking, payment, children, asChild }: EmailSender
         </div>
 
         <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button onClick={handleOpenMailClient} disabled={!selectedTemplateId}>
                 <Send className="mr-2 h-4 w-4" />
                 Abrir en Cliente de Correo
@@ -204,5 +200,3 @@ export function EmailSender({ booking, payment, children, asChild }: EmailSender
     </Dialog>
   );
 }
-
-    

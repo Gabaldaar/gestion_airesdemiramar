@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Table,
   TableBody,
@@ -21,8 +23,9 @@ import { BookingEditForm } from './booking-edit-form';
 import { BookingDeleteForm } from './booking-delete-form';
 import { NotesViewer } from './notes-viewer';
 import { GuaranteeManager } from './guarantee-manager';
-import { Landmark, Wallet, Pencil, Trash2, FileText, Shield } from 'lucide-react';
+import { Landmark, Wallet, Pencil, Trash2, FileText, Mail } from 'lucide-react';
 import { useState } from 'react';
+import { EmailSender } from "./email-sender";
 
 
 interface BookingsListProps {
@@ -53,13 +56,12 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isNotesOpen, setIsNotesOpen] = useState(false);
-    const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
-
+    
     return (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 max-w-[120px]">
             {booking.notes && (
                 <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
                         <FileText className="h-4 w-4" />
                         <span className="sr-only">Ver Notas</span>
                     </Button>
@@ -67,35 +69,28 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
             )}
 
             <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id}>
-                 <Button variant="ghost" size="icon">
+                 <Button variant="ghost" size="icon" className="h-8 w-8">
                     <Landmark className="h-4 w-4" />
                     <span className="sr-only">Gestionar Pagos</span>
                 </Button>
             </BookingPaymentsManager>
             
-            <GuaranteeManager booking={booking} open={isGuaranteeOpen} onOpenChange={setIsGuaranteeOpen}>
-                 <Button variant="ghost" size="icon">
-                    <Shield className="h-4 w-4" />
-                    <span className="sr-only">Gestionar Garantía</span>
-                </Button>
-            </GuaranteeManager>
-            
             <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id}>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
                     <Wallet className="h-4 w-4" />
                     <span className="sr-only">Gestionar Gastos</span>
                 </Button>
             </BookingExpensesManager>
 
             <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Editar Reserva</span>
                 </Button>
             </BookingEditForm>
 
             <BookingDeleteForm open={isDeleteOpen} onOpenChange={setIsDeleteOpen} bookingId={booking.id} propertyId={booking.propertyId}>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
                     <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Eliminar Reserva</span>
                 </Button>
@@ -105,6 +100,10 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
 }
 
 export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
+  const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
+  const [isEmailOpen, setIsEmailOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<BookingWithDetails | null>(null);
+
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
   }
@@ -191,7 +190,27 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="font-medium max-w-[150px] truncate">{booking.tenant?.name || 'N/A'}</TableCell>
+                <TableCell className="font-medium max-w-[150px] truncate">
+                   <EmailSender 
+                      booking={booking} 
+                      open={isEmailOpen && selectedBooking?.id === booking.id} 
+                      onOpenChange={(isOpen) => {
+                        if (!isOpen) setSelectedBooking(null);
+                        setIsEmailOpen(isOpen);
+                      }}
+                      asChild>
+                      <button 
+                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed"
+                        onClick={() => {
+                            setSelectedBooking(booking);
+                            setIsEmailOpen(true);
+                        }}
+                        disabled={!booking.tenant?.email}
+                      >
+                        {booking.tenant?.name || 'N/A'}
+                      </button>
+                    </EmailSender>
+                </TableCell>
                 <TableCell>
                     <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
                         <span>{formatDate(booking.startDate)}</span>
@@ -217,20 +236,33 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                   </TooltipProvider>
                 </TableCell>
                 <TableCell>
-                  <TooltipProvider>
-                     <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
-                              {guaranteeInfo.text}
+                  <GuaranteeManager
+                      booking={booking}
+                      open={isGuaranteeOpen && selectedBooking?.id === booking.id}
+                      onOpenChange={(isOpen) => {
+                        if (!isOpen) setSelectedBooking(null);
+                        setIsGuaranteeOpen(isOpen);
+                      }}
+                  >
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            className={cn("cursor-pointer", guaranteeInfo.className)}
+                            onClick={() => {
+                                setSelectedBooking(booking);
+                                setIsGuaranteeOpen(true);
+                            }}
+                          >
+                            {guaranteeInfo.text}
                           </Badge>
-                        </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                           <p>El estado de la garantía se gestiona desde el menú de acciones.</p>
+                           <p>Gestionar Garantía</p>
                         </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </GuaranteeManager>
                 </TableCell>
                 <TableCell>
                     <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>

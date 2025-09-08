@@ -35,7 +35,7 @@ const initialState: { message: string; success: boolean, error?: string } = {
 function SubmitButton({ isPending }: { isPending: boolean }) {
     return (
         <Button type="submit" disabled={isPending}>
-            {pending ? (
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Guardando...
@@ -154,7 +154,7 @@ export function GuaranteeManager({ booking, open, onOpenChange, children }: Guar
                             <SelectItem value="solicited">Solicitada</SelectItem>
                             <SelectItem value="received">Recibida</SelectItem>
                             <SelectItem value="returned">Devuelta</SelectItem>
-                            <SelectItem value="not_applicable">N/C</SelectItem>
+                            <SelectItem value="not_applicable">N/A</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
