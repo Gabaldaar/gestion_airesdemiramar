@@ -358,7 +358,7 @@ async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> 
 
 
 export async function getBookings(): Promise<BookingWithDetails[]> {
-    const snapshot = await getDocs(query(bookingsCollection, orderBy('startDate', 'desc')));
+    const snapshot = await getDocs(query(bookingsCollection, orderBy('startDate', 'asc')));
     const allBookings = snapshot.docs.map(processDoc) as Booking[];
     const allPayments = await getAllPayments();
     
@@ -397,7 +397,7 @@ export async function getBookings(): Promise<BookingWithDetails[]> {
 }
 
 export async function getBookingsByPropertyId(propertyId: string): Promise<BookingWithDetails[]> {
-    const q = query(bookingsCollection, where('propertyId', '==', propertyId), orderBy('startDate', 'desc'));
+    const q = query(bookingsCollection, where('propertyId', '==', propertyId), orderBy('startDate', 'asc'));
     const snapshot = await getDocs(q);
     const propertyBookings = snapshot.docs.map(processDoc) as Booking[];
     
