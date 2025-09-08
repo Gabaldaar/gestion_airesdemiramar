@@ -116,6 +116,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
     <TableRow key={booking.id}>
       {showProperty && <TableCell className={cn("font-bold align-middle", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
       <TableCell className="align-middle">
+        <div className='flex items-center h-full'>
           <EmailSender booking={booking}>
             <button 
               className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2 max-w-[150px]"
@@ -124,6 +125,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
               {booking.tenant?.name || 'N/A'}
             </button>
           </EmailSender>
+        </div>
       </TableCell>
       <TableCell className="align-middle">
           <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
@@ -196,7 +198,12 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
       </TableCell>
       <TableCell className="align-middle text-right">
           <div className="grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
-                <NotesViewer booking={booking} isOpen={isNotesOpen} onOpenChange={setIsNotesOpen} />
+                <NotesViewer 
+                    notes={booking.notes} 
+                    title={`Notas sobre la reserva de ${booking.tenant?.name}`} 
+                    isOpen={isNotesOpen} 
+                    onOpenChange={setIsNotesOpen}
+                />
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>

@@ -9,30 +9,29 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { BookingWithDetails } from '@/lib/data';
 
 interface NotesViewerProps {
-  booking: BookingWithDetails;
+  notes?: string | null;
+  title: string;
   children?: ReactNode;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
 
-export function NotesViewer({ booking, children, isOpen, onOpenChange }: NotesViewerProps) {
+export function NotesViewer({ notes, title, children, isOpen, onOpenChange }: NotesViewerProps) {
   return (
     <>
-      {/* The trigger is now handled outside, this just renders the button */}
-      {children} 
+      {children}
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Notas sobre la reserva de {booking.tenant?.name}</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
-              Contenido de las notas asociadas a la reserva.
+              Contenido de las notas asociadas.
             </DialogDescription>
           </DialogHeader>
           <div className="prose prose-sm max-w-none dark:prose-invert">
-            <p className='whitespace-pre-wrap'>{booking.notes}</p>
+            <p className='whitespace-pre-wrap'>{notes}</p>
           </div>
           <div className="flex justify-end pt-4">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
