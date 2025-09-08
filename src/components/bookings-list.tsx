@@ -58,20 +58,20 @@ export default function BookingsList({ bookings, properties, tenants, showProper
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
-    if (currency === 'USD') {
-         return `USD ${new Intl.NumberFormat('es-AR', {
-            style: 'decimal',
+        if (currency === 'USD') {
+             return `USD ${new Intl.NumberFormat('es-AR', {
+                style: 'decimal',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(amount)}`;
+        }
+        return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: currency,
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-        }).format(amount)}`;
+        }).format(amount);
     }
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(amount);
-  }
   
   const getBookingColorClass = (booking: BookingWithDetails): string => {
     const today = new Date();
