@@ -65,30 +65,18 @@ interface BookingEditFormProps {
     tenants: Tenant[];
     properties: Property[];
     allBookings?: Booking[];
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
     children?: ReactNode;
 }
 
 
-export function BookingEditForm({ booking, tenants, properties, allBookings, open, onOpenChange, children }: BookingEditFormProps) {
+export function BookingEditForm({ booking, tenants, properties, allBookings, children }: BookingEditFormProps) {
   const [state, formAction] = useActionState(updateBooking, initialState);
   const [date, setDate] = useState<DateRange | undefined>({
       from: new Date(booking.startDate),
       to: new Date(booking.endDate)
   });
   const [conflict, setConflict] = useState<Booking | null>(null);
-
-  const isControlled = open !== undefined && onOpenChange !== undefined;
-  const [internalOpen, setInternalOpen] = useState(false);
-  const isOpen = isControlled ? open : internalOpen;
-  const setIsOpen = (newOpen: boolean) => {
-    if (isControlled) {
-      onOpenChange(newOpen);
-    } else {
-      setInternalOpen(newOpen);
-    }
-  };
+  const [isOpen, setIsOpen] = useState(false);
 
   const resetForm = () => {
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
@@ -99,7 +87,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, ope
     if (state.success) {
       setIsOpen(false);
     }
-  }, [state, setIsOpen]);
+  }, [state]);
 
    useEffect(() => {
     if (date?.from && date?.to && allBookings) {

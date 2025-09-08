@@ -54,19 +54,17 @@ interface EmailSenderProps {
     booking: BookingWithDetails;
     payment?: Payment;
     children: ReactNode;
-    asChild?: boolean;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
 }
 
-export function EmailSender({ booking, payment, children, asChild, open, onOpenChange }: EmailSenderProps) {
+export function EmailSender({ booking, payment, children }: EmailSenderProps) {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [processedBody, setProcessedBody] = useState('');
   const [processedSubject, setProcessedSubject] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       getEmailTemplates().then(setTemplates);
       // Auto-select "Confirmación de Pago" template if a payment is provided
       if (payment) {
@@ -83,7 +81,7 @@ export function EmailSender({ booking, payment, children, asChild, open, onOpenC
         setProcessedBody('');
         setProcessedSubject('');
     }
-  }, [open, payment]);
+  }, [isOpen, payment]);
 
   const replacements = useMemo(() => {
       if (!booking) return {};
@@ -139,12 +137,12 @@ export function EmailSender({ booking, payment, children, asChild, open, onOpenC
 
     const mailtoLink = `mailto:${booking.tenant.email}?subject=${encodeURIComponent(processedSubject)}&body=${encodeURIComponent(processedBody)}`;
     window.location.href = mailtoLink;
-    onOpenChange(false);
+    setIsOpen(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild={asChild}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
         {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
@@ -190,7 +188,7 @@ export function EmailSender({ booking, payment, children, asChild, open, onOpenC
         </div>
 
         <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
             <Button onClick={handleOpenMailClient} disabled={!selectedTemplateId}>
                 <Send className="mr-2 h-4 w-4" />
                 Abrir en Cliente de Correo

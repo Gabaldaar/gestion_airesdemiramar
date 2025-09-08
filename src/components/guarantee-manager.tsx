@@ -49,15 +49,14 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
 
 interface GuaranteeManagerProps {
     booking: Booking;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
     children: ReactNode;
 }
 
 
-export function GuaranteeManager({ booking, open, onOpenChange, children }: GuaranteeManagerProps) {
+export function GuaranteeManager({ booking, children }: GuaranteeManagerProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
   
   const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
   const [amount, setAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
@@ -88,14 +87,14 @@ export function GuaranteeManager({ booking, open, onOpenChange, children }: Guar
 
   // Effect to reset form fields when dialog opens or booking data changes
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
       setAmount(booking.guaranteeAmount || undefined);
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
     }
-  }, [open, booking]);
+  }, [isOpen, booking]);
   
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -104,7 +103,7 @@ export function GuaranteeManager({ booking, open, onOpenChange, children }: Guar
     startTransition(async () => {
         const result = await updateBooking(initialState, formData);
         if (result.success) {
-            onOpenChange(false);
+            setIsOpen(false);
         }
     });
   };
@@ -115,7 +114,7 @@ export function GuaranteeManager({ booking, open, onOpenChange, children }: Guar
   }, [status, receivedDate, returnedDate, amount]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
@@ -209,7 +208,7 @@ export function GuaranteeManager({ booking, open, onOpenChange, children }: Guar
             </div>
 
             <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
                 <SubmitButton isPending={isPending} />
             </DialogFooter>
         </form>

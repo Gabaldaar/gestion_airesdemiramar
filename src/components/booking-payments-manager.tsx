@@ -32,30 +32,17 @@ import { getBookingById, BookingWithDetails } from '@/lib/data';
 
 interface BookingPaymentsManagerProps {
     bookingId: string;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
     children?: ReactNode;
 }
 
 
-export function BookingPaymentsManager({ bookingId, open, onOpenChange, children }: BookingPaymentsManagerProps) {
+export function BookingPaymentsManager({ bookingId, children }: BookingPaymentsManagerProps) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  const isControlled = open !== undefined && onOpenChange !== undefined;
-  const [internalOpen, setInternalOpen] = useState(false);
-  const isOpen = isControlled ? open : internalOpen;
+  const [isOpen, setIsOpen] = useState(false);
   
-  const setIsOpen = (newOpen: boolean) => {
-    if (isControlled) {
-      onOpenChange(newOpen);
-    } else {
-      setInternalOpen(newOpen);
-    }
-  };
-
   const fetchPayments = useCallback(async () => {
     if (!isOpen) return;
     setIsLoading(true);
@@ -148,7 +135,7 @@ export function BookingPaymentsManager({ bookingId, open, onOpenChange, children
                   <TableCell className="text-right">{formatCurrency(payment.amount, 'USD')}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {booking && <EmailSender booking={booking} payment={payment} asChild>
+                      {booking && <EmailSender booking={booking} payment={payment}>
                          <Button variant="ghost" size="icon" disabled={!booking.tenant?.email}>
                             <Mail className="h-4 w-4" />
                             <span className="sr-only">Enviar confirmación de pago</span>

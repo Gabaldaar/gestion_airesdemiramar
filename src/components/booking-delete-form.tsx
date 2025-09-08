@@ -42,27 +42,14 @@ function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
 interface BookingDeleteFormProps {
     bookingId: string;
     propertyId: string;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
     children?: ReactNode;
 }
 
-export function BookingDeleteForm({ bookingId, propertyId, open, onOpenChange, children }: BookingDeleteFormProps) {
+export function BookingDeleteForm({ bookingId, propertyId, children }: BookingDeleteFormProps) {
   const [state, formAction] = useActionState(deleteBooking, initialState);
   const [confirmationInput, setConfirmationInput] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
-
-  const isControlled = open !== undefined && onOpenChange !== undefined;
-  const [internalOpen, setInternalOpen] = useState(false);
-  const isOpen = isControlled ? open : internalOpen;
-  
-  const setIsOpen = (newOpen: boolean) => {
-    if (isControlled) {
-      onOpenChange(newOpen);
-    } else {
-      setInternalOpen(newOpen);
-    }
-  };
+  const [isOpen, setIsOpen] = useState(false);
   
   const isButtonDisabled = confirmationInput !== 'Eliminar';
 
@@ -70,7 +57,7 @@ export function BookingDeleteForm({ bookingId, propertyId, open, onOpenChange, c
     if (state.success) {
       setIsOpen(false);
     }
-  }, [state.success, setIsOpen]);
+  }, [state.success]);
 
   useEffect(() => {
     if (!isOpen) {

@@ -29,27 +29,15 @@ import { BookingExpenseDeleteForm } from './booking-expense-delete-form';
 
 interface BookingExpensesManagerProps {
     bookingId: string;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
     children?: ReactNode;
 }
 
 
-export function BookingExpensesManager({ bookingId, open, onOpenChange, children }: BookingExpensesManagerProps) {
+export function BookingExpensesManager({ bookingId, children }: BookingExpensesManagerProps) {
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  const isControlled = open !== undefined && onOpenChange !== undefined;
-  const [internalOpen, setInternalOpen] = useState(false);
-  const isOpen = isControlled ? open : internalOpen;
-  const setIsOpen = (newOpen: boolean) => {
-    if (isControlled) {
-      onOpenChange(newOpen);
-    } else {
-      setInternalOpen(newOpen);
-    }
-  };
+  const [isOpen, setIsOpen] = useState(false);
 
 
   const fetchExpensesAndCategories = useCallback(async () => {

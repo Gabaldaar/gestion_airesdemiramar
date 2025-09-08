@@ -10,31 +10,22 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { BookingWithDetails } from '@/lib/data';
 
 interface NotesViewerProps {
-  notes: string | null | undefined;
-  title: string;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  booking: BookingWithDetails;
   children?: ReactNode;
 }
 
-export function NotesViewer({ notes, title, open, onOpenChange, children }: NotesViewerProps) {
-  const isControlled = open !== undefined && onOpenChange !== undefined;
-  const [internalOpen, setInternalOpen] = useState(false);
+export function NotesViewer({ booking, children }: NotesViewerProps) {
+  const [isOpen, setIsOpen] = useState(false);
   
-  const isOpen = isControlled ? open : internalOpen;
-
-  const setIsOpen = (newOpen: boolean) => {
-    if (isControlled) {
-      onOpenChange(newOpen);
-    } else {
-      setInternalOpen(newOpen);
-    }
-  };
-
-  if (!notes) {
-    return null;
+  if (!booking.notes) {
+    return (
+        <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+            {children}
+        </Button>
+    )
   }
   
   return (
@@ -44,13 +35,13 @@ export function NotesViewer({ notes, title, open, onOpenChange, children }: Note
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>Notas sobre la reserva de {booking.tenant?.name}</DialogTitle>
           <DialogDescription>
-            Contenido de las notas asociadas.
+            Contenido de las notas asociadas a la reserva.
           </DialogDescription>
         </DialogHeader>
         <div className="prose prose-sm max-w-none dark:prose-invert">
-          <p className='whitespace-pre-wrap'>{notes}</p>
+          <p className='whitespace-pre-wrap'>{booking.notes}</p>
         </div>
         <div className="flex justify-end pt-4">
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cerrar</Button>

@@ -51,9 +51,6 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
 };
 
 export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
-  const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
-  const [isEmailOpen, setIsEmailOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<BookingWithDetails | null>(null);
 
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
@@ -141,21 +138,10 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold align-middle", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="align-middle max-w-[150px] leading-tight">
-                    <EmailSender 
-                      booking={booking} 
-                      open={isEmailOpen && selectedBooking?.id === booking.id} 
-                      onOpenChange={(isOpen) => {
-                        if (!isOpen) setSelectedBooking(null);
-                        setIsEmailOpen(isOpen);
-                      }}
-                      asChild>
+                <TableCell className="align-middle">
+                    <EmailSender booking={booking}>
                       <button 
-                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2"
-                        onClick={() => {
-                            setSelectedBooking(booking);
-                            setIsEmailOpen(true);
-                        }}
+                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2 max-w-[150px]"
                         disabled={!booking.tenant?.email}
                       >
                         {booking.tenant?.name || 'N/A'}
@@ -187,23 +173,12 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                   </TooltipProvider>
                 </TableCell>
                 <TableCell className="align-middle">
-                  <GuaranteeManager
-                      booking={booking}
-                      open={isGuaranteeOpen && selectedBooking?.id === booking.id}
-                      onOpenChange={(isOpen) => {
-                        if (!isOpen) setSelectedBooking(null);
-                        setIsGuaranteeOpen(isOpen);
-                      }}
-                  >
+                  <GuaranteeManager booking={booking}>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Badge 
                             className={cn("cursor-pointer", guaranteeInfo.className)}
-                            onClick={() => {
-                                setSelectedBooking(booking);
-                                setIsGuaranteeOpen(true);
-                            }}
                           >
                             {guaranteeInfo.text}
                           </Badge>
