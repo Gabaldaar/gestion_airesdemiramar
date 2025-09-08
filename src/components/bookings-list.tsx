@@ -117,8 +117,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
             <TableRow>
               {showProperty && <TableHead>Propiedad</TableHead>}
               <TableHead>Inquilino</TableHead>
-              <TableHead>Check-in</TableHead>
-              <TableHead>Check-out</TableHead>
+              <TableHead>Estadía</TableHead>
               <TableHead>Contrato</TableHead>
               <TableHead>Garantía</TableHead>
               <TableHead>Monto</TableHead>
@@ -130,6 +129,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
             {bookings.map((booking) => {
               const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
               const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
+              const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
@@ -137,7 +137,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                          <EmailSender booking={booking} asChild>
+                         <EmailSender booking={booking} asChild>
                             <button 
                               className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
                               disabled={!booking.tenant?.email}
@@ -152,8 +152,12 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     </Tooltip>
                   </TooltipProvider>
                 </TableCell>
-                <TableCell>{formatDate(booking.startDate)}</TableCell>
-                <TableCell>{formatDate(booking.endDate)}</TableCell>
+                <TableCell>
+                    <div>
+                        <span>{formatDate(booking.startDate)} → {formatDate(booking.endDate)}</span>
+                        <span className="block text-xs text-muted-foreground">{nights} noches</span>
+                    </div>
+                </TableCell>
                 <TableCell>
                   <TooltipProvider>
                      <Tooltip>
@@ -173,13 +177,13 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 <TableCell>
                   <TooltipProvider>
                      <Tooltip>
+                      <TooltipTrigger asChild>
                         <GuaranteeManager booking={booking} asChild>
-                          <TooltipTrigger asChild>
                               <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
                                   {guaranteeInfo.text}
                               </Badge>
-                          </TooltipTrigger>
                         </GuaranteeManager>
+                        </TooltipTrigger>
                         <TooltipContent>
                            <p>Gestionar Garantía</p>
                         </TooltipContent>
