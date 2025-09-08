@@ -137,19 +137,19 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 <TableCell className="font-medium">
                   <TooltipProvider>
                     <Tooltip>
-                        <TooltipTrigger asChild>
-                           <EmailSender booking={booking} asChild>
-                              <button 
-                                className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
-                                disabled={!booking.tenant?.email}
-                              >
-                                  {booking.tenant?.name || 'N/A'}
-                              </button>
+                      <TooltipTrigger asChild>
+                          <EmailSender booking={booking} asChild>
+                            <button 
+                              className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
+                              disabled={!booking.tenant?.email}
+                            >
+                                {booking.tenant?.name || 'N/A'}
+                            </button>
                           </EmailSender>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                           <p>Enviar Email</p>
-                        </TooltipContent>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Enviar Email</p>
+                      </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </TableCell>
@@ -174,13 +174,13 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 <TableCell>
                   <TooltipProvider>
                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <GuaranteeManager booking={booking} asChild>
+                        <GuaranteeManager booking={booking} asChild>
+                          <TooltipTrigger asChild>
                               <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
                                   {guaranteeInfo.text}
                               </Badge>
-                          </GuaranteeManager>
-                        </TooltipTrigger>
+                          </TooltipTrigger>
+                        </GuaranteeManager>
                         <TooltipContent>
                            <p>Gestionar Garantía</p>
                         </TooltipContent>
