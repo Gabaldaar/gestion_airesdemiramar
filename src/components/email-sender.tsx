@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, ReactNode } from 'react';
 import {
   Dialog,
+  DialogTrigger,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -140,19 +141,21 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
   const handleOpenMailClient = () => {
     if (!booking.tenant?.email) return;
 
-    let mailtoLink = `mailto:${booking.tenant.email}`;
-    const params = [];
-    
+    const params: string[] = [];
+
     if (processedSubject) {
         params.push(`subject=${encodeURIComponent(processedSubject)}`);
     }
     if (processedBody) {
-        params.push(`body=${encodeURIComponent(processedBody)}`);
+        // Encode line breaks as %0A
+        const encodedBody = encodeURIComponent(processedBody).replace(/%20/g, ' ');
+        params.push(`body=${encodedBody.replace(/\n/g, '%0A')}`);
     }
     if (replyToEmail) {
         params.push(`reply-to=${encodeURIComponent(replyToEmail)}`);
     }
 
+    let mailtoLink = `mailto:${booking.tenant.email}`;
     if (params.length > 0) {
         mailtoLink += `?${params.join('&')}`;
     }
