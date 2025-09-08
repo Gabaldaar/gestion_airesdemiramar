@@ -16,6 +16,11 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { BookingActionsMenu } from "./booking-actions-menu";
 import Link from "next/link";
+import { NotesViewer } from "./notes-viewer";
+import { BookingPaymentsManager } from "./booking-payments-manager";
+import { BookingExpensesManager } from "./booking-expenses-manager";
+import { BookingEditForm } from "./booking-edit-form";
+import { BookingDeleteForm } from "./booking-delete-form";
 
 
 interface BookingsListProps {
@@ -175,7 +180,13 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     {formatCurrency(booking.balance, booking.currency)}
                 </TableCell>
                 <TableCell className="text-right">
-                    <BookingActionsMenu booking={booking} properties={properties} tenants={tenants} allBookings={bookings} />
+                    <div className="flex items-center justify-end gap-1">
+                        <NotesViewer notes={booking.notes} title={`Notas sobre ${booking.tenant?.name}`} />
+                        <BookingPaymentsManager bookingId={booking.id} />
+                        <BookingExpensesManager bookingId={booking.id} />
+                        <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
+                        <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />
+                    </div>
                 </TableCell>
               </TableRow>
             )})}
