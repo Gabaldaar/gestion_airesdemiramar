@@ -190,7 +190,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="align-middle font-medium max-w-[150px] line-clamp-2">
+                <TableCell className="font-medium max-w-[150px] align-middle">
                    <EmailSender 
                       booking={booking} 
                       open={isEmailOpen && selectedBooking?.id === booking.id} 
@@ -200,7 +200,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                       }}
                       asChild>
                       <button 
-                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed"
+                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2"
                         onClick={() => {
                             setSelectedBooking(booking);
                             setIsEmailOpen(true);
