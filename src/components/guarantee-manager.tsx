@@ -9,6 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,10 +51,11 @@ interface GuaranteeManagerProps {
     booking: Booking;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    children: ReactNode;
 }
 
 
-export function GuaranteeManager({ booking, open, onOpenChange }: GuaranteeManagerProps) {
+export function GuaranteeManager({ booking, open, onOpenChange, children }: GuaranteeManagerProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   
@@ -114,6 +116,7 @@ export function GuaranteeManager({ booking, open, onOpenChange }: GuaranteeManag
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>Gestionar Depósito de Garantía</DialogTitle>

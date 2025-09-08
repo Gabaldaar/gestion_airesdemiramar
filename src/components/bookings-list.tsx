@@ -1,5 +1,4 @@
 
-
 import {
   Table,
   TableBody,
@@ -15,7 +14,15 @@ import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import Link from "next/link";
-import { BookingActionsMenu } from "./booking-actions-menu";
+import { Button } from "./ui/button";
+import { BookingPaymentsManager } from './booking-payments-manager';
+import { BookingExpensesManager } from './booking-expenses-manager';
+import { BookingEditForm } from './booking-edit-form';
+import { BookingDeleteForm } from './booking-delete-form';
+import { NotesViewer } from './notes-viewer';
+import { GuaranteeManager } from './guarantee-manager';
+import { Landmark, Wallet, Pencil, Trash2, FileText, Shield } from 'lucide-react';
+import { useState } from 'react';
 
 
 interface BookingsListProps {
@@ -39,6 +46,63 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     returned: { text: 'Devuelta', className: 'bg-purple-500 hover:bg-purple-600' },
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
+
+function BookingActions({ booking, properties, tenants }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[]}) {
+    const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
+    const [isExpensesOpen, setIsExpensesOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isNotesOpen, setIsNotesOpen] = useState(false);
+    const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
+
+    return (
+        <div className="flex items-center justify-end gap-2">
+            {booking.notes && (
+                <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
+                    <Button variant="ghost" size="icon">
+                        <FileText className="h-4 w-4" />
+                        <span className="sr-only">Ver Notas</span>
+                    </Button>
+                </NotesViewer>
+            )}
+
+            <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id}>
+                 <Button variant="ghost" size="icon">
+                    <Landmark className="h-4 w-4" />
+                    <span className="sr-only">Gestionar Pagos</span>
+                </Button>
+            </BookingPaymentsManager>
+            
+            <GuaranteeManager booking={booking} open={isGuaranteeOpen} onOpenChange={setIsGuaranteeOpen}>
+                 <Button variant="ghost" size="icon">
+                    <Shield className="h-4 w-4" />
+                    <span className="sr-only">Gestionar Garantía</span>
+                </Button>
+            </GuaranteeManager>
+            
+            <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id}>
+                <Button variant="ghost" size="icon">
+                    <Wallet className="h-4 w-4" />
+                    <span className="sr-only">Gestionar Gastos</span>
+                </Button>
+            </BookingExpensesManager>
+
+            <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
+                <Button variant="ghost" size="icon">
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">Editar Reserva</span>
+                </Button>
+            </BookingEditForm>
+
+            <BookingDeleteForm open={isDeleteOpen} onOpenChange={setIsDeleteOpen} bookingId={booking.id} propertyId={booking.propertyId}>
+                <Button variant="ghost" size="icon">
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Eliminar Reserva</span>
+                </Button>
+            </BookingDeleteForm>
+        </div>
+    )
+}
 
 export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
   if (bookings.length === 0) {
@@ -175,11 +239,10 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     {formatCurrency(booking.balance, booking.currency)}
                 </TableCell>
                 <TableCell className="text-right">
-                    <BookingActionsMenu 
+                    <BookingActions 
                         booking={booking} 
                         properties={properties} 
-                        tenants={tenants} 
-                        allBookings={bookings} 
+                        tenants={tenants}
                     />
                 </TableCell>
               </TableRow>
