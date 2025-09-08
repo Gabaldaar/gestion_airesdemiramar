@@ -9,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +34,7 @@ const initialState: { message: string; success: boolean, error?: string } = {
 function SubmitButton({ isPending }: { isPending: boolean }) {
     return (
         <Button type="submit" disabled={isPending}>
-            {isPending ? (
+            {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Guardando...
@@ -49,13 +48,12 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
 
 interface GuaranteeManagerProps {
     booking: Booking;
-    children?: ReactNode;
-    asChild?: boolean;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
 }
 
 
-export function GuaranteeManager({ booking, children, asChild }: GuaranteeManagerProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function GuaranteeManager({ booking, open, onOpenChange }: GuaranteeManagerProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   
@@ -88,14 +86,14 @@ export function GuaranteeManager({ booking, children, asChild }: GuaranteeManage
 
   // Effect to reset form fields when dialog opens or booking data changes
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
       setAmount(booking.guaranteeAmount || undefined);
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
     }
-  }, [isOpen, booking]);
+  }, [open, booking]);
   
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -104,7 +102,7 @@ export function GuaranteeManager({ booking, children, asChild }: GuaranteeManage
     startTransition(async () => {
         const result = await updateBooking(initialState, formData);
         if (result.success) {
-            setIsOpen(false);
+            onOpenChange(false);
         }
     });
   };
@@ -115,15 +113,7 @@ export function GuaranteeManager({ booking, children, asChild }: GuaranteeManage
   }, [status, receivedDate, returnedDate, amount]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-       <DialogTrigger asChild={asChild}>
-         {children ?? (
-            <Button variant="ghost" size="icon">
-              <Shield className="h-4 w-4" />
-              <span className="sr-only">Gestionar Garantía</span>
-            </Button>
-         )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>Gestionar Depósito de Garantía</DialogTitle>
@@ -216,7 +206,7 @@ export function GuaranteeManager({ booking, children, asChild }: GuaranteeManage
             </div>
 
             <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <SubmitButton isPending={isPending} />
             </DialogFooter>
         </form>
