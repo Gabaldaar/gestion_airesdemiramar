@@ -665,9 +665,10 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
           .filter(b => b.currency === 'USD')
           .reduce((acc, b) => acc + b.amount, 0);
 
+      const safeAvgExchangeRate = avgExchangeRate || 1;
       const incomeInUsdFromArsBookings = propertyBookings
           .filter(b => b.currency === 'ARS')
-          .reduce((acc, b) => acc + (b.amount / (b.exchangeRate || avgExchangeRate || 1)), 0);
+          .reduce((acc, b) => acc + (b.amount / (b.exchangeRate || safeAvgExchangeRate)), 0);
 
       const totalIncome = incomeInUsdFromUsdBookings + incomeInUsdFromArsBookings;
 
@@ -676,11 +677,11 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
       const totalPayments = propertyPayments.reduce((acc, p) => acc + p.amount, 0);
 
       const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id && isWithinDateRange(e.date));
-      const totalPropertyExpensesInUSD = propertyExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / (e.exchangeRate || avgExchangeRate || 1))), 0);
+      const totalPropertyExpensesInUSD = propertyExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / (e.exchangeRate || safeAvgExchangeRate))), 0);
 
       const relevantBookingIds = new Set(allBookings.filter(b => b.propertyId === property.id).map(b => b.id));
       const relevantBookingExpenses = allBookingExpenses.filter(e => relevantBookingIds.has(e.bookingId) && isWithinDateRange(e.date));
-      const totalBookingExpensesInUSD = relevantBookingExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / (e.exchangeRate || avgExchangeRate || 1))), 0);
+      const totalBookingExpensesInUSD = relevantBookingExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / (e.exchangeRate || safeAvgExchangeRate))), 0);
       
       const netResult = totalPayments - totalPropertyExpensesInUSD - totalBookingExpensesInUSD;
       
