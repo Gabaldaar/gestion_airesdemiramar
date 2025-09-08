@@ -19,7 +19,6 @@ import { BookingExpensesManager } from "./booking-expenses-manager";
 import { BookingPaymentsManager } from "./booking-payments-manager";
 import { NotesViewer } from "./notes-viewer";
 import { cn } from "@/lib/utils";
-import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { GuaranteeManager } from "./guarantee-manager";
 import { EmailSender } from "./email-sender";
