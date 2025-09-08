@@ -7,7 +7,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Landmark, Mail } from 'lucide-react';
@@ -33,15 +32,16 @@ import { getBookingById, BookingWithDetails } from '@/lib/data';
 interface BookingPaymentsManagerProps {
     bookingId: string;
     children?: ReactNode;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
 
-export function BookingPaymentsManager({ bookingId, children }: BookingPaymentsManagerProps) {
+export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChange }: BookingPaymentsManagerProps) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
   
   const fetchPayments = useCallback(async () => {
     if (!isOpen) return;
@@ -99,65 +99,65 @@ export function BookingPaymentsManager({ bookingId, children }: BookingPaymentsM
   const totalAmount = payments.reduce((acc, payment) => acc + payment.amount, 0);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-       <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Pagos de la Reserva</DialogTitle>
-          <DialogDescription>
-            Gestiona los pagos recibidos para esta reserva.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex justify-end">
-            <PaymentAddForm bookingId={bookingId} onPaymentAdded={handlePaymentAction} />
-        </div>
-        {isLoading ? (
-          <p>Cargando pagos...</p>
-        ) : payments.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">No hay pagos para mostrar.</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead className="text-right">Monto (USD)</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell>{formatDate(payment.date)}</TableCell>
-                  <TableCell className="font-medium">{payment.description}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(payment.amount, 'USD')}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {booking && <EmailSender booking={booking} payment={payment}>
-                         <Button variant="ghost" size="icon" disabled={!booking.tenant?.email}>
-                            <Mail className="h-4 w-4" />
-                            <span className="sr-only">Enviar confirmación de pago</span>
-                        </Button>
-                      </EmailSender>}
-                      <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
-                      <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handlePaymentAction} />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-             <TableFooter>
+    <>
+      {children}
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Pagos de la Reserva</DialogTitle>
+            <DialogDescription>
+              Gestiona los pagos recibidos para esta reserva.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+              <PaymentAddForm bookingId={bookingId} onPaymentAdded={handlePaymentAction} />
+          </div>
+          {isLoading ? (
+            <p>Cargando pagos...</p>
+          ) : payments.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No hay pagos para mostrar.</p>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                    <TableCell colSpan={2} className="font-bold text-right">Total Pagado</TableCell>
-                    <TableCell className="text-right font-bold">{formatCurrency(totalAmount, 'USD')}</TableCell>
-                    <TableCell></TableCell>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead className="text-right">Monto (USD)</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-            </TableFooter>
-          </Table>
-        )}
-      </DialogContent>
-    </Dialog>
+              </TableHeader>
+              <TableBody>
+                {payments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>{formatDate(payment.date)}</TableCell>
+                    <TableCell className="font-medium">{payment.description}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(payment.amount, 'USD')}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {booking && <EmailSender booking={booking} payment={payment}>
+                          <Button variant="ghost" size="icon" disabled={!booking.tenant?.email}>
+                              <Mail className="h-4 w-4" />
+                              <span className="sr-only">Enviar confirmación de pago</span>
+                          </Button>
+                        </EmailSender>}
+                        <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
+                        <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handlePaymentAction} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                  <TableRow>
+                      <TableCell colSpan={2} className="font-bold text-right">Total Pagado</TableCell>
+                      <TableCell className="text-right font-bold">{formatCurrency(totalAmount, 'USD')}</TableCell>
+                      <TableCell></TableCell>
+                  </TableRow>
+              </TableFooter>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

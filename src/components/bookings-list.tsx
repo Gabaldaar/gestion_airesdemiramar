@@ -51,6 +51,11 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
 
 function BookingRow({ booking, properties, tenants, showProperty }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[], showProperty: boolean }) {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
+  const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
+  const [isExpensesOpen, setIsExpensesOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
@@ -145,21 +150,22 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
         </TooltipProvider>
       </TableCell>
       <TableCell className="align-middle">
-        <GuaranteeManager booking={booking}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge 
-                  className={cn("cursor-pointer", guaranteeInfo.className)}
-                >
-                  {guaranteeInfo.text}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                  <p>Gestionar Garantía</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <GuaranteeManager booking={booking} isOpen={isGuaranteeOpen} onOpenChange={setIsGuaranteeOpen}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    onClick={() => setIsGuaranteeOpen(true)}
+                    className={cn("cursor-pointer", guaranteeInfo.className)}
+                  >
+                    {guaranteeInfo.text}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Gestionar Garantía</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
         </GuaranteeManager>
       </TableCell>
       <TableCell className="align-middle">
@@ -190,25 +196,24 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
       </TableCell>
       <TableCell className="align-middle text-right">
           <div className="grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
-              <NotesViewer booking={booking} isOpen={isNotesOpen} onOpenChange={setIsNotesOpen}>
-                  <TooltipProvider>
-                      <Tooltip>
-                          <TooltipTrigger asChild>
-                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsNotesOpen(true)} disabled={!booking.notes}>
-                                  <FileText className="h-4 w-4" />
-                                  <span className="sr-only">Ver Notas</span>
-                              </Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Ver Notas</p></TooltipContent>
-                      </Tooltip>
-                  </TooltipProvider>
-              </NotesViewer>
+                <NotesViewer booking={booking} isOpen={isNotesOpen} onOpenChange={setIsNotesOpen} />
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsNotesOpen(true)} disabled={!booking.notes}>
+                                <FileText className="h-4 w-4" />
+                                <span className="sr-only">Ver Notas</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Ver Notas</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
               
-              <BookingPaymentsManager bookingId={booking.id}>
+              <BookingPaymentsManager bookingId={booking.id} isOpen={isPaymentsOpen} onOpenChange={setIsPaymentsOpen}>
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsPaymentsOpen(true)}>
                                   <Landmark className="h-4 w-4" />
                                   <span className="sr-only">Gestionar Pagos</span>
                               </Button>
@@ -218,11 +223,11 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
                   </TooltipProvider>
               </BookingPaymentsManager>
               
-              <BookingExpensesManager bookingId={booking.id}>
+              <BookingExpensesManager bookingId={booking.id} isOpen={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsExpensesOpen(true)}>
                                   <Wallet className="h-4 w-4" />
                                   <span className="sr-only">Gestionar Gastos</span>
                               </Button>
@@ -232,11 +237,11 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
                   </TooltipProvider>
               </BookingExpensesManager>
 
-              <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
+              <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]} isOpen={isEditOpen} onOpenChange={setIsEditOpen}>
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditOpen(true)}>
                                   <Pencil className="h-4 w-4" />
                                   <span className="sr-only">Editar Reserva</span>
                               </Button>
@@ -246,11 +251,11 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
                   </TooltipProvider>
               </BookingEditForm>
               
-              <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId}>
+              <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsDeleteOpen(true)}>
                                   <Trash2 className="h-4 w-4" />
                                   <span className="sr-only">Eliminar Reserva</span>
                               </Button>

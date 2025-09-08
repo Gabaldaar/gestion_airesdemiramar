@@ -9,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -66,17 +65,18 @@ interface BookingEditFormProps {
     properties: Property[];
     allBookings?: Booking[];
     children?: ReactNode;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
 
-export function BookingEditForm({ booking, tenants, properties, allBookings, children }: BookingEditFormProps) {
+export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange }: BookingEditFormProps) {
   const [state, formAction] = useActionState(updateBooking, initialState);
   const [date, setDate] = useState<DateRange | undefined>({
       from: new Date(booking.startDate),
       to: new Date(booking.endDate)
   });
   const [conflict, setConflict] = useState<Booking | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
 
   const resetForm = () => {
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
@@ -85,9 +85,9 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
 
   useEffect(() => {
     if (state.success) {
-      setIsOpen(false);
+      onOpenChange(false);
     }
-  }, [state]);
+  }, [state, onOpenChange]);
 
    useEffect(() => {
     if (date?.from && date?.to && allBookings) {
@@ -125,10 +125,8 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
 
   return (
     <>
-        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; setIsOpen(open)}}>
-        <DialogTrigger asChild>
-            {children}
-        </DialogTrigger>
+      {children}
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; onOpenChange(open)}}>
         <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
             <DialogTitle>Editar Reserva</DialogTitle>

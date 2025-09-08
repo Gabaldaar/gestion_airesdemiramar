@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, useTransition, ReactNode } from 'react';
@@ -9,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,13 +48,14 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
 interface GuaranteeManagerProps {
     booking: Booking;
     children: ReactNode;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
 
-export function GuaranteeManager({ booking, children }: GuaranteeManagerProps) {
+export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: GuaranteeManagerProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
   
   const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
   const [amount, setAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
@@ -103,7 +102,7 @@ export function GuaranteeManager({ booking, children }: GuaranteeManagerProps) {
     startTransition(async () => {
         const result = await updateBooking(initialState, formData);
         if (result.success) {
-            setIsOpen(false);
+            onOpenChange(false);
         }
     });
   };
@@ -114,112 +113,114 @@ export function GuaranteeManager({ booking, children }: GuaranteeManagerProps) {
   }, [status, receivedDate, returnedDate, amount]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>Gestionar Depósito de Garantía</DialogTitle>
-          <DialogDescription>
-            Administra el estado y el monto de la garantía para esta reserva.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      {children}
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Gestionar Depósito de Garantía</DialogTitle>
+            <DialogDescription>
+              Administra el estado y el monto de la garantía para esta reserva.
+            </DialogDescription>
+          </DialogHeader>
 
-        <form ref={formRef} onSubmit={handleSubmit}>
-            <input type="hidden" name="id" value={booking.id} />
-            <input type="hidden" name="guaranteeReceivedDate" value={receivedDate ? receivedDate.toISOString().split('T')[0] : ''} />
-            <input type="hidden" name="guaranteeReturnedDate" value={returnedDate ? returnedDate.toISOString().split('T')[0] : ''} />
-            {/* Pass through all other booking fields to avoid them being overwritten */}
-            <input type="hidden" name="propertyId" value={booking.propertyId} />
-            <input type="hidden" name="tenantId" value={booking.tenantId} />
-            <input type="hidden" name="startDate" value={booking.startDate} />
-            <input type="hidden" name="endDate" value={booking.endDate} />
-            <input type="hidden" name="amount" value={booking.amount} />
-            <input type="hidden" name="currency" value={booking.currency} />
-            <input type="hidden" name="notes" value={booking.notes} />
-            <input type="hidden" name="contractStatus" value={booking.contractStatus} />
-            <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
+          <form ref={formRef} onSubmit={handleSubmit}>
+              <input type="hidden" name="id" value={booking.id} />
+              <input type="hidden" name="guaranteeReceivedDate" value={receivedDate ? receivedDate.toISOString().split('T')[0] : ''} />
+              <input type="hidden" name="guaranteeReturnedDate" value={returnedDate ? returnedDate.toISOString().split('T')[0] : ''} />
+              {/* Pass through all other booking fields to avoid them being overwritten */}
+              <input type="hidden" name="propertyId" value={booking.propertyId} />
+              <input type="hidden" name="tenantId" value={booking.tenantId} />
+              <input type="hidden" name="startDate" value={booking.startDate} />
+              <input type="hidden" name="endDate" value={booking.endDate} />
+              <input type="hidden" name="amount" value={booking.amount} />
+              <input type="hidden" name="currency" value={booking.currency} />
+              <input type="hidden" name="notes" value={booking.notes} />
+              <input type="hidden" name="contractStatus" value={booking.contractStatus} />
+              <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
 
-            <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeStatus" className="text-right">
-                    Estado
-                    </Label>
-                    <Select name="guaranteeStatus" value={status} onValueChange={(val) => setStatus(val as GuaranteeStatus)}>
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="not_solicited">S/Solicitar</SelectItem>
-                            <SelectItem value="solicited">Solicitada</SelectItem>
-                            <SelectItem value="received">Recibida</SelectItem>
-                            <SelectItem value="returned">Devuelta</SelectItem>
-                            <SelectItem value="not_applicable">N/A</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+              <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="guaranteeStatus" className="text-right">
+                      Estado
+                      </Label>
+                      <Select name="guaranteeStatus" value={status} onValueChange={(val) => setStatus(val as GuaranteeStatus)}>
+                          <SelectTrigger className="col-span-3">
+                              <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="not_solicited">S/Solicitar</SelectItem>
+                              <SelectItem value="solicited">Solicitada</SelectItem>
+                              <SelectItem value="received">Recibida</SelectItem>
+                              <SelectItem value="returned">Devuelta</SelectItem>
+                              <SelectItem value="not_applicable">N/A</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeAmount" className="text-right">
-                        Monto
-                    </Label>
-                    <Input 
-                      id="guaranteeAmount" 
-                      name="guaranteeAmount" 
-                      type="number" 
-                      step="0.01" 
-                      value={amount || ''}
-                      onChange={(e) => setAmount(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="col-span-3" 
-                    />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeCurrency" className="text-right">
-                        Moneda
-                    </Label>
-                    <Select name="guaranteeCurrency" defaultValue={booking.guaranteeCurrency || 'USD'}>
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ARS">ARS</SelectItem>
-                            <SelectItem value="USD">USD</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="guaranteeAmount" className="text-right">
+                          Monto
+                      </Label>
+                      <Input 
+                        id="guaranteeAmount" 
+                        name="guaranteeAmount" 
+                        type="number" 
+                        step="0.01" 
+                        value={amount || ''}
+                        onChange={(e) => setAmount(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        className="col-span-3" 
+                      />
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="guaranteeCurrency" className="text-right">
+                          Moneda
+                      </Label>
+                      <Select name="guaranteeCurrency" defaultValue={booking.guaranteeCurrency || 'USD'}>
+                          <SelectTrigger className="col-span-3">
+                              <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="ARS">ARS</SelectItem>
+                              <SelectItem value="USD">USD</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeReceivedDate-picker" className="text-right">
-                        Fecha Recibida
-                    </Label>
-                    <div className="col-span-3">
-                        <DatePicker date={receivedDate} onDateSelect={setReceivedDate} placeholder="Seleccionar fecha" />
-                    </div>
-                </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="guaranteeReceivedDate-picker" className="text-right">
+                          Fecha Recibida
+                      </Label>
+                      <div className="col-span-3">
+                          <DatePicker date={receivedDate} onDateSelect={setReceivedDate} placeholder="Seleccionar fecha" />
+                      </div>
+                  </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeReturnedDate-picker" className="text-right">
-                        Fecha Devuelta
-                    </Label>
-                    <div className="col-span-3">
-                        <DatePicker date={returnedDate} onDateSelect={setReturnedDate} placeholder="Seleccionar fecha" />
-                    </div>
-                </div>
-            </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="guaranteeReturnedDate-picker" className="text-right">
+                          Fecha Devuelta
+                      </Label>
+                      <div className="col-span-3">
+                          <DatePicker date={returnedDate} onDateSelect={setReturnedDate} placeholder="Seleccionar fecha" />
+                      </div>
+                  </div>
+              </div>
 
-            <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                <SubmitButton isPending={isPending} />
-            </DialogFooter>
-        </form>
-         {(clientError) && (
-            <Alert variant="destructive" className="mt-4">
-                <AlertDescription>
-                   {clientError}
-                </AlertDescription>
-            </Alert>
-        )}
-      </DialogContent>
-    </Dialog>
+              <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                  <SubmitButton isPending={isPending} />
+              </DialogFooter>
+          </form>
+          {(clientError) && (
+              <Alert variant="destructive" className="mt-4">
+                  <AlertDescription>
+                    {clientError}
+                  </AlertDescription>
+              </Alert>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -7,7 +7,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
@@ -30,14 +29,15 @@ import { BookingExpenseDeleteForm } from './booking-expense-delete-form';
 interface BookingExpensesManagerProps {
     bookingId: string;
     children?: ReactNode;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
 
-export function BookingExpensesManager({ bookingId, children }: BookingExpensesManagerProps) {
+export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChange }: BookingExpensesManagerProps) {
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
 
 
   const fetchExpensesAndCategories = useCallback(async () => {
@@ -78,61 +78,61 @@ export function BookingExpensesManager({ bookingId, children }: BookingExpensesM
   const totalAmount = expenses.reduce((acc, expense) => acc + expense.amount, 0);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Gastos de la Reserva</DialogTitle>
-          <DialogDescription>
-            Gestiona los gastos asociados a esta reserva.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex justify-end">
-            <BookingExpenseAddForm bookingId={bookingId} onExpenseAdded={handleExpenseAction} categories={categories}/>
-        </div>
-        {isLoading ? (
-          <p>Cargando gastos...</p>
-        ) : expenses.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">No hay gastos para mostrar.</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Categoría</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead className="text-right">Monto</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenses.map((expense) => (
-                <TableRow key={expense.id}>
-                  <TableCell>{formatDate(expense.date)}</TableCell>
-                  <TableCell>{expense.categoryId ? categoriesMap.get(expense.categoryId) : 'N/A'}</TableCell>
-                  <TableCell className="font-medium">{expense.description}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <BookingExpenseEditForm expense={expense} categories={categories} />
-                      <BookingExpenseDeleteForm expenseId={expense.id} bookingId={bookingId} />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-             <TableFooter>
+    <>
+      {children}
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Gastos de la Reserva</DialogTitle>
+            <DialogDescription>
+              Gestiona los gastos asociados a esta reserva.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+              <BookingExpenseAddForm bookingId={bookingId} onExpenseAdded={handleExpenseAction} categories={categories}/>
+          </div>
+          {isLoading ? (
+            <p>Cargando gastos...</p>
+          ) : expenses.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No hay gastos para mostrar.</p>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                    <TableCell colSpan={3} className="font-bold text-right">Total</TableCell>
-                    <TableCell className="text-right font-bold">{formatCurrency(totalAmount)}</TableCell>
-                    <TableCell></TableCell>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Categoría</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead className="text-right">Monto</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-            </TableFooter>
-          </Table>
-        )}
-      </DialogContent>
-    </Dialog>
+              </TableHeader>
+              <TableBody>
+                {expenses.map((expense) => (
+                  <TableRow key={expense.id}>
+                    <TableCell>{formatDate(expense.date)}</TableCell>
+                    <TableCell>{expense.categoryId ? categoriesMap.get(expense.categoryId) : 'N/A'}</TableCell>
+                    <TableCell className="font-medium">{expense.description}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <BookingExpenseEditForm expense={expense} categories={categories} />
+                        <BookingExpenseDeleteForm expenseId={expense.id} bookingId={bookingId} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                  <TableRow>
+                      <TableCell colSpan={3} className="font-bold text-right">Total</TableCell>
+                      <TableCell className="text-right font-bold">{formatCurrency(totalAmount)}</TableCell>
+                      <TableCell></TableCell>
+                  </TableRow>
+              </TableFooter>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

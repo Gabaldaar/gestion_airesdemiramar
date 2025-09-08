@@ -9,7 +9,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -43,21 +42,22 @@ interface BookingDeleteFormProps {
     bookingId: string;
     propertyId: string;
     children?: ReactNode;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
-export function BookingDeleteForm({ bookingId, propertyId, children }: BookingDeleteFormProps) {
+export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onOpenChange }: BookingDeleteFormProps) {
   const [state, formAction] = useActionState(deleteBooking, initialState);
   const [confirmationInput, setConfirmationInput] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
   
   const isButtonDisabled = confirmationInput !== 'Eliminar';
 
   useEffect(() => {
     if (state.success) {
-      setIsOpen(false);
+      onOpenChange(false);
     }
-  }, [state.success]);
+  }, [state.success, onOpenChange]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -66,42 +66,42 @@ export function BookingDeleteForm({ bookingId, propertyId, children }: BookingDe
   }, [isOpen]);
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger asChild>
-        {children}
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <form action={formAction} ref={formRef}>
-            <input type="hidden" name="id" value={bookingId} />
-            <input type="hidden" name="propertyId" value={propertyId} />
-            <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-                Esta acción es irreversible. Se eliminará permanentemente la reserva, junto con sus pagos y gastos asociados.
-                <br/><br/>
-                Para confirmar, por favor escribe <strong className='text-foreground'>Eliminar</strong> en el campo de abajo.
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="my-4">
-                <Label htmlFor="confirmation" className="sr-only">Confirmación</Label>
-                <Input 
-                    id="confirmation"
-                    name="confirmation"
-                    value={confirmationInput}
-                    onChange={(e) => setConfirmationInput(e.target.value)}
-                    placeholder='Escribe "Eliminar"'
-                    autoComplete='off'
-                />
-                 {state.message && !state.success && (
-                    <p className="text-red-500 text-sm mt-2">{state.message}</p>
-                )}
-            </div>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <DeleteButton isDisabled={isButtonDisabled} />
-            </AlertDialogFooter>
-        </form>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      {children}
+      <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+        <AlertDialogContent>
+          <form action={formAction} ref={formRef}>
+              <input type="hidden" name="id" value={bookingId} />
+              <input type="hidden" name="propertyId" value={propertyId} />
+              <AlertDialogHeader>
+              <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+              <AlertDialogDescription>
+                  Esta acción es irreversible. Se eliminará permanentemente la reserva, junto con sus pagos y gastos asociados.
+                  <br/><br/>
+                  Para confirmar, por favor escribe <strong className='text-foreground'>Eliminar</strong> en el campo de abajo.
+              </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="my-4">
+                  <Label htmlFor="confirmation" className="sr-only">Confirmación</Label>
+                  <Input 
+                      id="confirmation"
+                      name="confirmation"
+                      value={confirmationInput}
+                      onChange={(e) => setConfirmationInput(e.target.value)}
+                      placeholder='Escribe "Eliminar"'
+                      autoComplete='off'
+                  />
+                  {state.message && !state.success && (
+                      <p className="text-red-500 text-sm mt-2">{state.message}</p>
+                  )}
+              </div>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <DeleteButton isDisabled={isButtonDisabled} />
+              </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
