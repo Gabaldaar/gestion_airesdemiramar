@@ -330,22 +330,20 @@ async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> 
     const allPayments = await getPaymentsByBookingId(booking.id);
     const totalPaidInUSD = allPayments.reduce((acc, payment) => acc + payment.amount, 0);
 
-    let bookingAmountInUSD;
+    let balance = 0;
     if (booking.currency === 'USD') {
-        bookingAmountInUSD = booking.amount;
-    } else {
-        // If an ARS booking doesn't have an exchange rate, we can't reliably calculate a USD equivalent.
-        // We'll treat its USD amount as 0 to avoid calculation errors (NaN).
-        // The balance will be shown in ARS in this case.
-        if (booking.exchangeRate && booking.exchangeRate > 0) {
-            bookingAmountInUSD = booking.amount / booking.exchangeRate;
-        } else {
-            // This is a safe fallback. The balance will be calculated based on the original currency.
-            bookingAmountInUSD = 0; 
-        }
+        balance = booking.amount - totalPaidInUSD;
+    } else { // currency is ARS
+        const totalPaidInArs = allPayments.reduce((acc, p) => {
+            if (p.originalArsAmount) {
+                return acc + p.originalArsAmount;
+            }
+            // Fallback: if a USD payment has no rate, we can't convert it accurately
+            // For now, we'll assume it doesn't contribute to the ARS balance in that edge case
+            return p.exchangeRate ? acc + (p.amount * p.exchangeRate) : acc;
+        }, 0);
+        balance = booking.amount - totalPaidInArs;
     }
-
-    const balance = booking.amount - totalPaidInUSD;
 
     return { 
         ...booking, 
@@ -397,11 +395,16 @@ export async function getBookings(): Promise<BookingWithDetails[]> {
 }
 
 export async function getBookingsByPropertyId(propertyId: string): Promise<BookingWithDetails[]> {
-    const q = query(bookingsCollection, where('propertyId', '==', propertyId), orderBy('startDate', 'asc'));
+    const q = query(bookingsCollection, where('propertyId', '==', propertyId));
     const snapshot = await getDocs(q);
     const propertyBookings = snapshot.docs.map(processDoc) as Booking[];
     
-    return Promise.all(propertyBookings.map(booking => getBookingDetails(booking)));
+    const detailedBookings = await Promise.all(propertyBookings.map(booking => getBookingDetails(booking)));
+    
+    // Sort in application code to avoid needing a composite index
+    detailedBookings.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    
+    return detailedBookings;
 }
 
 export async function getBookingById(id: string): Promise<Booking | undefined> {
