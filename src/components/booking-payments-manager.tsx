@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, ReactNode } from 'react';
@@ -27,7 +26,7 @@ import { es } from 'date-fns/locale';
 import { PaymentAddForm } from './payment-add-form';
 import { PaymentEditForm } from './payment-edit-form';
 import { PaymentDeleteForm } from './payment-delete-form';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { EmailSender } from './email-sender';
 import { getBookingById, BookingWithDetails } from '@/lib/data';
 
