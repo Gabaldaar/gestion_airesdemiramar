@@ -117,7 +117,6 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableHead>Garantía</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Saldo</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -192,9 +191,6 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 </TableCell>
                 <TableCell className={`font-bold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                     {formatCurrency(booking.balance, booking.currency)}
-                </TableCell>
-                <TableCell className="text-right">
-                    <BookingActionsMenu booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
                 </TableCell>
               </TableRow>
             )})}
