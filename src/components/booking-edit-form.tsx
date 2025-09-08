@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect, useRef, useState, useMemo } from 'react';
+import { useActionState, useEffect, useRef, useState, useMemo, ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -60,14 +61,29 @@ function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
     )
 }
 
-export function BookingEditForm({ booking, tenants, properties, allBookings }: { booking: Booking, tenants: Tenant[], properties: Property[], allBookings?: Booking[] }) {
+interface BookingEditFormProps {
+    booking: Booking;
+    tenants: Tenant[];
+    properties: Property[];
+    allBookings?: Booking[];
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    children?: ReactNode;
+}
+
+
+export function BookingEditForm({ booking, tenants, properties, allBookings, open, onOpenChange, children }: BookingEditFormProps) {
   const [state, formAction] = useActionState(updateBooking, initialState);
-  const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>({
       from: new Date(booking.startDate),
       to: new Date(booking.endDate)
   });
   const [conflict, setConflict] = useState<Booking | null>(null);
+
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
   const resetForm = () => {
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
@@ -78,7 +94,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
     if (state.success) {
       setIsOpen(false);
     }
-  }, [state]);
+  }, [state, setIsOpen]);
 
    useEffect(() => {
     if (date?.from && date?.to && allBookings) {
@@ -114,16 +130,18 @@ export function BookingEditForm({ booking, tenants, properties, allBookings }: {
     return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
+  const trigger = children ?? (
+    <Button variant="ghost" size="icon">
+        <Pencil className="h-4 w-4" />
+        <span className="sr-only">Editar Reserva</span>
+    </Button>
+  );
+
 
   return (
     <>
         <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; setIsOpen(open)}}>
-        <DialogTrigger asChild>
-            <Button variant="ghost" size="icon">
-            <Pencil className="h-4 w-4" />
-            <span className="sr-only">Editar Reserva</span>
-            </Button>
-        </DialogTrigger>
+        {!children && <DialogTrigger asChild>{trigger}</DialogTrigger>}
         <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
             <DialogTitle>Editar Reserva</DialogTitle>

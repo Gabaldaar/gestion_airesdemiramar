@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -30,11 +31,24 @@ import { PaymentDeleteForm } from './payment-delete-form';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { EmailSender } from './email-sender';
 
-export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
-  const [isOpen, setIsOpen] = useState(false);
+interface BookingPaymentsManagerProps {
+    bookingId: string;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    children?: ReactNode;
+}
+
+export function BookingPaymentsManager({ bookingId, open, onOpenChange, children }: BookingPaymentsManagerProps) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Use the externally provided state if available, otherwise use internal state.
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
+
 
   const fetchData = useCallback(async () => {
     if (!isOpen) return;
@@ -63,6 +77,14 @@ export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
   const handlePaymentAction = useCallback(() => {
     fetchData();
   }, [fetchData]);
+  
+  const trigger = children ?? (
+      <Button variant="ghost" size="icon">
+          <Landmark className="h-4 w-4" />
+          <span className="sr-only">Gestionar Pagos</span>
+      </Button>
+  );
+
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
@@ -80,12 +102,7 @@ export function BookingPaymentsManager({ bookingId }: { bookingId: string }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Landmark className="h-4 w-4" />
-          <span className="sr-only">Gestionar Pagos</span>
-        </Button>
-      </DialogTrigger>
+      {!children && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Pagos de la Reserva</DialogTitle>

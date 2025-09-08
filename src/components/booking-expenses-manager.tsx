@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -29,13 +29,28 @@ import { BookingExpenseAddForm } from './booking-expense-add-form';
 import { BookingExpenseEditForm } from './booking-expense-edit-form';
 import { BookingExpenseDeleteForm } from './booking-expense-delete-form';
 
-export function BookingExpensesManager({ bookingId }: { bookingId: string }) {
-  const [isOpen, setIsOpen] = useState(false);
+interface BookingExpensesManagerProps {
+    bookingId: string;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    children?: ReactNode;
+}
+
+
+export function BookingExpensesManager({ bookingId, open, onOpenChange, children }: BookingExpensesManagerProps) {
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Use the externally provided state if available, otherwise use internal state.
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
+
+
   const fetchExpensesAndCategories = useCallback(async () => {
+    if (!isOpen) return;
     setIsLoading(true);
     const [fetchedExpenses, fetchedCategories] = await Promise.all([
         getBookingExpensesByBookingId(bookingId),
@@ -44,15 +59,13 @@ export function BookingExpensesManager({ bookingId }: { bookingId: string }) {
     setExpenses(fetchedExpenses);
     setCategories(fetchedCategories);
     setIsLoading(false);
-  }, [bookingId]);
+  }, [bookingId, isOpen]);
 
   const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
 
   useEffect(() => {
-    if (isOpen) {
       fetchExpensesAndCategories();
-    }
-  }, [isOpen, fetchExpensesAndCategories]);
+  }, [fetchExpensesAndCategories]);
 
   const handleExpenseAction = useCallback(() => {
     fetchExpensesAndCategories();
@@ -73,14 +86,16 @@ export function BookingExpensesManager({ bookingId }: { bookingId: string }) {
 
   const totalAmount = expenses.reduce((acc, expense) => acc + expense.amount, 0);
 
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
+  const trigger = children ?? (
+      <Button variant="ghost" size="icon">
           <Wallet className="h-4 w-4" />
           <span className="sr-only">Gestionar Gastos de Reserva</span>
-        </Button>
-      </DialogTrigger>
+      </Button>
+  );
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {!children && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Gastos de la Reserva</DialogTitle>

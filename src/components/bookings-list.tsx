@@ -13,15 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus } from "@/lib/data";
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { BookingEditForm } from "./booking-edit-form";
-import { BookingDeleteForm } from "./booking-delete-form";
-import { BookingExpensesManager } from "./booking-expenses-manager";
-import { BookingPaymentsManager } from "./booking-payments-manager";
-import { NotesViewer } from "./notes-viewer";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { GuaranteeManager } from "./guarantee-manager";
 import { EmailSender } from "./email-sender";
+import { BookingActionsMenu } from "./booking-actions-menu";
 
 
 interface BookingsListProps {
@@ -178,11 +174,13 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                   <TooltipProvider>
                      <Tooltip>
                       <TooltipTrigger asChild>
-                        <GuaranteeManager booking={booking} asChild>
-                              <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
-                                  {guaranteeInfo.text}
-                              </Badge>
-                        </GuaranteeManager>
+                        <div>
+                            <GuaranteeManager booking={booking} asChild>
+                                  <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
+                                      {guaranteeInfo.text}
+                                  </Badge>
+                            </GuaranteeManager>
+                        </div>
                         </TooltipTrigger>
                         <TooltipContent>
                            <p>Gestionar Garantía</p>
@@ -197,66 +195,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     {formatCurrency(booking.balance, booking.currency)}
                 </TableCell>
                 <TableCell className="text-right">
-                    <TooltipProvider>
-                        <div className="flex items-center justify-end gap-1">
-                            {booking.notes && (
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div>
-                                            <NotesViewer notes={booking.notes} title={`Notas sobre la reserva`} />
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Ver Notas</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            )}
-                            
-                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div>
-                                        <BookingPaymentsManager bookingId={booking.id} />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Gestionar Pagos</p>
-                                </TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div>
-                                        <BookingExpensesManager bookingId={booking.id} />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Gestionar Gastos</p>
-                                </TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div>
-                                        <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Editar Reserva</p>
-                                </TooltipContent>
-                            </Tooltip>
-
-                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div>
-                                       <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Eliminar Reserva</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </div>
-                    </TooltipProvider>
+                   <BookingActionsMenu booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
                 </TableCell>
               </TableRow>
             )})}

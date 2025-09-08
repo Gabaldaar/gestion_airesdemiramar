@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useActionState, useState, useEffect, useRef } from 'react';
+import { useActionState, useState, useEffect, useRef, ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   AlertDialog,
@@ -40,11 +41,23 @@ function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
     )
 }
 
-export function BookingDeleteForm({ bookingId, propertyId }: { bookingId: string; propertyId: string }) {
+interface BookingDeleteFormProps {
+    bookingId: string;
+    propertyId: string;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    children?: ReactNode;
+}
+
+export function BookingDeleteForm({ bookingId, propertyId, open, onOpenChange, children }: BookingDeleteFormProps) {
   const [state, formAction] = useActionState(deleteBooking, initialState);
-  const [isOpen, setIsOpen] = useState(false);
   const [confirmationInput, setConfirmationInput] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
+
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
   
   const isButtonDisabled = confirmationInput !== 'Eliminar';
 
@@ -52,7 +65,7 @@ export function BookingDeleteForm({ bookingId, propertyId }: { bookingId: string
     if (state.success) {
       setIsOpen(false);
     }
-  }, [state.success]);
+  }, [state.success, setIsOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -60,14 +73,17 @@ export function BookingDeleteForm({ bookingId, propertyId }: { bookingId: string
     }
   }, [isOpen]);
 
+  const trigger = children ?? (
+     <Button variant="ghost" size="icon">
+        <Trash2 className="h-4 w-4" />
+        <span className="sr-only">Borrar Reserva</span>
+    </Button>
+  );
+
+
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Trash2 className="h-4 w-4" />
-          <span className="sr-only">Borrar Reserva</span>
-        </Button>
-      </AlertDialogTrigger>
+      {!children && <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>}
       <AlertDialogContent>
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="id" value={bookingId} />
