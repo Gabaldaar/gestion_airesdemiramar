@@ -113,21 +113,31 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
     }
     return "";
   };
+
+  const getBalanceColorClass = () => {
+    if (booking.balance <= 0) return 'bg-green-600 hover:bg-green-700';
+    if (booking.balance >= booking.amount) return 'bg-red-600 hover:bg-red-700';
+    return 'bg-orange-500 hover:bg-orange-600';
+  };
+  
   
   return (
     <TableRow key={booking.id}>
       {showProperty && <TableCell className={cn("font-bold align-middle", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
       <TableCell className="align-middle">
         <div className='flex items-center h-full'>
-           <EmailSender booking={booking} isOpen={isEmailOpen} onOpenChange={setIsEmailOpen}>
-            <button 
-              onClick={() => setIsEmailOpen(true)}
-              className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2 max-w-[150px]"
-              disabled={!booking.tenant?.email}
-            >
-              {booking.tenant?.name || 'N/A'}
-            </button>
-          </EmailSender>
+           <EmailSender 
+                booking={booking} 
+                isOpen={isEmailOpen} 
+                onOpenChange={setIsEmailOpen}>
+                <button
+                    onClick={() => setIsEmailOpen(true)}
+                    className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2 max-w-[150px]"
+                    disabled={!booking.tenant?.email}
+                >
+                    {booking.tenant?.name || 'N/A'}
+                </button>
+            </EmailSender>
         </div>
       </TableCell>
       <TableCell className="align-middle">
@@ -159,15 +169,13 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="unstyled"
-                    className={cn("cursor-pointer h-auto p-0", guaranteeInfo.className)}
-                    onClick={() => setIsGuaranteeOpen(true)}
-                  >
-                    <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
+                    <Badge 
+                        className={cn("cursor-pointer", guaranteeInfo.className)}
+                        onClick={() => setIsGuaranteeOpen(true)}
+                        role="button"
+                    >
                       {guaranteeInfo.text}
                     </Badge>
-                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>Gestionar Garantía</p>
@@ -192,7 +200,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
           <TooltipProvider>
               <Tooltip>
                   <TooltipTrigger asChild>
-                      <Badge variant={booking.balance > 0 ? "destructive" : "default"} className={cn('cursor-default', booking.balance <= 0 && 'bg-green-600 hover:bg-green-700')}>
+                      <Badge variant="default" className={cn('cursor-default', getBalanceColorClass())}>
                           {formatCurrency(booking.balance, booking.currency)}
                       </Badge>
                   </TooltipTrigger>
@@ -209,18 +217,19 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
                     title={`Notas sobre la reserva de ${booking.tenant?.name}`} 
                     isOpen={isNotesOpen} 
                     onOpenChange={setIsNotesOpen}
-                />
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsNotesOpen(true)} disabled={!booking.notes}>
-                                <FileText className="h-4 w-4" />
-                                <span className="sr-only">Ver Notas</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Ver Notas</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                >
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsNotesOpen(true)} disabled={!booking.notes}>
+                                    <FileText className="h-4 w-4" />
+                                    <span className="sr-only">Ver Notas</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Ver Notas</p></TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </NotesViewer>
               
               <BookingPaymentsManager bookingId={booking.id} isOpen={isPaymentsOpen} onOpenChange={setIsPaymentsOpen}>
                   <TooltipProvider>
