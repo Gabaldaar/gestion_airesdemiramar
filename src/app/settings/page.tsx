@@ -7,15 +7,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProperties, Property, getExpenseCategories } from "@/lib/data";
+import { getProperties, Property, getExpenseCategories, getEmailSettings } from "@/lib/data";
 import { PropertyEditForm } from "@/components/property-edit-form";
 import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
+import { EmailSettingsManager } from "@/components/email-settings-manager";
 
 export default async function SettingsPage() {
-  const [properties, expenseCategories] = await Promise.all([
+  const [properties, expenseCategories, emailSettings] = await Promise.all([
       getProperties(),
       getExpenseCategories(),
+      getEmailSettings(),
   ]);
 
   return (
@@ -28,6 +30,7 @@ export default async function SettingsPage() {
             <TabsList>
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 <TabsTrigger value="expense-categories">Cat. de Gastos</TabsTrigger>
+                <TabsTrigger value="email">Email</TabsTrigger>
             </TabsList>
         </div>
 
@@ -68,6 +71,19 @@ export default async function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                     <ExpenseCategoryManager initialCategories={expenseCategories} />
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="email">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Configuración de Email</CardTitle>
+                    <CardDescription>
+                        Gestiona las opciones de envío de correo electrónico.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <EmailSettingsManager initialSettings={emailSettings} />
                 </CardContent>
             </Card>
         </TabsContent>

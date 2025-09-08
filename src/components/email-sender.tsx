@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { BookingWithDetails, EmailTemplate, getEmailTemplates, Payment } from '@/lib/data';
+import { BookingWithDetails, EmailTemplate, getEmailTemplates, Payment, getEmailSettings } from '@/lib/data';
 import { Mail, Send } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { format } from 'date-fns';
@@ -62,10 +62,16 @@ export function EmailSender({ booking, payment, children }: EmailSenderProps) {
   const [processedBody, setProcessedBody] = useState('');
   const [processedSubject, setProcessedSubject] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (isOpen) {
       getEmailTemplates().then(setTemplates);
+      getEmailSettings().then(settings => {
+          if (settings?.replyToEmail) {
+              setReplyToEmail(settings.replyToEmail);
+          }
+      });
       // Auto-select "Confirmación de Pago" template if a payment is provided
       if (payment) {
         getEmailTemplates().then(templates => {
@@ -135,7 +141,6 @@ export function EmailSender({ booking, payment, children }: EmailSenderProps) {
   const handleOpenMailClient = () => {
     if (!booking.tenant?.email) return;
 
-    const replyToEmail = process.env.NEXT_PUBLIC_REPLY_TO_EMAIL;
     const params = new URLSearchParams();
     params.append('subject', processedSubject);
     params.append('body', processedBody);

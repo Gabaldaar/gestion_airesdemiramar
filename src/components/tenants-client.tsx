@@ -1,13 +1,14 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Tenant, BookingWithDetails } from '@/lib/data';
+import { useState, useMemo, useEffect } from 'react';
+import { Tenant, BookingWithDetails, getEmailSettings } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import TenantsList from './tenants-list';
 import { Mail } from 'lucide-react';
+import { useToast } from './ui/use-toast';
 
 type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed';
 
@@ -18,6 +19,16 @@ interface TenantsClientProps {
 
 export default function TenantsClient({ initialTenants, allBookings }: TenantsClientProps) {
   const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
+  const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    getEmailSettings().then(settings => {
+        if (settings?.replyToEmail) {
+            setReplyToEmail(settings.replyToEmail);
+        }
+    });
+  }, []);
 
   const filteredTenants = useMemo(() => {
     if (statusFilter === 'all') {
@@ -63,7 +74,6 @@ export default function TenantsClient({ initialTenants, allBookings }: TenantsCl
     if (uniqueRecipients.length > 0) {
         const bcc = uniqueRecipients.join(',');
         const subject = "Miramar te espera";
-        const replyToEmail = process.env.NEXT_PUBLIC_REPLY_TO_EMAIL;
         
         const params = new URLSearchParams();
         params.append('bcc', bcc);
@@ -74,7 +84,11 @@ export default function TenantsClient({ initialTenants, allBookings }: TenantsCl
 
         window.location.href = `mailto:?${params.toString()}`;
     } else {
-        alert("No hay inquilinos con email en la selección actual para enviar correos.");
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No hay inquilinos con email en la selección actual.",
+        });
     }
   };
 

@@ -13,7 +13,8 @@ import {
   orderBy,
   Timestamp,
   writeBatch,
-  collectionGroup
+  collectionGroup,
+  setDoc
 } from 'firebase/firestore';
 
 // --- TYPE DEFINITIONS ---
@@ -169,6 +170,11 @@ export type EmailTemplate = {
   body: string; // Will store HTML content
 };
 
+export type EmailSettings = {
+    id: 'email';
+    replyToEmail?: string;
+}
+
 
 // --- DATA ACCESS FUNCTIONS ---
 
@@ -180,6 +186,7 @@ const bookingExpensesCollection = collection(db, 'bookingExpenses');
 const paymentsCollection = collection(db, 'payments');
 const expenseCategoriesCollection = collection(db, 'expenseCategories');
 const emailTemplatesCollection = collection(db, 'emailTemplates');
+const settingsCollection = collection(db, 'settings');
 
 
 // Helper function to add default data only if the collection is empty
@@ -786,4 +793,23 @@ export async function updateEmailTemplate(updatedTemplate: EmailTemplate): Promi
 export async function deleteEmailTemplate(id: string): Promise<void> {
   const docRef = doc(db, 'emailTemplates', id);
   await deleteDoc(docRef);
+}
+
+
+// --- App Settings Functions ---
+
+export async function getEmailSettings(): Promise<EmailSettings | null> {
+    const docRef = doc(db, 'settings', 'email');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return processDoc(docSnap) as EmailSettings;
+    }
+    return null; // No settings found
+}
+
+export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<EmailSettings> {
+    const docRef = doc(db, 'settings', 'email');
+    // Use setDoc with merge:true to create or update the document
+    await setDoc(docRef, settings, { merge: true });
+    return { id: 'email', ...settings };
 }

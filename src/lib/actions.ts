@@ -27,6 +27,7 @@ import {
     addEmailTemplate as dbAddEmailTemplate,
     updateEmailTemplate as dbUpdateEmailTemplate,
     deleteEmailTemplate as dbDeleteEmailTemplate,
+    updateEmailSettings as dbUpdateEmailSettings,
     getBookingById,
     getPropertyById,
     getTenantById,
@@ -853,4 +854,20 @@ export async function deleteEmailTemplate(previousState: any, formData: FormData
   }
 }
 
+
+export async function updateEmailSettings(previousState: any, formData: FormData) {
+    const replyToEmail = formData.get('replyToEmail') as string;
     
+    // Basic email validation
+    if (replyToEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyToEmail)) {
+        return { success: false, message: 'Por favor, introduce una dirección de email válida.' };
+    }
+
+    try {
+        await dbUpdateEmailSettings({ replyToEmail });
+        revalidatePath('/settings');
+        return { success: true, message: 'Configuración de email guardada.' };
+    } catch (error) {
+        return { success: false, message: 'Error al guardar la configuración de email.' };
+    }
+}

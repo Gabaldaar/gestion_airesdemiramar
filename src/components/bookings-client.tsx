@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
-import { BookingWithDetails, ContractStatus, Property, Tenant } from '@/lib/data';
+import { useState, useMemo, useEffect } from 'react';
+import { BookingWithDetails, ContractStatus, Property, Tenant, getEmailSettings } from '@/lib/data';
 import BookingsList from '@/components/bookings-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from './ui/label';
 import { Download, Mail } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from './ui/use-toast';
 
 type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt';
 type ContractStatusFilter = 'all' | ContractStatus;
@@ -28,6 +29,16 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
   const [contractStatusFilter, setContractStatusFilter] = useState<ContractStatusFilter>('all');
+  const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    getEmailSettings().then(settings => {
+        if (settings?.replyToEmail) {
+            setReplyToEmail(settings.replyToEmail);
+        }
+    });
+  }, []);
   
   // Apply the initial tenant filter if it exists
   const bookingsForTenant = useMemo(() => {
@@ -137,8 +148,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
     if (uniqueRecipients.length > 0) {
         const bcc = uniqueRecipients.join(',');
         const subject = "Miramar te espera";
-        const replyToEmail = process.env.NEXT_PUBLIC_REPLY_TO_EMAIL;
-
+        
         const params = new URLSearchParams();
         params.append('bcc', bcc);
         params.append('subject', subject);
@@ -148,7 +158,11 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
         
         window.location.href = `mailto:?${params.toString()}`;
     } else {
-        alert("No hay inquilinos con email en la selección actual para enviar correos.");
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No hay inquilinos con email en la selección actual.",
+        });
     }
   };
 
