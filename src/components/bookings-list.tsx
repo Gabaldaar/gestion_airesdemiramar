@@ -23,7 +23,7 @@ import { BookingEditForm } from './booking-edit-form';
 import { BookingDeleteForm } from './booking-delete-form';
 import { NotesViewer } from './notes-viewer';
 import { GuaranteeManager } from './guarantee-manager';
-import { Landmark, Wallet, Pencil, Trash2, FileText, Mail } from 'lucide-react';
+import { Landmark, Wallet, Pencil, Trash2, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { EmailSender } from "./email-sender";
 
@@ -49,90 +49,6 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     returned: { text: 'Devuelta', className: 'bg-purple-500 hover:bg-purple-600' },
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
-
-function BookingActions({ booking, properties, tenants }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[]}) {
-    const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
-    const [isExpensesOpen, setIsExpensesOpen] = useState(false);
-    const [isEditOpen, setIsEditOpen] = useState(false);
-    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-    const [isNotesOpen, setIsNotesOpen] = useState(false);
-    
-    return (
-        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 max-w-[120px] sm:grid sm:grid-cols-3 sm:max-w-[120px]">
-            {booking.notes && (
-                <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <FileText className="h-4 w-4" />
-                                    <span className="sr-only">Ver Notas</span>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Ver Notas</p></TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </NotesViewer>
-            )}
-
-            <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id}>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Landmark className="h-4 w-4" />
-                                <span className="sr-only">Gestionar Pagos</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </BookingPaymentsManager>
-            
-            <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id}>
-                 <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Wallet className="h-4 w-4" />
-                                <span className="sr-only">Gestionar Gastos</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </BookingExpensesManager>
-
-            <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Editar Reserva</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Editar Reserva</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </BookingEditForm>
-            
-            <BookingDeleteForm open={isDeleteOpen} onOpenChange={setIsDeleteOpen} bookingId={booking.id} propertyId={booking.propertyId}>
-                 <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Eliminar Reserva</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </BookingDeleteForm>
-        </div>
-    )
-}
 
 export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
   const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
@@ -224,9 +140,9 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
               return (
               <TableRow key={booking.id}>
-                {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="align-middle max-w-[150px] line-clamp-2">
-                   <EmailSender 
+                {showProperty && <TableCell className={cn("font-bold align-middle", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
+                <TableCell className="align-middle max-w-[150px]">
+                    <EmailSender 
                       booking={booking} 
                       open={isEmailOpen && selectedBooking?.id === booking.id} 
                       onOpenChange={(isOpen) => {
@@ -235,7 +151,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                       }}
                       asChild>
                       <button 
-                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed"
+                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2"
                         onClick={() => {
                             setSelectedBooking(booking);
                             setIsEmailOpen(true);
@@ -246,7 +162,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                       </button>
                     </EmailSender>
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-middle">
                     <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
                         <span>{formatDate(booking.startDate)}</span>
                         <span className="hidden md:inline">→</span>
@@ -254,7 +170,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     </div>
                     <span className="block text-xs text-muted-foreground">{nights} noches</span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-middle">
                   <TooltipProvider>
                      <Tooltip>
                         <TooltipTrigger asChild>
@@ -270,7 +186,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     </Tooltip>
                   </TooltipProvider>
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-middle">
                   <GuaranteeManager
                       booking={booking}
                       open={isGuaranteeOpen && selectedBooking?.id === booking.id}
@@ -299,7 +215,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     </TooltipProvider>
                   </GuaranteeManager>
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-middle">
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -311,7 +227,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                         </Tooltip>
                     </TooltipProvider>
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-middle">
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -325,12 +241,78 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                         </Tooltip>
                     </TooltipProvider>
                 </TableCell>
-                <TableCell className="text-right">
-                    <BookingActions 
-                        booking={booking} 
-                        properties={properties} 
-                        tenants={tenants}
-                    />
+                <TableCell className="align-middle text-right">
+                    <div className="flex flex-wrap items-center justify-end gap-x-1 gap-y-1 sm:grid sm:grid-cols-3 sm:max-w-[120px]">
+                       <NotesViewer booking={booking} asChild>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!booking.notes}>
+                                            <FileText className="h-4 w-4" />
+                                            <span className="sr-only">Ver Notas</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Ver Notas</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </NotesViewer>
+                        
+                        <BookingPaymentsManager bookingId={booking.id} asChild>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Landmark className="h-4 w-4" />
+                                            <span className="sr-only">Gestionar Pagos</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </BookingPaymentsManager>
+                        
+                        <BookingExpensesManager bookingId={booking.id} asChild>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Wallet className="h-4 w-4" />
+                                            <span className="sr-only">Gestionar Gastos</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </BookingExpensesManager>
+
+                        <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]} asChild>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Pencil className="h-4 w-4" />
+                                            <span className="sr-only">Editar Reserva</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Editar Reserva</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </BookingEditForm>
+                        
+                        <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} asChild>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Trash2 className="h-4 w-4" />
+                                            <span className="sr-only">Eliminar Reserva</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </BookingDeleteForm>
+                    </div>
                 </TableCell>
               </TableRow>
             )})}
