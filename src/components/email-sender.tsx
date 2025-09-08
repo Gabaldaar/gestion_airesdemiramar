@@ -19,10 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { BookingWithDetails, EmailTemplate, getEmailTemplates, Payment, getEmailSettings } from '@/lib/data';
-import { Mail, Send } from 'lucide-react';
+import { AlertTriangle, Send } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
@@ -52,9 +53,9 @@ const formatCurrency = (amount: number | null | undefined, currency: 'USD' | 'AR
 interface EmailSenderProps {
     booking: BookingWithDetails;
     payment?: Payment;
-    children: ReactNode;
-    isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    isOpen: boolean;
+    children?: ReactNode;
 }
 
 export function EmailSender({ booking, payment, children, isOpen, onOpenChange }: EmailSenderProps) {
@@ -141,21 +142,13 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
   const handleOpenMailClient = () => {
     if (!booking.tenant?.email) return;
 
-    const params: string[] = [];
+    const subject = encodeURIComponent(processedSubject).replace(/'/g, "%27");
+    const body = encodeURIComponent(processedBody).replace(/'/g, "%27");
+    
+    let mailtoLink = `mailto:${booking.tenant.email}?subject=${subject}&body=${body}`;
 
-    if (processedSubject) {
-      params.push(`subject=${encodeURIComponent(processedSubject)}`);
-    }
-    if (processedBody) {
-      params.push(`body=${encodeURIComponent(processedBody)}`);
-    }
     if (replyToEmail) {
-      params.push(`reply-to=${encodeURIComponent(replyToEmail)}`);
-    }
-
-    let mailtoLink = `mailto:${booking.tenant.email}`;
-    if (params.length > 0) {
-      mailtoLink += `?${params.join('&')}`;
+      mailtoLink += `&reply-to=${encodeURIComponent(replyToEmail)}`;
     }
 
     window.location.href = mailtoLink;
@@ -164,14 +157,24 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+        {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+        <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Preparar Email para {booking.tenant?.name}</DialogTitle>
           <DialogDescription>
             Selecciona una plantilla y revisa el contenido. El email se abrirá en tu cliente de correo.
           </DialogDescription>
         </DialogHeader>
+        
+        {replyToEmail && (
+            <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>¡Atención!</AlertTitle>
+                <AlertDescription>
+                    Para asegurar que las respuestas lleguen a <span className="font-semibold">{replyToEmail}</span>, asegúrate de enviar este correo desde esa misma cuenta en tu cliente de email.
+                </AlertDescription>
+            </Alert>
+        )}
         
         <div className="space-y-4 py-4">
             <div>
