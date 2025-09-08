@@ -135,7 +135,15 @@ export function EmailSender({ booking, payment, children }: EmailSenderProps) {
   const handleOpenMailClient = () => {
     if (!booking.tenant?.email) return;
 
-    const mailtoLink = `mailto:${booking.tenant.email}?subject=${encodeURIComponent(processedSubject)}&body=${encodeURIComponent(processedBody)}`;
+    const replyToEmail = process.env.NEXT_PUBLIC_REPLY_TO_EMAIL;
+    const params = new URLSearchParams();
+    params.append('subject', processedSubject);
+    params.append('body', processedBody);
+    if (replyToEmail) {
+        params.append('reply-to', replyToEmail);
+    }
+
+    const mailtoLink = `mailto:${booking.tenant.email}?${params.toString()}`;
     window.location.href = mailtoLink;
     setIsOpen(false);
   }

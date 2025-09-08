@@ -136,8 +136,17 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
 
     if (uniqueRecipients.length > 0) {
         const bcc = uniqueRecipients.join(',');
-        const subject = encodeURIComponent("Miramar te espera");
-        window.location.href = `mailto:?bcc=${bcc}&subject=${subject}`;
+        const subject = "Miramar te espera";
+        const replyToEmail = process.env.NEXT_PUBLIC_REPLY_TO_EMAIL;
+
+        const params = new URLSearchParams();
+        params.append('bcc', bcc);
+        params.append('subject', subject);
+        if (replyToEmail) {
+            params.append('reply-to', replyToEmail);
+        }
+        
+        window.location.href = `mailto:?${params.toString()}`;
     } else {
         alert("No hay inquilinos con email en la selección actual para enviar correos.");
     }
@@ -157,7 +166,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
                 <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Hasta" />
             </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-wrap">
           <div className="grid gap-2">
               <Label>Propiedad</Label>
               <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
