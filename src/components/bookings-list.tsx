@@ -21,7 +21,7 @@ import { BookingPaymentsManager } from './booking-payments-manager';
 import { BookingExpensesManager } from './booking-expenses-manager';
 import { BookingEditForm } from './booking-edit-form';
 import { BookingDeleteForm } from './booking-delete-form';
-import { NotebookPen } from "lucide-react";
+import { BookingActionsMenu } from "./booking-actions-menu";
 
 
 interface BookingsListProps {
@@ -123,6 +123,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableHead>Monto</TableHead>
               <TableHead>Saldo</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
+              <TableHead><span className="sr-only">Menú</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -206,6 +207,9 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                         <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings}/>
                         <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId}/>
                    </div>
+                </TableCell>
+                <TableCell className="text-right">
+                    <BookingActionsMenu booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
                 </TableCell>
               </TableRow>
             )})}

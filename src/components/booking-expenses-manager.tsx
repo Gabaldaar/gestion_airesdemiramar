@@ -42,11 +42,16 @@ export function BookingExpensesManager({ bookingId, open, onOpenChange, children
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Use the externally provided state if available, otherwise use internal state.
   const isControlled = open !== undefined && onOpenChange !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = isControlled ? open : internalOpen;
-  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
+  const setIsOpen = (newOpen: boolean) => {
+    if (isControlled) {
+      onOpenChange(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
 
 
   const fetchExpensesAndCategories = useCallback(async () => {
@@ -95,7 +100,9 @@ export function BookingExpensesManager({ bookingId, open, onOpenChange, children
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      {!children && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      <DialogTrigger asChild>
+        {children || trigger}
+      </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Gastos de la Reserva</DialogTitle>

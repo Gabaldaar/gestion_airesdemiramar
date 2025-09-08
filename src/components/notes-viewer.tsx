@@ -34,9 +34,13 @@ export function NotesViewer({ notes, title, open, onOpenChange, children }: Note
       </Button>
   );
 
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {!children && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+    <Dialog open={isControlled ? open : undefined} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        {children || trigger}
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

@@ -57,7 +57,14 @@ export function BookingDeleteForm({ bookingId, propertyId, open, onOpenChange, c
   const isControlled = open !== undefined && onOpenChange !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = isControlled ? open : internalOpen;
-  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
+  
+  const setIsOpen = (newOpen: boolean) => {
+    if (isControlled) {
+      onOpenChange(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
   
   const isButtonDisabled = confirmationInput !== 'Eliminar';
 
@@ -83,7 +90,9 @@ export function BookingDeleteForm({ bookingId, propertyId, open, onOpenChange, c
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      {!children && <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>}
+      <AlertDialogTrigger asChild>
+        {children || trigger}
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="id" value={bookingId} />

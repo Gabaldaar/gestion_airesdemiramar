@@ -83,7 +83,13 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, ope
   const isControlled = open !== undefined && onOpenChange !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = isControlled ? open : internalOpen;
-  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
+  const setIsOpen = (newOpen: boolean) => {
+    if (isControlled) {
+      onOpenChange(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
 
   const resetForm = () => {
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
@@ -141,7 +147,9 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, ope
   return (
     <>
         <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; setIsOpen(open)}}>
-        {!children && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+        <DialogTrigger asChild>
+            {children || trigger}
+        </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
             <DialogTitle>Editar Reserva</DialogTitle>

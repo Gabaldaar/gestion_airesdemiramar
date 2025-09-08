@@ -43,11 +43,16 @@ export function BookingPaymentsManager({ bookingId, open, onOpenChange, children
   const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Use the externally provided state if available, otherwise use internal state.
   const isControlled = open !== undefined && onOpenChange !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = isControlled ? open : internalOpen;
-  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
+  const setIsOpen = (newOpen: boolean) => {
+    if (isControlled) {
+      onOpenChange(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
 
 
   const fetchData = useCallback(async () => {
@@ -102,7 +107,9 @@ export function BookingPaymentsManager({ bookingId, open, onOpenChange, children
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      {!children && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      <DialogTrigger asChild>
+        {children || trigger}
+      </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Pagos de la Reserva</DialogTitle>
