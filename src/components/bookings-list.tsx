@@ -14,7 +14,6 @@ import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { BookingActionsMenu } from "./booking-actions-menu";
 import Link from "next/link";
 import { NotesViewer } from "./notes-viewer";
 import { BookingPaymentsManager } from "./booking-payments-manager";
@@ -121,9 +120,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableHead>Garantía</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Saldo</TableHead>
-              <TableHead className="text-right">
-                <span className="sr-only">Acciones</span>
-              </TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
