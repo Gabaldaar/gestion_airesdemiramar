@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -57,10 +58,10 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     
     return (
-        <TooltipProvider>
-            <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 max-w-[120px] sm:grid sm:grid-cols-3 sm:max-w-[120px]">
-                {booking.notes && (
-                    <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
+        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 max-w-[120px] sm:grid sm:grid-cols-3 sm:max-w-[120px]">
+            {booking.notes && (
+                <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
+                    <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -70,10 +71,12 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
                             </TooltipTrigger>
                             <TooltipContent><p>Ver Notas</p></TooltipContent>
                         </Tooltip>
-                    </NotesViewer>
-                )}
+                    </TooltipProvider>
+                </NotesViewer>
+            )}
 
-                <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id}>
+            <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id}>
+                <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -83,10 +86,12 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
                         </TooltipTrigger>
                         <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
                     </Tooltip>
-                </BookingPaymentsManager>
-                
-                <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id}>
-                     <Tooltip>
+                </TooltipProvider>
+            </BookingPaymentsManager>
+            
+            <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id}>
+                 <TooltipProvider>
+                    <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Wallet className="h-4 w-4" />
@@ -95,9 +100,11 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
                         </TooltipTrigger>
                         <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
                     </Tooltip>
-                </BookingExpensesManager>
+                </TooltipProvider>
+            </BookingExpensesManager>
 
-                <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
+            <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
+                <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -107,10 +114,12 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
                         </TooltipTrigger>
                         <TooltipContent><p>Editar Reserva</p></TooltipContent>
                     </Tooltip>
-                </BookingEditForm>
-                
-                <BookingDeleteForm open={isDeleteOpen} onOpenChange={setIsDeleteOpen} bookingId={booking.id} propertyId={booking.propertyId}>
-                     <Tooltip>
+                </TooltipProvider>
+            </BookingEditForm>
+            
+            <BookingDeleteForm open={isDeleteOpen} onOpenChange={setIsDeleteOpen} bookingId={booking.id} propertyId={booking.propertyId}>
+                 <TooltipProvider>
+                    <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Trash2 className="h-4 w-4" />
@@ -119,9 +128,9 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
                         </TooltipTrigger>
                         <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
                     </Tooltip>
-                </BookingDeleteForm>
-            </div>
-        </TooltipProvider>
+                </TooltipProvider>
+            </BookingDeleteForm>
+        </div>
     )
 }
 
@@ -216,7 +225,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="align-middle max-w-[150px]">
+                <TableCell className="align-middle max-w-[150px] line-clamp-2">
                    <EmailSender 
                       booking={booking} 
                       open={isEmailOpen && selectedBooking?.id === booking.id} 
@@ -226,7 +235,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                       }}
                       asChild>
                       <button 
-                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2"
+                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed"
                         onClick={() => {
                             setSelectedBooking(booking);
                             setIsEmailOpen(true);
@@ -291,12 +300,30 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                   </GuaranteeManager>
                 </TableCell>
                 <TableCell>
-                    <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Badge variant="secondary" className="cursor-default">{formatCurrency(booking.amount, booking.currency)}</Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Valor del Alquiler</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </TableCell>
                 <TableCell>
-                   <Badge variant={booking.balance > 0 ? "destructive" : "default"} className={cn(booking.balance <= 0 && 'bg-green-600 hover:bg-green-700')}>
-                        {formatCurrency(booking.balance, booking.currency)}
-                    </Badge>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Badge variant={booking.balance > 0 ? "destructive" : "default"} className={cn('cursor-default', booking.balance <= 0 && 'bg-green-600 hover:bg-green-700')}>
+                                    {formatCurrency(booking.balance, booking.currency)}
+                                </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Saldo a pagar</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </TableCell>
                 <TableCell className="text-right">
                     <BookingActions 
