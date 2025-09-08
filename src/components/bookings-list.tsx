@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -58,44 +59,71 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     
     return (
-        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 max-w-[120px] sm:grid sm:grid-cols-3 sm:max-w-[120px]">
-            {booking.notes && (
-                <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <FileText className="h-4 w-4" />
-                        <span className="sr-only">Ver Notas</span>
-                    </Button>
-                </NotesViewer>
-            )}
+        <TooltipProvider>
+            <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 max-w-[120px] sm:grid sm:grid-cols-3 sm:max-w-[120px]">
+                {booking.notes && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <FileText className="h-4 w-4" />
+                                    <span className="sr-only">Ver Notas</span>
+                                </Button>
+                            </NotesViewer>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Ver Notas</p></TooltipContent>
+                    </Tooltip>
+                )}
 
-            <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id}>
-                 <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Landmark className="h-4 w-4" />
-                    <span className="sr-only">Gestionar Pagos</span>
-                </Button>
-            </BookingPaymentsManager>
-            
-            <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id}>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Wallet className="h-4 w-4" />
-                    <span className="sr-only">Gestionar Gastos</span>
-                </Button>
-            </BookingExpensesManager>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Landmark className="h-4 w-4" />
+                                <span className="sr-only">Gestionar Pagos</span>
+                            </Button>
+                        </BookingPaymentsManager>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Wallet className="h-4 w-4" />
+                                <span className="sr-only">Gestionar Gastos</span>
+                            </Button>
+                        </BookingExpensesManager>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
+                </Tooltip>
 
-            <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Pencil className="h-4 w-4" />
-                    <span className="sr-only">Editar Reserva</span>
-                </Button>
-            </BookingEditForm>
-
-            <BookingDeleteForm open={isDeleteOpen} onOpenChange={setIsDeleteOpen} bookingId={booking.id} propertyId={booking.propertyId}>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Eliminar Reserva</span>
-                </Button>
-            </BookingDeleteForm>
-        </div>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                         <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Editar Reserva</span>
+                            </Button>
+                        </BookingEditForm>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Editar Reserva</p></TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <BookingDeleteForm open={isDeleteOpen} onOpenChange={setIsDeleteOpen} bookingId={booking.id} propertyId={booking.propertyId}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Eliminar Reserva</span>
+                            </Button>
+                        </BookingDeleteForm>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
+                </Tooltip>
+            </div>
+        </TooltipProvider>
     )
 }
 
@@ -190,7 +218,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="font-medium max-w-[150px] align-middle">
+                <TableCell className="align-middle max-w-[150px]">
                    <EmailSender 
                       booking={booking} 
                       open={isEmailOpen && selectedBooking?.id === booking.id} 
