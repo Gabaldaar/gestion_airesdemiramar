@@ -141,14 +141,15 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
   const handleOpenMailClient = () => {
     if (!booking.tenant?.email) return;
 
-    const subject = encodeURIComponent(processedSubject);
-    const body = encodeURIComponent(processedBody);
-    
-    let mailtoLink = `mailto:${booking.tenant.email}?subject=${subject}&body=${body}`;
-    
+    const params = new URLSearchParams();
+    params.append('subject', processedSubject);
+    params.append('body', processedBody);
+
     if (replyToEmail) {
-        mailtoLink += `&reply-to=${encodeURIComponent(replyToEmail)}`;
+        params.append('reply-to', replyToEmail);
     }
+    
+    const mailtoLink = `mailto:${booking.tenant.email}?${params.toString()}`;
 
     window.location.href = mailtoLink;
     onOpenChange(false);

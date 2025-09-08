@@ -146,15 +146,14 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
     const uniqueRecipients = [...new Set(recipients)];
 
     if (uniqueRecipients.length > 0) {
-        const bcc = uniqueRecipients.join(',');
-        const subject = "Miramar te espera";
-        
-        let mailtoLink = `mailto:?bcc=${bcc}&subject=${encodeURIComponent(subject)}`;
-        
+        const params = new URLSearchParams();
+        params.append('bcc', uniqueRecipients.join(','));
+        params.append('subject', "Miramar te espera");
         if (replyToEmail) {
-            mailtoLink += `&reply-to=${encodeURIComponent(replyToEmail)}`;
+            params.append('reply-to', replyToEmail);
         }
         
+        const mailtoLink = `mailto:?${params.toString()}`;
         window.location.href = mailtoLink;
     } else {
         toast({
