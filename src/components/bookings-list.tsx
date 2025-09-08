@@ -190,7 +190,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="font-medium max-w-[150px] truncate">
+                <TableCell className="font-medium max-w-[200px]">
                    <EmailSender 
                       booking={booking} 
                       open={isEmailOpen && selectedBooking?.id === booking.id} 
