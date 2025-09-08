@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, ReactNode } from 'react';
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Landmark, Mail } from 'lucide-react';
-import { getPaymentsByBookingId, Payment } from '@/lib/data';
+import { getPaymentsByBookingId, Payment, getBookingWithDetails } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -27,11 +28,11 @@ import { PaymentEditForm } from './payment-edit-form';
 import { PaymentDeleteForm } from './payment-delete-form';
 import { useToast } from '@/components/ui/use-toast';
 import { EmailSender } from './email-sender';
-import { getBookingById, BookingWithDetails } from '@/lib/data';
+import { BookingWithDetails } from '@/lib/data';
 
 interface BookingPaymentsManagerProps {
     bookingId: string;
-    children?: ReactNode;
+    children: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
 }
@@ -42,19 +43,19 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
   const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [isEmailSenderOpen, setIsEmailSenderOpen] = useState(false);
+  const [selectedPaymentForEmail, setSelectedPaymentForEmail] = useState<Payment | undefined>(undefined);
   
-  const fetchPayments = useCallback(async () => {
+  const fetchPaymentsAndBooking = useCallback(async () => {
     if (!isOpen) return;
     setIsLoading(true);
     try {
         const [fetchedPayments, fetchedBooking] = await Promise.all([
             getPaymentsByBookingId(bookingId),
-            getBookingById(bookingId)
+            getBookingWithDetails(bookingId)
         ]);
         setPayments(fetchedPayments);
-        if(fetchedBooking) {
-            setBooking(fetchedBooking as BookingWithDetails);
-        }
+        setBooking(fetchedBooking);
     } catch (error) {
         console.error("Error fetching payments or booking:", error);
         toast({
@@ -69,12 +70,17 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
 
 
   useEffect(() => {
-      fetchPayments();
-  }, [fetchPayments]);
+      fetchPaymentsAndBooking();
+  }, [fetchPaymentsAndBooking]);
 
   const handlePaymentAction = useCallback(() => {
-    fetchPayments(); // Re-fetch payments after an action
-  }, [fetchPayments]);
+    fetchPaymentsAndBooking(); // Re-fetch payments after an action
+  }, [fetchPaymentsAndBooking]);
+
+  const openEmailSender = (payment: Payment) => {
+    setSelectedPaymentForEmail(payment);
+    setIsEmailSenderOpen(true);
+  };
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
@@ -100,8 +106,8 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
 
   return (
     <>
-      {children}
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        {children}
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Pagos de la Reserva</DialogTitle>
@@ -134,12 +140,10 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
                     <TableCell className="text-right">{formatCurrency(payment.amount, 'USD')}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {booking && <EmailSender booking={booking} payment={payment}>
-                          <Button variant="ghost" size="icon" disabled={!booking.tenant?.email}>
-                              <Mail className="h-4 w-4" />
-                              <span className="sr-only">Enviar confirmación de pago</span>
-                          </Button>
-                        </EmailSender>}
+                        <Button variant="ghost" size="icon" onClick={() => openEmailSender(payment)} disabled={!booking?.tenant?.email}>
+                            <Mail className="h-4 w-4" />
+                            <span className="sr-only">Enviar confirmación de pago</span>
+                        </Button>
                         <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
                         <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handlePaymentAction} />
                       </div>
@@ -158,6 +162,17 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
           )}
         </DialogContent>
       </Dialog>
+      {booking && (
+          <EmailSender 
+            booking={booking} 
+            payment={selectedPaymentForEmail}
+            isOpen={isEmailSenderOpen}
+            onOpenChange={setIsEmailSenderOpen}
+          >
+            {/* The trigger is now handled programmatically, so no child needed here */}
+            <></>
+          </EmailSender>
+      )}
     </>
   );
 }

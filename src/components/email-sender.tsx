@@ -9,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,14 +53,15 @@ interface EmailSenderProps {
     booking: BookingWithDetails;
     payment?: Payment;
     children: ReactNode;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
-export function EmailSender({ booking, payment, children }: EmailSenderProps) {
+export function EmailSender({ booking, payment, children, isOpen, onOpenChange }: EmailSenderProps) {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [processedBody, setProcessedBody] = useState('');
   const [processedSubject, setProcessedSubject] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
   const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -141,23 +141,22 @@ export function EmailSender({ booking, payment, children }: EmailSenderProps) {
   const handleOpenMailClient = () => {
     if (!booking.tenant?.email) return;
 
-    const params = new URLSearchParams();
-    params.append('subject', processedSubject);
-    params.append('body', processedBody);
+    const subject = encodeURIComponent(processedSubject);
+    const body = encodeURIComponent(processedBody);
+    
+    let mailtoLink = `mailto:${booking.tenant.email}?subject=${subject}&body=${body}`;
+    
     if (replyToEmail) {
-        params.append('reply-to', replyToEmail);
+        mailtoLink += `&reply-to=${encodeURIComponent(replyToEmail)}`;
     }
 
-    const mailtoLink = `mailto:${booking.tenant.email}?${params.toString()}`;
     window.location.href = mailtoLink;
-    setIsOpen(false);
+    onOpenChange(false);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      {children}
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Preparar Email para {booking.tenant?.name}</DialogTitle>
@@ -201,7 +200,7 @@ export function EmailSender({ booking, payment, children }: EmailSenderProps) {
         </div>
 
         <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button onClick={handleOpenMailClient} disabled={!selectedTemplateId}>
                 <Send className="mr-2 h-4 w-4" />
                 Abrir en Cliente de Correo
