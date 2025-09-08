@@ -141,7 +141,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold align-middle", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="align-middle max-w-[150px]">
+                <TableCell className="align-middle max-w-[150px] leading-tight">
                     <EmailSender 
                       booking={booking} 
                       open={isEmailOpen && selectedBooking?.id === booking.id} 
@@ -242,8 +242,8 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     </TooltipProvider>
                 </TableCell>
                 <TableCell className="align-middle text-right">
-                    <div className="flex flex-wrap items-center justify-end gap-x-1 gap-y-1 sm:grid sm:grid-cols-3 sm:max-w-[120px]">
-                       <NotesViewer booking={booking} asChild>
+                    <div className="grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
+                       <NotesViewer booking={booking}>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -257,7 +257,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                             </TooltipProvider>
                         </NotesViewer>
                         
-                        <BookingPaymentsManager bookingId={booking.id} asChild>
+                        <BookingPaymentsManager bookingId={booking.id}>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -271,7 +271,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                             </TooltipProvider>
                         </BookingPaymentsManager>
                         
-                        <BookingExpensesManager bookingId={booking.id} asChild>
+                        <BookingExpensesManager bookingId={booking.id}>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -285,7 +285,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                             </TooltipProvider>
                         </BookingExpensesManager>
 
-                        <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]} asChild>
+                        <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -299,7 +299,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                             </TooltipProvider>
                         </BookingEditForm>
                         
-                        <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} asChild>
+                        <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId}>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
