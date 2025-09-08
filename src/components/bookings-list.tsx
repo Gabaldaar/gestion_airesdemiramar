@@ -133,10 +133,12 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
                 <TableCell className="font-medium">{booking.tenant?.name || 'N/A'}</TableCell>
                 <TableCell>
-                    <div>
-                        <span>{formatDate(booking.startDate)} → {formatDate(booking.endDate)}</span>
-                        <span className="block text-xs text-muted-foreground">{nights} noches</span>
+                    <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
+                        <span>{formatDate(booking.startDate)}</span>
+                        <span className="hidden md:inline">→</span>
+                        <span>{formatDate(booking.endDate)}</span>
                     </div>
+                    <span className="block text-xs text-muted-foreground">{nights} noches</span>
                 </TableCell>
                 <TableCell>
                   <TooltipProvider>
