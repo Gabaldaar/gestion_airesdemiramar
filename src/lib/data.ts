@@ -667,7 +667,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
       const incomeInUsdFromArsBookings = propertyBookings
           .filter(b => b.currency === 'ARS')
-          .reduce((acc, b) => acc + (b.amount / (b.exchangeRate || avgExchangeRate)), 0);
+          .reduce((acc, b) => acc + (b.amount / (b.exchangeRate || avgExchangeRate || 1)), 0);
 
       const totalIncome = incomeInUsdFromUsdBookings + incomeInUsdFromArsBookings;
 
@@ -676,11 +676,11 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
       const totalPayments = propertyPayments.reduce((acc, p) => acc + p.amount, 0);
 
       const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id && isWithinDateRange(e.date));
-      const totalPropertyExpensesInUSD = propertyExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / avgExchangeRate)), 0);
+      const totalPropertyExpensesInUSD = propertyExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / (e.exchangeRate || avgExchangeRate || 1))), 0);
 
       const relevantBookingIds = new Set(allBookings.filter(b => b.propertyId === property.id).map(b => b.id));
       const relevantBookingExpenses = allBookingExpenses.filter(e => relevantBookingIds.has(e.bookingId) && isWithinDateRange(e.date));
-      const totalBookingExpensesInUSD = relevantBookingExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / avgExchangeRate)), 0);
+      const totalBookingExpensesInUSD = relevantBookingExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / (e.exchangeRate || avgExchangeRate || 1))), 0);
       
       const netResult = totalPayments - totalPropertyExpensesInUSD - totalBookingExpensesInUSD;
       
@@ -734,7 +734,7 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
             ...expense,
             type: 'Propiedad',
             amountARS: expense.amount,
-            amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate)),
+            amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate || 1)),
             propertyName: propertiesMap.get(expense.propertyId) || 'N/A',
             categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
         });
@@ -747,7 +747,7 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
                 ...expense,
                 type: 'Reserva',
                 amountARS: expense.amount,
-                amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate)),
+                amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate || 1)),
                 propertyName: propertiesMap.get(booking.propertyId) || 'N/A',
                 tenantName: tenantsMap.get(booking.tenantId) || 'N_A',
                 categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
