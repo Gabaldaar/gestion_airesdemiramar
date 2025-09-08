@@ -3,12 +3,12 @@
 import { useEffect, useState, useMemo, ReactNode } from 'react';
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -144,25 +144,23 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
     const params: string[] = [];
 
     if (processedSubject) {
-        params.push(`subject=${encodeURIComponent(processedSubject)}`);
+      params.push(`subject=${encodeURIComponent(processedSubject)}`);
     }
     if (processedBody) {
-        // Encode line breaks as %0A
-        const encodedBody = encodeURIComponent(processedBody).replace(/%20/g, ' ');
-        params.push(`body=${encodedBody.replace(/\n/g, '%0A')}`);
+      params.push(`body=${encodeURIComponent(processedBody)}`);
     }
     if (replyToEmail) {
-        params.push(`reply-to=${encodeURIComponent(replyToEmail)}`);
+      params.push(`reply-to=${encodeURIComponent(replyToEmail)}`);
     }
 
     let mailtoLink = `mailto:${booking.tenant.email}`;
     if (params.length > 0) {
-        mailtoLink += `?${params.join('&')}`;
+      mailtoLink += `?${params.join('&')}`;
     }
 
     window.location.href = mailtoLink;
     onOpenChange(false);
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
