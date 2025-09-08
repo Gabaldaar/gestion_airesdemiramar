@@ -21,7 +21,8 @@ const missingConfig = configKeys.filter(key => !firebaseConfig[key]);
 if (missingConfig.length > 0) {
   // Do not throw an error for measurementId as it is often optional
   if(!(missingConfig.length === 1 && missingConfig[0] === 'measurementId')) {
-    throw new Error(`Missing Firebase config environment variables: ${missingConfig.join(", ")}. Please set them in your deployment environment.`);
+    // Replaced throw new Error with console.warn to prevent app crash during build.
+    console.warn(`Missing Firebase config environment variables: ${missingConfig.join(", ")}. Please set them in your deployment environment.`);
   }
 }
 
