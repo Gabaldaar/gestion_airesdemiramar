@@ -58,7 +58,7 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     
     return (
-        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 max-w-[120px]">
+        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 max-w-[120px] sm:grid sm:grid-cols-3 sm:max-w-[120px]">
             {booking.notes && (
                 <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -190,7 +190,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="font-medium max-w-[200px]">
+                <TableCell className="font-medium max-w-[200px] line-clamp-2">
                    <EmailSender 
                       booking={booking} 
                       open={isEmailOpen && selectedBooking?.id === booking.id} 
@@ -267,8 +267,10 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                 <TableCell>
                     <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
                 </TableCell>
-                <TableCell className={`font-bold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                    {formatCurrency(booking.balance, booking.currency)}
+                <TableCell>
+                   <Badge variant={booking.balance > 0 ? "destructive" : "default"} className={cn(booking.balance <= 0 && 'bg-green-600 hover:bg-green-700')}>
+                        {formatCurrency(booking.balance, booking.currency)}
+                    </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                     <BookingActions 
