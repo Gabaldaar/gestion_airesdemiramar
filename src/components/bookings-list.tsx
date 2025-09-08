@@ -1,6 +1,5 @@
 
 
-import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -15,9 +14,8 @@ import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { GuaranteeManager } from "./guarantee-manager";
-import { EmailSender } from "./email-sender";
 import { BookingActionsMenu } from "./booking-actions-menu";
+import Link from "next/link";
 
 
 interface BookingsListProps {
@@ -131,25 +129,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               return (
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-                <TableCell className="font-medium">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                         <EmailSender booking={booking} asChild>
-                            <button 
-                              className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
-                              disabled={!booking.tenant?.email}
-                            >
-                                {booking.tenant?.name || 'N/A'}
-                            </button>
-                          </EmailSender>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Enviar Email</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableCell>
+                <TableCell className="font-medium">{booking.tenant?.name || 'N/A'}</TableCell>
                 <TableCell>
                     <div>
                         <span>{formatDate(booking.startDate)} → {formatDate(booking.endDate)}</span>
@@ -177,15 +157,13 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                      <Tooltip>
                       <TooltipTrigger asChild>
                         <div>
-                            <GuaranteeManager booking={booking} asChild>
-                                  <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
-                                      {guaranteeInfo.text}
-                                  </Badge>
-                            </GuaranteeManager>
+                          <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
+                              {guaranteeInfo.text}
+                          </Badge>
                         </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                           <p>Gestionar Garantía</p>
+                           <p>El estado de la garantía se gestiona desde el menú de acciones.</p>
                         </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
