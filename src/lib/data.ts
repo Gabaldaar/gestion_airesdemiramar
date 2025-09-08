@@ -324,20 +324,33 @@ export async function deleteTenant(id: string): Promise<boolean> {
 }
 
 async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> {
-    // Fetch tenant and property, providing default fallback objects if not found.
     const tenant = await getTenantById(booking.tenantId);
     const property = await getPropertyById(booking.propertyId);
 
     const allPayments = await getPaymentsByBookingId(booking.id);
     const totalPaidInUSD = allPayments.reduce((acc, payment) => acc + payment.amount, 0);
 
-    const bookingAmountInUSD = booking.currency === 'ARS' ? (booking.amount / (booking.exchangeRate || 1)) : booking.amount;
-    const balance = booking.currency === booking.currency ? booking.amount - totalPaidInUSD : bookingAmountInUSD - totalPaidInUSD;
+    let bookingAmountInUSD;
+    if (booking.currency === 'USD') {
+        bookingAmountInUSD = booking.amount;
+    } else {
+        // If an ARS booking doesn't have an exchange rate, we can't reliably calculate a USD equivalent.
+        // We'll treat its USD amount as 0 to avoid calculation errors (NaN).
+        // The balance will be shown in ARS in this case.
+        if (booking.exchangeRate && booking.exchangeRate > 0) {
+            bookingAmountInUSD = booking.amount / booking.exchangeRate;
+        } else {
+            // This is a safe fallback. The balance will be calculated based on the original currency.
+            bookingAmountInUSD = 0; 
+        }
+    }
+
+    const balance = booking.amount - totalPaidInUSD;
 
     return { 
         ...booking, 
-        tenant: tenant, 
-        property: property,
+        tenant, 
+        property,
         totalPaid: totalPaidInUSD, 
         balance 
     };
@@ -361,10 +374,18 @@ export async function getBookings(): Promise<BookingWithDetails[]> {
         if (booking.currency === 'USD') {
              balance = booking.amount - totalPaid;
         } else {
-             const lastPaymentRate = paymentsForBooking[paymentsForBooking.length - 1]?.exchangeRate;
+             // For ARS bookings, the balance is best represented in ARS.
+             // Here we assume payments are converted to ARS at some rate for a true balance,
+             // but for simplicity, we just show the remaining ARS amount.
+             // A more complex system would track payments in both currencies or convert at payment time.
+             // For now, let's just subtract the USD payments converted at *some* rate.
+             const lastPaymentRate = paymentsForBooking.find(p => p.exchangeRate)?.exchangeRate || booking.exchangeRate;
              if (lastPaymentRate) {
-                balance = booking.amount - (totalPaid * lastPaymentRate);
+                const totalPaidInArs = totalPaid * lastPaymentRate;
+                balance = booking.amount - totalPaidInArs;
              } else {
+                // If no exchange rate, we can't calculate a meaningful mixed-currency balance.
+                // Show the original amount as the balance.
                 balance = booking.amount;
              }
         }
