@@ -147,7 +147,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
                 <Label>Desde</Label>
                 <DatePicker date={fromDate} onDateSelect={setFromDate} placeholder="Desde" />
@@ -157,11 +157,11 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
                 <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Hasta" />
             </div>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="grid gap-2">
               <Label>Propiedad</Label>
               <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger>
                       <SelectValue placeholder="Propiedad" />
                   </SelectTrigger>
                   <SelectContent>
@@ -175,7 +175,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
           <div className="grid gap-2">
               <Label>Estado</Label>
               <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger>
                       <SelectValue placeholder="Estado" />
                   </SelectTrigger>
                   <SelectContent>
@@ -190,7 +190,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
           <div className="grid gap-2">
               <Label>Contrato</Label>
               <Select value={contractStatusFilter} onValueChange={(value) => setContractStatusFilter(value as ContractStatusFilter)}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger>
                       <SelectValue placeholder="Contrato" />
                   </SelectTrigger>
                   <SelectContent>
@@ -202,18 +202,18 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
                   </SelectContent>
               </Select>
           </div>
-          <div className="flex items-end gap-2 ml-auto">
-              <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
-              <Button onClick={handleDownloadCSV}>
+        </div>
+         <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
+              <Button variant="outline" onClick={handleClearFilters} className="w-full sm:w-auto">Limpiar Filtros</Button>
+              <Button onClick={handleDownloadCSV} className="w-full sm:w-auto">
                 <Download className="mr-2 h-4 w-4"/>
                 Descargar CSV
               </Button>
-              <Button onClick={handleEmailAll}>
+              <Button onClick={handleEmailAll} className="w-full sm:w-auto">
                 <Mail className="mr-2 h-4 w-4"/>
                 Email a Todos
               </Button>
           </div>
-        </div>
       </div>
       <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} showProperty={true} />
     </div>
