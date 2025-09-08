@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -34,21 +34,30 @@ const formatDate = (dateString: string | null | undefined) => {
 
 const formatCurrency = (amount: number | null | undefined, currency: 'USD' | 'ARS' = 'USD') => {
     if (amount === null || typeof amount === 'undefined') return 'N/A';
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(amount);
+    if (currency === 'USD') {
+        return `USD ${new Intl.NumberFormat('es-AR', {
+           style: 'decimal',
+           minimumFractionDigits: 2,
+           maximumFractionDigits: 2,
+       }).format(amount)}`;
+   }
+   return new Intl.NumberFormat('es-AR', {
+       style: 'currency',
+       currency: currency,
+       minimumFractionDigits: 2,
+       maximumFractionDigits: 2,
+   }).format(amount);
 };
 
 
 interface EmailSenderProps {
     booking: BookingWithDetails;
     payment?: Payment;
+    children?: ReactNode;
+    asChild?: boolean;
 }
 
-export function EmailSender({ booking, payment }: EmailSenderProps) {
+export function EmailSender({ booking, payment, children, asChild }: EmailSenderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -134,11 +143,13 @@ export function EmailSender({ booking, payment }: EmailSenderProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" disabled={!booking.tenant?.email}>
-          <Mail className="h-4 w-4" />
-          <span className="sr-only">Enviar Email</span>
-        </Button>
+      <DialogTrigger asChild={asChild}>
+        {children ?? (
+            <Button variant="ghost" size="icon" disabled={!booking.tenant?.email}>
+              <Mail className="h-4 w-4" />
+              <span className="sr-only">Enviar Email</span>
+            </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>

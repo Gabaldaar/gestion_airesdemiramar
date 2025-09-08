@@ -136,16 +136,14 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableRow key={booking.id}>
                 {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
                 <TableCell className="font-medium">
-                    {booking.tenant?.email ? (
-                        <a 
-                            href={`mailto:${booking.tenant.email}?subject=${encodeURIComponent(`Tu reserva en Miramar - ${booking.property?.name} - Check-in ${format(new Date(booking.startDate), 'dd/MM/yyyy')}`)}`}
-                            className="text-primary hover:underline"
-                        >
-                            {booking.tenant?.name || 'N/A'}
-                        </a>
-                    ) : (
-                        booking.tenant?.name || 'N/A'
-                    )}
+                  <EmailSender booking={booking} asChild>
+                      <button 
+                        className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
+                        disabled={!booking.tenant?.email}
+                      >
+                          {booking.tenant?.name || 'N/A'}
+                      </button>
+                  </EmailSender>
                 </TableCell>
                 <TableCell>{formatDate(booking.startDate)}</TableCell>
                 <TableCell>{formatDate(booking.endDate)}</TableCell>
@@ -181,17 +179,6 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                                 </Tooltip>
                             )}
                             
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div>
-                                        <EmailSender booking={booking} />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Enviar Email</p>
-                                </TooltipContent>
-                            </Tooltip>
-
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button asChild variant="ghost" size="icon">
