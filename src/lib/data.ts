@@ -800,11 +800,15 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
 
 export async function getEmailSettings(): Promise<EmailSettings | null> {
     const docRef = doc(db, 'settings', 'email');
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return processDoc(docSnap) as EmailSettings;
+    let docSnap = await getDoc(docRef);
+    
+    // If the document doesn't exist, create it with default empty values
+    if (!docSnap.exists()) {
+        await setDoc(docRef, { replyToEmail: '' });
+        docSnap = await getDoc(docRef); // Re-fetch the newly created document
     }
-    return null; // No settings found
+
+    return processDoc(docSnap) as EmailSettings;
 }
 
 export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<EmailSettings> {
