@@ -117,7 +117,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableHead>Garantía</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Saldo</TableHead>
-              <TableHead>
+              <TableHead className="text-right">
                 <span className="sr-only">Acciones</span>
               </TableHead>
             </TableRow>
