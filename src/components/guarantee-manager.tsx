@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useRef, useTransition } from 'react';
+import { useEffect, useState, useRef, useTransition, ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -47,7 +47,14 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
     );
 }
 
-export function GuaranteeManager({ booking }: { booking: Booking }) {
+interface GuaranteeManagerProps {
+    booking: Booking;
+    children?: ReactNode;
+    asChild?: boolean;
+}
+
+
+export function GuaranteeManager({ booking, children, asChild }: GuaranteeManagerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -92,6 +99,7 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
   
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!validateForm()) return;
     const formData = new FormData(event.currentTarget);
     startTransition(async () => {
         const result = await updateBooking(initialState, formData);
@@ -108,11 +116,13 @@ export function GuaranteeManager({ booking }: { booking: Booking }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Shield className="h-4 w-4" />
-          <span className="sr-only">Gestionar Garantía</span>
-        </Button>
+       <DialogTrigger asChild={asChild}>
+         {children ?? (
+            <Button variant="ghost" size="icon">
+              <Shield className="h-4 w-4" />
+              <span className="sr-only">Gestionar Garantía</span>
+            </Button>
+         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>

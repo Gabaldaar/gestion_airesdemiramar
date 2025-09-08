@@ -20,7 +20,7 @@ import { BookingPaymentsManager } from "./booking-payments-manager";
 import { NotesViewer } from "./notes-viewer";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { FileText, NotebookPen, Shield, Mail } from "lucide-react";
+import { FileText, NotebookPen } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { GuaranteeManager } from "./guarantee-manager";
 import { EmailSender } from "./email-sender";
@@ -153,9 +153,11 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     </Badge>
                 </TableCell>
                 <TableCell>
-                    <Badge className={guaranteeInfo.className}>
-                        {guaranteeInfo.text}
-                    </Badge>
+                    <GuaranteeManager booking={booking} asChild>
+                        <Badge className={cn("cursor-pointer", guaranteeInfo.className)}>
+                            {guaranteeInfo.text}
+                        </Badge>
+                    </GuaranteeManager>
                 </TableCell>
                 <TableCell>
                     <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
@@ -218,17 +220,6 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div>
-                                        <GuaranteeManager booking={booking} />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Gestionar Garantía</p>
-                                </TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div>
                                         <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={bookings} />
                                     </div>
                                 </TooltipTrigger>
@@ -257,5 +248,3 @@ export default function BookingsList({ bookings, properties, tenants, showProper
     </div>
   );
 }
-
-    
