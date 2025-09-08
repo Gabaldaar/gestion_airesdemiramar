@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useActionState, useState, useEffect, useRef, ReactNode } from 'react';
@@ -80,18 +78,10 @@ export function BookingDeleteForm({ bookingId, propertyId, open, onOpenChange, c
     }
   }, [isOpen]);
 
-  const trigger = children ?? (
-     <Button variant="ghost" size="icon">
-        <Trash2 className="h-4 w-4" />
-        <span className="sr-only">Borrar Reserva</span>
-    </Button>
-  );
-
-
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
-        {children || trigger}
+        {children}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <form action={formAction} ref={formRef}>

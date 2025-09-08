@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import {
@@ -62,66 +60,66 @@ function BookingActions({ booking, properties, tenants }: { booking: BookingWith
         <TooltipProvider>
             <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 max-w-[120px] sm:grid sm:grid-cols-3 sm:max-w-[120px]">
                 {booking.notes && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
+                    <NotesViewer open={isNotesOpen} onOpenChange={setIsNotesOpen} notes={booking.notes} title={`Notas sobre la reserva`}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
                                     <FileText className="h-4 w-4" />
                                     <span className="sr-only">Ver Notas</span>
                                 </Button>
-                            </NotesViewer>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Ver Notas</p></TooltipContent>
-                    </Tooltip>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Ver Notas</p></TooltipContent>
+                        </Tooltip>
+                    </NotesViewer>
                 )}
 
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id}>
+                <BookingPaymentsManager open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} bookingId={booking.id}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Landmark className="h-4 w-4" />
                                 <span className="sr-only">Gestionar Pagos</span>
                             </Button>
-                        </BookingPaymentsManager>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
-                </Tooltip>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
+                    </Tooltip>
+                </BookingPaymentsManager>
                 
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id}>
+                <BookingExpensesManager open={isExpensesOpen} onOpenChange={setIsExpensesOpen} bookingId={booking.id}>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Wallet className="h-4 w-4" />
                                 <span className="sr-only">Gestionar Gastos</span>
                             </Button>
-                        </BookingExpensesManager>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
-                </Tooltip>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
+                    </Tooltip>
+                </BookingExpensesManager>
 
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                         <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
+                <BookingEditForm open={isEditOpen} onOpenChange={setIsEditOpen} booking={booking} tenants={tenants} properties={properties} allBookings={[]}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Pencil className="h-4 w-4" />
                                 <span className="sr-only">Editar Reserva</span>
                             </Button>
-                        </BookingEditForm>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Editar Reserva</p></TooltipContent>
-                </Tooltip>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Editar Reserva</p></TooltipContent>
+                    </Tooltip>
+                </BookingEditForm>
                 
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <BookingDeleteForm open={isDeleteOpen} onOpenChange={setIsDeleteOpen} bookingId={booking.id} propertyId={booking.propertyId}>
+                <BookingDeleteForm open={isDeleteOpen} onOpenChange={setIsDeleteOpen} bookingId={booking.id} propertyId={booking.propertyId}>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Eliminar Reserva</span>
                             </Button>
-                        </BookingDeleteForm>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
-                </Tooltip>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
+                    </Tooltip>
+                </BookingDeleteForm>
             </div>
         </TooltipProvider>
     )

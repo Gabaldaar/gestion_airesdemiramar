@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useMemo, ReactNode } from 'react';
@@ -136,19 +135,11 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, ope
     return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
-  const trigger = children ?? (
-    <Button variant="ghost" size="icon">
-        <Pencil className="h-4 w-4" />
-        <span className="sr-only">Editar Reserva</span>
-    </Button>
-  );
-
-
   return (
     <>
         <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; setIsOpen(open)}}>
         <DialogTrigger asChild>
-            {children || trigger}
+            {children}
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>

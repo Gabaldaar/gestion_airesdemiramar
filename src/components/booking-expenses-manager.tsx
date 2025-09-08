@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useState, useCallback, ReactNode } from 'react';
@@ -91,17 +89,10 @@ export function BookingExpensesManager({ bookingId, open, onOpenChange, children
 
   const totalAmount = expenses.reduce((acc, expense) => acc + expense.amount, 0);
 
-  const trigger = children ?? (
-      <Button variant="ghost" size="icon">
-          <Wallet className="h-4 w-4" />
-          <span className="sr-only">Gestionar Gastos de Reserva</span>
-      </Button>
-  );
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        {children || trigger}
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>

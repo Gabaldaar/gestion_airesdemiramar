@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ReactNode, useState } from 'react';
@@ -11,7 +10,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
 
 interface NotesViewerProps {
   notes: string | null | undefined;
@@ -39,17 +37,10 @@ export function NotesViewer({ notes, title, open, onOpenChange, children }: Note
     return null;
   }
   
-  const trigger = children ?? (
-     <Button variant="ghost" size="icon">
-        <FileText className="h-4 w-4" />
-        <span className="sr-only">Ver Notas</span>
-    </Button>
-  );
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        {trigger}
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

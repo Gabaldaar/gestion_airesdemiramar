@@ -110,18 +110,11 @@ export function BookingPaymentsManager({ bookingId, open, onOpenChange, children
   }
 
   const totalAmount = payments.reduce((acc, payment) => acc + payment.amount, 0);
-  
-  const trigger = children ?? (
-      <Button variant="ghost" size="icon">
-          <Landmark className="h-4 w-4" />
-          <span className="sr-only">Gestionar Pagos</span>
-      </Button>
-  );
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
        <DialogTrigger asChild>
-        {children || trigger}
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
