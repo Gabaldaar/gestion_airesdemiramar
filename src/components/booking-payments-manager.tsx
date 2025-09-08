@@ -169,10 +169,7 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
             payment={selectedPaymentForEmail}
             isOpen={isEmailSenderOpen}
             onOpenChange={setIsEmailSenderOpen}
-          >
-            {/* The trigger is now handled programmatically, so no child needed here */}
-            <></>
-          </EmailSender>
+          />
       )}
     </>
   );
