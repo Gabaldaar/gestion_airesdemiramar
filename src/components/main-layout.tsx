@@ -2,9 +2,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -15,6 +15,15 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Logo from '@/assets/logo.png';
 import { Toaster } from './ui/toaster';
+import { useAuth } from './auth-provider';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 
 const navItems = [
@@ -55,12 +64,50 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   );
 }
 
+function UserMenu() {
+    const { user, signOut } = useAuth();
+    const router = useRouter();
+
+    const handleSignOut = async () => {
+        await signOut();
+        router.push('/login');
+    };
+
+    if (!user) return null;
+    
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="rounded-full">
+                    {user.photoURL ? (
+                        <Image
+                            src={user.photoURL}
+                            alt={user.displayName || "User Avatar"}
+                            width={36}
+                            height={36}
+                            className="rounded-full"
+                        />
+                    ) : (
+                         <Users className="h-5 w-5" />
+                    )}
+                    <span className="sr-only">Toggle user menu</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{user.displayName || 'Mi Cuenta'}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Cerrar Sesión</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const pathname = usePathname();
-  if (pathname === '/contract') {
-    return <>{children}</>;
-  }
 
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
@@ -100,7 +147,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </SheetContent>
             </Sheet>
             <div className='ml-auto'>
-                {/* User menu can go here */}
+                <UserMenu />
             </div>
             </header>
             <main className="flex flex-1 flex-col gap-4 p-2 md:p-4 lg:gap-6 lg:p-6">

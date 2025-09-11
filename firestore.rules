@@ -2,9 +2,6 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Solo permite que los usuarios autenticados puedan leer y escribir en la base de datos.
-    // Esta es una regla de seguridad básica. Para un control más granular,
-    // se pueden definir reglas por cada colección (ej. match /bookings/{bookingId}).
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
