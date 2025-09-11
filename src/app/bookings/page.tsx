@@ -12,6 +12,7 @@ import { getBookings, getProperties, getTenants, BookingWithDetails, Property, T
 import BookingsClient from "@/components/bookings-client";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface BookingsData {
     allBookings: BookingWithDetails[];
@@ -19,17 +20,12 @@ interface BookingsData {
     tenants: Tenant[];
 }
 
-export default function BookingsPage({
-  searchParams,
-}: {
-  searchParams?: {
-    tenantId?: string;
-  };
-}) {
+export default function BookingsPage() {
   const { user } = useAuth();
   const [data, setData] = useState<BookingsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const tenantId = searchParams?.tenantId;
+  const searchParams = useSearchParams();
+  const tenantId = searchParams.get('tenantId') || undefined;
 
   useEffect(() => {
     if (user) {
