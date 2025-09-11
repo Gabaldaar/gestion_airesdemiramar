@@ -1,33 +1,44 @@
 
-import { getFinancialSummaryByProperty } from "@/lib/data";
+'use client';
+
+import { getFinancialSummaryByProperty, FinancialSummaryByCurrency } from "@/lib/data";
 import ReportsClient from "@/components/reports-client";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
 
-function ReportsContent({ from, to }: { from?: string; to?: string }) {
-  // This is now a temporary wrapper to show how data fetching works.
-  // The actual state management and filtering logic will be in ReportsClient.
-  return <Suspense fallback={<div>Cargando...</div>}><ReportsPageContent from={from} to={to} /></Suspense>;
-}
+function ReportsPageContent() {
+  const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from') || undefined;
+  const to = searchParams.get('to') || undefined;
 
+  const [summary, setSummary] = useState<FinancialSummaryByCurrency | null>(null);
+  const [loading, setLoading] = useState(true);
 
-async function ReportsPageContent({ from, to }: { from?: string; to?: string }) {
-  const summary = await getFinancialSummaryByProperty({ startDate: from, endDate: to });
+  useEffect(() => {
+    if (user) {
+        setLoading(true);
+        getFinancialSummaryByProperty({ startDate: from, endDate: to }).then(summaryData => {
+            setSummary(summaryData);
+            setLoading(false);
+        });
+    }
+  }, [user, from, to]);
+
+  // Pass loading state to the client
+  if (loading || !summary) {
+      return <p>Cargando reporte...</p>
+  }
+  
   return <ReportsClient summary={summary} />;
 }
 
 
-export default function ReportsPage({
-  searchParams,
-}: {
-  searchParams?: {
-    from?: string;
-    to?: string;
-  };
-}) {
-  const from = searchParams?.from;
-  const to = searchParams?.to;
-
+export default function ReportsPage() {
   return (
-    <ReportsContent from={from} to={to} />
+    <Suspense fallback={<div>Cargando...</div>}>
+        <ReportsPageContent />
+    </Suspense>
     )
 }

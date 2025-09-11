@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -7,18 +9,44 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProperties, Property, getExpenseCategories, getEmailSettings } from "@/lib/data";
+import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings } from "@/lib/data";
 import { PropertyEditForm } from "@/components/property-edit-form";
 import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
 import { EmailSettingsManager } from "@/components/email-settings-manager";
+import { useAuth } from "@/components/auth-provider";
+import { useEffect, useState } from "react";
 
-export default async function SettingsPage() {
-  const [properties, expenseCategories, emailSettings] = await Promise.all([
-      getProperties(),
-      getExpenseCategories(),
-      getEmailSettings(),
-  ]);
+interface SettingsData {
+    properties: Property[];
+    expenseCategories: ExpenseCategory[];
+    emailSettings: EmailSettings | null;
+}
+
+export default function SettingsPage() {
+    const { user } = useAuth();
+    const [data, setData] = useState<SettingsData | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            setLoading(true);
+            Promise.all([
+                getProperties(),
+                getExpenseCategories(),
+                getEmailSettings(),
+            ]).then(([properties, expenseCategories, emailSettings]) => {
+                setData({ properties, expenseCategories, emailSettings });
+                setLoading(false);
+            });
+        }
+    }, [user]);
+
+    if (loading || !data) {
+        return <p>Cargando configuración...</p>
+    }
+    
+    const { properties, expenseCategories, emailSettings } = data;
 
   return (
     <Tabs defaultValue="properties" className="space-y-4">

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -27,8 +28,10 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
   const from = searchParams.get('from') || undefined;
   const to = searchParams.get('to') || undefined;
 
+  // Since we fetch data in the parent, this component is now just for presentation.
+  // The date change logic will trigger a re-render in the parent component.
   const handleDateChange = (newFrom?: string, newTo?: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     if (newFrom) {
       params.set('from', newFrom);
     } else {
@@ -54,8 +57,12 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
     router.push(pathname);
   };
 
-  const hasArsData = summary.ars.some(s => s.totalIncome > 0 || s.totalPropertyExpenses > 0 || s.totalBookingExpenses > 0);
-  const hasUsdData = summary.usd.some(s => s.totalIncome > 0);
+  const hasArsData = summary.ars.some(s => 
+    s.totalIncome !== 0 || s.totalPayments !== 0 || s.balance !== 0 || s.totalPropertyExpenses !== 0 || s.totalBookingExpenses !== 0 || s.netResult !== 0
+  );
+  const hasUsdData = summary.usd.some(s => 
+    s.totalIncome !== 0 || s.totalPayments !== 0 || s.balance !== 0 || s.totalPropertyExpenses !== 0 || s.totalBookingExpenses !== 0 || s.netResult !== 0
+  );
 
   return (
     <div className="space-y-4">
@@ -67,8 +74,8 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <DatePicker date={from ? new Date(from) : undefined} onDateSelect={handleFromDateSelect} placeholder="Desde"/>
-            <DatePicker date={to ? new Date(to) : undefined} onDateSelect={handleToDateSelect} placeholder="Hasta"/>
+            <DatePicker date={from ? new Date(from.replace(/-/g, '/')) : undefined} onDateSelect={handleFromDateSelect} placeholder="Desde"/>
+            <DatePicker date={to ? new Date(to.replace(/-/g, '/')) : undefined} onDateSelect={handleToDateSelect} placeholder="Hasta"/>
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
         </CardContent>
       </Card>

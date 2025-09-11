@@ -1,4 +1,5 @@
 
+'use client';
 
 import {
   Card,
@@ -7,23 +8,49 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { getBookings, getProperties, getTenants } from "@/lib/data";
+import { getBookings, getProperties, getTenants, BookingWithDetails, Property, Tenant } from "@/lib/data";
 import BookingsClient from "@/components/bookings-client";
+import { useAuth } from "@/components/auth-provider";
+import { useEffect, useState } from "react";
 
-export default async function BookingsPage({
+interface BookingsData {
+    allBookings: BookingWithDetails[];
+    properties: Property[];
+    tenants: Tenant[];
+}
+
+export default function BookingsPage({
   searchParams,
 }: {
   searchParams?: {
     tenantId?: string;
   };
 }) {
+  const { user } = useAuth();
+  const [data, setData] = useState<BookingsData | null>(null);
+  const [loading, setLoading] = useState(true);
   const tenantId = searchParams?.tenantId;
 
-  const [allBookings, properties, tenants] = await Promise.all([
-    getBookings(),
-    getProperties(),
-    getTenants(),
-  ]);
+  useEffect(() => {
+    if (user) {
+        setLoading(true);
+        Promise.all([
+            getBookings(),
+            getProperties(),
+            getTenants(),
+        ]).then(([allBookings, properties, tenants]) => {
+            setData({ allBookings, properties, tenants });
+            setLoading(false);
+        });
+    }
+  }, [user]);
+
+
+  if (loading || !data) {
+      return <p>Cargando reservas...</p>;
+  }
+
+  const { allBookings, properties, tenants } = data;
 
   const tenant = tenantId ? tenants.find(t => t.id === tenantId) : null;
   const pageTitle = tenant ? `Reservas de ${tenant.name}` : 'Reservas';

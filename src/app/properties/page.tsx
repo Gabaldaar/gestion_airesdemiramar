@@ -1,4 +1,6 @@
 
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -10,9 +12,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getProperties, Property } from "@/lib/data";
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/components/auth-provider';
 
-export default async function PropertiesPage() {
-  const properties = await getProperties();
+export default function PropertiesPage() {
+  const { user } = useAuth();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+        setLoading(true);
+        getProperties().then(data => {
+            setProperties(data);
+            setLoading(false);
+        });
+    }
+  }, [user]);
+
+  if (loading) {
+    return <p>Cargando propiedades...</p>
+  }
 
   return (
     <div className="flex-1 space-y-4">

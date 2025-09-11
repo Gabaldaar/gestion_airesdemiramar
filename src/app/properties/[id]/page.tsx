@@ -1,4 +1,5 @@
 
+'use client';
 
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -15,27 +16,60 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories } from "@/lib/data";
+import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/components/auth-provider';
 
-export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
+interface PropertyDetailData {
+    property: Property;
+    properties: Property[];
+    tenants: Tenant[];
+    bookings: BookingWithDetails[];
+    expenses: PropertyExpense[];
+    categories: ExpenseCategory[];
+}
+
+export default function PropertyDetailPage({ params }: { params: { id: string } }) {
+  const { user } = useAuth();
   const propertyId = params.id;
-  const [property, properties, tenants, bookings, expenses, categories] = await Promise.all([
-    getPropertyById(propertyId),
-    getProperties(),
-    getTenants(),
-    getBookingsByPropertyId(propertyId),
-    getPropertyExpensesByPropertyId(propertyId),
-    getExpenseCategories(),
-  ]);
+  const [data, setData] = useState<PropertyDetailData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!property) {
-    notFound();
+  useEffect(() => {
+    if (user) {
+        const fetchData = async () => {
+            setLoading(true);
+            const [property, properties, tenants, bookings, expenses, categories] = await Promise.all([
+                getPropertyById(propertyId),
+                getProperties(),
+                getTenants(),
+                getBookingsByPropertyId(propertyId),
+                getPropertyExpensesByPropertyId(propertyId),
+                getExpenseCategories(),
+            ]);
+
+            if (!property) {
+                notFound();
+                return;
+            }
+            setData({ property, properties, tenants, bookings, expenses, categories });
+            setLoading(false);
+        };
+        fetchData();
+    }
+  }, [user, propertyId]);
+
+
+  if (loading || !data) {
+    return <p>Cargando detalles de la propiedad...</p>;
   }
+  
+  const { property, properties, tenants, bookings, expenses, categories } = data;
 
   const calendarSrc = property.googleCalendarId 
     ? `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(property.googleCalendarId)}&ctz=America/Argentina/Buenos_Aires`

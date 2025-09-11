@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -6,11 +8,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getEmailTemplates } from "@/lib/data";
+import { getEmailTemplates, EmailTemplate } from "@/lib/data";
 import EmailTemplateManager from "@/components/email-template-manager";
+import { useAuth } from "@/components/auth-provider";
+import { useEffect, useState } from "react";
 
-export default async function TemplatesPage() {
-  const emailTemplates = await getEmailTemplates();
+export default function TemplatesPage() {
+    const { user } = useAuth();
+    const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            setLoading(true);
+            getEmailTemplates().then(data => {
+                setEmailTemplates(data);
+                setLoading(false);
+            });
+        }
+    }, [user]);
+
+    if (loading) {
+        return <p>Cargando plantillas...</p>
+    }
 
   return (
     <div className="space-y-4">
