@@ -146,7 +146,7 @@ export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated }
                     </Label>
                     <Input id="amount" name="amount" type="number" step="0.01" defaultValue={expense.originalUsdAmount || expense.amount} className="col-span-3" required />
                 </div>
-                 {currency === 'USD' && (
+                 {(currency === 'USD' || currency === 'ARS') && (
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="exchangeRate" className="text-right">
                         Valor USD

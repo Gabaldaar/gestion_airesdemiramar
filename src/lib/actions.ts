@@ -471,25 +471,40 @@ const handleExpenseData = (formData: FormData) => {
         exchangeRate?: number;
         originalUsdAmount?: number;
         categoryId?: string | null;
+        currency: 'USD' | 'ARS'; // Add currency to the payload
     } = {
         amount: originalAmount,
         description: description,
+        currency: currency, // Set the currency from the form
     };
 
     if (currency === 'USD') {
+        // If currency is USD, `amount` is already in USD. We just need to save it.
+        // No conversion needed, but we might want to store it as `originalUsdAmount` for consistency.
+        expensePayload.originalUsdAmount = originalAmount;
+        // The main `amount` field in Firestore for expenses should ideally be in a consistent currency (e.g., ARS).
+        // Let's establish that `amount` will be ARS.
         const rate = parseFloat(exchangeRateStr);
-        if (!rate || rate <= 0) {
+         if (!rate || rate <= 0) {
             throw new Error("El valor del USD es obligatorio y debe ser mayor a cero para gastos en USD.");
         }
         expensePayload.exchangeRate = rate;
-        expensePayload.amount = originalAmount * expensePayload.exchangeRate;
-        expensePayload.originalUsdAmount = originalAmount;
+        expensePayload.amount = originalAmount * rate; // Convert USD to ARS for storage
 
         const usdFormatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(originalAmount);
         const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(expensePayload.exchangeRate);
         const autoDescription = `Gasto en USD - Total: ${usdFormatted} - Valor USD: ${rateFormatted}`;
         expensePayload.description = description ? `${description} | ${autoDescription}` : autoDescription;
+
+    } else { // currency is 'ARS'
+        // If currency is ARS, `amount` is already in ARS.
+        const rate = parseFloat(exchangeRateStr);
+        if (!rate || rate <= 0) {
+            throw new Error("El valor del USD es obligatorio y debe ser mayor a cero para gastos en ARS.");
+        }
+        expensePayload.exchangeRate = rate;
     }
+
 
     if (categoryId && categoryId !== 'none') {
         expensePayload.categoryId = categoryId;
@@ -497,10 +512,12 @@ const handleExpenseData = (formData: FormData) => {
         expensePayload.categoryId = null;
     }
     
-    if (expensePayload.exchangeRate === undefined) delete expensePayload.exchangeRate;
-    if (expensePayload.originalUsdAmount === undefined) delete expensePayload.originalUsdAmount;
-    
-    return expensePayload;
+    // We will store all expense amounts in ARS in the `amount` field.
+    // We remove the `currency` from the final payload as it will always be ARS.
+    const { currency: formCurrency, ...finalPayload } = expensePayload;
+
+
+    return finalPayload;
 }
 
 
@@ -544,6 +561,7 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
         const expenseData = handleExpenseData(formData);
         const updatedExpense = {
             date,
+            currency: 'ARS',
             ...expenseData,
         };
 
@@ -618,6 +636,7 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
         const expenseData = handleExpenseData(formData);
         const updatedExpense = {
             date,
+            currency: 'ARS',
             ...expenseData,
         };
 
