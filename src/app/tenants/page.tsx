@@ -37,7 +37,7 @@ export default function TenantsPage() {
         }
     }, [user]);
 
-    if (loading || !data) {
+    if (!user || loading || !data) {
         return <p>Cargando inquilinos...</p>;
     }
 

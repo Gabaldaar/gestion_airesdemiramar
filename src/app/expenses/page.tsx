@@ -38,7 +38,7 @@ export default function ExpensesPage() {
         }
     }, [user]);
 
-    if (loading || !data) {
+    if (!user || loading || !data) {
         return <p>Cargando gastos...</p>;
     }
 

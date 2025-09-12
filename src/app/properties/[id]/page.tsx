@@ -65,7 +65,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   }, [user, propertyId]);
 
 
-  if (loading || !data) {
+  if (!user || loading || !data) {
     return <p>Cargando detalles de la propiedad...</p>;
   }
   

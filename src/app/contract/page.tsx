@@ -162,6 +162,7 @@ function ContractPage({ bookingId }: { bookingId: string }) {
         const fetchBooking = async () => {
             setIsLoading(true);
             try {
+                // Not protected by auth, but only accessible with a direct link with ID
                 const fetchedBooking = await getBookingWithDetails(bookingId);
                 if (!fetchedBooking) {
                     setError('Reserva no encontrada.');

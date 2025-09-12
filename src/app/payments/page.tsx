@@ -36,7 +36,7 @@ export default function PaymentsPage() {
         }
     }, [user]);
 
-    if (loading || !data) {
+    if (!user || loading || !data) {
         return <p>Cargando ingresos...</p>;
     }
 

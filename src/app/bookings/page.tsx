@@ -42,7 +42,7 @@ export default function BookingsPage() {
   }, [user]);
 
 
-  if (loading || !data) {
+  if (!user || loading || !data) {
       return <p>Cargando reservas...</p>;
   }
 

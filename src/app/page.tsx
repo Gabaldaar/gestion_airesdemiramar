@@ -38,8 +38,12 @@ export default function DashboardPage() {
         }
     }, [user]);
 
-    if (loading || !data) {
+    if (!user || (loading && !data)) {
         return <p>Cargando dashboard...</p>;
+    }
+    
+    if (!data) {
+        return <p>No se pudieron cargar los datos del dashboard.</p>;
     }
 
     const { summaryByCurrency, properties, tenants, bookings } = data;

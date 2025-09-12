@@ -42,7 +42,7 @@ export default function SettingsPage() {
         }
     }, [user]);
 
-    if (loading || !data) {
+    if (!user || loading || !data) {
         return <p>Cargando configuración...</p>
     }
     
