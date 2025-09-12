@@ -65,9 +65,9 @@ export async function addProperty(previousState: any, formData: FormData) {
     revalidatePath("/properties");
     revalidatePath("/");
     return { success: true, message: "Propiedad añadida correctamente." };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error adding property:", error);
-    return { success: false, message: "Error al añadir la propiedad." };
+    return { success: false, message: `Error al añadir la propiedad: ${error.message}` };
   }
 }
 
@@ -98,9 +98,9 @@ export async function updateProperty(previousState: any, formData: FormData) {
     revalidatePath("/payments");
     revalidatePath("/reports");
     return { success: true, message: "Propiedad actualizada." };
-  } catch (error) {
+  } catch (error: any) {
      console.error("Error updating property:", error);
-    return { success: false, message: "Error al actualizar la propiedad." };
+    return { success: false, message: `Error al actualizar la propiedad: ${error.message}` };
   }
 }
 
@@ -127,9 +127,9 @@ export async function deleteProperty(previousState: any, formData: FormData) {
         revalidatePath("/payments");
         revalidatePath("/reports");
         return { success: true, message: "Propiedad eliminada correctamente." };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error deleting property:", error);
-        return { success: false, message: "Error al eliminar la propiedad." };
+        return { success: false, message: `Error al eliminar la propiedad: ${error.message}` };
     }
 }
 
@@ -137,21 +137,22 @@ export async function deleteProperty(previousState: any, formData: FormData) {
 export async function addTenant(previousState: any, formData: FormData) {
   const newTenant = {
     name: formData.get("name") as string,
-    dni: formData.get("dni") as string,
-    email: formData.get("email") as string,
-    phone: formData.get("phone") as string,
-    address: formData.get("address") as string,
-    city: formData.get("city") as string,
+    dni: (formData.get("dni") as string) || "",
+    email: (formData.get("email") as string) || "",
+    phone: (formData.get("phone") as string) || "",
+    address: (formData.get("address") as string) || "",
+    city: (formData.get("city") as string) || "",
     country: (formData.get("country") as string) || "Argentina",
-    notes: formData.get("notes") as string || "",
+    notes: (formData.get("notes") as string) || "",
   };
 
   try {
     await dbAddTenant(newTenant);
     revalidatePath("/tenants");
     return { success: true, message: "Inquilino añadido correctamente." };
-  } catch (error) {
-    return { success: false, message: "Error al añadir inquilino." };
+  } catch (error: any) {
+    console.error("Error in addTenant action:", error);
+    return { success: false, message: `Error al añadir inquilino: ${error.message}` };
   }
 }
 
@@ -163,8 +164,6 @@ export async function updateTenant(previousState: any, formData: FormData) {
         return { success: false, message: "El ID y el nombre del inquilino son obligatorios." };
     }
 
-    // Build the data object by explicitly getting each field
-    // and providing a default empty string if it's null or undefined.
     const updatedTenant: Tenant = {
         id,
         name,
@@ -184,9 +183,9 @@ export async function updateTenant(previousState: any, formData: FormData) {
         revalidatePath("/");
         revalidatePath(`/properties/${id}`);
         return { success: true, message: "Inquilino actualizado correctamente." };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error in updateTenant action:", error);
-        return { success: false, message: "Error al actualizar inquilino." };
+        return { success: false, message: `Error al actualizar inquilino: ${error.message}` };
     }
 }
 
@@ -202,8 +201,8 @@ export async function deleteTenant(previousState: any, formData: FormData) {
       await dbDeleteTenant(id);
       revalidatePath("/tenants");
       return { success: true, message: "Inquilino eliminado correctamente." };
-    } catch (error) {
-      return { success: false, message: "Error al eliminar el inquilino." };
+    } catch (error: any) {
+      return { success: false, message: `Error al eliminar el inquilino: ${error.message}` };
     }
   }
 
@@ -252,11 +251,11 @@ export async function addBooking(previousState: any, formData: FormData) {
                 if (eventId) {
                     await dbUpdateBooking({ ...newBooking, googleCalendarEventId: eventId });
                 }
-            } catch (calendarError) {
+            } catch (calendarError: any) {
                  // Log the calendar error, but don't block the user. The booking is already saved.
                  // We show a more generic error message to the user now.
                  console.error("Calendar sync failed on booking creation, but the booking was saved:", calendarError);
-                 return { success: true, message: "Reserva creada, pero falló la sincronización con el calendario. Revise las credenciales." };
+                 return { success: true, message: `Reserva creada, pero falló la sincronización con el calendario: ${calendarError.message}` };
             }
         }
     
@@ -266,9 +265,9 @@ export async function addBooking(previousState: any, formData: FormData) {
         revalidatePath('/'); // Revalidate dashboard
         return { success: true, message: "Reserva creada correctamente." };
 
-    } catch (dbError) {
+    } catch (dbError: any) {
         console.error("Error creating booking in DB:", dbError);
-        return { success: false, message: "Error al guardar la reserva en la base de datos." };
+        return { success: false, message: `Error al guardar la reserva: ${dbError.message}` };
     }
 }
 
@@ -361,9 +360,9 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
                             await dbUpdateBooking({ id, googleCalendarEventId: newEventId });
                         }
                     }
-                } catch (calendarError) {
+                } catch (calendarError: any) {
                     console.error(`Calendar sync failed for booking ${id}, but the booking was updated:`, calendarError);
-                    return { success: true, message: "Reserva actualizada, pero falló la sincronización con el calendario. Revise las credenciales." };
+                    return { success: true, message: `Reserva actualizada, pero falló la sincronización con el calendario: ${calendarError.message}` };
                 }
             }
         }
@@ -374,9 +373,9 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
         revalidatePath('/');
         return { success: true, message: "Reserva actualizada correctamente." };
 
-    } catch (dbError) {
+    } catch (dbError: any) {
          console.error("Error updating booking in DB:", dbError);
-         return { success: false, message: "Error al actualizar la reserva en la base de datos." };
+         return { success: false, message: `Error al actualizar la reserva: ${dbError.message}` };
     }
 }
 
@@ -404,7 +403,7 @@ export async function deleteBooking(previousState: any, formData: FormData) {
                 if (property && property.googleCalendarId) {
                     await deleteEventFromCalendar(property.googleCalendarId, bookingToDelete.googleCalendarEventId);
                 }
-            } catch(calendarError) {
+            } catch(calendarError: any) {
                  console.error(`Failed to delete calendar event for booking ${id}, but deleting booking from DB anyway:`, calendarError);
                  // We don't return here, just log the error and proceed with DB deletion.
             }
@@ -419,9 +418,9 @@ export async function deleteBooking(previousState: any, formData: FormData) {
         revalidatePath('/'); // Revalidate dashboard
         return { success: true, message: "Reserva eliminada correctamente." };
 
-    } catch (dbError) {
+    } catch (dbError: any) {
         console.error("Error deleting booking from DB:", dbError);
-        return { success: false, message: "Error al eliminar la reserva de la base de datos." };
+        return { success: false, message: `Error al eliminar la reserva: ${dbError.message}` };
     }
 }
 
@@ -541,8 +540,8 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
         revalidatePath('/reports');
         revalidatePath('/expenses');
         return { success: true, message: "Gasto eliminado correctamente." };
-    } catch (error) {
-        return { success: false, message: "Error al eliminar el gasto." };
+    } catch (error: any) {
+        return { success: false, message: `Error al eliminar el gasto: ${error.message}` };
     }
 }
 
@@ -618,8 +617,8 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
         revalidatePath('/reports');
         revalidatePath('/expenses');
         return { success: true, message: "Gasto de reserva eliminado correctamente." };
-    } catch (error) {
-        return { success: false, message: "Error al eliminar el gasto de reserva." };
+    } catch (error: any) {
+        return { success: false, message: `Error al eliminar el gasto de reserva: ${error.message}` };
     }
 }
 
@@ -680,9 +679,9 @@ export async function addPayment(previousState: any, formData: FormData) {
         revalidatePath(`/reports`);
         revalidatePath(`/payments`);
         return { success: true, message: "Pago añadido correctamente." };
-    } catch (error) {
+    } catch (error: any) {
         console.error(error)
-        return { success: false, message: "Error al añadir el pago." };
+        return { success: false, message: `Error al añadir el pago: ${error.message}` };
     }
 }
 
@@ -744,8 +743,8 @@ export async function updatePayment(previousState: any, formData: FormData) {
         revalidatePath(`/reports`);
         revalidatePath(`/payments`);
         return { success: true, message: "Pago actualizado correctamente." };
-    } catch (error) {
-        return { success: false, message: "Error al actualizar el pago." };
+    } catch (error: any) {
+        return { success: false, message: `Error al actualizar el pago: ${error.message}` };
     }
 }
 
@@ -763,8 +762,8 @@ export async function deletePayment(previousState: any, formData: FormData) {
         revalidatePath(`/reports`);
         revalidatePath(`/payments`);
         return { success: true, message: "Pago eliminado correctamente." };
-    } catch (error) {
-        return { success: false, message: "Error al eliminar el pago." };
+    } catch (error: any) {
+        return { success: false, message: `Error al eliminar el pago: ${error.message}` };
     }
 }
 
@@ -779,8 +778,8 @@ export async function addExpenseCategory(previousState: any, formData: FormData)
     revalidatePath('/settings');
     revalidatePath('/expenses');
     return { success: true, message: 'Categoría añadida.' };
-  } catch (error) {
-    return { success: false, message: 'Error al añadir la categoría.' };
+  } catch (error: any) {
+    return { success: false, message: `Error al añadir la categoría: ${error.message}` };
   }
 }
 
@@ -795,8 +794,8 @@ export async function updateExpenseCategory(previousState: any, formData: FormDa
     revalidatePath('/settings');
      revalidatePath('/expenses');
     return { success: true, message: 'Categoría actualizada.' };
-  } catch (error) {
-    return { success: false, message: 'Error al actualizar la categoría.' };
+  } catch (error: any) {
+    return { success: false, message: `Error al actualizar la categoría: ${error.message}` };
   }
 }
 
@@ -810,8 +809,8 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
     revalidatePath('/settings');
     revalidatePath('/expenses');
     return { success: true, message: 'Categoría eliminada.' };
-  } catch (error) {
-    return { success: false, message: 'Error al eliminar la categoría.' };
+  } catch (error: any) {
+    return { success: false, message: `Error al eliminar la categoría: ${error.message}` };
   }
 }
 
@@ -828,8 +827,8 @@ export async function addEmailTemplate(previousState: any, formData: FormData) {
     await dbAddEmailTemplate({ name, subject, body });
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla añadida.' };
-  } catch (error) {
-    return { success: false, message: 'Error al añadir la plantilla.' };
+  } catch (error: any) {
+    return { success: false, message: `Error al añadir la plantilla: ${error.message}` };
   }
 }
 
@@ -846,8 +845,8 @@ export async function updateEmailTemplate(previousState: any, formData: FormData
     await dbUpdateEmailTemplate({ id, name, subject, body });
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla actualizada.' };
-  } catch (error) {
-    return { success: false, message: 'Error al actualizar la plantilla.' };
+  } catch (error: any) {
+    return { success: false, message: `Error al actualizar la plantilla: ${error.message}` };
   }
 }
 
@@ -860,8 +859,8 @@ export async function deleteEmailTemplate(previousState: any, formData: FormData
     await dbDeleteEmailTemplate(id);
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla eliminada.' };
-  } catch (error) {
-    return { success: false, message: 'Error al eliminar la plantilla.' };
+  } catch (error: any) {
+    return { success: false, message: `Error al eliminar la plantilla: ${error.message}` };
   }
 }
 
@@ -878,7 +877,7 @@ export async function updateEmailSettings(previousState: any, formData: FormData
         await dbUpdateEmailSettings({ replyToEmail });
         revalidatePath('/settings');
         return { success: true, message: 'Configuración de email guardada.' };
-    } catch (error) {
-        return { success: false, message: 'Error al guardar la configuración de email.' };
+    } catch (error: any) {
+        return { success: false, message: `Error al guardar la configuración de email: ${error.message}` };
     }
 }
