@@ -1,4 +1,5 @@
 
+
 // This file contains functions for READING data from Firestore on the client-side.
 // It uses the Firebase Web SDK (v9 modular).
 // Write operations have been moved to `lib/actions.ts` to be used in Server Actions.
