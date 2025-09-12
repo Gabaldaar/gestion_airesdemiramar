@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { setSession } from '@/lib/session';
 
 interface AuthContextType {
   user: User | null;
@@ -26,8 +27,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      if (user) {
+        try {
+          const idToken = await user.getIdToken();
+          await setSession(idToken); // Guardar el token de sesión en Firestore
+        } catch (error) {
+          console.error("Failed to set session:", error);
+          // Optional: sign out the user if session saving fails
+          // await firebaseSignOut(auth);
+        }
+      } else {
+        // You might want to clear the session here if you implement server-side clearing
+      }
       setLoading(false);
     });
 
@@ -37,7 +50,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      // The onAuthStateChanged listener will handle setting the session
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       throw error;

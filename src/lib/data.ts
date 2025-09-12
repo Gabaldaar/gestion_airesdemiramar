@@ -1,5 +1,5 @@
 
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import {
   collection,
   getDocs,
@@ -16,6 +16,7 @@ import {
   collectionGroup,
   setDoc
 } from 'firebase/firestore';
+import { getSession } from './session';
 
 // --- TYPE DEFINITIONS ---
 
@@ -242,11 +243,13 @@ export async function getPropertyById(id: string): Promise<Property | undefined>
 }
 
 export async function addProperty(property: Omit<Property, 'id'>): Promise<Property> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = await addDoc(propertiesCollection, property);
     return { id: docRef.id, ...property };
 }
 
 export async function updateProperty(updatedProperty: Property): Promise<Property | null> {
+    await getSession(); // Ensure user is authenticated server-side
     const { id, ...data } = updatedProperty;
     const docRef = doc(db, 'properties', id);
     await updateDoc(docRef, data);
@@ -254,6 +257,7 @@ export async function updateProperty(updatedProperty: Property): Promise<Propert
 }
 
 export async function deleteProperty(propertyId: string): Promise<void> {
+    await getSession(); // Ensure user is authenticated server-side
     const batch = writeBatch(db);
 
     // 1. Delete the property itself
@@ -305,11 +309,13 @@ export async function getTenantById(id: string): Promise<Tenant | undefined> {
 }
 
 export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = await addDoc(tenantsCollection, tenant);
     return { id: docRef.id, ...tenant };
 }
 
 export async function updateTenant(tenantData: Tenant): Promise<Tenant> {
+    await getSession(); // Ensure user is authenticated server-side
     const { id, ...dataToUpdate } = tenantData;
     if (!id) {
         throw new Error("Tenant ID is required for updates.");
@@ -327,6 +333,7 @@ export async function updateTenant(tenantData: Tenant): Promise<Tenant> {
 }
 
 export async function deleteTenant(id: string): Promise<boolean> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = doc(db, 'tenants', id);
     await deleteDoc(docRef);
     return true;
@@ -425,11 +432,13 @@ export async function getBookingById(id: string): Promise<Booking | undefined> {
 
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = await addDoc(bookingsCollection, booking);
     return { id: docRef.id, ...booking };
 }
 
 export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
+    await getSession(); // Ensure user is authenticated server-side
     const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
@@ -439,6 +448,7 @@ export async function updateBooking(updatedBooking: Partial<Booking>): Promise<B
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {
+    await getSession(); // Ensure user is authenticated server-side
     const batch = writeBatch(db);
     
     const bookingRef = doc(db, 'bookings', id);
@@ -462,11 +472,13 @@ export async function getExpenseCategories(): Promise<ExpenseCategory[]> {
 }
 
 export async function addExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = await addDoc(expenseCategoriesCollection, category);
     return { id: docRef.id, ...category };
 }
 
 export async function updateExpenseCategory(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
+    await getSession(); // Ensure user is authenticated server-side
     const { id, ...data } = updatedCategory;
     const docRef = doc(db, 'expenseCategories', id);
     await updateDoc(docRef, data);
@@ -474,6 +486,7 @@ export async function updateExpenseCategory(updatedCategory: ExpenseCategory): P
 }
 
 export async function deleteExpenseCategory(id: string): Promise<void> {
+    await getSession(); // Ensure user is authenticated server-side
     // TODO: We might need to handle what happens to expenses that have this categoryId
     const docRef = doc(db, 'expenseCategories', id);
     await deleteDoc(docRef);
@@ -492,11 +505,13 @@ export async function getPropertyExpensesByPropertyId(propertyId: string): Promi
 }
 
 export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = await addDoc(propertyExpensesCollection, { ...expense, currency: 'ARS' });
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
 export async function updatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense | null> {
+    await getSession(); // Ensure user is authenticated server-side
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'propertyExpenses', id);
     await updateDoc(docRef, { ...data, currency: 'ARS' });
@@ -504,6 +519,7 @@ export async function updatePropertyExpense(updatedExpense: PropertyExpense): Pr
 }
 
 export async function deletePropertyExpense(id: string): Promise<boolean> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = doc(db, 'propertyExpenses', id);
     await deleteDoc(docRef);
     return true;
@@ -521,11 +537,13 @@ export async function getBookingExpensesByBookingId(bookingId: string): Promise<
 }
 
 export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = await addDoc(bookingExpensesCollection, { ...expense, currency: 'ARS' });
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
 export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense | null> {
+    await getSession(); // Ensure user is authenticated server-side
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'bookingExpenses', id);
 await updateDoc(docRef, { ...data, currency: 'ARS' });
@@ -533,6 +551,7 @@ await updateDoc(docRef, { ...data, currency: 'ARS' });
 }
 
 export async function deleteBookingExpense(id: string): Promise<boolean> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = doc(db, 'bookingExpenses', id);
     await deleteDoc(docRef);
     return true;
@@ -545,11 +564,13 @@ export async function getPaymentsByBookingId(bookingId: string): Promise<Payment
 }
 
 export async function addPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = await addDoc(paymentsCollection, { ...payment, currency: 'USD' });
     return { id: docRef.id, ...payment, currency: 'USD' };
 }
 
 export async function updatePayment(updatedPayment: Payment): Promise<Payment | null> {
+    await getSession(); // Ensure user is authenticated server-side
     const { id, ...data } = updatedPayment;
     const docRef = doc(db, 'payments', id);
     await updateDoc(docRef, { ...data, currency: 'USD' });
@@ -557,6 +578,7 @@ export async function updatePayment(updatedPayment: Payment): Promise<Payment | 
 }
 
 export async function deletePayment(id: string): Promise<boolean> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = doc(db, 'payments', id);
     await deleteDoc(docRef);
     return true;
@@ -814,11 +836,13 @@ export async function getEmailTemplates(): Promise<EmailTemplate[]> {
 }
 
 export async function addEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
+  await getSession(); // Ensure user is authenticated server-side
   const docRef = await addDoc(emailTemplatesCollection, template);
   return { id: docRef.id, ...template };
 }
 
 export async function updateEmailTemplate(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
+  await getSession(); // Ensure user is authenticated server-side
   const { id, ...data } = updatedTemplate;
   const docRef = doc(db, 'emailTemplates', id);
   await updateDoc(docRef, data);
@@ -826,6 +850,7 @@ export async function updateEmailTemplate(updatedTemplate: EmailTemplate): Promi
 }
 
 export async function deleteEmailTemplate(id: string): Promise<void> {
+  await getSession(); // Ensure user is authenticated server-side
   const docRef = doc(db, 'emailTemplates', id);
   await deleteDoc(docRef);
 }
@@ -847,6 +872,7 @@ export async function getEmailSettings(): Promise<EmailSettings | null> {
 }
 
 export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<EmailSettings> {
+    await getSession(); // Ensure user is authenticated server-side
     const docRef = doc(db, 'settings', 'email');
     // Use setDoc with merge:true to create or update the document
     await setDoc(docRef, settings, { merge: true });
