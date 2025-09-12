@@ -1,21 +1,21 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getClientSideToken } from './components/auth-provider';
 
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   
-  // This is a workaround to pass the client-side token to server actions
-  // as middleware doesn't have access to client-side module state directly.
-  // In a real app, you might get this token from an HttpOnly cookie.
+  // Pass the token from the cookie to the request headers for server actions
   const token = request.cookies.get('firebaseIdToken')?.value;
 
   if (token) {
     requestHeaders.set('Authorization', `Bearer ${token}`);
   }
 
+  // You can also set request headers from cookies.
+  // request.headers.set('x-hello-from-middleware1', 'hello')
+  
   return NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -25,5 +25,8 @@ export function middleware(request: NextRequest) {
 
 // See "Matching Paths" below to learn more
 export const config = {
-  matcher: '/:path*',
+  // Match all paths except for static files and the login page image assets
+  matcher: [
+    '/((?!_next/static|favicon.ico|logo.png|logocont.png|firma.png|login).*)',
+  ],
 }

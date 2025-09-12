@@ -4,13 +4,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
-
-// A client-side store for the idToken
-let idToken: string | null = null;
-
-// Function to be called by middleware or server actions to get the token
-export const getClientSideToken = () => idToken;
+import Cookies from 'js-cookie';
 
 interface AuthContextType {
   user: User | null;
@@ -29,21 +23,15 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-      if (user) {
-        try {
-          // Store the token in the client-side variable
-          idToken = await user.getIdToken();
-        } catch (error) {
-          console.error("Failed to get ID token:", error);
-          idToken = null;
-        }
+       if (user) {
+        const token = await user.getIdToken();
+        Cookies.set('firebaseIdToken', token, { path: '/' });
       } else {
-        idToken = null;
+        Cookies.remove('firebaseIdToken', { path: '/' });
       }
       setLoading(false);
     });
@@ -55,10 +43,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener will handle setting the token
+      // The onAuthStateChanged listener will handle setting the cookie
     } catch (error) {
       console.error("Error signing in with Google: ", error);
-      idToken = null;
+      Cookies.remove('firebaseIdToken', { path: '/' });
       throw error;
     }
   };
@@ -66,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      idToken = null;
+      Cookies.remove('firebaseIdToken', { path: '/' });
     } catch (error) {
       console.error("Error signing out: ", error);
     }

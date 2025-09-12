@@ -14,7 +14,6 @@ import {
 import { useState } from 'react';
 import Image from 'next/image';
 import Logo from '@/assets/logo.png';
-import { Toaster } from './ui/toaster';
 import { useAuth } from './auth-provider';
 import {
   DropdownMenu,
@@ -153,7 +152,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <main className="flex flex-1 flex-col gap-4 p-2 md:p-4 lg:gap-6 lg:p-6">
             {children}
             </main>
-            <Toaster />
         </div>
         </div>
     </div>
