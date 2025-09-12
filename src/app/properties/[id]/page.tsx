@@ -86,7 +86,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         <PropertyNotesForm property={property} onPropertyUpdated={fetchData} />
     </div>
 
-    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-1">
         <Card>
             <CardHeader className="p-0">
@@ -107,7 +107,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         </Card>
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="md:col-span-1 lg:col-span-2">
         <Tabs defaultValue="bookings" className="space-y-4">
             <div className="flex justify-between items-center">
             <TabsList>
