@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from "next/link";
@@ -15,7 +16,7 @@ import { TenantEditForm } from "@/components/tenant-edit-form";
 import { TenantDeleteForm } from "@/components/tenant-delete-form";
 import { History, FileText } from "lucide-react";
 import { NotesViewer } from "@/components/notes-viewer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface TenantsListProps {
     tenants: Tenant[];
@@ -47,7 +48,7 @@ function TenantRow({ tenant }: { tenant: Tenant }) {
                     </a>
                 ) : null}
             </TableCell>
-            <TableCell>{`${tenant.address}, ${tenant.city}, ${tenant.country}`}</TableCell>
+            <TableCell>{`${tenant.address || ''}, ${tenant.city || ''}, ${tenant.country || ''}`.replace(/^,|,$/g, '').trim()}</TableCell>
             <TableCell className="text-right">
               <div className="flex items-center justify-end gap-2">
                 <NotesViewer 
@@ -55,11 +56,12 @@ function TenantRow({ tenant }: { tenant: Tenant }) {
                     title={`Notas sobre ${tenant.name}`}
                     isOpen={isNotesOpen}
                     onOpenChange={setIsNotesOpen}
-                />
-                 <Button variant="ghost" size="icon" onClick={() => setIsNotesOpen(true)} disabled={!tenant.notes}>
-                    <FileText className="h-4 w-4" />
-                    <span className="sr-only">Ver Notas</span>
-                </Button>
+                >
+                    <Button variant="ghost" size="icon" onClick={() => setIsNotesOpen(true)} disabled={!tenant.notes}>
+                        <FileText className="h-4 w-4" />
+                        <span className="sr-only">Ver Notas</span>
+                    </Button>
+                </NotesViewer>
                 <TenantEditForm tenant={tenant} />
                 <TenantDeleteForm tenantId={tenant.id} />
                 <Button asChild variant="ghost" size="icon">
@@ -76,6 +78,15 @@ function TenantRow({ tenant }: { tenant: Tenant }) {
 
 
 export default function TenantsList({ tenants }: TenantsListProps) {
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    if (!isClient) {
+        return null; // O un spinner/skeleton
+    }
+    
     if (tenants.length === 0) {
         return <p className="text-sm text-center text-muted-foreground py-8">No hay inquilinos para mostrar con los filtros seleccionados.</p>;
     }

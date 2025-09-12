@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -23,7 +24,7 @@ import { BookingDeleteForm } from './booking-delete-form';
 import { NotesViewer } from './notes-viewer';
 import { GuaranteeManager } from './guarantee-manager';
 import { Landmark, Wallet, Pencil, Trash2, FileText } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EmailSender } from "./email-sender";
 
 
@@ -61,11 +62,12 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
 
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
-  const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
   
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd-LLL-yyyy", { locale: es });
   };
+  
+  const nights = booking.endDate && booking.startDate ? differenceInDays(new Date(booking.endDate), new Date(booking.startDate)) : 0;
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
         if (currency === 'USD') {
@@ -294,6 +296,14 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
 
 
 export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+      setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+      return null; 
+  }
 
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
