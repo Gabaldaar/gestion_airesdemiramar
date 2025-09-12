@@ -30,7 +30,7 @@ function SubmitButton() {
     )
 }
 
-export function PropertyNotesForm({ property }: { property: Property }) {
+export function PropertyNotesForm({ property, onPropertyUpdated }: { property: Property, onPropertyUpdated: () => void }) {
   const [state, formAction] = useActionState(updateProperty, initialState);
   const formId = `property-notes-form-${property.id}`;
   const [isOpen, setIsOpen] = useState(false);
@@ -38,8 +38,9 @@ export function PropertyNotesForm({ property }: { property: Property }) {
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
+      onPropertyUpdated();
     }
-  }, [state]);
+  }, [state, onPropertyUpdated]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -63,6 +64,7 @@ export function PropertyNotesForm({ property }: { property: Property }) {
           <input type="hidden" name="address" defaultValue={property.address} />
           <input type="hidden" name="googleCalendarId" defaultValue={property.googleCalendarId} />
           <input type="hidden" name="imageUrl" defaultValue={property.imageUrl} />
+          <input type="hidden" name="contractTemplate" defaultValue={property.contractTemplate} />
           <Textarea
             name="notes"
             defaultValue={property.notes}

@@ -151,17 +151,17 @@ function CategoryDeleteAction({ categoryId, onDeleted }: { categoryId: string, o
 }
 
 
-export default function ExpenseCategoryManager({ initialCategories }: { initialCategories: ExpenseCategory[] }) {
+export default function ExpenseCategoryManager({ initialCategories, onCategoriesChanged }: { initialCategories: ExpenseCategory[], onCategoriesChanged: () => void }) {
   const [categories, setCategories] = useState(initialCategories);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   
+  useEffect(() => {
+      setCategories(initialCategories);
+  }, [initialCategories]);
+  
   const handleCategoryAction = () => {
-    // This is a dummy function to force a re-render by updating state.
-    // The actual data revalidation happens on the server via revalidatePath.
-    // In a real client-side state management scenario, you'd re-fetch here.
-     setEditingCategoryId(null); // Exit edit mode
-     // In a full client-side app, you'd re-fetch here.
-     // For this app, we rely on the page reload triggered by the server action.
+     setEditingCategoryId(null);
+     onCategoriesChanged();
   };
 
   return (

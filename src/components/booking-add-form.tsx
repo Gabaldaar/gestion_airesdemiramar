@@ -60,7 +60,7 @@ function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
     )
 }
 
-export function BookingAddForm({ propertyId, tenants, existingBookings }: { propertyId: string, tenants: Tenant[], existingBookings: Booking[] }) {
+export function BookingAddForm({ propertyId, tenants, existingBookings, onBookingAdded }: { propertyId: string, tenants: Tenant[], existingBookings: Booking[], onBookingAdded: () => void }) {
   const [state, formAction] = useActionState(addBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -77,8 +77,9 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     if (state.success) {
       setIsOpen(false);
       resetForm();
+      onBookingAdded();
     }
-  }, [state]);
+  }, [state, onBookingAdded]);
 
   useEffect(() => {
     if (date?.from && date?.to) {

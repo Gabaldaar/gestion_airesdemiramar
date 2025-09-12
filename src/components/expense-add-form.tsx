@@ -46,7 +46,7 @@ function SubmitButton() {
     )
 }
 
-export function ExpenseAddForm({ propertyId, categories }: { propertyId: string, categories: ExpenseCategory[] }) {
+export function ExpenseAddForm({ propertyId, categories, onExpenseAdded }: { propertyId: string, categories: ExpenseCategory[], onExpenseAdded: () => void }) {
   const [state, formAction] = useActionState(addPropertyExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -60,8 +60,9 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
       formRef.current?.reset();
       setDate(new Date());
       setCurrency('ARS');
+      onExpenseAdded();
     }
-  }, [state]);
+  }, [state, onExpenseAdded]);
   
   const resetForm = () => {
     formRef.current?.reset();

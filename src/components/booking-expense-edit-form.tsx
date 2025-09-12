@@ -47,7 +47,7 @@ function SubmitButton() {
     )
 }
 
-export function BookingExpenseEditForm({ expense, categories }: { expense: BookingExpense, categories: ExpenseCategory[] }) {
+export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated }: { expense: BookingExpense, categories: ExpenseCategory[], onExpenseUpdated: () => void }) {
   const [state, formAction] = useActionState(updateBookingExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
@@ -56,8 +56,9 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
+      onExpenseUpdated();
     }
-  }, [state]);
+  }, [state, onExpenseUpdated]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

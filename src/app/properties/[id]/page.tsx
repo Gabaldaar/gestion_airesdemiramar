@@ -22,7 +22,7 @@ import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/auth-provider';
 
 interface PropertyDetailData {
@@ -40,29 +40,30 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   const [data, setData] = useState<PropertyDetailData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (user) {
-        const fetchData = async () => {
-            setLoading(true);
-            const [property, properties, tenants, bookings, expenses, categories] = await Promise.all([
-                getPropertyById(propertyId),
-                getProperties(),
-                getTenants(),
-                getBookingsByPropertyId(propertyId),
-                getPropertyExpensesByPropertyId(propertyId),
-                getExpenseCategories(),
-            ]);
+        setLoading(true);
+        const [property, properties, tenants, bookings, expenses, categories] = await Promise.all([
+            getPropertyById(propertyId),
+            getProperties(),
+            getTenants(),
+            getBookingsByPropertyId(propertyId),
+            getPropertyExpensesByPropertyId(propertyId),
+            getExpenseCategories(),
+        ]);
 
-            if (!property) {
-                notFound();
-                return;
-            }
-            setData({ property, properties, tenants, bookings, expenses, categories });
-            setLoading(false);
-        };
-        fetchData();
+        if (!property) {
+            notFound();
+            return;
+        }
+        setData({ property, properties, tenants, bookings, expenses, categories });
+        setLoading(false);
     }
   }, [user, propertyId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
 
   if (!user || loading || !data) {
@@ -82,7 +83,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
             <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
             <p className="text-muted-foreground">{property.address}</p>
         </div>
-        <PropertyNotesForm property={property} />
+        <PropertyNotesForm property={property} onPropertyUpdated={fetchData} />
     </div>
 
     <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
@@ -115,8 +116,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 <TabsTrigger value="expenses">Gastos</TabsTrigger>
             </TabsList>
             <div className="flex items-center space-x-2">
-                <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
-                <ExpenseAddForm propertyId={property.id} categories={categories} />
+                <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} onBookingAdded={fetchData} />
+                <ExpenseAddForm propertyId={property.id} categories={categories} onExpenseAdded={fetchData} />
             </div>
             </div>
             <TabsContent value="calendar" className="space-y-4">
@@ -154,7 +155,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <BookingsList bookings={bookings} properties={properties} tenants={tenants} />
+                <BookingsList bookings={bookings} properties={properties} tenants={tenants} onDataNeedsRefresh={fetchData} />
                 </CardContent>
             </Card>
             </TabsContent>
@@ -167,7 +168,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <ExpensesList expenses={expenses} categories={categories} />
+                <ExpensesList expenses={expenses} categories={categories} onDataNeedsRefresh={fetchData} />
                 </CardContent>
             </Card>
             </TabsContent>

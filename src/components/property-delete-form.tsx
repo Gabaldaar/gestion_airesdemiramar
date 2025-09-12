@@ -39,7 +39,7 @@ function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
     )
 }
 
-export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: string; propertyName: string }) {
+export function PropertyDeleteForm({ propertyId, propertyName, onPropertyDeleted }: { propertyId: string; propertyName: string, onPropertyDeleted: () => void }) {
   const [state, formAction] = useActionState(deleteProperty, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [confirmationInput, setConfirmationInput] = useState('');
@@ -48,14 +48,13 @@ export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: s
   const isButtonDisabled = confirmationInput !== 'Eliminar';
 
   useEffect(() => {
-    // If the deletion was successful, close the dialog
     if (state.success) {
       setIsOpen(false);
+      onPropertyDeleted();
     }
-  }, [state.success]);
+  }, [state, onPropertyDeleted]);
 
   useEffect(() => {
-    // Reset confirmation when dialog is closed
     if (!isOpen) {
       setConfirmationInput('');
     }

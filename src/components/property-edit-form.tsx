@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Label } from './ui/label';
 import { Card, CardContent } from './ui/card';
 import { PropertyDeleteForm } from './property-delete-form';
 import { Loader2 } from 'lucide-react';
+import { useToast } from './ui/use-toast';
 
 const initialState = {
   message: '',
@@ -34,8 +35,25 @@ function SubmitButton() {
     )
 }
 
-export function PropertyEditForm({ property }: { property: Property }) {
+export function PropertyEditForm({ property, onPropertyUpdated }: { property: Property, onPropertyUpdated: () => void }) {
   const [state, formAction] = useActionState(updateProperty, initialState);
+  const { toast } = useToast();
+
+  useEffect(() => {
+      if (state.success) {
+          onPropertyUpdated();
+          toast({
+            title: 'Éxito',
+            description: state.message,
+          });
+      } else if (state.message) {
+           toast({
+            title: 'Error',
+            description: state.message,
+            variant: 'destructive',
+          });
+      }
+  }, [state, onPropertyUpdated, toast]);
 
   return (
     <div className="py-4">
@@ -69,15 +87,9 @@ export function PropertyEditForm({ property }: { property: Property }) {
                 </div>
             </div>
             <div className="flex justify-between items-center">
-                <PropertyDeleteForm propertyId={property.id} propertyName={property.name} />
+                <PropertyDeleteForm propertyId={property.id} propertyName={property.name} onPropertyDeleted={onPropertyUpdated} />
                 <SubmitButton />
             </div>
-             {state.message && !state.success && (
-                <p className="text-red-500 text-sm">{state.message}</p>
-            )}
-             {state.message && state.success && (
-                <p className="text-green-500 text-sm">{state.message}</p>
-            )}
         </form>
     </div>
   );

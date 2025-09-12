@@ -21,9 +21,10 @@ import { BookingExpenseDeleteForm } from "./booking-expense-delete-form";
 interface ExpensesUnifiedListProps {
   expenses: UnifiedExpense[];
   categories: ExpenseCategory[];
+  onDataNeedsRefresh: () => void;
 }
 
-export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUnifiedListProps) {
+export default function ExpensesUnifiedList({ expenses, categories, onDataNeedsRefresh }: ExpensesUnifiedListProps) {
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
@@ -82,13 +83,13 @@ export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUn
                 <div className="flex items-center justify-end gap-2">
                     {expense.type === 'Propiedad' ? (
                         <>
-                            <ExpenseEditForm expense={expense as PropertyExpense} categories={categories} />
-                            <ExpenseDeleteForm expenseId={expense.id} propertyId={(expense as PropertyExpense).propertyId} />
+                            <ExpenseEditForm expense={expense as PropertyExpense} categories={categories} onExpenseUpdated={onDataNeedsRefresh} />
+                            <ExpenseDeleteForm expenseId={expense.id} propertyId={(expense as PropertyExpense).propertyId} onExpenseDeleted={onDataNeedsRefresh} />
                         </>
                     ) : (
                         <>
-                            <BookingExpenseEditForm expense={expense as BookingExpense} categories={categories} />
-                            <BookingExpenseDeleteForm expenseId={expense.id} bookingId={(expense as BookingExpense).bookingId} />
+                            <BookingExpenseEditForm expense={expense as BookingExpense} categories={categories} onExpenseUpdated={onDataNeedsRefresh} />
+                            <BookingExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={onDataNeedsRefresh} />
                         </>
                     )}
                 </div>

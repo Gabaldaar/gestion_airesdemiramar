@@ -46,7 +46,7 @@ function SubmitButton() {
     )
 }
 
-export function ExpenseEditForm({ expense, categories }: { expense: PropertyExpense, categories: ExpenseCategory[] }) {
+export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { expense: PropertyExpense, categories: ExpenseCategory[], onExpenseUpdated: () => void }) {
   const [state, formAction] = useActionState(updatePropertyExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
@@ -55,8 +55,9 @@ export function ExpenseEditForm({ expense, categories }: { expense: PropertyExpe
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
+      onExpenseUpdated();
     }
-  }, [state]);
+  }, [state, onExpenseUpdated]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

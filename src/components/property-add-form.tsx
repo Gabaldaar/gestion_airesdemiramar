@@ -39,7 +39,7 @@ function SubmitButton() {
     )
 }
 
-export function PropertyAddForm() {
+export function PropertyAddForm({ onPropertyAdded }: { onPropertyAdded: () => void; }) {
   const [state, formAction] = useActionState(addProperty, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -48,8 +48,9 @@ export function PropertyAddForm() {
     if (state.success) {
       setIsOpen(false);
       formRef.current?.reset();
+      onPropertyAdded();
     }
-  }, [state]);
+  }, [state, onPropertyAdded]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

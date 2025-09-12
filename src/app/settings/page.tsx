@@ -15,7 +15,7 @@ import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
 import { EmailSettingsManager } from "@/components/email-settings-manager";
 import { useAuth } from "@/components/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface SettingsData {
     properties: Property[];
@@ -28,7 +28,7 @@ export default function SettingsPage() {
     const [data, setData] = useState<SettingsData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    const fetchData = useCallback(() => {
         if (user) {
             setLoading(true);
             Promise.all([
@@ -41,6 +41,10 @@ export default function SettingsPage() {
             });
         }
     }, [user]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     if (!user || loading || !data) {
         return <p>Cargando configuración...</p>
@@ -71,13 +75,13 @@ export default function SettingsPage() {
                         Administra los datos de tus propiedades.
                         </CardDescription>
                     </div>
-                    <PropertyAddForm />
+                    <PropertyAddForm onPropertyAdded={fetchData} />
                 </CardHeader>
                 <CardContent>
                     {properties.length > 0 ? (
                         properties.map((property: Property) => (
                             <div key={property.id} className="border-t">
-                                <PropertyEditForm property={property} />
+                                <PropertyEditForm property={property} onPropertyUpdated={fetchData} />
                             </div>
                         ))
                     ) : (
@@ -98,7 +102,7 @@ export default function SettingsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ExpenseCategoryManager initialCategories={expenseCategories} />
+                    <ExpenseCategoryManager initialCategories={expenseCategories} onCategoriesChanged={fetchData}/>
                 </CardContent>
             </Card>
         </TabsContent>

@@ -18,9 +18,10 @@ import { ExpenseDeleteForm } from "./expense-delete-form";
 interface ExpensesListProps {
   expenses: PropertyExpense[];
   categories: ExpenseCategory[];
+  onDataNeedsRefresh: () => void;
 }
 
-export default function ExpensesList({ expenses, categories }: ExpensesListProps) {
+export default function ExpensesList({ expenses, categories, onDataNeedsRefresh }: ExpensesListProps) {
   if (expenses.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay gastos para mostrar.</p>;
   }
@@ -62,8 +63,8 @@ export default function ExpensesList({ expenses, categories }: ExpensesListProps
             <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                    <ExpenseEditForm expense={expense} categories={categories} />
-                    <ExpenseDeleteForm expenseId={expense.id} propertyId={expense.propertyId} />
+                    <ExpenseEditForm expense={expense} categories={categories} onExpenseUpdated={onDataNeedsRefresh} />
+                    <ExpenseDeleteForm expenseId={expense.id} propertyId={expense.propertyId} onExpenseDeleted={onDataNeedsRefresh} />
                 </div>
             </TableCell>
           </TableRow>

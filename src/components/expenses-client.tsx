@@ -16,9 +16,10 @@ interface ExpensesClientProps {
   initialExpenses: UnifiedExpense[];
   properties: Property[];
   categories: ExpenseCategory[];
+  onDataNeedsRefresh: () => void;
 }
 
-export default function ExpensesClient({ initialExpenses, properties, categories }: ExpensesClientProps) {
+export default function ExpensesClient({ initialExpenses, properties, categories, onDataNeedsRefresh }: ExpensesClientProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
@@ -137,7 +138,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
           </div>
         </div>
       </div>
-      <ExpensesUnifiedList expenses={filteredExpenses} categories={categories} />
+      <ExpensesUnifiedList expenses={filteredExpenses} categories={categories} onDataNeedsRefresh={onDataNeedsRefresh} />
     </div>
   );
 }
