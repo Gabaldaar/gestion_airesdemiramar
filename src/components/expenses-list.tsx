@@ -16,18 +16,28 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ExpenseEditForm } from "./expense-edit-form";
 import { ExpenseDeleteForm } from "./expense-delete-form";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { getPropertyExpensesByPropertyId } from "@/lib/data";
 
 interface ExpensesListProps {
   expenses: PropertyExpense[];
   categories: ExpenseCategory[];
+  propertyId: string;
 }
 
-export default function ExpensesList({ expenses, categories }: ExpensesListProps) {
+export default function ExpensesList({ expenses: initialExpenses, categories, propertyId }: ExpensesListProps) {
   const [isClient, setIsClient] = useState(false);
+  const [expenses, setExpenses] = useState(initialExpenses);
+
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    setExpenses(initialExpenses);
+  }, [initialExpenses]);
+
+  const refreshExpenses = useCallback(async () => {
+    const freshExpenses = await getPropertyExpensesByPropertyId(propertyId);
+    setExpenses(freshExpenses);
+  }, [propertyId]);
 
   if (expenses.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay gastos para mostrar.</p>;
@@ -72,7 +82,7 @@ export default function ExpensesList({ expenses, categories }: ExpensesListProps
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
                     <ExpenseEditForm expense={expense} categories={categories} />
-                    <ExpenseDeleteForm expenseId={expense.id} propertyId={expense.propertyId} />
+                    <ExpenseDeleteForm expenseId={expense.id} propertyId={expense.propertyId} onExpenseDeleted={refreshExpenses} />
                 </div>
             </TableCell>
           </TableRow>

@@ -26,6 +26,7 @@ export default function DashboardStats({
 }: DashboardStatsProps) {
 
   const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
+    if (!currency) return '...'; // Safeguard for initial render
     if (currency === 'USD') {
         return `USD ${new Intl.NumberFormat('es-AR', {
             style: 'decimal',

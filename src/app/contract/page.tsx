@@ -206,6 +206,7 @@ function ContractPage({ bookingId }: { bookingId: string }) {
     }
 
     const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
+        if (!currency) return '...'; // Safeguard
         if (currency === 'USD') {
              return `USD ${new Intl.NumberFormat('es-AR', {
                 style: 'decimal',

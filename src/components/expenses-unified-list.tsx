@@ -38,6 +38,7 @@ export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUn
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
+    if (!currency) return '...'; // Safeguard for initial render
     const options: Intl.NumberFormatOptions = {
         style: 'decimal',
         minimumFractionDigits: 2,

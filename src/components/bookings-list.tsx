@@ -71,20 +71,21 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
   const nights = booking.endDate && booking.startDate ? differenceInDays(new Date(booking.endDate), new Date(booking.startDate)) : 0;
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
-        if (currency === 'USD') {
-             return `USD ${new Intl.NumberFormat('es-AR', {
-                style: 'decimal',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            }).format(amount)}`;
-        }
-        return new Intl.NumberFormat('es-AR', {
-            style: 'currency',
-            currency: currency,
+    if (!currency) return '...'; // Safeguard for initial render
+    if (currency === 'USD') {
+        return `USD ${new Intl.NumberFormat('es-AR', {
+            style: 'decimal',
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-        }).format(amount);
+        }).format(amount)}`;
     }
+    return new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(amount);
+  }
   
   const getBookingColorClass = (booking: BookingWithDetails): string => {
     const today = new Date();

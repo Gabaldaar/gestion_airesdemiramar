@@ -33,6 +33,7 @@ export default function DashboardRecentBookings({ bookings }: { bookings: Bookin
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
+    if (!currency) return '...'; // Safeguard for initial render
     if (currency === 'USD') {
         return `USD ${new Intl.NumberFormat('es-AR', {
             style: 'decimal',
