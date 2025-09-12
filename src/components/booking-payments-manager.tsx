@@ -36,10 +36,11 @@ interface BookingPaymentsManagerProps {
     children: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    onDataNeedsRefresh?: () => void;
 }
 
 
-export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChange }: BookingPaymentsManagerProps) {
+export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChange, onDataNeedsRefresh }: BookingPaymentsManagerProps) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +77,10 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
 
   const handlePaymentAction = useCallback(() => {
     fetchPaymentsAndBooking(); // Re-fetch payments after an action
-  }, [fetchPaymentsAndBooking]);
+    if (onDataNeedsRefresh) {
+        onDataNeedsRefresh();
+    }
+  }, [fetchPaymentsAndBooking, onDataNeedsRefresh]);
 
   const openEmailSender = (payment: Payment) => {
     setSelectedPaymentForEmail(payment);

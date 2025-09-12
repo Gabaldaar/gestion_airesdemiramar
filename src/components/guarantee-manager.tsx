@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useTransition, ReactNode } from 'react';
@@ -50,10 +51,11 @@ interface GuaranteeManagerProps {
     children: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    onDataNeedsRefresh?: () => void;
 }
 
 
-export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: GuaranteeManagerProps) {
+export function GuaranteeManager({ booking, children, isOpen, onOpenChange, onDataNeedsRefresh }: GuaranteeManagerProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   
@@ -103,6 +105,9 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
         const result = await updateBooking(initialState, formData);
         if (result.success) {
             onOpenChange(false);
+            if (onDataNeedsRefresh) {
+                onDataNeedsRefresh();
+            }
         }
     });
   };

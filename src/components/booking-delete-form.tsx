@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useState, useEffect, useRef, ReactNode } from 'react';
@@ -44,9 +45,10 @@ interface BookingDeleteFormProps {
     children?: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    onDataNeedsRefresh?: () => void;
 }
 
-export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onOpenChange }: BookingDeleteFormProps) {
+export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onOpenChange, onDataNeedsRefresh }: BookingDeleteFormProps) {
   const [state, formAction] = useActionState(deleteBooking, initialState);
   const [confirmationInput, setConfirmationInput] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
@@ -56,8 +58,11 @@ export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onO
   useEffect(() => {
     if (state.success) {
       onOpenChange(false);
+       if (onDataNeedsRefresh) {
+        onDataNeedsRefresh();
+      }
     }
-  }, [state.success, onOpenChange]);
+  }, [state, onOpenChange, onDataNeedsRefresh]);
 
   useEffect(() => {
     if (!isOpen) {

@@ -11,7 +11,7 @@ import {
 import { getBookings, getProperties, getTenants, BookingWithDetails, Property, Tenant } from "@/lib/data";
 import BookingsClient from "@/components/bookings-client";
 import { useAuth } from "@/components/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 
 interface BookingsData {
@@ -27,19 +27,23 @@ export default function BookingsPage() {
   const searchParams = useSearchParams();
   const tenantId = searchParams.get('tenantId') || undefined;
 
+  const fetchData = useCallback(() => {
+    setLoading(true);
+    Promise.all([
+        getBookings(),
+        getProperties(),
+        getTenants(),
+    ]).then(([allBookings, properties, tenants]) => {
+        setData({ allBookings, properties, tenants });
+        setLoading(false);
+    });
+  }, []);
+  
   useEffect(() => {
     if (user) {
-        setLoading(true);
-        Promise.all([
-            getBookings(),
-            getProperties(),
-            getTenants(),
-        ]).then(([allBookings, properties, tenants]) => {
-            setData({ allBookings, properties, tenants });
-            setLoading(false);
-        });
+        fetchData();
     }
-  }, [user]);
+  }, [user, fetchData]);
 
 
   if (!user || loading || !data) {
@@ -67,6 +71,7 @@ export default function BookingsPage() {
         properties={properties} 
         tenants={tenants} 
         initialTenantIdFilter={tenantId}
+        onDataNeedsRefresh={fetchData}
         />
     </CardContent>
     </Card>

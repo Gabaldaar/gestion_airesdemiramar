@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useMemo, ReactNode } from 'react';
@@ -67,10 +68,11 @@ interface BookingEditFormProps {
     children?: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    onDataNeedsRefresh?: () => void;
 }
 
 
-export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange }: BookingEditFormProps) {
+export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange, onDataNeedsRefresh }: BookingEditFormProps) {
   const [state, formAction] = useActionState(updateBooking, initialState);
   const [date, setDate] = useState<DateRange | undefined>({
       from: new Date(booking.startDate),
@@ -86,8 +88,11 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   useEffect(() => {
     if (state.success) {
       onOpenChange(false);
+      if (onDataNeedsRefresh) {
+        onDataNeedsRefresh();
+      }
     }
-  }, [state, onOpenChange]);
+  }, [state, onOpenChange, onDataNeedsRefresh]);
 
    useEffect(() => {
     if (date?.from && date?.to && allBookings) {

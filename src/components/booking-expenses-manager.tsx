@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, ReactNode } from 'react';
@@ -31,10 +32,11 @@ interface BookingExpensesManagerProps {
     children?: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    onDataNeedsRefresh?: () => void;
 }
 
 
-export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChange }: BookingExpensesManagerProps) {
+export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChange, onDataNeedsRefresh }: BookingExpensesManagerProps) {
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +62,10 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
 
   const handleExpenseAction = useCallback(() => {
     fetchExpensesAndCategories();
-  }, [fetchExpensesAndCategories]);
+    if (onDataNeedsRefresh) {
+        onDataNeedsRefresh();
+    }
+  }, [fetchExpensesAndCategories, onDataNeedsRefresh]);
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -32,6 +33,7 @@ interface BookingsListProps {
   properties: Property[];
   tenants: Tenant[];
   showProperty?: boolean;
+  onDataNeedsRefresh?: () => void;
 }
 
 const contractStatusMap: Record<ContractStatus, { text: string, className: string }> = {
@@ -49,7 +51,7 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-function BookingRow({ booking, properties, tenants, showProperty }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[], showProperty: boolean }) {
+function BookingRow({ booking, properties, tenants, showProperty, onDataNeedsRefresh }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[], showProperty: boolean, onDataNeedsRefresh?: () => void }) {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
   const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
@@ -165,7 +167,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
         </TooltipProvider>
       </TableCell>
       <TableCell className="align-middle">
-        <GuaranteeManager booking={booking} isOpen={isGuaranteeOpen} onOpenChange={setIsGuaranteeOpen}>
+        <GuaranteeManager booking={booking} isOpen={isGuaranteeOpen} onOpenChange={setIsGuaranteeOpen} onDataNeedsRefresh={onDataNeedsRefresh}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -231,7 +233,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
                     </TooltipProvider>
                 </NotesViewer>
               
-              <BookingPaymentsManager bookingId={booking.id} isOpen={isPaymentsOpen} onOpenChange={setIsPaymentsOpen}>
+              <BookingPaymentsManager bookingId={booking.id} isOpen={isPaymentsOpen} onOpenChange={setIsPaymentsOpen} onDataNeedsRefresh={onDataNeedsRefresh}>
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
@@ -245,7 +247,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
                   </TooltipProvider>
               </BookingPaymentsManager>
               
-              <BookingExpensesManager bookingId={booking.id} isOpen={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
+              <BookingExpensesManager bookingId={booking.id} isOpen={isExpensesOpen} onOpenChange={setIsExpensesOpen} onDataNeedsRefresh={onDataNeedsRefresh}>
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
@@ -259,7 +261,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
                   </TooltipProvider>
               </BookingExpensesManager>
 
-              <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]} isOpen={isEditOpen} onOpenChange={setIsEditOpen}>
+              <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]} isOpen={isEditOpen} onOpenChange={setIsEditOpen} onDataNeedsRefresh={onDataNeedsRefresh}>
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
@@ -273,7 +275,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
                   </TooltipProvider>
               </BookingEditForm>
               
-              <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+              <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen} onDataNeedsRefresh={onDataNeedsRefresh}>
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
@@ -293,7 +295,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
 }
 
 
-export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
+export default function BookingsList({ bookings, properties, tenants, showProperty = false, onDataNeedsRefresh }: BookingsListProps) {
 
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
@@ -329,6 +331,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     properties={properties} 
                     tenants={tenants} 
                     showProperty={showProperty} 
+                    onDataNeedsRefresh={onDataNeedsRefresh}
                 />
             ))}
           </TableBody>

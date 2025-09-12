@@ -21,9 +21,10 @@ interface BookingsClientProps {
   properties: Property[];
   tenants: Tenant[];
   initialTenantIdFilter?: string;
+  onDataNeedsRefresh: () => void;
 }
 
-export default function BookingsClient({ initialBookings, properties, tenants, initialTenantIdFilter }: BookingsClientProps) {
+export default function BookingsClient({ initialBookings, properties, tenants, initialTenantIdFilter, onDataNeedsRefresh }: BookingsClientProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -237,7 +238,13 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
               </Button>
           </div>
       </div>
-      <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} showProperty={true} />
+      <BookingsList 
+        bookings={filteredBookings} 
+        properties={properties} 
+        tenants={tenants} 
+        showProperty={true}
+        onDataNeedsRefresh={onDataNeedsRefresh} 
+      />
     </div>
   );
 }
