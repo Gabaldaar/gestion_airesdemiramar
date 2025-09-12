@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -35,10 +35,13 @@ const mainNavItems = [
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
   { href: '/reports', label: 'Reportes', icon: BarChart3 },
   { href: '/templates', label: 'Plantillas', icon: Mail },
-  { href: '/settings', label: 'Configuración', icon: Settings },
 ];
 
-const helpNavItem = { href: '/help', label: 'Ayuda', icon: CircleHelp };
+const secondaryNavItems = [
+  { href: '/github', label: 'GitHub', icon: Github },
+  { href: '/settings', label: 'Configuración', icon: Settings },
+  { href: '/help', label: 'Ayuda', icon: CircleHelp },
+];
 
 function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
@@ -67,7 +70,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
             {mainNavItems.map(renderLink)}
         </nav>
         <nav className="grid items-start px-2 text-sm font-medium lg:px-4 mb-4">
-            {renderLink(helpNavItem)}
+            {secondaryNavItems.map(renderLink)}
         </nav>
     </div>
   );
