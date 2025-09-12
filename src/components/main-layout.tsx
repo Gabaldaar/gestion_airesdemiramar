@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, Github } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -38,7 +38,6 @@ const mainNavItems = [
 ];
 
 const secondaryNavItems = [
-  { href: '/github', label: 'GitHub', icon: Github },
   { href: '/settings', label: 'Configuración', icon: Settings },
   { href: '/help', label: 'Ayuda', icon: CircleHelp },
 ];
