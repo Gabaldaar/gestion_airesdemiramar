@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -18,6 +19,7 @@ import { updateTenant } from '@/lib/actions';
 import { Tenant } from '@/lib/data';
 import { Pencil, Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
+import { useAuth } from './auth-provider';
 
 const initialState = {
   message: '',
@@ -43,12 +45,29 @@ function SubmitButton() {
 export function TenantEditForm({ tenant }: { tenant: Tenant }) {
   const [state, formAction] = useActionState(updateTenant, initialState);
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
     }
   }, [state]);
+
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(async () => {
+      if (user) {
+        // The action will handle the token verification
+        await formAction(formData);
+      } else {
+        // Handle case where user is not logged in, though this should be prevented by UI
+        console.error("User is not authenticated.");
+      }
+    });
+  }
+
 
   return (
     <>
