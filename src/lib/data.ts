@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { db as clientDb } from './firebase';
@@ -8,16 +7,11 @@ import {
   getDocs,
   doc,
   getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
   Timestamp,
-  writeBatch,
   collectionGroup,
-  setDoc
 } from 'firebase/firestore';
 
 // --- TYPE DEFINITIONS ---
