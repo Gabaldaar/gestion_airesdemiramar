@@ -159,22 +159,30 @@ export async function updateTenant(previousState: any, formData: FormData) {
   const updatedTenant: Tenant = {
     id: formData.get("id") as string,
     name: formData.get("name") as string,
-    dni: formData.get("dni") as string,
-    email: formData.get("email") as string,
-    phone: formData.get("phone") as string,
-    address: formData.get("address") as string,
-    city: formData.get("city") as string,
-    country: formData.get("country") as string,
-    notes: formData.get("notes") as string,
+    dni: formData.get("dni") as string || "",
+    email: formData.get("email") as string || "",
+    phone: formData.get("phone") as string || "",
+    address: formData.get("address") as string || "",
+    city: formData.get("city") as string || "",
+    country: formData.get("country") as string || "Argentina",
+    notes: formData.get("notes") as string || "",
   };
+
+  if (!updatedTenant.id || !updatedTenant.name) {
+      return { success: false, message: "El ID y el nombre del inquilino son obligatorios." };
+  }
 
   try {
     await dbUpdateTenant(updatedTenant);
     revalidatePath("/tenants");
     revalidatePath("/bookings");
     revalidatePath("/");
+    revalidatePath(`/properties/[id]`);
+    revalidatePath('/dashboard');
+
     return { success: true, message: "Inquilino actualizado correctamente." };
   } catch (error) {
+    console.error("Error in updateTenant action:", error);
     return { success: false, message: "Error al actualizar inquilino." };
   }
 }
