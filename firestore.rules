@@ -1,12 +1,8 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Regla para la colección de sesiones: solo el propietario puede leer/escribir su sesión.
-    match /_sessions/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
-    }
-
-    // Regla general para todos los demás documentos.
+    // All documents are protected and require user to be authenticated
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

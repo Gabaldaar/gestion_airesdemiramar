@@ -1,5 +1,6 @@
 
-import { db, auth } from './firebase';
+import { db } from './firebase-admin'; // Use Admin SDK for server-side operations
+import { getSession } from './session';
 import {
   collection,
   getDocs,
@@ -13,16 +14,15 @@ import {
   orderBy,
   Timestamp,
   writeBatch,
-  collectionGroup,
   setDoc
-} from 'firebase/firestore';
-import { getSession } from './session';
+} from 'firebase-admin/firestore';
+
 
 // --- TYPE DEFINITIONS ---
 
 // Helper to convert Firestore Timestamps to ISO strings
-const processDoc = (doc: any) => {
-    const data = doc.data();
+const processDoc = (doc: FirebaseFirestore.DocumentSnapshot) => {
+    const data = doc.data()!;
     for (const key in data) {
         if (data[key] instanceof Timestamp) {
             data[key] = data[key].toDate().toISOString();
@@ -179,36 +179,36 @@ export type EmailSettings = {
 
 // --- DATA ACCESS FUNCTIONS ---
 
-const propertiesCollection = collection(db, 'properties');
-const tenantsCollection = collection(db, 'tenants');
-const bookingsCollection = collection(db, 'bookings');
-const propertyExpensesCollection = collection(db, 'propertyExpenses');
-const bookingExpensesCollection = collection(db, 'bookingExpenses');
-const paymentsCollection = collection(db, 'payments');
-const expenseCategoriesCollection = collection(db, 'expenseCategories');
-const emailTemplatesCollection = collection(db, 'emailTemplates');
-const settingsCollection = collection(db, 'settings');
+const getCollectionRef = async <T>(collectionName: string) => {
+    const { uid } = await getSession();
+    return collection(db, 'users', uid, collectionName) as FirebaseFirestore.CollectionReference<T>;
+}
 
+// --- DATA ACCESS FUNCTIONS ---
+
+const getRootCollectionRef = <T>(collectionName: string) => {
+    return collection(db, collectionName) as FirebaseFirestore.CollectionReference<T>;
+};
 
 // Helper function to add default data only if the collection is empty
-const addDefaultData = async (collRef: any, data: any[]) => {
+const addDefaultData = async (collRef: FirebaseFirestore.CollectionReference<any>, data: any[]) => {
     const querySnapshot = await getDocs(collRef);
     if (querySnapshot.empty) {
-        const batch = writeBatch(db);
+        const batch = db.batch();
         data.forEach(item => {
             const docRef = doc(collRef);
             batch.set(docRef, item);
         });
         await batch.commit();
         console.log(`Default data added to ${collRef.path}.`);
-    } else {
-        // console.log(`Collection ${collRef.path} already has data. Skipping default data.`);
     }
 };
 
-
 // Function to initialize default data for the app
 const initializeDefaultData = async () => {
+    const { uid } = await getSession();
+    const emailTemplatesCollection = getRootCollectionRef<Omit<EmailTemplate, 'id'>>('emailTemplates');
+
     const defaultTemplates = [
         {
             name: 'Confirmación de Pago',
@@ -231,131 +231,131 @@ const initializeDefaultData = async () => {
 
 
 export async function getProperties(): Promise<Property[]> {
+  const propertiesCollection = getRootCollectionRef<Property>('properties');
   const snapshot = await getDocs(query(propertiesCollection, orderBy('name')));
   return snapshot.docs.map(processDoc) as Property[];
 }
 
 export async function getPropertyById(id: string): Promise<Property | undefined> {
   if (!id) return undefined;
-  const docRef = doc(db, 'properties', id);
+  const propertiesCollection = getRootCollectionRef<Property>('properties');
+  const docRef = doc(propertiesCollection, id);
   const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? processDoc(docSnap) as Property : undefined;
+  return docSnap.exists ? processDoc(docSnap) as Property : undefined;
 }
 
 export async function addProperty(property: Omit<Property, 'id'>): Promise<Property> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const propertiesCollection = getRootCollectionRef<Omit<Property, 'id'>>('properties');
     const docRef = await addDoc(propertiesCollection, property);
     return { id: docRef.id, ...property };
 }
 
 export async function updateProperty(updatedProperty: Property): Promise<Property | null> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const propertiesCollection = getRootCollectionRef<Property>('properties');
     const { id, ...data } = updatedProperty;
-    const docRef = doc(db, 'properties', id);
+    const docRef = doc(propertiesCollection, id);
     await updateDoc(docRef, data);
     return updatedProperty;
 }
 
 export async function deleteProperty(propertyId: string): Promise<void> {
-    await getSession(); // Ensure user is authenticated server-side
-    const batch = writeBatch(db);
+    await getSession();
+    const batch = db.batch();
 
-    // 1. Delete the property itself
-    const propertyRef = doc(db, 'properties', propertyId);
+    const propertiesCollection = getRootCollectionRef<Property>('properties');
+    const bookingsCollection = getRootCollectionRef<Booking>('bookings');
+    const paymentsCollection = getRootCollectionRef<Payment>('payments');
+    const bookingExpensesCollection = getRootCollectionRef<BookingExpense>('bookingExpenses');
+    const propertyExpensesCollection = getRootCollectionRef<PropertyExpense>('propertyExpenses');
+
+    const propertyRef = doc(propertiesCollection, propertyId);
     batch.delete(propertyRef);
 
-    // 2. Find and delete all bookings for the property
     const bookingsQuery = query(bookingsCollection, where('propertyId', '==', propertyId));
     const bookingsSnapshot = await getDocs(bookingsQuery);
     
     const bookingIds = bookingsSnapshot.docs.map(d => d.id);
 
     if (bookingIds.length > 0) {
-        // 3. Find and delete all payments for those bookings
         const paymentsQuery = query(paymentsCollection, where('bookingId', 'in', bookingIds));
         const paymentsSnapshot = await getDocs(paymentsQuery);
         paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-        // 4. Find and delete all booking expenses for those bookings
         const bookingExpensesQuery = query(bookingExpensesCollection, where('bookingId', 'in', bookingIds));
         const bookingExpensesSnapshot = await getDocs(bookingExpensesQuery);
         bookingExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
     }
 
-    // Delete the bookings themselves
     bookingsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-    // 5. Find and delete all property expenses
     const propertyExpensesQuery = query(propertyExpensesCollection, where('propertyId', '==', propertyId));
     const propertyExpensesSnapshot = await getDocs(propertyExpensesQuery);
     propertyExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
 
-    // Commit the batch
     await batch.commit();
 }
 
 
-
 export async function getTenants(): Promise<Tenant[]> {
+    const tenantsCollection = getRootCollectionRef<Tenant>('tenants');
     const snapshot = await getDocs(query(tenantsCollection, orderBy('name')));
     return snapshot.docs.map(processDoc) as Tenant[];
 }
 
 export async function getTenantById(id: string): Promise<Tenant | undefined> {
     if (!id) return undefined;
-    const docRef = doc(db, 'tenants', id);
+    const tenantsCollection = getRootCollectionRef<Tenant>('tenants');
+    const docRef = doc(tenantsCollection, id);
     const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? processDoc(docSnap) as Tenant : undefined;
+    return docSnap.exists ? processDoc(docSnap) as Tenant : undefined;
 }
 
 export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const tenantsCollection = getRootCollectionRef<Omit<Tenant, 'id'>>('tenants');
     const docRef = await addDoc(tenantsCollection, tenant);
     return { id: docRef.id, ...tenant };
 }
 
 export async function updateTenant(tenantData: Tenant): Promise<Tenant> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const tenantsCollection = getRootCollectionRef<Tenant>('tenants');
     const { id, ...dataToUpdate } = tenantData;
     if (!id) {
         throw new Error("Tenant ID is required for updates.");
     }
-    const tenantRef = doc(db, 'tenants', id);
-    console.log(`[data.ts] Attempting to update tenant ${id} with data:`, dataToUpdate);
-    try {
-        await updateDoc(tenantRef, dataToUpdate);
-        console.log(`[data.ts] Successfully updated tenant ${id}.`);
-        return tenantData;
-    } catch (error) {
-        console.error(`[data.ts] Firestore update failed for tenant ${id}:`, error);
-        throw error; // Re-throw the error to be caught by the server action
-    }
+    const tenantRef = doc(tenantsCollection, id);
+    await updateDoc(tenantRef, dataToUpdate);
+    return tenantData;
 }
 
 export async function deleteTenant(id: string): Promise<boolean> {
-    await getSession(); // Ensure user is authenticated server-side
-    const docRef = doc(db, 'tenants', id);
+    await getSession();
+    const tenantsCollection = getRootCollectionRef<Tenant>('tenants');
+    const docRef = doc(tenantsCollection, id);
     await deleteDoc(docRef);
     return true;
 }
 
 async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> {
-    const tenant = await getTenantById(booking.tenantId);
-    const property = await getPropertyById(booking.propertyId);
+    const [tenant, property, allPayments] = await Promise.all([
+        getTenantById(booking.tenantId),
+        getPropertyById(booking.propertyId),
+        getPaymentsByBookingId(booking.id)
+    ]);
 
-    const allPayments = await getPaymentsByBookingId(booking.id);
     const totalPaidInUSD = allPayments.reduce((acc, payment) => acc + payment.amount, 0);
 
     let balance = 0;
     if (booking.currency === 'USD') {
         balance = booking.amount - totalPaidInUSD;
-    } else { // currency is ARS
+    } else { 
         const totalPaidInArs = allPayments.reduce((acc, p) => {
             if (p.originalArsAmount) {
                 return acc + p.originalArsAmount;
             }
-            // Fallback: if a USD payment has no rate, we can't convert it accurately
-            // For now, we'll assume it doesn't contribute to the ARS balance in that edge case
             return p.exchangeRate ? acc + (p.amount * p.exchangeRate) : acc;
         }, 0);
         balance = booking.amount - totalPaidInArs;
@@ -372,52 +372,21 @@ async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> 
 
 
 export async function getBookings(): Promise<BookingWithDetails[]> {
+    const bookingsCollection = getRootCollectionRef<Booking>('bookings');
     const snapshot = await getDocs(query(bookingsCollection, orderBy('startDate', 'asc')));
     const allBookings = snapshot.docs.map(processDoc) as Booking[];
-    const allPayments = await getAllPayments();
     
-    const detailedBookings = await Promise.all(allBookings.map(async (booking) => {
-        const [tenant, property] = await Promise.all([
-            getTenantById(booking.tenantId),
-            getPropertyById(booking.propertyId)
-        ]);
-        const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
-        const totalPaid = paymentsForBooking.reduce((acc, payment) => acc + payment.amount, 0);
-        
-        let balance;
-        if (booking.currency === 'USD') {
-             balance = booking.amount - totalPaid;
-        } else {
-             // For ARS bookings, the balance is best represented in ARS.
-             // Here we assume payments are converted to ARS at some rate for a true balance,
-             // but for simplicity, we just show the remaining ARS amount.
-             // A more complex system would track payments in both currencies or convert at payment time.
-             // For now, let's just subtract the USD payments converted at *some* rate.
-             const lastPaymentRate = paymentsForBooking.find(p => p.exchangeRate)?.exchangeRate || booking.exchangeRate;
-             if (lastPaymentRate) {
-                const totalPaidInArs = totalPaid * lastPaymentRate;
-                balance = booking.amount - totalPaidInArs;
-             } else {
-                // If no exchange rate, we can't calculate a meaningful mixed-currency balance.
-                // Show the original amount as the balance.
-                balance = booking.amount;
-             }
-        }
-
-        return { ...booking, tenant, property, totalPaid, balance };
-    }));
-
-    return detailedBookings;
+    return Promise.all(allBookings.map(booking => getBookingDetails(booking)));
 }
 
 export async function getBookingsByPropertyId(propertyId: string): Promise<BookingWithDetails[]> {
+    const bookingsCollection = getRootCollectionRef<Booking>('bookings');
     const q = query(bookingsCollection, where('propertyId', '==', propertyId));
     const snapshot = await getDocs(q);
     const propertyBookings = snapshot.docs.map(processDoc) as Booking[];
     
     const detailedBookings = await Promise.all(propertyBookings.map(booking => getBookingDetails(booking)));
     
-    // Sort in application code to avoid needing a composite index
     detailedBookings.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     
     return detailedBookings;
@@ -425,33 +394,40 @@ export async function getBookingsByPropertyId(propertyId: string): Promise<Booki
 
 export async function getBookingById(id: string): Promise<Booking | undefined> {
     if (!id) return undefined;
-    const docRef = doc(db, 'bookings', id);
+    const bookingsCollection = getRootCollectionRef<Booking>('bookings');
+    const docRef = doc(bookingsCollection, id);
     const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? processDoc(docSnap) as Booking : undefined;
+    return docSnap.exists ? processDoc(docSnap) as Booking : undefined;
 }
 
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const bookingsCollection = getRootCollectionRef<Omit<Booking, 'id'>>('bookings');
     const docRef = await addDoc(bookingsCollection, booking);
     return { id: docRef.id, ...booking };
 }
 
 export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const bookingsCollection = getRootCollectionRef<Booking>('bookings');
     const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
-    const docRef = doc(db, 'bookings', id);
+    const docRef = doc(bookingsCollection, id);
     await updateDoc(docRef, data);
     const newDoc = await getDoc(docRef);
-    return newDoc.exists() ? processDoc(newDoc) as Booking : null;
+    return newDoc.exists ? processDoc(newDoc) as Booking : null;
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {
-    await getSession(); // Ensure user is authenticated server-side
-    const batch = writeBatch(db);
+    await getSession();
+    const batch = db.batch();
     
-    const bookingRef = doc(db, 'bookings', id);
+    const bookingsCollection = getRootCollectionRef<Booking>('bookings');
+    const paymentsCollection = getRootCollectionRef<Payment>('payments');
+    const bookingExpensesCollection = getRootCollectionRef<BookingExpense>('bookingExpenses');
+
+    const bookingRef = doc(bookingsCollection, id);
     batch.delete(bookingRef);
 
     const paymentsQuery = query(paymentsCollection, where('bookingId', '==', id));
@@ -467,129 +443,147 @@ export async function deleteBooking(id: string): Promise<boolean> {
 }
 
 export async function getExpenseCategories(): Promise<ExpenseCategory[]> {
+    const expenseCategoriesCollection = getRootCollectionRef<ExpenseCategory>('expenseCategories');
     const snapshot = await getDocs(query(expenseCategoriesCollection, orderBy('name')));
     return snapshot.docs.map(processDoc) as ExpenseCategory[];
 }
 
 export async function addExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const expenseCategoriesCollection = getRootCollectionRef<Omit<ExpenseCategory, 'id'>>('expenseCategories');
     const docRef = await addDoc(expenseCategoriesCollection, category);
     return { id: docRef.id, ...category };
 }
 
 export async function updateExpenseCategory(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const expenseCategoriesCollection = getRootCollectionRef<ExpenseCategory>('expenseCategories');
     const { id, ...data } = updatedCategory;
-    const docRef = doc(db, 'expenseCategories', id);
+    const docRef = doc(expenseCategoriesCollection, id);
     await updateDoc(docRef, data);
     return updatedCategory;
 }
 
 export async function deleteExpenseCategory(id: string): Promise<void> {
-    await getSession(); // Ensure user is authenticated server-side
-    // TODO: We might need to handle what happens to expenses that have this categoryId
-    const docRef = doc(db, 'expenseCategories', id);
+    await getSession();
+    const expenseCategoriesCollection = getRootCollectionRef<ExpenseCategory>('expenseCategories');
+    const docRef = doc(expenseCategoriesCollection, id);
     await deleteDoc(docRef);
 }
 
-
 export async function getAllPropertyExpenses(): Promise<PropertyExpense[]> {
+    const propertyExpensesCollection = getRootCollectionRef<PropertyExpense>('propertyExpenses');
     const snapshot = await getDocs(propertyExpensesCollection);
     return snapshot.docs.map(processDoc) as PropertyExpense[];
 }
 
 export async function getPropertyExpensesByPropertyId(propertyId: string): Promise<PropertyExpense[]> {
+    const propertyExpensesCollection = getRootCollectionRef<PropertyExpense>('propertyExpenses');
     const q = query(propertyExpensesCollection, where('propertyId', '==', propertyId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(processDoc) as PropertyExpense[];
 }
 
 export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const propertyExpensesCollection = getRootCollectionRef<Omit<PropertyExpense, 'id'>>('propertyExpenses');
     const docRef = await addDoc(propertyExpensesCollection, { ...expense, currency: 'ARS' });
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
 export async function updatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense | null> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const propertyExpensesCollection = getRootCollectionRef<PropertyExpense>('propertyExpenses');
     const { id, ...data } = updatedExpense;
-    const docRef = doc(db, 'propertyExpenses', id);
+    const docRef = doc(propertyExpensesCollection, id);
     await updateDoc(docRef, { ...data, currency: 'ARS' });
     return { ...updatedExpense, currency: 'ARS' };
 }
 
 export async function deletePropertyExpense(id: string): Promise<boolean> {
-    await getSession(); // Ensure user is authenticated server-side
-    const docRef = doc(db, 'propertyExpenses', id);
+    await getSession();
+    const propertyExpensesCollection = getRootCollectionRef<PropertyExpense>('propertyExpenses');
+    const docRef = doc(propertyExpensesCollection, id);
     await deleteDoc(docRef);
     return true;
 }
 
 export async function getAllBookingExpenses(): Promise<BookingExpense[]> {
+    const bookingExpensesCollection = getRootCollectionRef<BookingExpense>('bookingExpenses');
     const snapshot = await getDocs(bookingExpensesCollection);
     return snapshot.docs.map(processDoc) as BookingExpense[];
 }
 
 export async function getBookingExpensesByBookingId(bookingId: string): Promise<BookingExpense[]> {
+    const bookingExpensesCollection = getRootCollectionRef<BookingExpense>('bookingExpenses');
     const q = query(bookingExpensesCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(processDoc) as BookingExpense[];
 }
 
 export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const bookingExpensesCollection = getRootCollectionRef<Omit<BookingExpense, 'id'>>('bookingExpenses');
     const docRef = await addDoc(bookingExpensesCollection, { ...expense, currency: 'ARS' });
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
 export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense | null> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const bookingExpensesCollection = getRootCollectionRef<BookingExpense>('bookingExpenses');
     const { id, ...data } = updatedExpense;
-    const docRef = doc(db, 'bookingExpenses', id);
-await updateDoc(docRef, { ...data, currency: 'ARS' });
+    const docRef = doc(bookingExpensesCollection, id);
+    await updateDoc(docRef, { ...data, currency: 'ARS' });
     return { ...updatedExpense, currency: 'ARS' };
 }
 
 export async function deleteBookingExpense(id: string): Promise<boolean> {
-    await getSession(); // Ensure user is authenticated server-side
-    const docRef = doc(db, 'bookingExpenses', id);
+    await getSession();
+    const bookingExpensesCollection = getRootCollectionRef<BookingExpense>('bookingExpenses');
+    const docRef = doc(bookingExpensesCollection, id);
     await deleteDoc(docRef);
     return true;
 }
 
 export async function getPaymentsByBookingId(bookingId: string): Promise<Payment[]> {
+    const paymentsCollection = getRootCollectionRef<Payment>('payments');
     const q = query(paymentsCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(processDoc) as Payment[];
 }
 
 export async function addPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const paymentsCollection = getRootCollectionRef<Omit<Payment, 'id'>>('payments');
     const docRef = await addDoc(paymentsCollection, { ...payment, currency: 'USD' });
     return { id: docRef.id, ...payment, currency: 'USD' };
 }
 
 export async function updatePayment(updatedPayment: Payment): Promise<Payment | null> {
-    await getSession(); // Ensure user is authenticated server-side
+    await getSession();
+    const paymentsCollection = getRootCollectionRef<Payment>('payments');
     const { id, ...data } = updatedPayment;
-    const docRef = doc(db, 'payments', id);
+    const docRef = doc(paymentsCollection, id);
     await updateDoc(docRef, { ...data, currency: 'USD' });
     return { ...updatedPayment, currency: 'USD' };
 }
 
 export async function deletePayment(id: string): Promise<boolean> {
-    await getSession(); // Ensure user is authenticated server-side
-    const docRef = doc(db, 'payments', id);
+    await getSession();
+    const paymentsCollection = getRootCollectionRef<Payment>('payments');
+    const docRef = doc(paymentsCollection, id);
     await deleteDoc(docRef);
     return true;
 }
 
 export async function getAllPayments(): Promise<Payment[]> {
+    const paymentsCollection = getRootCollectionRef<Payment>('payments');
     const snapshot = await getDocs(paymentsCollection);
     return snapshot.docs.map(processDoc) as Payment[];
 }
 
 export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]> {
+    const bookingsCollection = getRootCollectionRef<Booking>('bookings');
     const [payments, bookings, tenants, properties] = await Promise.all([
         getAllPayments(),
         getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
@@ -604,24 +598,17 @@ export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]>
     const detailedPayments = payments.map(payment => {
         const booking = bookingsMap.get(payment.bookingId);
         if (!booking) {
-            return {
-                ...payment,
-                propertyName: 'Reserva eliminada',
-            };
+            return { ...payment, propertyName: 'Reserva eliminada' };
         }
-        const tenantName = tenantsMap.get(booking.tenantId);
-        const propertyName = propertiesMap.get(booking.propertyId);
-
         return {
             ...payment,
             propertyId: booking.propertyId,
-            propertyName: propertyName || 'N/A',
+            propertyName: propertiesMap.get(booking.propertyId) || 'N/A',
             tenantId: booking.tenantId,
-            tenantName: tenantName || 'N/A',
+            tenantName: tenantsMap.get(booking.tenantId) || 'N/A',
         };
     });
 
-    // Sort by date descending
     detailedPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return detailedPayments;
@@ -629,6 +616,14 @@ export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]>
 
 
 export async function getFinancialSummaryByProperty(options?: { startDate?: string; endDate?: string }): Promise<FinancialSummaryByCurrency> {
+    const { uid } = await getSession();
+
+    const propertiesCollection = getRootCollectionRef<Property>('properties');
+    const bookingsCollection = getRootCollectionRef<Booking>('bookings');
+    const propertyExpensesCollection = getRootCollectionRef<PropertyExpense>('propertyExpenses');
+    const bookingExpensesCollection = getRootCollectionRef<BookingExpense>('bookingExpenses');
+    const paymentsCollection = getRootCollectionRef<Payment>('payments');
+
   const startDate = options?.startDate;
   const endDate = options?.endDate;
   const fromDate = startDate ? new Date(startDate) : null;
@@ -638,14 +633,12 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
   if (toDate) toDate.setUTCHours(23, 59, 59, 999);
 
   const [allProperties, allBookingsData, allPropertyExpenses, allBookingExpenses, allPayments] = await Promise.all([
-    getProperties(),
-    getDocs(query(bookingsCollection)),
-    getAllPropertyExpenses(),
-    getAllBookingExpenses(),
-    getAllPayments(),
+    getDocs(query(propertiesCollection)).then(s => s.docs.map(processDoc)) as Promise<Property[]>,
+    getDocs(query(bookingsCollection)).then(s => s.docs.map(processDoc)) as Promise<Booking[]>,
+    getDocs(query(propertyExpensesCollection)).then(s => s.docs.map(processDoc)) as Promise<PropertyExpense[]>,
+    getDocs(query(bookingExpensesCollection)).then(s => s.docs.map(processDoc)) as Promise<BookingExpense[]>,
+    getDocs(query(paymentsCollection)).then(s => s.docs.map(processDoc)) as Promise<Payment[]>,
   ]);
-  const allBookings = allBookingsData.docs.map(processDoc) as Booking[];
-
 
   const isWithinDateRange = (dateStr: string) => {
       if (!dateStr || (!fromDate && !toDate)) return true;
@@ -763,7 +756,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
     const [properties, bookings, tenants, propertyExpenses, bookingExpenses, categories] = await Promise.all([
         getProperties(),
-        getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
+        getDocs(getRootCollectionRef('bookings')).then(snap => snap.docs.map(processDoc) as Booking[]),
         getTenants(),
         getAllPropertyExpenses(),
         getAllBookingExpenses(),
@@ -811,7 +804,6 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
         }
     });
 
-    // Sort by date descending
     unifiedList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return unifiedList;
@@ -820,61 +812,60 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
 export async function getBookingWithDetails(bookingId: string): Promise<BookingWithDetails | null> {
     const booking = await getBookingById(bookingId);
     if (!booking) return null;
-    
-    // This now returns a more robust object, preventing crashes.
     return getBookingDetails(booking);
 }
 
 
-// --- Email Template Functions ---
-
 export async function getEmailTemplates(): Promise<EmailTemplate[]> {
-  // Try to add default templates if they don't exist
+  await getSession();
   await initializeDefaultData();
+  const emailTemplatesCollection = getRootCollectionRef<EmailTemplate>('emailTemplates');
   const snapshot = await getDocs(query(emailTemplatesCollection, orderBy('name')));
   return snapshot.docs.map(processDoc) as EmailTemplate[];
 }
 
 export async function addEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
-  await getSession(); // Ensure user is authenticated server-side
+  await getSession();
+  const emailTemplatesCollection = getRootCollectionRef<Omit<EmailTemplate, 'id'>>('emailTemplates');
   const docRef = await addDoc(emailTemplatesCollection, template);
   return { id: docRef.id, ...template };
 }
 
 export async function updateEmailTemplate(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
-  await getSession(); // Ensure user is authenticated server-side
+  await getSession();
+  const emailTemplatesCollection = getRootCollectionRef<EmailTemplate>('emailTemplates');
   const { id, ...data } = updatedTemplate;
-  const docRef = doc(db, 'emailTemplates', id);
+  const docRef = doc(emailTemplatesCollection, id);
   await updateDoc(docRef, data);
   return updatedTemplate;
 }
 
 export async function deleteEmailTemplate(id: string): Promise<void> {
-  await getSession(); // Ensure user is authenticated server-side
-  const docRef = doc(db, 'emailTemplates', id);
+  await getSession();
+  const emailTemplatesCollection = getRootCollectionRef<EmailTemplate>('emailTemplates');
+  const docRef = doc(emailTemplatesCollection, id);
   await deleteDoc(docRef);
 }
 
 
-// --- App Settings Functions ---
-
 export async function getEmailSettings(): Promise<EmailSettings | null> {
-    const docRef = doc(db, 'settings', 'email');
+    await getSession();
+    const settingsCollection = getRootCollectionRef<EmailSettings>('settings');
+    const docRef = doc(settingsCollection, 'email');
     let docSnap = await getDoc(docRef);
     
-    // If the document doesn't exist, create it with default empty values
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
         await setDoc(docRef, { replyToEmail: '' });
-        docSnap = await getDoc(docRef); // Re-fetch the newly created document
+        docSnap = await getDoc(docRef);
     }
 
     return processDoc(docSnap) as EmailSettings;
 }
 
 export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<EmailSettings> {
-    await getSession(); // Ensure user is authenticated server-side
-    const docRef = doc(db, 'settings', 'email');
-    // Use setDoc with merge:true to create or update the document
+    await getSession();
+    const settingsCollection = getRootCollectionRef<Omit<EmailSettings, 'id'>>('settings');
+    const docRef = doc(settingsCollection, 'email');
     await setDoc(docRef, settings, { merge: true });
     return { id: 'email', ...settings };
 }

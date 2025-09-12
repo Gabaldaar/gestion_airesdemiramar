@@ -5,7 +5,12 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { setSession } from '@/lib/session';
+
+// A client-side store for the idToken
+let idToken: string | null = null;
+
+// Function to be called by middleware or server actions to get the token
+export const getClientSideToken = () => idToken;
 
 interface AuthContextType {
   user: User | null;
@@ -31,15 +36,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(user);
       if (user) {
         try {
-          const idToken = await user.getIdToken();
-          await setSession(idToken); // Guardar el token de sesión en Firestore
+          // Store the token in the client-side variable
+          idToken = await user.getIdToken();
         } catch (error) {
-          console.error("Failed to set session:", error);
-          // Optional: sign out the user if session saving fails
-          // await firebaseSignOut(auth);
+          console.error("Failed to get ID token:", error);
+          idToken = null;
         }
       } else {
-        // You might want to clear the session here if you implement server-side clearing
+        idToken = null;
       }
       setLoading(false);
     });
@@ -50,10 +54,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener will handle setting the session
+      await signInWithPopup(auth, provider);
+      // The onAuthStateChanged listener will handle setting the token
     } catch (error) {
       console.error("Error signing in with Google: ", error);
+      idToken = null;
       throw error;
     }
   };
@@ -61,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      // The redirect is handled by the layout manager
+      idToken = null;
     } catch (error) {
       console.error("Error signing out: ", error);
     }

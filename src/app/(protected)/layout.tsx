@@ -1,9 +1,11 @@
+
 'use client';
 
 import { useAuth } from '@/components/auth-provider';
 import MainLayout from '@/components/main-layout';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import Cookies from 'js-cookie';
 
 export default function ProtectedLayout({
     children,
@@ -14,14 +16,19 @@ export default function ProtectedLayout({
     const router = useRouter();
 
     useEffect(() => {
-        // Si no estamos en estado de carga y no hay usuario, redirigir a login.
-        if (!loading && !user) {
-            router.push('/login');
+        if (!loading) {
+            if (user) {
+                user.getIdToken().then(token => {
+                    Cookies.set('firebaseIdToken', token, { path: '/' });
+                });
+            } else {
+                Cookies.remove('firebaseIdToken', { path: '/' });
+                router.push('/login');
+            }
         }
     }, [user, loading, router]);
 
-    // Mientras se carga la información del usuario, mostrar un estado de carga.
-    // Esto previene que se muestre el contenido protegido antes de tiempo.
+
     if (loading || !user) {
         return (
             <div className="flex h-screen items-center justify-center bg-muted/40">
@@ -30,6 +37,5 @@ export default function ProtectedLayout({
         );
     }
 
-    // Si la carga ha terminado y hay un usuario, mostrar el layout principal con el contenido.
     return <MainLayout>{children}</MainLayout>;
 }
