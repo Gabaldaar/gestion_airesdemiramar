@@ -2,7 +2,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { db } from './firebase';
+import { adminDb } from './firebase-admin'; // Usar admin DB para escrituras
+import { db } from './firebase'; // Usar client DB para lecturas
 import {
     Booking,
     ContractStatus,
@@ -15,34 +16,34 @@ import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } fr
 import { collection, addDoc, updateDoc, deleteDoc, doc, writeBatch, query, where, getDocs, getDoc } from "firebase/firestore";
 
 
-const propertiesCollection = collection(db, 'properties');
-const tenantsCollection = collection(db, 'tenants');
-const bookingsCollection = collection(db, 'bookings');
-const propertyExpensesCollection = collection(db, 'propertyExpenses');
-const bookingExpensesCollection = collection(db, 'bookingExpenses');
-const paymentsCollection = collection(db, 'payments');
-const expenseCategoriesCollection = collection(db, 'expenseCategories');
-const emailTemplatesCollection = collection(db, 'emailTemplates');
-const settingsCollection = collection(db, 'settings');
+const propertiesCollection = collection(adminDb, 'properties');
+const tenantsCollection = collection(adminDb, 'tenants');
+const bookingsCollection = collection(adminDb, 'bookings');
+const propertyExpensesCollection = collection(adminDb, 'propertyExpenses');
+const bookingExpensesCollection = collection(adminDb, 'bookingExpenses');
+const paymentsCollection = collection(adminDb, 'payments');
+const expenseCategoriesCollection = collection(adminDb, 'expenseCategories');
+const emailTemplatesCollection = collection(adminDb, 'emailTemplates');
+const settingsCollection = collection(adminDb, 'settings');
 
 
 export async function getPropertyById(id: string): Promise<Property | undefined> {
   if (!id) return undefined;
-  const docRef = doc(db, 'properties', id);
+  const docRef = doc(db, 'properties', id); // Lectura con client DB
   const docSnap = await getDoc(docRef);
   return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Property : undefined;
 }
 
 export async function getTenantById(id: string): Promise<Tenant | undefined> {
     if (!id) return undefined;
-    const docRef = doc(db, 'tenants', id);
+    const docRef = doc(db, 'tenants', id); // Lectura con client DB
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Tenant : undefined;
 }
 
 export async function getBookingById(id: string): Promise<Booking | undefined> {
     if (!id) return undefined;
-    const docRef = doc(db, 'bookings', id);
+    const docRef = doc(db, 'bookings', id); // Lectura con client DB
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Booking : undefined;
 }
@@ -92,7 +93,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
   
   try {
     const { id, ...data } = propertyData;
-    await updateDoc(doc(db, 'properties', id), data);
+    await updateDoc(doc(adminDb, 'properties', id), data);
     revalidatePath("/settings");
     revalidatePath("/properties");
     revalidatePath(`/properties/${propertyData.id}`);
@@ -122,29 +123,29 @@ export async function deleteProperty(previousState: any, formData: FormData) {
     }
 
     try {
-        const batch = writeBatch(db);
+        const batch = writeBatch(adminDb);
 
-        const propertyRef = doc(db, 'properties', id);
+        const propertyRef = doc(adminDb, 'properties', id);
         batch.delete(propertyRef);
 
-        const bookingsQuery = query(collection(db, 'bookings'), where('propertyId', '==', id));
+        const bookingsQuery = query(collection(adminDb, 'bookings'), where('propertyId', '==', id));
         const bookingsSnapshot = await getDocs(bookingsQuery);
         
         const bookingIds = bookingsSnapshot.docs.map(d => d.id);
 
         if (bookingIds.length > 0) {
-            const paymentsQuery = query(collection(db, 'payments'), where('bookingId', 'in', bookingIds));
+            const paymentsQuery = query(collection(adminDb, 'payments'), where('bookingId', 'in', bookingIds));
             const paymentsSnapshot = await getDocs(paymentsQuery);
             paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-            const bookingExpensesQuery = query(collection(db, 'bookingExpenses'), where('bookingId', 'in', bookingIds));
+            const bookingExpensesQuery = query(collection(adminDb, 'bookingExpenses'), where('bookingId', 'in', bookingIds));
             const bookingExpensesSnapshot = await getDocs(bookingExpensesQuery);
             bookingExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
         }
 
         bookingsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-        const propertyExpensesQuery = query(collection(db, 'propertyExpenses'), where('propertyId', '==', id));
+        const propertyExpensesQuery = query(collection(adminDb, 'propertyExpenses'), where('propertyId', '==', id));
         const propertyExpensesSnapshot = await getDocs(propertyExpensesQuery);
         propertyExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
 
@@ -200,7 +201,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
   const id = formData.get("id") as string;
 
   try {
-    await updateDoc(doc(db, 'tenants', id), updatedTenant);
+    await updateDoc(doc(adminDb, 'tenants', id), updatedTenant);
     revalidatePath("/tenants");
     revalidatePath("/bookings");
     revalidatePath("/");
@@ -220,7 +221,7 @@ export async function deleteTenant(previousState: any, formData: FormData) {
     }
   
     try {
-      await deleteDoc(doc(db, 'tenants', id));
+      await deleteDoc(doc(adminDb, 'tenants', id));
       revalidatePath("/tenants");
       return { success: true, message: "Inquilino eliminado correctamente." };
     } catch (error) {
@@ -269,7 +270,7 @@ export async function addBooking(previousState: any, formData: FormData) {
                     notes,
                 });
                 if (eventId) {
-                    await updateDoc(doc(db, 'bookings', newBooking.id), { googleCalendarEventId: eventId });
+                    await updateDoc(doc(adminDb, 'bookings', newBooking.id), { googleCalendarEventId: eventId });
                 }
             } catch (calendarError) {
                  console.error("Calendar sync failed on booking creation, but the booking was saved:", calendarError);
@@ -354,7 +355,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
         }
 
 
-        await updateDoc(doc(db, 'bookings', id), updatedBookingData);
+        await updateDoc(doc(adminDb, 'bookings', id), updatedBookingData);
         
         const finalBookingState = { ...oldBooking, ...updatedBookingData };
 
@@ -381,7 +382,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
                     } else {
                         const newEventId = await addEventToCalendar(property.googleCalendarId, eventDetails);
                         if (newEventId) {
-                            await updateDoc(doc(db, 'bookings', id), { googleCalendarEventId: newEventId });
+                            await updateDoc(doc(adminDb, 'bookings', id), { googleCalendarEventId: newEventId });
                         }
                     }
                 } catch (calendarError) {
@@ -431,16 +432,16 @@ export async function deleteBooking(previousState: any, formData: FormData) {
             }
         }
 
-        const batch = writeBatch(db);
+        const batch = writeBatch(adminDb);
     
-        const bookingRef = doc(db, 'bookings', id);
+        const bookingRef = doc(adminDb, 'bookings', id);
         batch.delete(bookingRef);
 
-        const paymentsQuery = query(collection(db, 'payments'), where('bookingId', '==', id));
+        const paymentsQuery = query(collection(adminDb, 'payments'), where('bookingId', '==', id));
         const paymentsSnapshot = await getDocs(paymentsQuery);
         paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-        const expensesQuery = query(collection(db, 'bookingExpenses'), where('bookingId', '==', id));
+        const expensesQuery = query(collection(adminDb, 'bookingExpenses'), where('bookingId', '==', id));
         const expensesSnapshot = await getDocs(expensesQuery);
         expensesSnapshot.forEach(doc => batch.delete(doc.ref));
     
@@ -565,7 +566,7 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
             ...expenseData,
         };
 
-        await updateDoc(doc(db, 'propertyExpenses', id), updatedExpense);
+        await updateDoc(doc(adminDb, 'propertyExpenses', id), updatedExpense);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
         revalidatePath('/expenses');
@@ -584,7 +585,7 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
     }
 
     try {
-        await deleteDoc(doc(db, 'propertyExpenses', id));
+        await deleteDoc(doc(adminDb, 'propertyExpenses', id));
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
         revalidatePath('/expenses');
@@ -640,7 +641,7 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
             ...expenseData,
         };
 
-        await updateDoc(doc(db, 'bookingExpenses', id), updatedExpense);
+        await updateDoc(doc(adminDb, 'bookingExpenses', id), updatedExpense);
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath('/reports');
@@ -659,7 +660,7 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
     }
 
     try {
-        await deleteDoc(doc(db, 'bookingExpenses', id));
+        await deleteDoc(doc(adminDb, 'bookingExpenses', id));
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath('/reports');
@@ -777,7 +778,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
     if (paymentPayload.originalArsAmount === undefined) delete paymentPayload.originalArsAmount;
 
     try {
-        await updateDoc(doc(db, 'payments', id), {
+        await updateDoc(doc(adminDb, 'payments', id), {
           ...paymentPayload,
           currency: 'USD'
         });
@@ -799,7 +800,7 @@ export async function deletePayment(previousState: any, formData: FormData) {
     }
 
     try {
-        await deleteDoc(doc(db, 'payments', id));
+        await deleteDoc(doc(adminDb, 'payments', id));
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath(`/reports`);
@@ -833,7 +834,7 @@ export async function updateExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'Faltan datos para actualizar la categoría.' };
   }
   try {
-    await updateDoc(doc(db, 'expenseCategories', id), { name });
+    await updateDoc(doc(adminDb, 'expenseCategories', id), { name });
     revalidatePath('/settings');
      revalidatePath('/expenses');
     return { success: true, message: 'Categoría actualizada.' };
@@ -848,7 +849,7 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'ID de categoría no válido.' };
   }
   try {
-    await deleteDoc(doc(db, 'expenseCategories', id));
+    await deleteDoc(doc(adminDb, 'expenseCategories', id));
     revalidatePath('/settings');
     revalidatePath('/expenses');
     return { success: true, message: 'Categoría eliminada.' };
@@ -885,7 +886,7 @@ export async function updateEmailTemplate(previousState: any, formData: FormData
     return { success: false, message: 'Faltan datos para actualizar la plantilla.' };
   }
   try {
-    await updateDoc(doc(db, 'emailTemplates', id), { name, subject, body });
+    await updateDoc(doc(adminDb, 'emailTemplates', id), { name, subject, body });
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla actualizada.' };
   } catch (error) {
@@ -899,7 +900,7 @@ export async function deleteEmailTemplate(previousState: any, formData: FormData
     return { success: false, message: 'ID de plantilla no válido.' };
   }
   try {
-    await deleteDoc(doc(db, 'emailTemplates', id));
+    await deleteDoc(doc(adminDb, 'emailTemplates', id));
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla eliminada.' };
   } catch (error) {
@@ -916,7 +917,7 @@ export async function updateEmailSettings(previousState: any, formData: FormData
     }
 
     try {
-        await updateDoc(doc(db, 'settings', 'email'), { replyToEmail });
+        await updateDoc(doc(adminDb, 'settings', 'email'), { replyToEmail });
         revalidatePath('/settings');
         return { success: true, message: 'Configuración de email guardada.' };
     } catch (error) {
