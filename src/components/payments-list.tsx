@@ -39,14 +39,13 @@ export default function PaymentsList({ payments }: PaymentsListProps) {
   };
 
   const formatDate = (dateString: string) => {
-    if (!isClient || !dateString) {
+    if (!isClient) {
       return ''; // Render nothing on the server to avoid mismatch
     }
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
-    if (!currency) return '...'; // Safeguard for initial render
     const options: Intl.NumberFormatOptions = {
         style: 'decimal',
         minimumFractionDigits: 2,
@@ -73,7 +72,7 @@ export default function PaymentsList({ payments }: PaymentsListProps) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {isClient ? payments.map((payment) => (
+        {payments.map((payment) => (
           <TableRow key={payment.id}>
             <TableCell>{formatDate(payment.date)}</TableCell>
             <TableCell>{payment.propertyName || 'N/A'}</TableCell>
@@ -98,18 +97,12 @@ export default function PaymentsList({ payments }: PaymentsListProps) {
                 </div>
             </TableCell>
           </TableRow>
-        )) : (
-             <TableRow>
-                <TableCell colSpan={6} className="text-center">
-                    Cargando...
-                </TableCell>
-            </TableRow>
-        )}
+        ))}
       </TableBody>
       <TableFooter>
         <TableRow className="font-bold bg-muted">
           <TableCell colSpan={4} className="text-right">Total</TableCell>
-          <TableCell className="text-right">{isClient ? formatCurrency(totalAmountUSD, 'USD') : '...'}</TableCell>
+          <TableCell className="text-right">{formatCurrency(totalAmountUSD, 'USD')}</TableCell>
           <TableCell></TableCell>
         </TableRow>
       </TableFooter>

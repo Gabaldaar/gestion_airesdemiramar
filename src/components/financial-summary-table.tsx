@@ -21,7 +21,6 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
   }
 
   const formatCurrency = (amount: number) => {
-    if (!currency) return '...'; // Safeguard for initial render
     if (currency === 'USD') {
         return `USD ${new Intl.NumberFormat('es-AR', {
             style: 'decimal',

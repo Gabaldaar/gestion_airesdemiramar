@@ -167,7 +167,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <ExpensesList expenses={expenses} categories={categories} propertyId={property.id} />
+                <ExpensesList expenses={expenses} categories={categories} />
                 </CardContent>
             </Card>
             </TabsContent>

@@ -1,7 +1,5 @@
 
 
-'use client';
-
 import {
   Table,
   TableBody,
@@ -15,25 +13,17 @@ import { BookingWithTenantAndProperty } from "@/lib/data";
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from 'react';
 
 export default function DashboardRecentBookings({ bookings }: { bookings: BookingWithTenantAndProperty[]}) {
-  const [isClient, setIsClient] = useState(false);
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay próximas reservas para mostrar.</p>;
   }
 
   const formatDate = (dateString: string) => {
-    if (!dateString || !isClient) return '';
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
-    if (!currency) return '...'; // Safeguard for initial render
     if (currency === 'USD') {
         return `USD ${new Intl.NumberFormat('es-AR', {
             style: 'decimal',
@@ -100,7 +90,7 @@ export default function DashboardRecentBookings({ bookings }: { bookings: Bookin
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isClient ? bookings.map((booking) => (
+            {bookings.map((booking) => (
               <TableRow key={booking.id}>
                 <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>
                 <TableCell className="font-medium">{booking.tenant?.name || 'N/A'}</TableCell>
@@ -110,11 +100,7 @@ export default function DashboardRecentBookings({ bookings }: { bookings: Bookin
                     <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
                 </TableCell>
               </TableRow>
-            )) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">Cargando...</TableCell>
-              </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
     </div>

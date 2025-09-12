@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
@@ -57,15 +56,9 @@ function SubmitButton() {
 export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Payment, onPaymentUpdated: () => void }) {
   const [state, formAction] = useActionState(updatePayment, initialState);
   const [isOpen, setIsOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<Date | undefined>(new Date(payment.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(payment.originalArsAmount ? 'ARS' : 'USD');
   
-  useEffect(() => {
-    if (payment) {
-        setDate(new Date(payment.date));
-    }
-  }, [payment]);
-
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);

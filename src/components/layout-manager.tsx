@@ -4,6 +4,7 @@
 import { usePathname } from 'next/navigation';
 import MainLayout from './main-layout';
 import { useAuth } from './auth-provider';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LayoutManager({ children }: { children: React.ReactNode }) {
@@ -12,24 +13,26 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   const router = useRouter();
 
   const isPublicPage = pathname === '/login' || pathname === '/contract';
-  const isProtectedPage = !isPublicPage;
+
+  useEffect(() => {
+    if (!loading && !user && !isPublicPage) {
+      router.push('/login');
+    }
+  }, [user, loading, isPublicPage, router]);
+  
+  if (isPublicPage) {
+    return <>{children}</>;
+  }
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center">Cargando...</div>;
+     return <div className="flex h-screen items-center justify-center">Cargando...</div>;
+  }
+  
+  if (!user) {
+    // This will be briefly visible before the useEffect redirects.
+    // Or you can return a loading spinner here as well.
+    return <div className="flex h-screen items-center justify-center">Redirigiendo a login...</div>;
   }
 
-  if (isProtectedPage) {
-    if (!user) {
-      // Redirect to login if not authenticated
-      if (typeof window !== 'undefined') {
-        router.push('/login');
-      }
-      return <div className="flex h-screen items-center justify-center">Redirigiendo a login...</div>;
-    }
-    // Render the protected layout
-    return <MainLayout>{children}</MainLayout>;
-  }
-
-  // For public pages, just render the children
-  return <>{children}</>;
+  return <MainLayout>{children}</MainLayout>;
 }

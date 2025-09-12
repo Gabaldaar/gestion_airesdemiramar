@@ -1,7 +1,5 @@
 
 
-'use client';
-
 import {
   Table,
   TableBody,
@@ -19,7 +17,6 @@ import { ExpenseEditForm } from "./expense-edit-form";
 import { BookingExpenseEditForm } from "./booking-expense-edit-form";
 import { ExpenseDeleteForm } from "./expense-delete-form";
 import { BookingExpenseDeleteForm } from "./booking-expense-delete-form";
-import { useState, useEffect } from 'react';
 
 interface ExpensesUnifiedListProps {
   expenses: UnifiedExpense[];
@@ -27,18 +24,12 @@ interface ExpensesUnifiedListProps {
 }
 
 export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUnifiedListProps) {
-  const [isClient, setIsClient] = useState(false);
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const formatDate = (dateString: string) => {
-    if (!dateString || !isClient) return '';
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
-    if (!currency) return '...'; // Safeguard for initial render
     const options: Intl.NumberFormatOptions = {
         style: 'decimal',
         minimumFractionDigits: 2,
@@ -73,7 +64,7 @@ export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUn
         </TableRow>
       </TableHeader>
       <TableBody>
-        {isClient ? expenses.map((expense) => (
+        {expenses.map((expense) => (
           <TableRow key={expense.id}>
             <TableCell>{formatDate(expense.date)}</TableCell>
             <TableCell>{expense.propertyName}</TableCell>
@@ -103,19 +94,13 @@ export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUn
                 </div>
             </TableCell>
           </TableRow>
-        )) : (
-           <TableRow>
-                <TableCell colSpan={9} className="text-center">
-                    Cargando...
-                </TableCell>
-            </TableRow>
-        )}
+        ))}
       </TableBody>
       <TableFooter>
         <TableRow className="font-bold bg-muted">
           <TableCell colSpan={6} className="text-right">Total</TableCell>
-          <TableCell className="text-right">{isClient ? formatCurrency(totalAmountARS, 'ARS') : '...'}</TableCell>
-          <TableCell className="text-right">{isClient ? formatCurrency(totalAmountUSD, 'USD') : '...'}</TableCell>
+          <TableCell className="text-right">{formatCurrency(totalAmountARS, 'ARS')}</TableCell>
+          <TableCell className="text-right">{formatCurrency(totalAmountUSD, 'USD')}</TableCell>
           <TableCell></TableCell>
         </TableRow>
       </TableFooter>

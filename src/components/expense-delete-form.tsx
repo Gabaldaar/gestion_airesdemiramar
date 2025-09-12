@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   AlertDialog,
@@ -39,14 +38,8 @@ function DeleteButton() {
     )
 }
 
-export function ExpenseDeleteForm({ expenseId, propertyId, onExpenseDeleted }: { expenseId: string; propertyId: string, onExpenseDeleted: () => void }) {
+export function ExpenseDeleteForm({ expenseId, propertyId }: { expenseId: string; propertyId: string }) {
   const [state, formAction] = useActionState(deletePropertyExpense, initialState);
-  
-  useEffect(() => {
-    if (state.success) {
-        onExpenseDeleted();
-    }
-  }, [state, onExpenseDeleted]);
 
   return (
     <AlertDialog>

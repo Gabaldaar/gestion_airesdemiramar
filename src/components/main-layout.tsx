@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -14,6 +14,7 @@ import {
 import { useState } from 'react';
 import Image from 'next/image';
 import Logo from '@/assets/logo.png';
+import { Toaster } from './ui/toaster';
 import { useAuth } from './auth-provider';
 import {
   DropdownMenu,
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 
-const navItems = [
+const mainNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/properties', label: 'Propiedades', icon: Building2 },
   { href: '/tenants', label: 'Inquilinos', icon: Users },
@@ -37,29 +38,38 @@ const navItems = [
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
 
+const helpNavItem = { href: '/help', label: 'Ayuda', icon: CircleHelp };
+
 function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
+  
+  const renderLink = (item: { href: string, label: string, icon: React.ElementType }) => {
+    const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+          isActive && 'bg-muted text-primary'
+        )}
+        onClick={onLinkClick}
+      >
+        <item.icon className="h-4 w-4" />
+        {item.label}
+      </Link>
+    );
+  }
 
   return (
-    <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-      {navItems.map(({ href, label, icon: Icon }) => {
-        const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-              isActive && 'bg-muted text-primary'
-            )}
-            onClick={onLinkClick} // Close sheet on click
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="flex flex-col justify-between h-full">
+        <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+            {mainNavItems.map(renderLink)}
+        </nav>
+        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 mb-4">
+            {renderLink(helpNavItem)}
+        </nav>
+    </div>
   );
 }
 
@@ -142,7 +152,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         <Image src={Logo} alt="Logo de la aplicacion" width={180} height={40} />
                     </Link>
                 </div>
-                <SidebarNav onLinkClick={() => setIsSheetOpen(false)} />
+                <div className="flex-1">
+                    <SidebarNav onLinkClick={() => setIsSheetOpen(false)} />
+                </div>
                 </SheetContent>
             </Sheet>
             <div className='ml-auto'>
@@ -152,6 +164,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <main className="flex flex-1 flex-col gap-4 p-2 md:p-4 lg:gap-6 lg:p-6">
             {children}
             </main>
+            <Toaster />
         </div>
         </div>
     </div>

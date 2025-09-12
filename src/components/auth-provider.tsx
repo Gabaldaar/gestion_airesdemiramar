@@ -4,7 +4,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
@@ -23,16 +23,11 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-       if (user) {
-        const token = await user.getIdToken();
-        Cookies.set('firebaseIdToken', token, { path: '/' });
-      } else {
-        Cookies.remove('firebaseIdToken', { path: '/' });
-      }
       setLoading(false);
     });
 
@@ -43,10 +38,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener will handle setting the cookie
     } catch (error) {
       console.error("Error signing in with Google: ", error);
-      Cookies.remove('firebaseIdToken', { path: '/' });
       throw error;
     }
   };
@@ -54,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      Cookies.remove('firebaseIdToken', { path: '/' });
+      // The redirect is handled by the layout manager
     } catch (error) {
       console.error("Error signing out: ", error);
     }

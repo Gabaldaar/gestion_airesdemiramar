@@ -1,7 +1,5 @@
 
 
-'use client';
-
 import {
   Table,
   TableBody,
@@ -16,29 +14,13 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ExpenseEditForm } from "./expense-edit-form";
 import { ExpenseDeleteForm } from "./expense-delete-form";
-import { useState, useEffect, useCallback } from 'react';
-import { getPropertyExpensesByPropertyId } from "@/lib/data";
 
 interface ExpensesListProps {
   expenses: PropertyExpense[];
   categories: ExpenseCategory[];
-  propertyId: string;
 }
 
-export default function ExpensesList({ expenses: initialExpenses, categories, propertyId }: ExpensesListProps) {
-  const [isClient, setIsClient] = useState(false);
-  const [expenses, setExpenses] = useState(initialExpenses);
-
-  useEffect(() => {
-    setIsClient(true);
-    setExpenses(initialExpenses);
-  }, [initialExpenses]);
-
-  const refreshExpenses = useCallback(async () => {
-    const freshExpenses = await getPropertyExpensesByPropertyId(propertyId);
-    setExpenses(freshExpenses);
-  }, [propertyId]);
-
+export default function ExpensesList({ expenses, categories }: ExpensesListProps) {
   if (expenses.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay gastos para mostrar.</p>;
   }
@@ -46,7 +28,6 @@ export default function ExpensesList({ expenses: initialExpenses, categories, pr
   const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
 
   const formatDate = (dateString: string) => {
-    if (!dateString || !isClient) return '';
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
   };
 
@@ -73,7 +54,7 @@ export default function ExpensesList({ expenses: initialExpenses, categories, pr
         </TableRow>
       </TableHeader>
       <TableBody>
-        {isClient ? expenses.map((expense) => (
+        {expenses.map((expense) => (
           <TableRow key={expense.id}>
             <TableCell>{formatDate(expense.date)}</TableCell>
             <TableCell>{expense.categoryId ? categoriesMap.get(expense.categoryId) : 'N/A'}</TableCell>
@@ -82,22 +63,16 @@ export default function ExpensesList({ expenses: initialExpenses, categories, pr
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
                     <ExpenseEditForm expense={expense} categories={categories} />
-                    <ExpenseDeleteForm expenseId={expense.id} propertyId={expense.propertyId} onExpenseDeleted={refreshExpenses} />
+                    <ExpenseDeleteForm expenseId={expense.id} propertyId={expense.propertyId} />
                 </div>
             </TableCell>
           </TableRow>
-        )) : (
-           <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                    Cargando...
-                </TableCell>
-            </TableRow>
-        )}
+        ))}
       </TableBody>
       <TableFooter>
         <TableRow>
           <TableCell colSpan={3} className="font-bold text-right">Total</TableCell>
-          <TableCell className="text-right font-bold">{isClient ? formatCurrency(totalAmount) : '...'}</TableCell>
+          <TableCell className="text-right font-bold">{formatCurrency(totalAmount)}</TableCell>
           <TableCell></TableCell>
         </TableRow>
       </TableFooter>

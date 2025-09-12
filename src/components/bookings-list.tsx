@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -24,7 +23,7 @@ import { BookingDeleteForm } from './booking-delete-form';
 import { NotesViewer } from './notes-viewer';
 import { GuaranteeManager } from './guarantee-manager';
 import { Landmark, Wallet, Pencil, Trash2, FileText } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { EmailSender } from "./email-sender";
 
 
@@ -62,30 +61,27 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
 
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
+  const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
   
   const formatDate = (dateString: string) => {
-    if (!dateString) return '';
     return format(new Date(dateString), "dd-LLL-yyyy", { locale: es });
   };
-  
-  const nights = booking.endDate && booking.startDate ? differenceInDays(new Date(booking.endDate), new Date(booking.startDate)) : 0;
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
-    if (!currency) return '...'; // Safeguard for initial render
-    if (currency === 'USD') {
-        return `USD ${new Intl.NumberFormat('es-AR', {
-            style: 'decimal',
+        if (currency === 'USD') {
+             return `USD ${new Intl.NumberFormat('es-AR', {
+                style: 'decimal',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(amount)}`;
+        }
+        return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: currency,
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-        }).format(amount)}`;
+        }).format(amount);
     }
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(amount);
-  }
   
   const getBookingColorClass = (booking: BookingWithDetails): string => {
     const today = new Date();
@@ -298,39 +294,9 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
 
 
 export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
-  const [isClient, setIsClient] = useState(false);
-  useEffect(() => {
-      setIsClient(true);
-  }, []);
 
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
-  }
-
-  if (!isClient) {
-      return (
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    {showProperty && <TableHead>Propiedad</TableHead>}
-                    <TableHead>Inquilino</TableHead>
-                    <TableHead>Estadía</TableHead>
-                    <TableHead>Contrato</TableHead>
-                    <TableHead>Garantía</TableHead>
-                    <TableHead>Monto</TableHead>
-                    <TableHead>Saldo</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                <TableRow>
-                    <TableCell colSpan={showProperty ? 8 : 7} className="text-center">
-                        Cargando...
-                    </TableCell>
-                </TableRow>
-            </TableBody>
-        </Table>
-      );
   }
 
   return (
