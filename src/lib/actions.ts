@@ -14,16 +14,6 @@ import {
 } from "./data";
 import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
 import { collection, addDoc, updateDoc, deleteDoc, doc, writeBatch, query, where, getDocs, getDoc } from "firebase/firestore";
-import { auth } from 'firebase-admin';
-
-// Helper function to check authentication on the server
-const checkAuth = async () => {
-    // This is a placeholder for a real server-side session check.
-    // In a production Next.js app, you'd typically get the session from cookies or a token.
-    // For this environment, we'll assume that if the action can be called, the user is authorized,
-    // but this check is crucial for real-world apps.
-    return true; 
-};
 
 
 const propertiesCollection = collection(adminDb, 'properties');
@@ -60,7 +50,6 @@ export async function getBookingById(id: string): Promise<Booking | undefined> {
 
 
 export async function addProperty(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const newPropertyData = {
     name: formData.get("name") as string,
     address: formData.get("address") as string,
@@ -88,7 +77,6 @@ export async function addProperty(previousState: any, formData: FormData) {
 
 
 export async function updateProperty(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const propertyData: Property = {
     id: formData.get("id") as string,
     name: formData.get("name") as string,
@@ -123,7 +111,6 @@ export async function updateProperty(previousState: any, formData: FormData) {
 
 
 export async function deleteProperty(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const id = formData.get("id") as string;
     const confirmation = formData.get("confirmation") as string;
 
@@ -180,7 +167,6 @@ export async function deleteProperty(previousState: any, formData: FormData) {
 
 
 export async function addTenant(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const newTenant = {
     name: formData.get("name") as string,
     dni: formData.get("dni") as string,
@@ -202,7 +188,6 @@ export async function addTenant(previousState: any, formData: FormData) {
 }
 
 export async function updateTenant(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const updatedTenant: Omit<Tenant, 'id'> = {
     name: formData.get("name") as string,
     dni: formData.get("dni") as string,
@@ -229,7 +214,6 @@ export async function updateTenant(previousState: any, formData: FormData) {
 
 
 export async function deleteTenant(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const id = formData.get("id") as string;
   
     if (!id) {
@@ -246,7 +230,6 @@ export async function deleteTenant(previousState: any, formData: FormData) {
   }
 
 export async function addBooking(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const propertyId = formData.get("propertyId") as string;
     const tenantId = formData.get("tenantId") as string;
     const startDate = formData.get("startDate") as string;
@@ -307,7 +290,6 @@ export async function addBooking(previousState: any, formData: FormData) {
 }
 
 export async function updateBooking(previousState: any, formData: FormData): Promise<{ success: boolean; message: string; }> {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const id = formData.get("id") as string;
     if (!id) {
         return { success: false, message: "ID de reserva no proporcionado." };
@@ -424,7 +406,6 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
 
 
 export async function deleteBooking(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const id = formData.get("id") as string;
     const propertyId = formData.get("propertyId") as string;
     const confirmation = formData.get("confirmation") as string;
@@ -542,7 +523,6 @@ const handleExpenseData = (formData: FormData) => {
 
 
 export async function addPropertyExpense(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     try {
         const propertyId = formData.get("propertyId") as string;
         const date = formData.get("date") as string;
@@ -570,7 +550,6 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
 }
 
 export async function updatePropertyExpense(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     try {
         const id = formData.get("id") as string;
         const propertyId = formData.get("propertyId") as string;
@@ -598,7 +577,6 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
 }
 
 export async function deletePropertyExpense(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const id = formData.get("id") as string;
     const propertyId = formData.get("propertyId") as string;
 
@@ -619,7 +597,6 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
 
 
 export async function addBookingExpense(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     try {
         const bookingId = formData.get("bookingId") as string;
         const date = formData.get("date") as string;
@@ -648,7 +625,6 @@ export async function addBookingExpense(previousState: any, formData: FormData) 
 }
 
 export async function updateBookingExpense(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     try {
         const id = formData.get("id") as string;
         const bookingId = formData.get("bookingId") as string;
@@ -677,7 +653,6 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
 }
 
 export async function deleteBookingExpense(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const id = formData.get("id") as string;
 
      if (!id) {
@@ -698,7 +673,6 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
 
 
 export async function addPayment(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const bookingId = formData.get("bookingId") as string;
     const originalAmount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
@@ -760,7 +734,6 @@ export async function addPayment(previousState: any, formData: FormData) {
 }
 
 export async function updatePayment(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const id = formData.get("id") as string;
     const bookingId = formData.get("bookingId") as string;
     const originalAmount = parseFloat(formData.get("amount") as string);
@@ -820,7 +793,6 @@ export async function updatePayment(previousState: any, formData: FormData) {
 }
 
 export async function deletePayment(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const id = formData.get("id") as string;
 
      if (!id) {
@@ -841,7 +813,6 @@ export async function deletePayment(previousState: any, formData: FormData) {
 
 
 export async function addExpenseCategory(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const name = formData.get('name') as string;
   if (!name) {
     return { success: false, message: 'El nombre de la categoría es obligatorio.' };
@@ -857,7 +828,6 @@ export async function addExpenseCategory(previousState: any, formData: FormData)
 }
 
 export async function updateExpenseCategory(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const id = formData.get('id') as string;
   const name = formData.get('name') as string;
   if (!id || !name) {
@@ -874,7 +844,6 @@ export async function updateExpenseCategory(previousState: any, formData: FormDa
 }
 
 export async function deleteExpenseCategory(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const id = formData.get('id') as string;
   if (!id) {
     return { success: false, message: 'ID de categoría no válido.' };
@@ -891,7 +860,6 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
 
 
 export async function addEmailTemplate(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const name = formData.get('name') as string;
   const subject = formData.get('subject') as string;
   const body = formData.get('body') as string;
@@ -909,7 +877,6 @@ export async function addEmailTemplate(previousState: any, formData: FormData) {
 }
 
 export async function updateEmailTemplate(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const id = formData.get('id') as string;
   const name = formData.get('name') as string;
   const subject = formData.get('subject') as string;
@@ -928,7 +895,6 @@ export async function updateEmailTemplate(previousState: any, formData: FormData
 }
 
 export async function deleteEmailTemplate(previousState: any, formData: FormData) {
-  if (!await checkAuth()) return { success: false, message: "No autorizado." };
   const id = formData.get('id') as string;
   if (!id) {
     return { success: false, message: 'ID de plantilla no válido.' };
@@ -944,7 +910,6 @@ export async function deleteEmailTemplate(previousState: any, formData: FormData
 
 
 export async function updateEmailSettings(previousState: any, formData: FormData) {
-    if (!await checkAuth()) return { success: false, message: "No autorizado." };
     const replyToEmail = formData.get('replyToEmail') as string;
     
     if (replyToEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyToEmail)) {
@@ -959,3 +924,5 @@ export async function updateEmailSettings(previousState: any, formData: FormData
         return { success: false, message: 'Error al guardar la configuración de email.' };
     }
 }
+
+    
