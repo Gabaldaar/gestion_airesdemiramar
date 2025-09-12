@@ -166,13 +166,13 @@ export async function updateTenant(previousState: any, formData: FormData) {
     const updatedTenant: Tenant = {
         id,
         name,
-        dni: String(formData.get("dni") || ''),
-        email: String(formData.get("email") || ''),
-        phone: String(formData.get("phone") || ''),
-        address: String(formData.get("address") || ''),
-        city: String(formData.get("city") || ''),
-        country: String(formData.get("country") || 'Argentina'),
-        notes: String(formData.get("notes") || ''),
+        dni: (formData.get("dni") as string) || '',
+        email: (formData.get("email") as string) || '',
+        phone: (formData.get("phone") as string) || '',
+        address: (formData.get("address") as string) || '',
+        city: (formData.get("city") as string) || '',
+        country: (formData.get("country") as string) || 'Argentina',
+        notes: (formData.get("notes") as string) || '',
     };
 
     try {
