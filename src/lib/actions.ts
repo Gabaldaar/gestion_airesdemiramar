@@ -2,7 +2,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { adminDb } from './firebase-admin';
+import { db } from './firebase'; // Usar la instancia del cliente
 import {
     getBookingById,
     getPropertyById,
@@ -20,16 +20,18 @@ import {
     EmailSettings
 } from "./data";
 import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
+import { collection, addDoc, updateDoc, deleteDoc, doc, writeBatch, query, where, getDocs } from "firebase/firestore";
 
-const propertiesCollectionAdmin = adminDb.collection('properties');
-const tenantsCollectionAdmin = adminDb.collection('tenants');
-const bookingsCollectionAdmin = adminDb.collection('bookings');
-const propertyExpensesCollectionAdmin = adminDb.collection('propertyExpenses');
-const bookingExpensesCollectionAdmin = adminDb.collection('bookingExpenses');
-const paymentsCollectionAdmin = adminDb.collection('payments');
-const expenseCategoriesCollectionAdmin = adminDb.collection('expenseCategories');
-const emailTemplatesCollectionAdmin = adminDb.collection('emailTemplates');
-const settingsCollectionAdmin = adminDb.collection('settings');
+
+const propertiesCollection = collection(db, 'properties');
+const tenantsCollection = collection(db, 'tenants');
+const bookingsCollection = collection(db, 'bookings');
+const propertyExpensesCollection = collection(db, 'propertyExpenses');
+const bookingExpensesCollection = collection(db, 'bookingExpenses');
+const paymentsCollection = collection(db, 'payments');
+const expenseCategoriesCollection = collection(db, 'expenseCategories');
+const emailTemplatesCollection = collection(db, 'emailTemplates');
+const settingsCollection = collection(db, 'settings');
 
 
 export async function addProperty(previousState: any, formData: FormData) {
@@ -47,7 +49,7 @@ export async function addProperty(previousState: any, formData: FormData) {
   }
 
   try {
-    await propertiesCollectionAdmin.add(newPropertyData);
+    await addDoc(propertiesCollection, newPropertyData);
     revalidatePath("/settings");
     revalidatePath("/properties");
     revalidatePath("/");
@@ -76,7 +78,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
   
   try {
     const { id, ...data } = propertyData;
-    await propertiesCollectionAdmin.doc(id).update(data);
+    await updateDoc(doc(db, 'properties', id), data);
     revalidatePath("/settings");
     revalidatePath("/properties");
     revalidatePath(`/properties/${propertyData.id}`);
@@ -106,30 +108,30 @@ export async function deleteProperty(previousState: any, formData: FormData) {
     }
 
     try {
-        const batch = adminDb.batch();
+        const batch = writeBatch(db);
 
-        const propertyRef = propertiesCollectionAdmin.doc(id);
+        const propertyRef = doc(db, 'properties', id);
         batch.delete(propertyRef);
 
-        const bookingsQuery = adminDb.collection('bookings').where('propertyId', '==', id);
-        const bookingsSnapshot = await bookingsQuery.get();
+        const bookingsQuery = query(collection(db, 'bookings'), where('propertyId', '==', id));
+        const bookingsSnapshot = await getDocs(bookingsQuery);
         
         const bookingIds = bookingsSnapshot.docs.map(d => d.id);
 
         if (bookingIds.length > 0) {
-            const paymentsQuery = adminDb.collection('payments').where('bookingId', 'in', bookingIds);
-            const paymentsSnapshot = await paymentsQuery.get();
+            const paymentsQuery = query(collection(db, 'payments'), where('bookingId', 'in', bookingIds));
+            const paymentsSnapshot = await getDocs(paymentsQuery);
             paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-            const bookingExpensesQuery = adminDb.collection('bookingExpenses').where('bookingId', 'in', bookingIds);
-            const bookingExpensesSnapshot = await bookingExpensesQuery.get();
+            const bookingExpensesQuery = query(collection(db, 'bookingExpenses'), where('bookingId', 'in', bookingIds));
+            const bookingExpensesSnapshot = await getDocs(bookingExpensesQuery);
             bookingExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
         }
 
         bookingsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-        const propertyExpensesQuery = adminDb.collection('propertyExpenses').where('propertyId', '==', id);
-        const propertyExpensesSnapshot = await propertyExpensesQuery.get();
+        const propertyExpensesQuery = query(collection(db, 'propertyExpenses'), where('propertyId', '==', id));
+        const propertyExpensesSnapshot = await getDocs(propertyExpensesQuery);
         propertyExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
 
         await batch.commit();
@@ -162,7 +164,7 @@ export async function addTenant(previousState: any, formData: FormData) {
   };
 
   try {
-    await tenantsCollectionAdmin.add(newTenant);
+    await addDoc(tenantsCollection, newTenant);
     revalidatePath("/tenants");
     return { success: true, message: "Inquilino añadido correctamente." };
   } catch (error) {
@@ -184,7 +186,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
   const id = formData.get("id") as string;
 
   try {
-    await tenantsCollectionAdmin.doc(id).update(updatedTenant);
+    await updateDoc(doc(db, 'tenants', id), updatedTenant);
     revalidatePath("/tenants");
     revalidatePath("/bookings");
     revalidatePath("/");
@@ -204,7 +206,7 @@ export async function deleteTenant(previousState: any, formData: FormData) {
     }
   
     try {
-      await tenantsCollectionAdmin.doc(id).delete();
+      await deleteDoc(doc(db, 'tenants', id));
       revalidatePath("/tenants");
       return { success: true, message: "Inquilino eliminado correctamente." };
     } catch (error) {
@@ -238,7 +240,7 @@ export async function addBooking(previousState: any, formData: FormData) {
     };
     
     try {
-        const docRef = await bookingsCollectionAdmin.add(newBookingData);
+        const docRef = await addDoc(bookingsCollection, newBookingData);
         const newBooking = { id: docRef.id, ...newBookingData };
         
         const property = await getPropertyById(propertyId);
@@ -253,7 +255,7 @@ export async function addBooking(previousState: any, formData: FormData) {
                     notes,
                 });
                 if (eventId) {
-                    await bookingsCollectionAdmin.doc(newBooking.id).update({ googleCalendarEventId: eventId });
+                    await updateDoc(doc(db, 'bookings', newBooking.id), { googleCalendarEventId: eventId });
                 }
             } catch (calendarError) {
                  console.error("Calendar sync failed on booking creation, but the booking was saved:", calendarError);
@@ -279,11 +281,10 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
     }
 
     try {
-        const oldBookingDoc = await bookingsCollectionAdmin.doc(id).get();
-        if (!oldBookingDoc.exists) {
+        const oldBooking = await getBookingById(id);
+        if (!oldBooking) {
             return { success: false, message: "No se encontró la reserva para actualizar." };
         }
-        const oldBooking = oldBookingDoc.data() as Booking;
         
         const updatedBookingData: Partial<Booking> = {
             propertyId: formData.get("propertyId") as string || oldBooking.propertyId,
@@ -332,7 +333,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             return { success: false, message: "La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'." };
         }
 
-        await bookingsCollectionAdmin.doc(id).update(updatedBookingData);
+        await updateDoc(doc(db, 'bookings', id), updatedBookingData);
         
         const finalBookingState = { ...oldBooking, ...updatedBookingData };
 
@@ -359,7 +360,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
                     } else {
                         const newEventId = await addEventToCalendar(property.googleCalendarId, eventDetails);
                         if (newEventId) {
-                            await bookingsCollectionAdmin.doc(id).update({ googleCalendarEventId: newEventId });
+                            await updateDoc(doc(db, 'bookings', id), { googleCalendarEventId: newEventId });
                         }
                     }
                 } catch (calendarError) {
@@ -396,9 +397,8 @@ export async function deleteBooking(previousState: any, formData: FormData) {
     }
 
     try {
-        const bookingDoc = await bookingsCollectionAdmin.doc(id).get();
-        const bookingToDelete = bookingDoc.data() as Booking;
-
+        const bookingToDelete = await getBookingById(id);
+        
         if (bookingToDelete && bookingToDelete.googleCalendarEventId) {
             try {
                 const property = await getPropertyById(bookingToDelete.propertyId);
@@ -410,17 +410,17 @@ export async function deleteBooking(previousState: any, formData: FormData) {
             }
         }
 
-        const batch = adminDb.batch();
+        const batch = writeBatch(db);
     
-        const bookingRef = bookingsCollectionAdmin.doc(id);
+        const bookingRef = doc(db, 'bookings', id);
         batch.delete(bookingRef);
 
-        const paymentsQuery = adminDb.collection('payments').where('bookingId', '==', id);
-        const paymentsSnapshot = await paymentsQuery.get();
+        const paymentsQuery = query(collection(db, 'payments'), where('bookingId', '==', id));
+        const paymentsSnapshot = await getDocs(paymentsQuery);
         paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-        const expensesQuery = adminDb.collection('bookingExpenses').where('bookingId', '==', id);
-        const expensesSnapshot = await expensesQuery.get();
+        const expensesQuery = query(collection(db, 'bookingExpenses'), where('bookingId', '==', id));
+        const expensesSnapshot = await getDocs(expensesQuery);
         expensesSnapshot.forEach(doc => batch.delete(doc.ref));
     
         await batch.commit();
@@ -500,7 +500,7 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
             ...expenseData
         };
 
-        await propertyExpensesCollectionAdmin.add(newExpense);
+        await addDoc(propertyExpensesCollection, newExpense);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
         revalidatePath('/expenses');
@@ -526,7 +526,7 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
             ...expenseData,
         };
 
-        await propertyExpensesCollectionAdmin.doc(id).update(updatedExpense);
+        await updateDoc(doc(db, 'propertyExpenses', id), updatedExpense);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
         revalidatePath('/expenses');
@@ -545,7 +545,7 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
     }
 
     try {
-        await propertyExpensesCollectionAdmin.doc(id).delete();
+        await deleteDoc(doc(db, 'propertyExpenses', id));
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
         revalidatePath('/expenses');
@@ -573,7 +573,7 @@ export async function addBookingExpense(previousState: any, formData: FormData) 
             ...expenseData
         };
 
-        await bookingExpensesCollectionAdmin.add(newExpense);
+        await addDoc(bookingExpensesCollection, newExpense);
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath('/reports');
@@ -600,7 +600,7 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
             ...expenseData,
         };
 
-        await bookingExpensesCollectionAdmin.doc(id).update(updatedExpense);
+        await updateDoc(doc(db, 'bookingExpenses', id), updatedExpense);
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath('/reports');
@@ -619,7 +619,7 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
     }
 
     try {
-        await bookingExpensesCollectionAdmin.doc(id).delete();
+        await deleteDoc(doc(db, 'bookingExpenses', id));
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath('/reports');
@@ -680,7 +680,7 @@ export async function addPayment(previousState: any, formData: FormData) {
 
 
     try {
-        await paymentsCollectionAdmin.add(paymentPayload);
+        await addDoc(paymentsCollection, paymentPayload);
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath(`/reports`);
@@ -737,7 +737,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
     if (paymentPayload.originalArsAmount === undefined) delete paymentPayload.originalArsAmount;
 
     try {
-        await paymentsCollectionAdmin.doc(id).update({
+        await updateDoc(doc(db, 'payments', id), {
           ...paymentPayload,
           currency: 'USD'
         });
@@ -759,7 +759,7 @@ export async function deletePayment(previousState: any, formData: FormData) {
     }
 
     try {
-        await paymentsCollectionAdmin.doc(id).delete();
+        await deleteDoc(doc(db, 'payments', id));
         revalidatePath(`/bookings`);
         revalidatePath(`/properties/*`);
         revalidatePath(`/reports`);
@@ -777,7 +777,7 @@ export async function addExpenseCategory(previousState: any, formData: FormData)
     return { success: false, message: 'El nombre de la categoría es obligatorio.' };
   }
   try {
-    await expenseCategoriesCollectionAdmin.add({ name });
+    await addDoc(expenseCategoriesCollection, { name });
     revalidatePath('/settings');
     revalidatePath('/expenses');
     return { success: true, message: 'Categoría añadida.' };
@@ -793,7 +793,7 @@ export async function updateExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'Faltan datos para actualizar la categoría.' };
   }
   try {
-    await expenseCategoriesCollectionAdmin.doc(id).update({ name });
+    await updateDoc(doc(db, 'expenseCategories', id), { name });
     revalidatePath('/settings');
      revalidatePath('/expenses');
     return { success: true, message: 'Categoría actualizada.' };
@@ -808,7 +808,7 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'ID de categoría no válido.' };
   }
   try {
-    await expenseCategoriesCollectionAdmin.doc(id).delete();
+    await deleteDoc(doc(db, 'expenseCategories', id));
     revalidatePath('/settings');
     revalidatePath('/expenses');
     return { success: true, message: 'Categoría eliminada.' };
@@ -827,7 +827,7 @@ export async function addEmailTemplate(previousState: any, formData: FormData) {
     return { success: false, message: 'Todos los campos son obligatorios.' };
   }
   try {
-    await emailTemplatesCollectionAdmin.add({ name, subject, body });
+    await addDoc(emailTemplatesCollection, { name, subject, body });
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla añadida.' };
   } catch (error) {
@@ -845,7 +845,7 @@ export async function updateEmailTemplate(previousState: any, formData: FormData
     return { success: false, message: 'Faltan datos para actualizar la plantilla.' };
   }
   try {
-    await emailTemplatesCollectionAdmin.doc(id).update({ name, subject, body });
+    await updateDoc(doc(db, 'emailTemplates', id), { name, subject, body });
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla actualizada.' };
   } catch (error) {
@@ -859,7 +859,7 @@ export async function deleteEmailTemplate(previousState: any, formData: FormData
     return { success: false, message: 'ID de plantilla no válido.' };
   }
   try {
-    await emailTemplatesCollectionAdmin.doc(id).delete();
+    await deleteDoc(doc(db, 'emailTemplates', id));
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla eliminada.' };
   } catch (error) {
@@ -876,10 +876,12 @@ export async function updateEmailSettings(previousState: any, formData: FormData
     }
 
     try {
-        await settingsCollectionAdmin.doc('email').set({ replyToEmail }, { merge: true });
+        await updateDoc(doc(db, 'settings', 'email'), { replyToEmail });
         revalidatePath('/settings');
         return { success: true, message: 'Configuración de email guardada.' };
     } catch (error) {
         return { success: false, message: 'Error al guardar la configuración de email.' };
     }
 }
+
+    
