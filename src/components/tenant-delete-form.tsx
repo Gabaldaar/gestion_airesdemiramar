@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   AlertDialog,
@@ -38,11 +39,19 @@ function DeleteButton() {
     )
 }
 
-export function TenantDeleteForm({ tenantId }: { tenantId: string }) {
+export function TenantDeleteForm({ tenantId, onTenantDeleted }: { tenantId: string, onTenantDeleted: () => void }) {
   const [state, formAction] = useActionState(deleteTenant, initialState);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (state.success) {
+      onTenantDeleted();
+      setIsOpen(false);
+    }
+  }, [state, onTenantDeleted]);
 
   return (
-    <AlertDialog>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
         <Button variant="ghost" size="icon">
           <Trash2 className="h-4 w-4" />

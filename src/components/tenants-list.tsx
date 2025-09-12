@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from "next/link";
@@ -19,9 +20,10 @@ import { useState } from "react";
 
 interface TenantsListProps {
     tenants: Tenant[];
+    onDataNeedsRefresh: () => void;
 }
 
-function TenantRow({ tenant }: { tenant: Tenant }) {
+function TenantRow({ tenant, onDataNeedsRefresh }: { tenant: Tenant, onDataNeedsRefresh: () => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     
     const formatWhatsAppLink = (phone: string) => {
@@ -55,13 +57,14 @@ function TenantRow({ tenant }: { tenant: Tenant }) {
                     title={`Notas sobre ${tenant.name}`}
                     isOpen={isNotesOpen}
                     onOpenChange={setIsNotesOpen}
-                />
-                 <Button variant="ghost" size="icon" onClick={() => setIsNotesOpen(true)} disabled={!tenant.notes}>
-                    <FileText className="h-4 w-4" />
-                    <span className="sr-only">Ver Notas</span>
-                </Button>
-                <TenantEditForm tenant={tenant} />
-                <TenantDeleteForm tenantId={tenant.id} />
+                >
+                     <Button variant="ghost" size="icon" onClick={() => setIsNotesOpen(true)} disabled={!tenant.notes}>
+                        <FileText className="h-4 w-4" />
+                        <span className="sr-only">Ver Notas</span>
+                    </Button>
+                </NotesViewer>
+                <TenantEditForm tenant={tenant} onTenantUpdated={onDataNeedsRefresh} />
+                <TenantDeleteForm tenantId={tenant.id} onTenantDeleted={onDataNeedsRefresh} />
                 <Button asChild variant="ghost" size="icon">
                   <Link href={`/bookings?tenantId=${tenant.id}`}>
                     <History className="h-4 w-4" />
@@ -75,7 +78,7 @@ function TenantRow({ tenant }: { tenant: Tenant }) {
 }
 
 
-export default function TenantsList({ tenants }: TenantsListProps) {
+export default function TenantsList({ tenants, onDataNeedsRefresh }: TenantsListProps) {
     if (tenants.length === 0) {
         return <p className="text-sm text-center text-muted-foreground py-8">No hay inquilinos para mostrar con los filtros seleccionados.</p>;
     }
@@ -96,7 +99,7 @@ export default function TenantsList({ tenants }: TenantsListProps) {
           </TableHeader>
           <TableBody>
             {tenants.map((tenant: Tenant) => (
-              <TenantRow key={tenant.id} tenant={tenant} />
+              <TenantRow key={tenant.id} tenant={tenant} onDataNeedsRefresh={onDataNeedsRefresh} />
             ))}
           </TableBody>
         </Table>

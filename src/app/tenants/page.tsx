@@ -12,7 +12,7 @@ import { getTenants, getBookings, Tenant, BookingWithDetails } from "@/lib/data"
 import { TenantAddForm } from "@/components/tenant-add-form";
 import TenantsClient from "@/components/tenants-client";
 import { useAuth } from "@/components/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface TenantsData {
     tenants: Tenant[];
@@ -24,18 +24,22 @@ export default function TenantsPage() {
     const [data, setData] = useState<TenantsData | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const fetchData = useCallback(() => {
+        setLoading(true);
+        Promise.all([
+            getTenants(),
+            getBookings()
+        ]).then(([tenants, bookings]) => {
+            setData({ tenants, bookings });
+            setLoading(false);
+        });
+    }, []);
+
     useEffect(() => {
         if (user) {
-            setLoading(true);
-            Promise.all([
-                getTenants(),
-                getBookings()
-            ]).then(([tenants, bookings]) => {
-                setData({ tenants, bookings });
-                setLoading(false);
-            });
+            fetchData();
         }
-    }, [user]);
+    }, [user, fetchData]);
 
     if (!user || loading || !data) {
         return <p>Cargando inquilinos...</p>;
@@ -50,10 +54,14 @@ export default function TenantsPage() {
                 Administra y filtra la información de tus inquilinos.
             </CardDescription>
             </div>
-            <TenantAddForm />
+            <TenantAddForm onTenantAdded={fetchData} />
         </CardHeader>
         <CardContent>
-            <TenantsClient initialTenants={data.tenants} allBookings={data.bookings} />
+            <TenantsClient 
+                initialTenants={data.tenants} 
+                allBookings={data.bookings}
+                onDataNeedsRefresh={fetchData}
+            />
         </CardContent>
         </Card>
     );

@@ -15,9 +15,10 @@ type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed';
 interface TenantsClientProps {
   initialTenants: Tenant[];
   allBookings: BookingWithDetails[];
+  onDataNeedsRefresh: () => void;
 }
 
-export default function TenantsClient({ initialTenants, allBookings }: TenantsClientProps) {
+export default function TenantsClient({ initialTenants, allBookings, onDataNeedsRefresh }: TenantsClientProps) {
   const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
   const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
   const { toast } = useToast();
@@ -116,7 +117,7 @@ export default function TenantsClient({ initialTenants, allBookings }: TenantsCl
             </Button>
         </div>
       </div>
-      <TenantsList tenants={filteredTenants} />
+      <TenantsList tenants={filteredTenants} onDataNeedsRefresh={onDataNeedsRefresh} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState, useTransition } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -41,15 +41,16 @@ function SubmitButton() {
     )
 }
 
-export function TenantEditForm({ tenant }: { tenant: Tenant }) {
+export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, onTenantUpdated: () => void }) {
   const [state, formAction] = useActionState(updateTenant, initialState);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (state.success) {
+      onTenantUpdated();
       setIsOpen(false);
     }
-  }, [state]);
+  }, [state, onTenantUpdated]);
 
   return (
     <>

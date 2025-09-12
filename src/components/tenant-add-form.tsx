@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -39,7 +40,7 @@ function SubmitButton() {
     )
 }
 
-export function TenantAddForm() {
+export function TenantAddForm({ onTenantAdded }: { onTenantAdded: () => void }) {
   const [state, formAction] = useActionState(addTenant, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -48,8 +49,9 @@ export function TenantAddForm() {
     if (state.success) {
       setIsOpen(false);
       formRef.current?.reset();
+      onTenantAdded();
     }
-  }, [state]);
+  }, [state, onTenantAdded]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
