@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import { getBookingExpensesByBookingId, BookingExpense, getExpenseCategories, ExpenseCategory } from '@/lib/data';
+import { getBookingExpensesByBookingId, BookingExpense, getExpenseCategories, ExpenseCategory, deleteBookingExpense } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -120,8 +120,8 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
                     <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <BookingExpenseEditForm expense={expense} categories={categories} />
-                        <BookingExpenseDeleteForm expenseId={expense.id} bookingId={bookingId} />
+                        <BookingExpenseEditForm expense={expense} categories={categories} onExpenseUpdated={handleExpenseAction} />
+                        <BookingExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleExpenseAction} />
                       </div>
                     </TableCell>
                   </TableRow>
