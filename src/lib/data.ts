@@ -1,6 +1,8 @@
 
 
-import { db } from './firebase';
+'use server';
+
+import { db as clientDb } from './firebase';
 import {
   collection,
   getDocs,
@@ -179,56 +181,16 @@ export type EmailSettings = {
 
 // --- DATA ACCESS FUNCTIONS ---
 
-const propertiesCollection = collection(db, 'properties');
-const tenantsCollection = collection(db, 'tenants');
-const bookingsCollection = collection(db, 'bookings');
-const propertyExpensesCollection = collection(db, 'propertyExpenses');
-const bookingExpensesCollection = collection(db, 'bookingExpenses');
-const paymentsCollection = collection(db, 'payments');
-const expenseCategoriesCollection = collection(db, 'expenseCategories');
-const emailTemplatesCollection = collection(db, 'emailTemplates');
-const settingsCollection = collection(db, 'settings');
-
-
-// Helper function to add default data only if the collection is empty
-const addDefaultData = async (collRef: any, data: any[]) => {
-    const querySnapshot = await getDocs(collRef);
-    if (querySnapshot.empty) {
-        const batch = writeBatch(db);
-        data.forEach(item => {
-            const docRef = doc(collRef);
-            batch.set(docRef, item);
-        });
-        await batch.commit();
-        console.log(`Default data added to ${collRef.path}.`);
-    } else {
-        console.log(`Collection ${collRef.path} already has data. Skipping default data.`);
-    }
-};
-
-
-// Function to initialize default data for the app
-const initializeDefaultData = async () => {
-    const defaultTemplates = [
-        {
-            name: 'Confirmación de Pago',
-            subject: 'Confirmación de tu pago para la reserva en {{propiedad.nombre}}',
-            body: `Hola {{inquilino.nombre}},\n\nTe escribimos para confirmar que hemos recibido tu pago de {{montoPago}} con fecha {{fechaPago}} para la reserva en {{propiedad.nombre}}.\n\nDetalles de la reserva:\n- Check-in: {{fechaCheckIn}}\n- Check-out: {{fechaCheckOut}}\n- Monto total: {{montoReserva}}\n- Saldo pendiente actualizado: {{saldoReserva}}\n\n¡Muchas gracias por tu pago!\n\nSaludos cordiales.`
-        },
-        {
-            name: 'Confirmación de Garantía',
-            subject: 'Confirmación de recepción de garantía para {{propiedad.nombre}}',
-            body: `Hola {{inquilino.nombre}},\n\nConfirmamos que hemos recibido el depósito de garantía de {{montoGarantia}} con fecha {{fechaGarantiaRecibida}} para tu reserva en {{propiedad.nombre}}.\n\nEste depósito será reembolsado al finalizar tu estancia, sujeto a la inspección de la propiedad.\n\n¡Gracias!\n\nSaludos cordiales.`
-        }
-    ];
-
-    try {
-        await addDefaultData(emailTemplatesCollection, defaultTemplates);
-    } catch (error) {
-        console.error("Error adding default email templates:", error);
-    }
-};
-
+// READ operations use the client DB instance for use in client components
+const propertiesCollection = collection(clientDb, 'properties');
+const tenantsCollection = collection(clientDb, 'tenants');
+const bookingsCollection = collection(clientDb, 'bookings');
+const propertyExpensesCollection = collection(clientDb, 'propertyExpenses');
+const bookingExpensesCollection = collection(clientDb, 'bookingExpenses');
+const paymentsCollection = collection(clientDb, 'payments');
+const expenseCategoriesCollection = collection(clientDb, 'expenseCategories');
+const emailTemplatesCollection = collection(clientDb, 'emailTemplates');
+const settingsCollection = collection(clientDb, 'settings');
 
 export async function getProperties(): Promise<Property[]> {
   const snapshot = await getDocs(query(propertiesCollection, orderBy('name')));
@@ -237,61 +199,10 @@ export async function getProperties(): Promise<Property[]> {
 
 export async function getPropertyById(id: string): Promise<Property | undefined> {
   if (!id) return undefined;
-  const docRef = doc(db, 'properties', id);
+  const docRef = doc(clientDb, 'properties', id);
   const docSnap = await getDoc(docRef);
   return docSnap.exists() ? processDoc(docSnap) as Property : undefined;
 }
-
-export async function addProperty(property: Omit<Property, 'id'>): Promise<Property> {
-    const docRef = await addDoc(propertiesCollection, property);
-    return { id: docRef.id, ...property };
-}
-
-export async function updateProperty(updatedProperty: Property): Promise<Property | null> {
-    const { id, ...data } = updatedProperty;
-    const docRef = doc(db, 'properties', id);
-    await updateDoc(docRef, data);
-    return updatedProperty;
-}
-
-export async function deleteProperty(propertyId: string): Promise<void> {
-    const batch = writeBatch(db);
-
-    // 1. Delete the property itself
-    const propertyRef = doc(db, 'properties', propertyId);
-    batch.delete(propertyRef);
-
-    // 2. Find and delete all bookings for the property
-    const bookingsQuery = query(bookingsCollection, where('propertyId', '==', propertyId));
-    const bookingsSnapshot = await getDocs(bookingsQuery);
-    
-    const bookingIds = bookingsSnapshot.docs.map(d => d.id);
-
-    if (bookingIds.length > 0) {
-        // 3. Find and delete all payments for those bookings
-        const paymentsQuery = query(paymentsCollection, where('bookingId', 'in', bookingIds));
-        const paymentsSnapshot = await getDocs(paymentsQuery);
-        paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
-
-        // 4. Find and delete all booking expenses for those bookings
-        const bookingExpensesQuery = query(bookingExpensesCollection, where('bookingId', 'in', bookingIds));
-        const bookingExpensesSnapshot = await getDocs(bookingExpensesQuery);
-        bookingExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
-    }
-
-    // Delete the bookings themselves
-    bookingsSnapshot.forEach(doc => batch.delete(doc.ref));
-
-    // 5. Find and delete all property expenses
-    const propertyExpensesQuery = query(propertyExpensesCollection, where('propertyId', '==', propertyId));
-    const propertyExpensesSnapshot = await getDocs(propertyExpensesQuery);
-    propertyExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
-
-    // Commit the batch
-    await batch.commit();
-}
-
-
 
 export async function getTenants(): Promise<Tenant[]> {
     const snapshot = await getDocs(query(tenantsCollection, orderBy('name')));
@@ -300,27 +211,9 @@ export async function getTenants(): Promise<Tenant[]> {
 
 export async function getTenantById(id: string): Promise<Tenant | undefined> {
     if (!id) return undefined;
-    const docRef = doc(db, 'tenants', id);
+    const docRef = doc(clientDb, 'tenants', id);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? processDoc(docSnap) as Tenant : undefined;
-}
-
-export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
-    const docRef = await addDoc(tenantsCollection, tenant);
-    return { id: docRef.id, ...tenant };
-}
-
-export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null> {
-    const { id, ...data } = updatedTenant;
-    const docRef = doc(db, 'tenants', id);
-    await updateDoc(docRef, data);
-    return updatedTenant;
-}
-
-export async function deleteTenant(id: string): Promise<boolean> {
-    const docRef = doc(db, 'tenants', id);
-    await deleteDoc(docRef);
-    return true;
 }
 
 async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> {
@@ -409,67 +302,15 @@ export async function getBookingsByPropertyId(propertyId: string): Promise<Booki
 
 export async function getBookingById(id: string): Promise<Booking | undefined> {
     if (!id) return undefined;
-    const docRef = doc(db, 'bookings', id);
+    const docRef = doc(clientDb, 'bookings', id);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? processDoc(docSnap) as Booking : undefined;
-}
-
-
-export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
-    const docRef = await addDoc(bookingsCollection, booking);
-    return { id: docRef.id, ...booking };
-}
-
-export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
-    const { id, ...data } = updatedBooking;
-    if (!id) throw new Error("Update booking requires an ID.");
-    const docRef = doc(db, 'bookings', id);
-    await updateDoc(docRef, data);
-    const newDoc = await getDoc(docRef);
-    return newDoc.exists() ? processDoc(newDoc) as Booking : null;
-}
-
-export async function deleteBooking(id: string): Promise<boolean> {
-    const batch = writeBatch(db);
-    
-    const bookingRef = doc(db, 'bookings', id);
-    batch.delete(bookingRef);
-
-    const paymentsQuery = query(paymentsCollection, where('bookingId', '==', id));
-    const paymentsSnapshot = await getDocs(paymentsQuery);
-    paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
-
-    const expensesQuery = query(bookingExpensesCollection, where('bookingId', '==', id));
-    const expensesSnapshot = await getDocs(expensesQuery);
-    expensesSnapshot.forEach(doc => batch.delete(doc.ref));
-    
-    await batch.commit();
-    return true;
 }
 
 export async function getExpenseCategories(): Promise<ExpenseCategory[]> {
     const snapshot = await getDocs(query(expenseCategoriesCollection, orderBy('name')));
     return snapshot.docs.map(processDoc) as ExpenseCategory[];
 }
-
-export async function addExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
-    const docRef = await addDoc(expenseCategoriesCollection, category);
-    return { id: docRef.id, ...category };
-}
-
-export async function updateExpenseCategory(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
-    const { id, ...data } = updatedCategory;
-    const docRef = doc(db, 'expenseCategories', id);
-    await updateDoc(docRef, data);
-    return updatedCategory;
-}
-
-export async function deleteExpenseCategory(id: string): Promise<void> {
-    // TODO: We might need to handle what happens to expenses that have this categoryId
-    const docRef = doc(db, 'expenseCategories', id);
-    await deleteDoc(docRef);
-}
-
 
 export async function getAllPropertyExpenses(): Promise<PropertyExpense[]> {
     const snapshot = await getDocs(propertyExpensesCollection);
@@ -480,24 +321,6 @@ export async function getPropertyExpensesByPropertyId(propertyId: string): Promi
     const q = query(propertyExpensesCollection, where('propertyId', '==', propertyId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(processDoc) as PropertyExpense[];
-}
-
-export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
-    const docRef = await addDoc(propertyExpensesCollection, { ...expense, currency: 'ARS' });
-    return { id: docRef.id, ...expense, currency: 'ARS' };
-}
-
-export async function updatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense | null> {
-    const { id, ...data } = updatedExpense;
-    const docRef = doc(db, 'propertyExpenses', id);
-    await updateDoc(docRef, { ...data, currency: 'ARS' });
-    return { ...updatedExpense, currency: 'ARS' };
-}
-
-export async function deletePropertyExpense(id: string): Promise<boolean> {
-    const docRef = doc(db, 'propertyExpenses', id);
-    await deleteDoc(docRef);
-    return true;
 }
 
 export async function getAllBookingExpenses(): Promise<BookingExpense[]> {
@@ -511,46 +334,10 @@ export async function getBookingExpensesByBookingId(bookingId: string): Promise<
     return snapshot.docs.map(processDoc) as BookingExpense[];
 }
 
-export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
-    const docRef = await addDoc(bookingExpensesCollection, { ...expense, currency: 'ARS' });
-    return { id: docRef.id, ...expense, currency: 'ARS' };
-}
-
-export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense | null> {
-    const { id, ...data } = updatedExpense;
-    const docRef = doc(db, 'bookingExpenses', id);
-await updateDoc(docRef, { ...data, currency: 'ARS' });
-    return { ...updatedExpense, currency: 'ARS' };
-}
-
-export async function deleteBookingExpense(id: string): Promise<boolean> {
-    const docRef = doc(db, 'bookingExpenses', id);
-    await deleteDoc(docRef);
-    return true;
-}
-
 export async function getPaymentsByBookingId(bookingId: string): Promise<Payment[]> {
     const q = query(paymentsCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(processDoc) as Payment[];
-}
-
-export async function addPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
-    const docRef = await addDoc(paymentsCollection, { ...payment, currency: 'USD' });
-    return { id: docRef.id, ...payment, currency: 'USD' };
-}
-
-export async function updatePayment(updatedPayment: Payment): Promise<Payment | null> {
-    const { id, ...data } = updatedPayment;
-    const docRef = doc(db, 'payments', id);
-    await updateDoc(docRef, { ...data, currency: 'USD' });
-    return { ...updatedPayment, currency: 'USD' };
-}
-
-export async function deletePayment(id: string): Promise<boolean> {
-    const docRef = doc(db, 'payments', id);
-    await deleteDoc(docRef);
-    return true;
 }
 
 export async function getAllPayments(): Promise<Payment[]> {
@@ -798,50 +585,19 @@ export async function getBookingWithDetails(bookingId: string): Promise<BookingW
 // --- Email Template Functions ---
 
 export async function getEmailTemplates(): Promise<EmailTemplate[]> {
-  // Try to add default templates if they don't exist
-  await initializeDefaultData();
   const snapshot = await getDocs(query(emailTemplatesCollection, orderBy('name')));
   return snapshot.docs.map(processDoc) as EmailTemplate[];
 }
 
-export async function addEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
-  const docRef = await addDoc(emailTemplatesCollection, template);
-  return { id: docRef.id, ...template };
-}
-
-export async function updateEmailTemplate(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
-  const { id, ...data } = updatedTemplate;
-  const docRef = doc(db, 'emailTemplates', id);
-  await updateDoc(docRef, data);
-  return updatedTemplate;
-}
-
-export async function deleteEmailTemplate(id: string): Promise<void> {
-  const docRef = doc(db, 'emailTemplates', id);
-  await deleteDoc(docRef);
-}
-
-
 // --- App Settings Functions ---
 
 export async function getEmailSettings(): Promise<EmailSettings | null> {
-    const docRef = doc(db, 'settings', 'email');
+    const docRef = doc(clientDb, 'settings', 'email');
     let docSnap = await getDoc(docRef);
     
-    // If the document doesn't exist, create it with default empty values
     if (!docSnap.exists()) {
-        await setDoc(docRef, { replyToEmail: '' });
-        docSnap = await getDoc(docRef); // Re-fetch the newly created document
+      return null;
     }
 
     return processDoc(docSnap) as EmailSettings;
 }
-
-export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<EmailSettings> {
-    const docRef = doc(db, 'settings', 'email');
-    // Use setDoc with merge:true to create or update the document
-    await setDoc(docRef, settings, { merge: true });
-    return { id: 'email', ...settings };
-}
-
-    
