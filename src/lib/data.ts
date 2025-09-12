@@ -20,6 +20,8 @@ import {
 // --- TYPE DEFINITIONS ---
 const processDoc = (doc: { id: string; data: () => any; }) => {
     const data = doc.data()!;
+    // Firestore Timestamps need to be converted to a serializable format.
+    // We convert them to ISO strings. The UI will then parse these strings.
     for (const key in data) {
         if (data[key] instanceof Timestamp) {
             data[key] = data[key].toDate().toISOString();
@@ -542,3 +544,5 @@ export async function getEmailSettings(): Promise<EmailSettings | null> {
     }
     return processDoc({id: docSnap.id, data: docSnap.data}) as EmailSettings;
 }
+
+    
