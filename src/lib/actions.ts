@@ -163,16 +163,18 @@ export async function updateTenant(previousState: any, formData: FormData) {
         return { success: false, message: "El ID y el nombre del inquilino son obligatorios." };
     }
 
+    // Build the data object by explicitly getting each field
+    // and providing a default empty string if it's null or undefined.
     const updatedTenant: Tenant = {
         id,
         name,
-        dni: (formData.get("dni") as string) || '',
-        email: (formData.get("email") as string) || '',
-        phone: (formData.get("phone") as string) || '',
-        address: (formData.get("address") as string) || '',
-        city: (formData.get("city") as string) || '',
-        country: (formData.get("country") as string) || 'Argentina',
-        notes: (formData.get("notes") as string) || '',
+        dni: (formData.get("dni") as string) ?? '',
+        email: (formData.get("email") as string) ?? '',
+        phone: (formData.get("phone") as string) ?? '',
+        address: (formData.get("address") as string) ?? '',
+        city: (formData.get("city") as string) ?? '',
+        country: (formData.get("country") as string) ?? 'Argentina',
+        notes: (formData.get("notes") as string) ?? '',
     };
 
     try {
@@ -880,5 +882,3 @@ export async function updateEmailSettings(previousState: any, formData: FormData
         return { success: false, message: 'Error al guardar la configuración de email.' };
     }
 }
-
-    

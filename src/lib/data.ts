@@ -1,5 +1,4 @@
 
-
 import { db } from './firebase';
 import {
   collection,
@@ -202,7 +201,7 @@ const addDefaultData = async (collRef: any, data: any[]) => {
         await batch.commit();
         console.log(`Default data added to ${collRef.path}.`);
     } else {
-        console.log(`Collection ${collRef.path} already has data. Skipping default data.`);
+        // console.log(`Collection ${collRef.path} already has data. Skipping default data.`);
     }
 };
 
@@ -310,11 +309,21 @@ export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
     return { id: docRef.id, ...tenant };
 }
 
-export async function updateTenant(updatedTenant: Tenant): Promise<Tenant> {
-    const { id, ...data } = updatedTenant;
-    const docRef = doc(db, 'tenants', id);
-    await updateDoc(docRef, data);
-    return updatedTenant;
+export async function updateTenant(tenantData: Tenant): Promise<Tenant> {
+    const { id, ...dataToUpdate } = tenantData;
+    if (!id) {
+        throw new Error("Tenant ID is required for updates.");
+    }
+    const tenantRef = doc(db, 'tenants', id);
+    console.log(`[data.ts] Attempting to update tenant ${id} with data:`, dataToUpdate);
+    try {
+        await updateDoc(tenantRef, dataToUpdate);
+        console.log(`[data.ts] Successfully updated tenant ${id}.`);
+        return tenantData;
+    } catch (error) {
+        console.error(`[data.ts] Firestore update failed for tenant ${id}:`, error);
+        throw error; // Re-throw the error to be caught by the server action
+    }
 }
 
 export async function deleteTenant(id: string): Promise<boolean> {
@@ -843,5 +852,3 @@ export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): 
     await setDoc(docRef, settings, { merge: true });
     return { id: 'email', ...settings };
 }
-
-    
