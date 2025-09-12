@@ -1,5 +1,7 @@
 
 
+'use client';
+
 import {
   Table,
   TableBody,
@@ -14,6 +16,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ExpenseEditForm } from "./expense-edit-form";
 import { ExpenseDeleteForm } from "./expense-delete-form";
+import { useState, useEffect } from 'react';
 
 interface ExpensesListProps {
   expenses: PropertyExpense[];
@@ -21,6 +24,11 @@ interface ExpensesListProps {
 }
 
 export default function ExpensesList({ expenses, categories }: ExpensesListProps) {
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   if (expenses.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay gastos para mostrar.</p>;
   }
@@ -28,6 +36,7 @@ export default function ExpensesList({ expenses, categories }: ExpensesListProps
   const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
 
   const formatDate = (dateString: string) => {
+    if (!dateString || !isClient) return '';
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
   };
 
@@ -54,7 +63,7 @@ export default function ExpensesList({ expenses, categories }: ExpensesListProps
         </TableRow>
       </TableHeader>
       <TableBody>
-        {expenses.map((expense) => (
+        {isClient ? expenses.map((expense) => (
           <TableRow key={expense.id}>
             <TableCell>{formatDate(expense.date)}</TableCell>
             <TableCell>{expense.categoryId ? categoriesMap.get(expense.categoryId) : 'N/A'}</TableCell>
@@ -67,12 +76,18 @@ export default function ExpensesList({ expenses, categories }: ExpensesListProps
                 </div>
             </TableCell>
           </TableRow>
-        ))}
+        )) : (
+           <TableRow>
+                <TableCell colSpan={5} className="text-center">
+                    Cargando...
+                </TableCell>
+            </TableRow>
+        )}
       </TableBody>
       <TableFooter>
         <TableRow>
           <TableCell colSpan={3} className="font-bold text-right">Total</TableCell>
-          <TableCell className="text-right font-bold">{formatCurrency(totalAmount)}</TableCell>
+          <TableCell className="text-right font-bold">{isClient ? formatCurrency(totalAmount) : '...'}</TableCell>
           <TableCell></TableCell>
         </TableRow>
       </TableFooter>

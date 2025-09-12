@@ -64,6 +64,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
   
   const formatDate = (dateString: string) => {
+    if (!dateString) return '';
     return format(new Date(dateString), "dd-LLL-yyyy", { locale: es });
   };
   
@@ -301,12 +302,34 @@ export default function BookingsList({ bookings, properties, tenants, showProper
       setIsClient(true);
   }, []);
 
-  if (!isClient) {
-      return null; 
-  }
-
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
+  }
+
+  if (!isClient) {
+      return (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    {showProperty && <TableHead>Propiedad</TableHead>}
+                    <TableHead>Inquilino</TableHead>
+                    <TableHead>Estadía</TableHead>
+                    <TableHead>Contrato</TableHead>
+                    <TableHead>Garantía</TableHead>
+                    <TableHead>Monto</TableHead>
+                    <TableHead>Saldo</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                <TableRow>
+                    <TableCell colSpan={showProperty ? 8 : 7} className="text-center">
+                        Cargando...
+                    </TableCell>
+                </TableRow>
+            </TableBody>
+        </Table>
+      );
   }
 
   return (
