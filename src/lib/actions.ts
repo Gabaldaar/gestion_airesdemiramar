@@ -2,25 +2,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { db } from './firebase'; // Usar la instancia del cliente
+import { db } from './firebase';
 import {
-    getBookingById,
-    getPropertyById,
-    getTenantById,
-    Tenant,
     Booking,
-    PropertyExpense,
-    BookingExpense,
-    Payment,
-    Property,
     ContractStatus,
     ExpenseCategory,
     GuaranteeStatus,
-    EmailTemplate,
-    EmailSettings
+    Property,
+    Tenant
 } from "./data";
 import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
-import { collection, addDoc, updateDoc, deleteDoc, doc, writeBatch, query, where, getDocs } from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, writeBatch, query, where, getDocs, getDoc } from "firebase/firestore";
 
 
 const propertiesCollection = collection(db, 'properties');
@@ -32,6 +24,28 @@ const paymentsCollection = collection(db, 'payments');
 const expenseCategoriesCollection = collection(db, 'expenseCategories');
 const emailTemplatesCollection = collection(db, 'emailTemplates');
 const settingsCollection = collection(db, 'settings');
+
+
+export async function getPropertyById(id: string): Promise<Property | undefined> {
+  if (!id) return undefined;
+  const docRef = doc(db, 'properties', id);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Property : undefined;
+}
+
+export async function getTenantById(id: string): Promise<Tenant | undefined> {
+    if (!id) return undefined;
+    const docRef = doc(db, 'tenants', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Tenant : undefined;
+}
+
+export async function getBookingById(id: string): Promise<Booking | undefined> {
+    if (!id) return undefined;
+    const docRef = doc(db, 'bookings', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Booking : undefined;
+}
 
 
 export async function addProperty(previousState: any, formData: FormData) {
@@ -296,42 +310,49 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             notes: formData.get("notes") as string ?? oldBooking.notes,
             contractStatus: formData.get("contractStatus") as ContractStatus || oldBooking.contractStatus,
             googleCalendarEventId: formData.get("googleCalendarEventId") as string ?? oldBooking.googleCalendarEventId,
-            guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus || oldBooking.guaranteeStatus,
-            guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS' || oldBooking.guaranteeCurrency,
         };
 
-        const guaranteeStatus = updatedBookingData.guaranteeStatus;
-        const guaranteeAmountStr = formData.get("guaranteeAmount") as string;
-        const guaranteeReceivedDateStr = formData.get("guaranteeReceivedDate") as string;
-        const guaranteeReturnedDateStr = formData.get("guaranteeReturnedDate") as string;
+        // Only process guarantee fields if they are submitted (i.e., not from the main booking edit form)
+        if (formData.has("guaranteeStatus")) {
+            const guaranteeStatus = formData.get("guaranteeStatus") as GuaranteeStatus;
+            const guaranteeAmountStr = formData.get("guaranteeAmount") as string;
+            const guaranteeCurrency = formData.get("guaranteeCurrency") as 'USD' | 'ARS';
+            const guaranteeReceivedDateStr = formData.get("guaranteeReceivedDate") as string;
+            const guaranteeReturnedDateStr = formData.get("guaranteeReturnedDate") as string;
 
-        if (guaranteeAmountStr && guaranteeAmountStr !== '') {
-            updatedBookingData.guaranteeAmount = parseFloat(guaranteeAmountStr);
-        } else {
-            updatedBookingData.guaranteeAmount = null;
+            updatedBookingData.guaranteeStatus = guaranteeStatus;
+            updatedBookingData.guaranteeCurrency = guaranteeCurrency;
+
+            if (guaranteeAmountStr && guaranteeAmountStr !== '') {
+                updatedBookingData.guaranteeAmount = parseFloat(guaranteeAmountStr);
+            } else {
+                updatedBookingData.guaranteeAmount = null;
+            }
+
+            if (guaranteeReceivedDateStr && guaranteeReceivedDateStr !== '') {
+                updatedBookingData.guaranteeReceivedDate = guaranteeReceivedDateStr;
+            } else {
+                updatedBookingData.guaranteeReceivedDate = null;
+            }
+
+            if (guaranteeReturnedDateStr && guaranteeReturnedDateStr !== '') {
+                updatedBookingData.guaranteeReturnedDate = guaranteeReturnedDateStr;
+            } else {
+                updatedBookingData.guaranteeReturnedDate = null;
+            }
+
+            // Validation logic only for guarantee form
+            if ((guaranteeStatus === 'solicited' || guaranteeStatus === 'received' || guaranteeStatus === 'returned') && (!updatedBookingData.guaranteeAmount || updatedBookingData.guaranteeAmount <= 0)) {
+                return { success: false, message: "El 'Monto' de la garantía es obligatorio y debe ser mayor a 0 para el estado seleccionado." };
+            }
+            if (guaranteeStatus === 'received' && !updatedBookingData.guaranteeReceivedDate) {
+                return { success: false, message: "La 'Fecha Recibida' es obligatoria para el estado 'Recibida'." };
+            }
+            if (guaranteeStatus === 'returned' && !updatedBookingData.guaranteeReturnedDate) {
+                return { success: false, message: "La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'." };
+            }
         }
 
-        if (guaranteeReceivedDateStr && guaranteeReceivedDateStr !== '') {
-            updatedBookingData.guaranteeReceivedDate = guaranteeReceivedDateStr;
-        } else {
-            updatedBookingData.guaranteeReceivedDate = null;
-        }
-
-        if (guaranteeReturnedDateStr && guaranteeReturnedDateStr !== '') {
-            updatedBookingData.guaranteeReturnedDate = guaranteeReturnedDateStr;
-        } else {
-            updatedBookingData.guaranteeReturnedDate = null;
-        }
-
-        if ((guaranteeStatus === 'solicited' || guaranteeStatus === 'received' || guaranteeStatus === 'returned') && (updatedBookingData.guaranteeAmount === null || updatedBookingData.guaranteeAmount <= 0)) {
-            return { success: false, message: "El 'Monto' de la garantía es obligatorio y debe ser mayor a 0 para el estado seleccionado." };
-        }
-        if (guaranteeStatus === 'received' && !updatedBookingData.guaranteeReceivedDate) {
-            return { success: false, message: "La 'Fecha Recibida' es obligatoria para el estado 'Recibida'." };
-        }
-        if (guaranteeStatus === 'returned' && !updatedBookingData.guaranteeReturnedDate) {
-            return { success: false, message: "La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'." };
-        }
 
         await updateDoc(doc(db, 'bookings', id), updatedBookingData);
         
@@ -883,5 +904,3 @@ export async function updateEmailSettings(previousState: any, formData: FormData
         return { success: false, message: 'Error al guardar la configuración de email.' };
     }
 }
-
-    
