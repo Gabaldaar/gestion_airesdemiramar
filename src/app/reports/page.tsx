@@ -26,7 +26,8 @@ function ReportsPageContent() {
     }
   }, [user, from, to]);
 
-  if (!user || loading || !summary) {
+  // Pass loading state to the client
+  if (loading || !summary) {
       return <p>Cargando reporte...</p>
   }
   
@@ -41,3 +42,4 @@ export default function ReportsPage() {
     </Suspense>
     )
 }
+

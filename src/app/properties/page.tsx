@@ -30,7 +30,7 @@ export default function PropertiesPage() {
     }
   }, [user]);
 
-  if (!user || loading) {
+  if (loading) {
     return <p>Cargando propiedades...</p>
   }
 

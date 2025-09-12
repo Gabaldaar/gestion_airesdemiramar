@@ -28,7 +28,7 @@ export default function TemplatesPage() {
         }
     }, [user]);
 
-    if (!user || loading) {
+    if (loading) {
         return <p>Cargando plantillas...</p>
     }
 

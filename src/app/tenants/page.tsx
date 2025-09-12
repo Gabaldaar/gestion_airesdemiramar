@@ -12,7 +12,7 @@ import { getTenants, getBookings, Tenant, BookingWithDetails } from "@/lib/data"
 import { TenantAddForm } from "@/components/tenant-add-form";
 import TenantsClient from "@/components/tenants-client";
 import { useAuth } from "@/components/auth-provider";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 interface TenantsData {
     tenants: Tenant[];
@@ -24,24 +24,20 @@ export default function TenantsPage() {
     const [data, setData] = useState<TenantsData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchData = useCallback(() => {
-        setLoading(true);
-        Promise.all([
-            getTenants(),
-            getBookings()
-        ]).then(([tenants, bookings]) => {
-            setData({ tenants, bookings });
-            setLoading(false);
-        });
-    }, []);
-
     useEffect(() => {
         if (user) {
-            fetchData();
+            setLoading(true);
+            Promise.all([
+                getTenants(),
+                getBookings()
+            ]).then(([tenants, bookings]) => {
+                setData({ tenants, bookings });
+                setLoading(false);
+            });
         }
-    }, [user, fetchData]);
+    }, [user]);
 
-    if (!user || loading || !data) {
+    if (loading || !data) {
         return <p>Cargando inquilinos...</p>;
     }
 
@@ -54,14 +50,10 @@ export default function TenantsPage() {
                 Administra y filtra la información de tus inquilinos.
             </CardDescription>
             </div>
-            <TenantAddForm onTenantAdded={fetchData} />
+            <TenantAddForm />
         </CardHeader>
         <CardContent>
-            <TenantsClient 
-                initialTenants={data.tenants} 
-                allBookings={data.bookings}
-                onDataNeedsRefresh={fetchData}
-            />
+            <TenantsClient initialTenants={data.tenants} allBookings={data.bookings} />
         </CardContent>
         </Card>
     );

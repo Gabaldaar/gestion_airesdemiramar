@@ -11,7 +11,7 @@ import {
 import { getProperties, getAllExpensesUnified, getExpenseCategories, UnifiedExpense, Property, ExpenseCategory } from "@/lib/data";
 import ExpensesClient from "@/components/expenses-client";
 import { useAuth } from "@/components/auth-provider";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 interface ExpensesData {
     allExpenses: UnifiedExpense[];
@@ -24,7 +24,7 @@ export default function ExpensesPage() {
     const [data, setData] = useState<ExpensesData | null>(null);
     const [loading, setLoading] = useState(true);
     
-    const fetchData = useCallback(() => {
+    useEffect(() => {
         if (user) {
             setLoading(true);
             Promise.all([
@@ -38,11 +38,7 @@ export default function ExpensesPage() {
         }
     }, [user]);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    if (!user || loading || !data) {
+    if (loading || !data) {
         return <p>Cargando gastos...</p>;
     }
 
@@ -57,7 +53,6 @@ export default function ExpensesPage() {
         initialExpenses={data.allExpenses} 
         properties={data.properties} 
         categories={data.categories}
-        onDataNeedsRefresh={fetchData}
         />
     </CardContent>
     </Card>
