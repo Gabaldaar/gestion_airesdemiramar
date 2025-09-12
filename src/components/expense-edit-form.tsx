@@ -49,8 +49,14 @@ function SubmitButton() {
 export function ExpenseEditForm({ expense, categories }: { expense: PropertyExpense, categories: ExpenseCategory[] }) {
   const [state, formAction] = useActionState(updatePropertyExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(expense.originalUsdAmount ? 'USD' : 'ARS');
+
+  useEffect(() => {
+    if (expense) {
+        setDate(new Date(expense.date));
+    }
+  }, [expense]);
 
   useEffect(() => {
     if (state.success) {

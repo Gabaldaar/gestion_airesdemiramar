@@ -72,11 +72,17 @@ interface BookingEditFormProps {
 
 export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange }: BookingEditFormProps) {
   const [state, formAction] = useActionState(updateBooking, initialState);
-  const [date, setDate] = useState<DateRange | undefined>({
-      from: new Date(booking.startDate),
-      to: new Date(booking.endDate)
-  });
+  const [date, setDate] = useState<DateRange | undefined>(undefined);
   const [conflict, setConflict] = useState<Booking | null>(null);
+
+  useEffect(() => {
+    if (booking) {
+        setDate({
+            from: booking.startDate ? new Date(booking.startDate) : undefined,
+            to: booking.endDate ? new Date(booking.endDate) : undefined,
+        })
+    }
+  }, [booking])
 
   const resetForm = () => {
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
