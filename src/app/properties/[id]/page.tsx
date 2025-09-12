@@ -36,19 +36,19 @@ interface PropertyDetailData {
 
 export default function PropertyDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
-  const propertyId = params.id;
+  const { id: propertyId } = params;
   const [data, setData] = useState<PropertyDetailData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async (id: string) => {
-    if (user) {
+  const fetchData = useCallback(async () => {
+    if (user && propertyId) {
         setLoading(true);
         const [property, properties, tenants, bookings, expenses, categories] = await Promise.all([
-            getPropertyById(id),
+            getPropertyById(propertyId),
             getProperties(),
             getTenants(),
-            getBookingsByPropertyId(id),
-            getPropertyExpensesByPropertyId(id),
+            getBookingsByPropertyId(propertyId),
+            getPropertyExpensesByPropertyId(propertyId),
             getExpenseCategories(),
         ]);
 
@@ -59,13 +59,11 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         setData({ property, properties, tenants, bookings, expenses, categories });
         setLoading(false);
     }
-  }, [user]);
+  }, [user, propertyId]);
 
   useEffect(() => {
-    if (propertyId) {
-        fetchData(propertyId);
-    }
-  }, [propertyId, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
 
   if (!user || loading || !data) {
@@ -85,11 +83,11 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
             <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
             <p className="text-muted-foreground">{property.address}</p>
         </div>
-        <PropertyNotesForm property={property} onPropertyUpdated={() => fetchData(propertyId)} />
+        <PropertyNotesForm property={property} onPropertyUpdated={fetchData} />
     </div>
 
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="lg:col-span-1">
+        <div className="md:col-span-2 lg:col-span-1">
         <Card>
             <CardHeader className="p-0">
             <div className="relative aspect-video w-full">
@@ -109,7 +107,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         </Card>
         </div>
 
-        <div className="md:col-span-1 lg:col-span-2">
+        <div className="md:col-span-2 lg:col-span-2">
         <Tabs defaultValue="bookings" className="space-y-4">
             <div className="flex justify-between items-center">
             <TabsList>
@@ -118,8 +116,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 <TabsTrigger value="expenses">Gastos</TabsTrigger>
             </TabsList>
             <div className="flex items-center space-x-2">
-                <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} onBookingAdded={() => fetchData(propertyId)} />
-                <ExpenseAddForm propertyId={property.id} categories={categories} onExpenseAdded={() => fetchData(propertyId)} />
+                <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} onBookingAdded={fetchData} />
+                <ExpenseAddForm propertyId={property.id} categories={categories} onExpenseAdded={fetchData} />
             </div>
             </div>
             <TabsContent value="calendar" className="space-y-4">
@@ -157,7 +155,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <BookingsList bookings={bookings} properties={properties} tenants={tenants} onDataNeedsRefresh={() => fetchData(propertyId)} />
+                <BookingsList bookings={bookings} properties={properties} tenants={tenants} onDataNeedsRefresh={fetchData} />
                 </CardContent>
             </Card>
             </TabsContent>
@@ -170,7 +168,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <ExpensesList expenses={expenses} categories={categories} onDataNeedsRefresh={() => fetchData(propertyId)} />
+                <ExpensesList expenses={expenses} categories={categories} onDataNeedsRefresh={fetchData} />
                 </CardContent>
             </Card>
             </TabsContent>
