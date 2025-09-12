@@ -310,7 +310,7 @@ export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
     return { id: docRef.id, ...tenant };
 }
 
-export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null> {
+export async function updateTenant(updatedTenant: Tenant): Promise<Tenant> {
     const { id, ...data } = updatedTenant;
     const docRef = doc(db, 'tenants', id);
     await updateDoc(docRef, data);

@@ -156,35 +156,36 @@ export async function addTenant(previousState: any, formData: FormData) {
 }
 
 export async function updateTenant(previousState: any, formData: FormData) {
-  const updatedTenant: Tenant = {
-    id: formData.get("id") as string,
-    name: formData.get("name") as string,
-    dni: formData.get("dni") as string || "",
-    email: formData.get("email") as string || "",
-    phone: formData.get("phone") as string || "",
-    address: formData.get("address") as string || "",
-    city: formData.get("city") as string || "",
-    country: formData.get("country") as string || "Argentina",
-    notes: formData.get("notes") as string || "",
-  };
+    const id = formData.get('id') as string;
+    const name = formData.get('name') as string;
 
-  if (!updatedTenant.id || !updatedTenant.name) {
-      return { success: false, message: "El ID y el nombre del inquilino son obligatorios." };
-  }
+    if (!id || !name) {
+        return { success: false, message: "El ID y el nombre del inquilino son obligatorios." };
+    }
 
-  try {
-    await dbUpdateTenant(updatedTenant);
-    revalidatePath("/tenants");
-    revalidatePath("/bookings");
-    revalidatePath("/");
-    revalidatePath(`/properties/[id]`);
-    revalidatePath('/dashboard');
+    const updatedTenant: Tenant = {
+        id,
+        name,
+        dni: String(formData.get("dni") || ''),
+        email: String(formData.get("email") || ''),
+        phone: String(formData.get("phone") || ''),
+        address: String(formData.get("address") || ''),
+        city: String(formData.get("city") || ''),
+        country: String(formData.get("country") || 'Argentina'),
+        notes: String(formData.get("notes") || ''),
+    };
 
-    return { success: true, message: "Inquilino actualizado correctamente." };
-  } catch (error) {
-    console.error("Error in updateTenant action:", error);
-    return { success: false, message: "Error al actualizar inquilino." };
-  }
+    try {
+        await dbUpdateTenant(updatedTenant);
+        revalidatePath("/tenants");
+        revalidatePath("/bookings");
+        revalidatePath("/");
+        revalidatePath(`/properties/${id}`);
+        return { success: true, message: "Inquilino actualizado correctamente." };
+    } catch (error) {
+        console.error("Error in updateTenant action:", error);
+        return { success: false, message: "Error al actualizar inquilino." };
+    }
 }
 
 
@@ -879,3 +880,5 @@ export async function updateEmailSettings(previousState: any, formData: FormData
         return { success: false, message: 'Error al guardar la configuración de email.' };
     }
 }
+
+    
