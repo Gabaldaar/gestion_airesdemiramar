@@ -19,7 +19,6 @@ import { Badge } from "@/components/ui/badge";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import Logo from "@/assets/logo.png";
 
 const navItems = [
     { href: "/", label: "Dashboard", icon: Home },
@@ -43,7 +42,7 @@ export default function Sidebar() {
             <div className="flex h-full max-h-screen flex-col gap-2">
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                     <Link href="/" className="flex items-center gap-2 font-semibold">
-                         <Image src={Logo} alt="Logo" width={160} />
+                         <span className="text-lg">Aires de Miramar</span>
                     </Link>
                 </div>
                 <div className="flex-1">
