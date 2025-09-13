@@ -22,7 +22,7 @@ import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/components/auth-provider';
 
 interface PropertyDetailData {
@@ -36,7 +36,7 @@ interface PropertyDetailData {
 
 export default function PropertyDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
-  const propertyId = params.id;
+  const { id: propertyId } = use(params);
   const [data, setData] = useState<PropertyDetailData | null>(null);
   const [loading, setLoading] = useState(true);
 
