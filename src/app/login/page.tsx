@@ -4,6 +4,8 @@
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Image from 'next/image';
+import Logo from '@/assets/logo.png';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -40,7 +42,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-               <h1 className="text-2xl font-bold">Aires de Miramar</h1>
+               <Image src={Logo} alt="Aires de Miramar" width={240} />
             </div>
           <CardTitle className="text-2xl">Bienvenido</CardTitle>
           <CardDescription>

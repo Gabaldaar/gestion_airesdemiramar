@@ -1,46 +1,69 @@
 
-'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails } from "@/lib/data";
-import { format } from "date-fns";
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-interface DashboardCurrentBookingsProps {
-  bookings: BookingWithDetails[];
-}
+export default function DashboardCurrentBookings({ bookings }: { bookings: BookingWithDetails[]}) {
+  if (bookings.length === 0) {
+    return <p className="text-sm text-muted-foreground">No hay reservas en curso en este momento.</p>;
+  }
 
-export default function DashboardCurrentBookings({ bookings }: DashboardCurrentBookingsProps) {
-    if (bookings.length === 0) {
-        return (
-            <div className="flex items-center justify-center h-40">
-                <p className="text-sm text-muted-foreground">No hay ninguna reserva en curso.</p>
-            </div>
-        )
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
+  };
+
+  const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
+    if (currency === 'USD') {
+        return `USD ${new Intl.NumberFormat('es-AR', {
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(amount)}`;
     }
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  }
 
   return (
-    <div className="space-y-4">
-      {bookings.map((booking) => (
-        <div key={booking.id} className="flex items-center p-2 rounded-lg hover:bg-muted/50">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={booking.tenant?.imageUrl} alt="Avatar" />
-            <AvatarFallback>
-                {booking.tenant?.name?.charAt(0).toUpperCase() || 'S/N'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="ml-4 space-y-1">
-            <p className="text-sm font-medium leading-none">{booking.tenant?.name || 'Inquilino no especificado'}</p>
-            <p className="text-sm text-muted-foreground">{booking.property?.name || 'Propiedad no especificada'}</p>
-          </div>
-          <div className="ml-auto font-medium text-sm text-right">
-              <p>{`Hasta ${format(new Date(booking.endDate), "dd/MM/yy", { locale: es })}`}</p>
-              <p className="text-xs text-muted-foreground">
-                  {booking.currency} {booking.amount.toLocaleString('es-AR')}
-              </p>
-            </div>
-        </div>
-      ))}
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Propiedad</TableHead>
+          <TableHead>Inquilino</TableHead>
+          <TableHead>Check-out</TableHead>
+          <TableHead>Monto</TableHead>
+          <TableHead className="text-right">Saldo</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {bookings.map((booking) => (
+          <TableRow key={booking.id}>
+            <TableCell className="font-bold text-green-600">{booking.property?.name || 'N/A'}</TableCell>
+            <TableCell className="font-medium">{booking.tenant?.name || 'N/A'}</TableCell>
+            <TableCell>{formatDate(booking.endDate)}</TableCell>
+            <TableCell>
+                <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
+            </TableCell>
+            <TableCell className={`text-right font-bold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                {formatCurrency(booking.balance, booking.currency)}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

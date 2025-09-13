@@ -8,6 +8,8 @@ import { es } from 'date-fns/locale';
 import ContractActions from "@/components/contract-actions";
 import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
+import LogoCont from "@/assets/logocont.png";
+import Firma from "@/assets/firma.png";
 import '../globals.css';
 import { BookingWithDetails } from "@/lib/data";
 
@@ -254,7 +256,7 @@ function ContractPage({ bookingId }: { bookingId: string }) {
              <div className="max-w-4xl mx-auto bg-white p-8 print:p-0">
                 <header className="flex justify-between items-center pb-8 border-b">
                     <div>
-                        <h2 className="text-xl font-bold">Aires de Miramar</h2>
+                        <Image src={LogoCont} alt="Logo" width={225} height={60} placeholder="blur" />
                     </div>
                     <div className="print:hidden">
                         <h1 className="text-2xl font-bold text-right">Vista Previa del Contrato</h1>
@@ -277,7 +279,7 @@ function ContractPage({ bookingId }: { bookingId: string }) {
                     </div>
                     <div className="text-center">
                         <div className="h-20 flex items-center justify-center">
-                           {/* Firma Image Removed */}
+                            <Image src={Firma} alt="Firma" width={109} height={99} placeholder="blur" />
                         </div>
                         <p className="pt-2 border-t border-black w-48 text-center">Firma Locador</p>
                     </div>

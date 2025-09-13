@@ -1,9 +1,7 @@
-
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { useActionState, useEffect, useRef, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -13,80 +11,51 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { addTenant } from '@/lib/data';
-import { useToast } from '@/hooks/use-toast';
-import { PlusCircle } from 'lucide-react';
+import { addTenant } from '@/lib/actions';
+import { PlusCircle, Loader2 } from 'lucide-react';
+import { Textarea } from './ui/textarea';
+
+const initialState = {
+  message: '',
+  success: false,
+};
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                </>
+            ) : (
+                'Guardar Inquilino'
+            )}
+        </Button>
+    )
+}
 
 export function TenantAddForm() {
-  const [name, setName] = useState('');
-  const [dni, setDni] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [notes, setNotes] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [state, formAction] = useActionState(addTenant, initialState);
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
-  const { toast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name) {
-      toast({
-        title: 'Error',
-        description: 'El nombre es un campo requerido.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      await addTenant({
-        name,
-        dni: dni || undefined,
-        email: email || undefined,
-        phone: phone || undefined,
-        address: address || undefined,
-        city: city || undefined,
-        notes: notes || undefined,
-        imageUrl: imageUrl || undefined,
-      });
-
-      toast({
-        title: 'Éxito',
-        description: 'Inquilino añadido correctamente.',
-      });
-      
+  useEffect(() => {
+    if (state.success) {
       setIsOpen(false);
-      // Reset form
-      setName('');
-      setDni('');
-      setEmail('');
-      setPhone('');
-      setAddress('');
-      setCity('');
-      setNotes('');
-      setImageUrl('');
-
-      router.refresh();
-    } catch (error) {
-      console.error('Error adding tenant:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudo añadir el inquilino. Por favor, inténtalo de nuevo.',
-        variant: 'destructive',
-      });
+      formRef.current?.reset();
     }
-  };
+  }, [state]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">
-          <PlusCircle className="h-4 w-4 mr-2" />
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
           Nuevo Inquilino
         </Button>
       </DialogTrigger>
@@ -94,106 +63,67 @@ export function TenantAddForm() {
         <DialogHeader>
           <DialogTitle>Añadir Nuevo Inquilino</DialogTitle>
           <DialogDescription>
-            Completa los datos del nuevo inquilino.
+            Completa los datos del nuevo inquilino. Haz clic en guardar cuando termines.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Nombre*
-              </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="col-span-3"
-                required
-              />
+        <form action={formAction} ref={formRef}>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                    Nombre
+                    </Label>
+                    <Input id="name" name="name" className="col-span-3" required />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="dni" className="text-right">
+                    DNI
+                    </Label>
+                    <Input id="dni" name="dni" className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="email" className="text-right">
+                    Email
+                    </Label>
+                    <Input id="email" name="email" type="email" className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="phone" className="text-right">
+                    Teléfono
+                    </Label>
+                    <Input id="phone" name="phone" className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="address" className="text-right">
+                    Dirección
+                    </Label>
+                    <Input id="address" name="address" className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="city" className="text-right">
+                    Ciudad
+                    </Label>
+                    <Input id="city" name="city" className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="country" className="text-right">
+                    País
+                    </Label>
+                    <Input id="country" name="country" defaultValue="Argentina" className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="notes" className="text-right pt-2">
+                        Notas
+                    </Label>
+                    <Textarea id="notes" name="notes" className="col-span-3" />
+                </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dni" className="text-right">
-                DNI
-              </Label>
-              <Input
-                id="dni"
-                value={dni}
-                onChange={(e) => setDni(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Teléfono
-              </Label>
-              <Input
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="address" className="text-right">
-                Dirección
-              </Label>
-              <Input
-                id="address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="city" className="text-right">
-                Ciudad
-              </Label>
-              <Input
-                id="city"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="imageUrl" className="text-right">
-                URL de Imagen
-              </Label>
-              <Input
-                id="imageUrl"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="notes" className="text-right">
-                Notas
-              </Label>
-              <Input
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit">Guardar Inquilino</Button>
-          </DialogFooter>
+            <DialogFooter>
+                <SubmitButton />
+            </DialogFooter>
         </form>
+         {state.message && !state.success && (
+            <p className="text-red-500 text-sm mt-2">{state.message}</p>
+        )}
       </DialogContent>
     </Dialog>
   );

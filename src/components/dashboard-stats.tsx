@@ -1,12 +1,11 @@
-'use client';
 
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { DollarSign, Building, Users, TrendingUp, Wallet } from 'lucide-react';
+} from "@/components/ui/card"
+import { DollarSign, Building, Users, TrendingUp } from "lucide-react"
 
 interface DashboardStatsProps {
   totalIncomeArs: number;
@@ -17,54 +16,88 @@ interface DashboardStatsProps {
   totalTenants: number;
 }
 
-const StatCard = ({ title, value, icon: Icon, subValue, subTitle }: { title: string, value: string, icon: React.ElementType, subValue?: string, subTitle?: string }) => (
-    <Card>
+export default function DashboardStats({
+  totalIncomeArs,
+  totalNetResultArs,
+  totalIncomeUsd,
+  totalNetResultUsd,
+  totalProperties,
+  totalTenants,
+}: DashboardStatsProps) {
+
+  const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
+    if (currency === 'USD') {
+        return `USD ${new Intl.NumberFormat('es-AR', {
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(amount)}`;
+    }
+    // For ARS
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            <Icon className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-sm font-medium">
+            Ingresos Totales
+          </CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-            <div className="text-2xl font-bold">{value}</div>
-            {subTitle && <p className="text-xs text-muted-foreground">{subTitle}: {subValue}</p>}
+          <div className="text-2xl font-bold">{formatCurrency(totalIncomeUsd, 'USD')}</div>
+          <p className="text-xs text-muted-foreground">
+             {formatCurrency(totalIncomeArs, 'ARS')}
+          </p>
         </CardContent>
-    </Card>
-);
-
-
-export default function DashboardStats({
-    totalIncomeArs,
-    totalNetResultArs,
-    totalIncomeUsd,
-    totalNetResultUsd,
-    totalProperties,
-    totalTenants
-}: DashboardStatsProps) {
-    return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-                title="Ingresos Totales (ARS)"
-                value={`$${totalIncomeArs.toLocaleString('es-AR')}`}
-                icon={Wallet}
-                subTitle="Resultado Neto"
-                subValue={`$${totalNetResultArs.toLocaleString('es-AR')}`}
-            />
-            <StatCard
-                title="Ingresos Totales (USD)"
-                value={`$${totalIncomeUsd.toLocaleString('es-AR')}`}
-                icon={DollarSign}
-                subTitle="Resultado Neto"
-                subValue={`$${totalNetResultUsd.toLocaleString('es-AR')}`}
-            />
-            <StatCard
-                title="Propiedades"
-                value={totalProperties.toString()}
-                icon={Building}
-            />
-            <StatCard
-                title="Inquilinos"
-                value={totalTenants.toString()}
-                icon={Users}
-            />
-      </div>
-    );
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">
+            Resultado Neto Total
+          </CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${totalNetResultUsd >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalNetResultUsd, 'USD')}</div>
+           <p className={`text-xs ${totalNetResultArs >= 0 ? 'text-muted-foreground' : 'text-red-500'}`}>
+            {formatCurrency(totalNetResultArs, 'ARS')}
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Propiedades</CardTitle>
+          <Building className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">+{totalProperties}</div>
+          <p className="text-xs text-muted-foreground">
+            Total de unidades gestionadas
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium"> Inquilinos </CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">+{totalTenants}</div>
+          <p className="text-xs text-muted-foreground">
+            Total de inquilinos registrados
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
+
+    
