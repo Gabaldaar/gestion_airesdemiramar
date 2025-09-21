@@ -122,9 +122,9 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
   
   
   return (
-    <TableRow key={booking.id}>
-      {showProperty && <TableCell className={cn("font-bold align-middle", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
-      <TableCell className="align-middle">
+    <TableRow key={booking.id} className="block md:table-row border-b md:border-b-0 last:border-b-0">
+      {showProperty && <TableCell data-label="Propiedad" className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>}
+      <TableCell data-label="Inquilino">
         <div className='flex items-center h-full'>
            <EmailSender 
                 booking={booking} 
@@ -140,7 +140,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
             </EmailSender>
         </div>
       </TableCell>
-      <TableCell className="align-middle">
+      <TableCell data-label="Estadía">
           <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
               <span>{formatDate(booking.startDate)}</span>
               <span className="hidden md:inline">→</span>
@@ -148,7 +148,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
           </div>
           <span className="block text-xs text-muted-foreground">{nights} noches</span>
       </TableCell>
-      <TableCell className="align-middle">
+      <TableCell data-label="Contrato">
         <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -164,7 +164,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell className="align-middle">
+      <TableCell data-label="Garantía">
         <GuaranteeManager booking={booking} isOpen={isGuaranteeOpen} onOpenChange={setIsGuaranteeOpen}>
             <TooltipProvider>
               <Tooltip>
@@ -184,7 +184,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
             </TooltipProvider>
         </GuaranteeManager>
       </TableCell>
-      <TableCell className="align-middle">
+      <TableCell data-label="Monto">
           <TooltipProvider>
               <Tooltip>
                   <TooltipTrigger asChild>
@@ -196,7 +196,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
               </Tooltip>
           </TooltipProvider>
       </TableCell>
-      <TableCell className="align-middle">
+      <TableCell data-label="Saldo">
           <TooltipProvider>
               <Tooltip>
                   <TooltipTrigger asChild>
@@ -210,7 +210,7 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
               </Tooltip>
           </TooltipProvider>
       </TableCell>
-      <TableCell className="align-middle text-right">
+      <TableCell data-label="Acciones" className="text-right">
           <div className="grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
                 <NotesViewer 
                     notes={booking.notes} 
@@ -308,9 +308,9 @@ export default function BookingsList({ bookings, properties, tenants, showProper
             <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-600 mr-1"></div>&lt; 7 días</div>
             <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-600 mr-1"></div>En Curso</div>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
+        <Table className="block md:table">
+          <TableHeader className="hidden md:table-header-group">
+            <TableRow className="hidden md:table-row">
               {showProperty && <TableHead>Propiedad</TableHead>}
               <TableHead>Inquilino</TableHead>
               <TableHead>Estadía</TableHead>
@@ -321,7 +321,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className="block md:table-row-group">
             {bookings.map((booking) => (
                 <BookingRow 
                     key={booking.id}
@@ -333,6 +333,36 @@ export default function BookingsList({ bookings, properties, tenants, showProper
             ))}
           </TableBody>
         </Table>
+        <style jsx>{`
+            @media (max-width: 767px) {
+                .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row {
+                    display: block;
+                    padding: 1rem 0.5rem;
+                    position: relative;
+                }
+                .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label] {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 0.5rem 0.5rem;
+                    border-bottom: 1px solid hsl(var(--border));
+                }
+                .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label]::before {
+                    content: attr(data-label);
+                    font-weight: bold;
+                    margin-right: 1rem;
+                }
+                .block.md\\:table > .block.md\\:table-row-group > .block.md\\table-row > [data-label="Acciones"] {
+                    justify-content: flex-end;
+                }
+                 .block.md\\:table > .block.md\\:table-row-group > .block.md\\table-row > [data-label="Acciones"]::before {
+                    display: none;
+                }
+                 .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row:first-child {
+                    border-top: 1px solid hsl(var(--border));
+                }
+            }
+        `}</style>
     </div>
   );
 }
