@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useMemo, ReactNode } from 'react';
@@ -22,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { updateBooking } from '@/lib/actions';
-import { Booking, Tenant, Property, ContractStatus } from '@/lib/data';
+import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -36,6 +37,7 @@ import {
 import { DateRange } from 'react-day-picker';
 import { Textarea } from './ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { DatePicker } from './ui/date-picker';
 
 
 const initialState = {
@@ -78,9 +80,24 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   });
   const [conflict, setConflict] = useState<Booking | null>(null);
 
+  // Guarantee state
+  const [guaranteeStatus, setGuaranteeStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
+  const [guaranteeAmount, setGuaranteeAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
+  const [guaranteeReceivedDate, setGuaranteeReceivedDate] = useState<Date | undefined>(
+    booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined
+  );
+  const [guaranteeReturnedDate, setGuaranteeReturnedDate] = useState<Date | undefined>(
+    booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined
+  );
+
+
   const resetForm = () => {
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
     setConflict(null);
+    setGuaranteeStatus(booking.guaranteeStatus || 'not_solicited');
+    setGuaranteeAmount(booking.guaranteeAmount || undefined);
+    setGuaranteeReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
+    setGuaranteeReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
   };
 
   useEffect(() => {
@@ -127,7 +144,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     <>
       {children}
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; onOpenChange(open)}}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
             <DialogTitle>Editar Reserva</DialogTitle>
             <DialogDescription>
@@ -270,6 +287,56 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                         </Label>
                         <Textarea id="notes" name="notes" defaultValue={booking.notes} className="col-span-3" />
                     </div>
+                    
+                    {/* Guarantee Fields */}
+                     <div className="col-span-4 border-t pt-4 mt-4">
+                        <h4 className="text-md font-semibold mb-2">Garantía</h4>
+                         <div className="grid grid-cols-4 items-center gap-4 mb-4">
+                             <Label htmlFor="guaranteeStatus" className="text-right">
+                                 Estado
+                             </Label>
+                             <Select name="guaranteeStatus" value={guaranteeStatus} onValueChange={(val) => setGuaranteeStatus(val as GuaranteeStatus)}>
+                                 <SelectTrigger className="col-span-3">
+                                     <SelectValue />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                     <SelectItem value="not_solicited">S/Solicitar</SelectItem>
+                                     <SelectItem value="solicited">Solicitada</SelectItem>
+                                     <SelectItem value="received">Recibida</SelectItem>
+                                     <SelectItem value="returned">Devuelta</SelectItem>
+                                     <SelectItem value="not_applicable">N/A</SelectItem>
+                                 </SelectContent>
+                             </Select>
+                         </div>
+                         <div className="grid grid-cols-4 items-center gap-4 mb-4">
+                            <Label htmlFor="guaranteeAmount" className="text-right">Monto</Label>
+                            <Input id="guaranteeAmount" name="guaranteeAmount" type="number" step="0.01" value={guaranteeAmount || ''} onChange={(e) => setGuaranteeAmount(e.target.value ? parseFloat(e.target.value) : undefined)} className="col-span-2" />
+                            <Select name="guaranteeCurrency" defaultValue={booking.guaranteeCurrency || 'USD'}>
+                                <SelectTrigger className="col-span-1">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ARS">ARS</SelectItem>
+                                    <SelectItem value="USD">USD</SelectItem>
+                                </SelectContent>
+                            </Select>
+                         </div>
+                         <div className="grid grid-cols-4 items-center gap-4 mb-4">
+                             <Label className="text-right">Fecha Recibida</Label>
+                             <div className="col-span-3">
+                                <DatePicker date={guaranteeReceivedDate} onDateSelect={setGuaranteeReceivedDate} placeholder='Fecha de recepción' />
+                             </div>
+                             <input type="hidden" name="guaranteeReceivedDate" value={guaranteeReceivedDate ? guaranteeReceivedDate.toISOString().split('T')[0] : ''} />
+                         </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                             <Label className="text-right">Fecha Devuelta</Label>
+                             <div className="col-span-3">
+                                <DatePicker date={guaranteeReturnedDate} onDateSelect={setGuaranteeReturnedDate} placeholder='Fecha de devolución' />
+                             </div>
+                             <input type="hidden" name="guaranteeReturnedDate" value={guaranteeReturnedDate ? guaranteeReturnedDate.toISOString().split('T')[0] : ''} />
+                         </div>
+                     </div>
+
 
                 </div>
                 <DialogFooter>

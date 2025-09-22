@@ -273,61 +273,64 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             return { success: false, message: "No se encontró la reserva para actualizar." };
         }
         
+        // Construct the update object with only the fields from the form
         const updatedBookingData: Partial<Booking> = {
             id,
-            propertyId: formData.get("propertyId") as string || oldBooking.propertyId,
-            tenantId: formData.get("tenantId") as string || oldBooking.tenantId,
-            startDate: formData.get("startDate") as string || oldBooking.startDate,
-            endDate: formData.get("endDate") as string || oldBooking.endDate,
-            amount: parseFloat(formData.get("amount") as string) || oldBooking.amount,
-            currency: formData.get("currency") as 'USD' | 'ARS' || oldBooking.currency,
-            notes: formData.get("notes") as string ?? oldBooking.notes,
-            contractStatus: formData.get("contractStatus") as ContractStatus || oldBooking.contractStatus,
-            googleCalendarEventId: formData.get("googleCalendarEventId") as string ?? oldBooking.googleCalendarEventId,
-            guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus || oldBooking.guaranteeStatus,
-            guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS' || oldBooking.guaranteeCurrency,
+            propertyId: formData.get("propertyId") as string,
+            tenantId: formData.get("tenantId") as string,
+            startDate: formData.get("startDate") as string,
+            endDate: formData.get("endDate") as string,
+            amount: parseFloat(formData.get("amount") as string),
+            currency: formData.get("currency") as 'USD' | 'ARS',
+            notes: formData.get("notes") as string,
+            contractStatus: formData.get("contractStatus") as ContractStatus,
+            googleCalendarEventId: oldBooking.googleCalendarEventId, // Preserve existing event ID
+            guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus,
+            guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS',
         };
 
-        const guaranteeStatus = updatedBookingData.guaranteeStatus;
         const guaranteeAmountStr = formData.get("guaranteeAmount") as string;
-        const guaranteeReceivedDateStr = formData.get("guaranteeReceivedDate") as string;
-        const guaranteeReturnedDateStr = formData.get("guaranteeReturnedDate") as string;
-
         if (guaranteeAmountStr && guaranteeAmountStr !== '') {
             updatedBookingData.guaranteeAmount = parseFloat(guaranteeAmountStr);
         } else {
             updatedBookingData.guaranteeAmount = null;
         }
-
-        if (guaranteeReceivedDateStr && guaranteeReceivedDateStr !== '') {
+        
+        const guaranteeReceivedDateStr = formData.get("guaranteeReceivedDate") as string;
+         if (guaranteeReceivedDateStr && guaranteeReceivedDateStr !== '') {
             updatedBookingData.guaranteeReceivedDate = guaranteeReceivedDateStr;
         } else {
             updatedBookingData.guaranteeReceivedDate = null;
         }
 
+        const guaranteeReturnedDateStr = formData.get("guaranteeReturnedDate") as string;
         if (guaranteeReturnedDateStr && guaranteeReturnedDateStr !== '') {
             updatedBookingData.guaranteeReturnedDate = guaranteeReturnedDateStr;
         } else {
             updatedBookingData.guaranteeReturnedDate = null;
         }
 
-        if ((guaranteeStatus === 'solicited' || guaranteeStatus === 'received' || guaranteeStatus === 'returned') && (updatedBookingData.guaranteeAmount === null || updatedBookingData.guaranteeAmount <= 0)) {
-            return { success: false, message: "El 'Monto' de la garantía es obligatorio y debe ser mayor a 0 para el estado seleccionado." };
+        // Validation for guarantee fields
+        if ((updatedBookingData.guaranteeStatus === 'solicited' || updatedBookingData.guaranteeStatus === 'received' || updatedBookingData.guaranteeStatus === 'returned') && (!updatedBookingData.guaranteeAmount || updatedBookingData.guaranteeAmount <= 0)) {
+            return { success: false, message: "El 'Monto' de la garantía es obligatorio para este estado." };
         }
-        if (guaranteeStatus === 'received' && !updatedBookingData.guaranteeReceivedDate) {
+        if (updatedBookingData.guaranteeStatus === 'received' && !updatedBookingData.guaranteeReceivedDate) {
             return { success: false, message: "La 'Fecha Recibida' es obligatoria para el estado 'Recibida'." };
         }
-        if (guaranteeStatus === 'returned' && !updatedBookingData.guaranteeReturnedDate) {
+        if (updatedBookingData.guaranteeStatus === 'returned' && !updatedBookingData.guaranteeReturnedDate) {
             return { success: false, message: "La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'." };
         }
 
-        const finalBookingState = await dbUpdateBooking(updatedBookingData);
-        if (!finalBookingState) throw new Error("Booking disappeared after update.");
 
-        const calendarFieldsChanged = updatedBookingData.startDate !== oldBooking.startDate || 
-                                     updatedBookingData.endDate !== oldBooking.endDate || 
-                                     updatedBookingData.tenantId !== oldBooking.tenantId ||
-                                     updatedBookingData.notes !== oldBooking.notes;
+        // Merge the old booking data with the new data to ensure no fields are lost
+        const finalBookingState = { ...oldBooking, ...updatedBookingData };
+
+        await dbUpdateBooking(finalBookingState);
+
+        const calendarFieldsChanged = finalBookingState.startDate !== oldBooking.startDate || 
+                                     finalBookingState.endDate !== oldBooking.endDate || 
+                                     finalBookingState.tenantId !== oldBooking.tenantId ||
+                                     finalBookingState.notes !== oldBooking.notes;
 
         if (calendarFieldsChanged) {
             const property = await getPropertyById(finalBookingState.propertyId);
