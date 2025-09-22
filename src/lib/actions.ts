@@ -235,6 +235,7 @@ export async function addBooking(previousState: any, formData: FormData) {
                     startDate,
                     endDate,
                     tenantName: tenant.name,
+                    propertyName: property.name,
                     notes,
                 });
                 // If the event is created successfully, update our booking with the event ID.
@@ -342,6 +343,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
                         startDate: finalBookingState.startDate, 
                         endDate: finalBookingState.endDate, 
                         tenantName: tenant.name, 
+                        propertyName: property.name,
                         notes: finalBookingState.notes 
                     };
                     

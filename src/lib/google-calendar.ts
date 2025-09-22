@@ -7,6 +7,7 @@ interface CalendarEventDetails {
     startDate: string;
     endDate: string;
     tenantName: string;
+    propertyName: string;
     notes?: string;
 }
 
@@ -51,7 +52,7 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
     
     try {
         const event = {
-            summary: `Reserva - ${eventDetails.tenantName}`,
+            summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
                 dateTime: eventDetails.startDate,
@@ -89,7 +90,7 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
 
     try {
         const event = {
-            summary: `Reserva - ${eventDetails.tenantName}`,
+            summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
                 dateTime: eventDetails.startDate,
