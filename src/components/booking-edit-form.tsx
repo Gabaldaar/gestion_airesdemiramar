@@ -144,7 +144,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     <>
       {children}
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; onOpenChange(open)}}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-md">
             <DialogHeader>
             <DialogTitle>Editar Reserva</DialogTitle>
             <DialogDescription>
@@ -165,12 +165,12 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
             <form action={formAction}>
                 <input type="hidden" name="id" value={booking.id} />
                 <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="propertyId" className="text-right">
+                    <div className="space-y-2">
+                        <Label htmlFor="propertyId">
                         Propiedad
                         </Label>
                         <Select name="propertyId" defaultValue={String(booking.propertyId)} required>
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -182,12 +182,12 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="tenantId" className="text-right">
+                    <div className="space-y-2">
+                        <Label htmlFor="tenantId">
                         Inquilino
                         </Label>
                         <Select name="tenantId" defaultValue={String(booking.tenantId)} required>
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -199,8 +199,8 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="dates" className="text-right">
+                    <div className="space-y-2">
+                        <Label htmlFor="dates">
                             Fechas
                         </Label>
                         <Popover>
@@ -209,7 +209,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                                 id="date"
                                 variant={"outline"}
                                 className={cn(
-                                "col-span-3 justify-start text-left font-normal",
+                                "w-full justify-start text-left font-normal",
                                 !date && "text-muted-foreground"
                                 )}
                             >
@@ -235,7 +235,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                                 defaultMonth={date?.from}
                                 selected={date}
                                 onSelect={setDate}
-                                numberOfMonths={2}
+                                numberOfMonths={1}
                                 locale={es}
                                 disabled={disabledDays}
                             />
@@ -245,18 +245,18 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                         <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="amount" className="text-right">
+                    <div className="space-y-2">
+                        <Label htmlFor="amount">
                         Monto
                         </Label>
-                        <Input id="amount" name="amount" type="number" step="0.01" defaultValue={booking.amount} className="col-span-3" required />
+                        <Input id="amount" name="amount" type="number" step="0.01" defaultValue={booking.amount} required />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="currency" className="text-right">
+                    <div className="space-y-2">
+                        <Label htmlFor="currency">
                         Moneda
                         </Label>
                         <Select name="currency" defaultValue={booking.currency} required>
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -265,12 +265,12 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="contractStatus" className="text-right">
+                    <div className="space-y-2">
+                        <Label htmlFor="contractStatus">
                         Contrato
                         </Label>
                         <Select name="contractStatus" defaultValue={booking.contractStatus || 'not_sent'} required>
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -281,22 +281,22 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                             </SelectContent>
                         </Select>
                     </div>
-                     <div className="grid grid-cols-4 items-start gap-4">
-                        <Label htmlFor="notes" className="text-right pt-2">
+                     <div className="space-y-2">
+                        <Label htmlFor="notes">
                             Notas
                         </Label>
-                        <Textarea id="notes" name="notes" defaultValue={booking.notes} className="col-span-3" />
+                        <Textarea id="notes" name="notes" defaultValue={booking.notes} />
                     </div>
                     
                     {/* Guarantee Fields */}
-                     <div className="col-span-4 border-t pt-4 mt-4">
-                        <h4 className="text-md font-semibold mb-2">Garantía</h4>
-                         <div className="grid grid-cols-4 items-center gap-4 mb-4">
-                             <Label htmlFor="guaranteeStatus" className="text-right">
+                     <div className="border-t pt-4 mt-4 space-y-4">
+                        <h4 className="text-md font-semibold">Garantía</h4>
+                         <div className="space-y-2">
+                             <Label htmlFor="guaranteeStatus">
                                  Estado
                              </Label>
                              <Select name="guaranteeStatus" value={guaranteeStatus} onValueChange={(val) => setGuaranteeStatus(val as GuaranteeStatus)}>
-                                 <SelectTrigger className="col-span-3">
+                                 <SelectTrigger>
                                      <SelectValue />
                                  </SelectTrigger>
                                  <SelectContent>
@@ -308,31 +308,32 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                                  </SelectContent>
                              </Select>
                          </div>
-                         <div className="grid grid-cols-4 items-center gap-4 mb-4">
-                            <Label htmlFor="guaranteeAmount" className="text-right">Monto</Label>
-                            <Input id="guaranteeAmount" name="guaranteeAmount" type="number" step="0.01" value={guaranteeAmount || ''} onChange={(e) => setGuaranteeAmount(e.target.value ? parseFloat(e.target.value) : undefined)} className="col-span-2" />
-                            <Select name="guaranteeCurrency" defaultValue={booking.guaranteeCurrency || 'USD'}>
-                                <SelectTrigger className="col-span-1">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="ARS">ARS</SelectItem>
-                                    <SelectItem value="USD">USD</SelectItem>
-                                </SelectContent>
-                            </Select>
+                         <div className='flex gap-2'>
+                            <div className="space-y-2 flex-grow">
+                                <Label htmlFor="guaranteeAmount">Monto</Label>
+                                <Input id="guaranteeAmount" name="guaranteeAmount" type="number" step="0.01" value={guaranteeAmount || ''} onChange={(e) => setGuaranteeAmount(e.target.value ? parseFloat(e.target.value) : undefined)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="guaranteeCurrency">Moneda</Label>
+                                <Select name="guaranteeCurrency" defaultValue={booking.guaranteeCurrency || 'USD'}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ARS">ARS</SelectItem>
+                                        <SelectItem value="USD">USD</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                          </div>
-                         <div className="grid grid-cols-4 items-center gap-4 mb-4">
-                             <Label className="text-right">Fecha Recibida</Label>
-                             <div className="col-span-3">
-                                <DatePicker date={guaranteeReceivedDate} onDateSelect={setGuaranteeReceivedDate} placeholder='Fecha de recepción' />
-                             </div>
+                         <div className="space-y-2">
+                             <Label>Fecha Recibida</Label>
+                            <DatePicker date={guaranteeReceivedDate} onDateSelect={setGuaranteeReceivedDate} placeholder='Fecha de recepción' />
                              <input type="hidden" name="guaranteeReceivedDate" value={guaranteeReceivedDate ? guaranteeReceivedDate.toISOString().split('T')[0] : ''} />
                          </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
-                             <Label className="text-right">Fecha Devuelta</Label>
-                             <div className="col-span-3">
-                                <DatePicker date={guaranteeReturnedDate} onDateSelect={setGuaranteeReturnedDate} placeholder='Fecha de devolución' />
-                             </div>
+                         <div className="space-y-2">
+                             <Label>Fecha Devuelta</Label>
+                            <DatePicker date={guaranteeReturnedDate} onDateSelect={setGuaranteeReturnedDate} placeholder='Fecha de devolución' />
                              <input type="hidden" name="guaranteeReturnedDate" value={guaranteeReturnedDate ? guaranteeReturnedDate.toISOString().split('T')[0] : ''} />
                          </div>
                      </div>
