@@ -2,10 +2,15 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import MainLayout from './main-layout';
 import { useAuth } from './auth-provider';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+const MainLayout = dynamic(() => import('./main-layout'), {
+  loading: () => <div className="flex h-screen items-center justify-center">Cargando...</div>,
+});
+
 
 export default function LayoutManager({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,12 +30,11 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   }
 
   if (loading) {
-     return <div className="flex h-screen items-center justify-center">Cargando...</div>;
+     return <div className="flex h-screen items-center justify-center">Cargando sesión...</div>;
   }
   
   if (!user) {
     // This will be briefly visible before the useEffect redirects.
-    // Or you can return a loading spinner here as well.
     return <div className="flex h-screen items-center justify-center">Redirigiendo a login...</div>;
   }
 
