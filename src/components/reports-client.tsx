@@ -16,6 +16,7 @@ import { DatePicker } from "./ui/date-picker";
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from "./ui/button";
 import TenantsByOriginChart from "./tenants-by-origin-chart";
+import NetIncomeDistributionChart from "./net-income-distribution-chart";
 
 interface ReportsClientProps {
   financialSummary: FinancialSummaryByCurrency;
@@ -124,17 +125,30 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin }: Rep
 
       {hasUsdData && (
          <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Resultado por Propiedad (USD)</CardTitle>
-              <CardDescription>
-                Comparación del resultado neto entre las propiedades en USD.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Resultado por Propiedad (USD)</CardTitle>
+                <CardDescription>
+                  Comparación del resultado neto entre las propiedades en USD.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribución de Ganancias (USD)</CardTitle>
+                <CardDescription>
+                    Porcentaje del resultado neto positivo total por propiedad.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NetIncomeDistributionChart summary={financialSummary.usd} />
+              </CardContent>
+            </Card>
+          </div>
           <Card>
             <CardHeader>
               <CardTitle>Reporte Financiero por Propiedad (USD)</CardTitle>
