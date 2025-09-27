@@ -32,6 +32,11 @@ function TenantRow({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
         return `https://wa.me/${cleanedPhone}`;
     }
 
+    // A simple page refresh is enough when server actions handle revalidation
+    const handleAction = () => {
+        window.location.reload();
+    };
+
     return (
         <TableRow key={tenant.id}>
             <TableCell className="font-medium">{tenant.name}</TableCell>
@@ -65,13 +70,14 @@ function TenantRow({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
                     title={`Notas sobre ${tenant.name}`}
                     isOpen={isNotesOpen}
                     onOpenChange={setIsNotesOpen}
-                />
-                 <Button variant="ghost" size="icon" onClick={() => setIsNotesOpen(true)} disabled={!tenant.notes}>
-                    <FileText className="h-4 w-4" />
-                    <span className="sr-only">Ver Notas</span>
-                </Button>
-                <TenantEditForm tenant={tenant} />
-                <TenantDeleteForm tenantId={tenant.id} />
+                >
+                     <Button variant="ghost" size="icon" onClick={() => setIsNotesOpen(true)} disabled={!tenant.notes}>
+                        <FileText className="h-4 w-4" />
+                        <span className="sr-only">Ver Notas</span>
+                    </Button>
+                </NotesViewer>
+                <TenantEditForm tenant={tenant} onTenantUpdated={handleAction} />
+                <TenantDeleteForm tenantId={tenant.id} onTenantDeleted={handleAction} />
                 <Button asChild variant="ghost" size="icon">
                   <Link href={`/bookings?tenantId=${tenant.id}`}>
                     <History className="h-4 w-4" />

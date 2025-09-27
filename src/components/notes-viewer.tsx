@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ReactNode } from 'react';
@@ -7,6 +8,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -21,8 +23,8 @@ interface NotesViewerProps {
 export function NotesViewer({ notes, title, children, isOpen, onOpenChange }: NotesViewerProps) {
   return (
     <>
-      {children}
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        {children && <DialogTrigger asChild>{children}</DialogTrigger>}
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>

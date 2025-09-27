@@ -42,7 +42,7 @@ function SubmitButton() {
     )
 }
 
-export function TenantEditForm({ tenant }: { tenant: Tenant }) {
+export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, onTenantUpdated: () => void }) {
   const [state, formAction] = useActionState(updateTenant, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [origins, setOrigins] = useState<Origin[]>([]);
@@ -50,8 +50,9 @@ export function TenantEditForm({ tenant }: { tenant: Tenant }) {
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
+      onTenantUpdated();
     }
-  }, [state]);
+  }, [state, onTenantUpdated]);
 
   useEffect(() => {
     if (isOpen) {
