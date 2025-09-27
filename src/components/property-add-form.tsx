@@ -104,6 +104,23 @@ export function PropertyAddForm() {
                     </Label>
                     <Textarea id="contractTemplate" name="contractTemplate" className="col-span-3 h-32" />
                 </div>
+                
+                {/* Custom Fields */}
+                <div className="col-span-4 border-t pt-4 mt-2">
+                  <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados</h4>
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="grid grid-cols-2 gap-4 mb-4">
+                        <div className='space-y-1'>
+                            <Label htmlFor={`customField${i}Label`} className="text-sm">Etiqueta Campo {i}</Label>
+                            <Input id={`customField${i}Label`} name={`customField${i}Label`} placeholder={`Ej: WiFi Pass`} />
+                        </div>
+                        <div className='space-y-1'>
+                            <Label htmlFor={`customField${i}Value`} className="text-sm">Valor Campo {i}</Label>
+                            <Input id={`customField${i}Value`} name={`customField${i}Value`} placeholder="Valor" />
+                        </div>
+                    </div>
+                  ))}
+                </div>
             </div>
             <DialogFooter>
                 <SubmitButton />

@@ -67,6 +67,23 @@ export function PropertyEditForm({ property }: { property: Property }) {
                     <Label htmlFor={`contractTemplate-${property.id}`}>Plantilla de Contrato</Label>
                     <Textarea id={`contractTemplate-${property.id}`} name="contractTemplate" defaultValue={property.contractTemplate} className="h-40" />
                 </div>
+                
+                {/* Custom Fields */}
+                <div className="md:col-span-2 border-t pt-4 mt-2">
+                  <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados</h4>
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="grid grid-cols-2 gap-4 mb-4">
+                        <div className='space-y-1'>
+                            <Label htmlFor={`customField${i}Label-${property.id}`} className="text-sm">Etiqueta Campo {i}</Label>
+                            <Input id={`customField${i}Label-${property.id}`} name={`customField${i}Label`} defaultValue={property[`customField${i}Label` as keyof Property] as string} placeholder={`Ej: WiFi Pass`} />
+                        </div>
+                        <div className='space-y-1'>
+                            <Label htmlFor={`customField${i}Value-${property.id}`} className="text-sm">Valor Campo {i}</Label>
+                            <Input id={`customField${i}Value-${property.id}`} name={`customField${i}Value`} defaultValue={property[`customField${i}Value` as keyof Property] as string} placeholder="Valor" />
+                        </div>
+                    </div>
+                  ))}
+                </div>
             </div>
             <div className="flex justify-between items-center">
                 <PropertyDeleteForm propertyId={property.id} propertyName={property.name} />

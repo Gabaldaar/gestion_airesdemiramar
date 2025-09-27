@@ -96,6 +96,7 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
       const baseReplacements: { [key: string]: string } = {
         '{{inquilino.nombre}}': booking.tenant?.name || 'N/A',
         '{{propiedad.nombre}}': booking.property?.name || 'N/A',
+        '{{propiedad.direccion}}': booking.property?.address || 'N/A',
         '{{fechaCheckIn}}': formatDate(booking.startDate),
         '{{fechaCheckOut}}': formatDate(booking.endDate),
         '{{montoReserva}}': formatCurrency(booking.amount, booking.currency),
@@ -106,6 +107,19 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
         // Default empty values for payment fields
         '{{montoPago}}': '',
         '{{fechaPago}}': '',
+        // Custom Fields
+        '{{propiedad.customField1Label}}': booking.property?.customField1Label || '',
+        '{{propiedad.customField1Value}}': booking.property?.customField1Value || '',
+        '{{propiedad.customField2Label}}': booking.property?.customField2Label || '',
+        '{{propiedad.customField2Value}}': booking.property?.customField2Value || '',
+        '{{propiedad.customField3Label}}': booking.property?.customField3Label || '',
+        '{{propiedad.customField3Value}}': booking.property?.customField3Value || '',
+        '{{propiedad.customField4Label}}': booking.property?.customField4Label || '',
+        '{{propiedad.customField4Value}}': booking.property?.customField4Value || '',
+        '{{propiedad.customField5Label}}': booking.property?.customField5Label || '',
+        '{{propiedad.customField5Value}}': booking.property?.customField5Value || '',
+        '{{propiedad.customField6Label}}': booking.property?.customField6Label || '',
+        '{{propiedad.customField6Value}}': booking.property?.customField6Value || '',
       };
 
       if (payment) {
@@ -128,8 +142,8 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
         let body = selectedTemplate.body;
         for (const key in replacements) {
             const typedKey = key as keyof typeof replacements;
-            subject = subject.replace(new RegExp(typedKey, 'g'), replacements[typedKey]);
-            body = body.replace(new RegExp(typedKey, 'g'), replacements[typedKey]);
+            subject = subject.replace(new RegExp(typedKey.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), replacements[typedKey]);
+            body = body.replace(new RegExp(typedKey.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), replacements[typedKey]);
         }
         setProcessedSubject(subject);
         setProcessedBody(body);

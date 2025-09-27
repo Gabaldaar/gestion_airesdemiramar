@@ -56,6 +56,18 @@ export async function addProperty(previousState: any, formData: FormData) {
     imageUrl: formData.get("imageUrl") as string,
     notes: formData.get("notes") as string || "",
     contractTemplate: formData.get("contractTemplate") as string || "",
+    customField1Label: formData.get("customField1Label") as string,
+    customField1Value: formData.get("customField1Value") as string,
+    customField2Label: formData.get("customField2Label") as string,
+    customField2Value: formData.get("customField2Value") as string,
+    customField3Label: formData.get("customField3Label") as string,
+    customField3Value: formData.get("customField3Value") as string,
+    customField4Label: formData.get("customField4Label") as string,
+    customField4Value: formData.get("customField4Value") as string,
+    customField5Label: formData.get("customField5Label") as string,
+    customField5Value: formData.get("customField5Value") as string,
+    customField6Label: formData.get("customField6Label") as string,
+    customField6Value: formData.get("customField6Value") as string,
   };
 
   if (!newPropertyData.name || !newPropertyData.address) {
@@ -84,6 +96,18 @@ export async function updateProperty(previousState: any, formData: FormData) {
     imageUrl: formData.get("imageUrl") as string,
     notes: formData.get("notes") as string,
     contractTemplate: formData.get("contractTemplate") as string,
+    customField1Label: formData.get("customField1Label") as string,
+    customField1Value: formData.get("customField1Value") as string,
+    customField2Label: formData.get("customField2Label") as string,
+    customField2Value: formData.get("customField2Value") as string,
+    customField3Label: formData.get("customField3Label") as string,
+    customField3Value: formData.get("customField3Value") as string,
+    customField4Label: formData.get("customField4Label") as string,
+    customField4Value: formData.get("customField4Value") as string,
+    customField5Label: formData.get("customField5Label") as string,
+    customField5Value: formData.get("customField5Value") as string,
+    customField6Label: formData.get("customField6Label") as string,
+    customField6Value: formData.get("customField6Value") as string,
   };
 
    if (!propertyData.id || !propertyData.name || !propertyData.address) {

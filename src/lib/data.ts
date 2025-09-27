@@ -42,6 +42,18 @@ export type Property = {
   contractTemplate?: string;
   contractLogoUrl?: string;
   contractSignatureUrl?: string;
+  customField1Label?: string;
+  customField1Value?: string;
+  customField2Label?: string;
+  customField2Value?: string;
+  customField3Label?: string;
+  customField3Value?: string;
+  customField4Label?: string;
+  customField4Value?: string;
+  customField5Label?: string;
+  customField5Value?: string;
+  customField6Label?: string;
+  customField6Value?: string;
 };
 
 export type Origin = {
@@ -955,4 +967,3 @@ export async function getTenantsByOriginSummary(): Promise<TenantsByOriginSummar
 
   return summary.sort((a,b) => b.count - a.count);
 }
-
