@@ -15,7 +15,7 @@ import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
 import { EmailSettingsManager } from "@/components/email-settings-manager";
 import { useAuth } from "@/components/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import OriginManager from "@/components/origin-manager";
 
 interface SettingsData {
@@ -30,20 +30,23 @@ export default function SettingsPage() {
     const [data, setData] = useState<SettingsData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    const fetchData = useCallback(async () => {
         if (user) {
             setLoading(true);
-            Promise.all([
+            const [properties, expenseCategories, emailSettings, origins] = await Promise.all([
                 getProperties(),
                 getExpenseCategories(),
                 getEmailSettings(),
                 getOrigins(),
-            ]).then(([properties, expenseCategories, emailSettings, origins]) => {
-                setData({ properties, expenseCategories, emailSettings, origins });
-                setLoading(false);
-            });
+            ]);
+            setData({ properties, expenseCategories, emailSettings, origins });
+            setLoading(false);
         }
     }, [user]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     if (loading || !data) {
         return <p>Cargando configuración...</p>
@@ -102,7 +105,7 @@ export default function SettingsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <OriginManager initialOrigins={origins} />
+                    <OriginManager initialOrigins={origins} onOriginsChanged={fetchData} />
                 </CardContent>
             </Card>
         </TabsContent>

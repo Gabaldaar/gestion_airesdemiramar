@@ -42,7 +42,7 @@ function AddOriginButton() {
     )
 }
 
-function OriginAddRow({ onOriginAdded }: { onOriginAdded: () => void }) {
+function OriginAddRow({ onActionComplete }: { onActionComplete: () => void }) {
   const [state, formAction] = useActionState(addOrigin, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const [color, setColor] = useState('#17628d');
@@ -51,9 +51,9 @@ function OriginAddRow({ onOriginAdded }: { onOriginAdded: () => void }) {
     if (state.success) {
       formRef.current?.reset();
       setColor('#17628d');
-      onOriginAdded();
+      onActionComplete();
     }
-  }, [state, onOriginAdded]);
+  }, [state, onActionComplete]);
   
   return (
     <form action={formAction} ref={formRef} className="flex items-center gap-2 p-2 border-t">
@@ -156,14 +156,13 @@ function OriginDeleteAction({ originId, onDeleted }: { originId: string, onDelet
 }
 
 
-export default function OriginManager({ initialOrigins }: { initialOrigins: Origin[] }) {
+export default function OriginManager({ initialOrigins, onOriginsChanged }: { initialOrigins: Origin[], onOriginsChanged: () => void }) {
   const [origins, setOrigins] = useState(initialOrigins);
   const [editingOriginId, setEditingOriginId] = useState<string | null>(null);
   
   const handleOriginAction = () => {
-     setEditingOriginId(null); // Exit edit mode
-     // In a full client-side app, you'd re-fetch here.
-     // For this app, we rely on the page reload triggered by the server action.
+     setEditingOriginId(null);
+     onOriginsChanged();
   };
 
   useEffect(() => {
@@ -207,7 +206,7 @@ export default function OriginManager({ initialOrigins }: { initialOrigins: Orig
                     ))}
                 </TableBody>
             </Table>
-            <OriginAddRow onOriginAdded={handleOriginAction} />
+            <OriginAddRow onActionComplete={handleOriginAction} />
         </div>
     </div>
   );

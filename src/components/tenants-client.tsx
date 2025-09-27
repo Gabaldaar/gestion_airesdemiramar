@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Tenant, BookingWithDetails, getEmailSettings, Origin } from '@/lib/data';
+import { Tenant, BookingWithDetails, getEmailSettings, Origin, getTenants } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
@@ -19,6 +19,7 @@ interface TenantsClientProps {
 }
 
 export default function TenantsClient({ initialTenants, allBookings, origins }: TenantsClientProps) {
+  const [tenants, setTenants] = useState(initialTenants);
   const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
   const [originFilter, setOriginFilter] = useState<string>('all');
   const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
@@ -32,12 +33,18 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
     });
   }, []);
 
+  // When initialTenants changes (due to a server action revalidating the page), update our state
+  useEffect(() => {
+    setTenants(initialTenants);
+  }, [initialTenants]);
+
+
   const filteredTenants = useMemo(() => {
-    let tenants = initialTenants;
+    let currentTenants = tenants;
 
     // Filter by Origin
     if (originFilter !== 'all') {
-      tenants = tenants.filter(tenant => tenant.originId === originFilter);
+      currentTenants = currentTenants.filter(tenant => tenant.originId === originFilter);
     }
 
     // Filter by Booking Status
@@ -63,11 +70,11 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
           tenantIdsWithMatchingBookings.add(booking.tenantId);
         }
       });
-      tenants = tenants.filter(tenant => tenantIdsWithMatchingBookings.has(tenant.id));
+      currentTenants = currentTenants.filter(tenant => tenantIdsWithMatchingBookings.has(tenant.id));
     }
     
-    return tenants;
-  }, [initialTenants, allBookings, statusFilter, originFilter]);
+    return currentTenants;
+  }, [tenants, allBookings, statusFilter, originFilter]);
 
   const handleClearFilters = () => {
     setStatusFilter('all');
