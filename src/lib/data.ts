@@ -183,6 +183,14 @@ export type EmailSettings = {
     replyToEmail?: string;
 }
 
+export type TenantsByOriginSummary = {
+  name: string;
+  count: number;
+  percentage: number;
+  fill: string;
+};
+
+
 
 // --- DATA ACCESS FUNCTIONS ---
 
@@ -888,3 +896,63 @@ export async function deleteOrigin(id: string): Promise<void> {
 
   await batch.commit();
 }
+
+
+export async function getTenantsByOriginSummary(): Promise<TenantsByOriginSummary[]> {
+  const [tenants, origins] = await Promise.all([
+    getTenants(),
+    getOrigins(),
+  ]);
+
+  const totalTenants = tenants.length;
+  if (totalTenants === 0) {
+    return [];
+  }
+
+  const originsMap = new Map(origins.map(o => [o.id, o]));
+  const summaryMap = new Map<string, number>();
+
+  // Initialize map with all existing origins to include those with 0 tenants
+  origins.forEach(origin => {
+    summaryMap.set(origin.id, 0);
+  });
+
+  // Add a "Sin Origen" category
+  summaryMap.set('none', 0);
+
+  // Count tenants for each origin
+  tenants.forEach(tenant => {
+    const originId = tenant.originId || 'none';
+    summaryMap.set(originId, (summaryMap.get(originId) || 0) + 1);
+  });
+  
+  const summary: TenantsByOriginSummary[] = [];
+  
+  summaryMap.forEach((count, originId) => {
+    if (count > 0) {
+        let name = "Sin Origen";
+        let color = "#808080"; // Grey for 'none'
+
+        if (originId !== 'none') {
+            const origin = originsMap.get(originId);
+            if (origin) {
+                name = origin.name;
+                color = origin.color;
+            } else {
+                // This case should ideally not happen if data is consistent
+                name = "Origen Desconocido"
+            }
+        }
+        
+        summary.push({
+            name: name,
+            count: count,
+            percentage: (count / totalTenants) * 100,
+            fill: color,
+        });
+    }
+  });
+
+  return summary.sort((a,b) => b.count - a.count);
+}
+

@@ -9,18 +9,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FinancialSummaryByCurrency } from "@/lib/data";
+import { FinancialSummaryByCurrency, TenantsByOriginSummary } from "@/lib/data";
 import FinancialSummaryTable from "@/components/financial-summary-table";
 import FinancialSummaryChart from "@/components/financial-summary-chart";
 import { DatePicker } from "./ui/date-picker";
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from "./ui/button";
+import TenantsByOriginChart from "./tenants-by-origin-chart";
 
 interface ReportsClientProps {
-  summary: FinancialSummaryByCurrency;
+  financialSummary: FinancialSummaryByCurrency;
+  tenantsByOrigin: TenantsByOriginSummary[];
 }
 
-export default function ReportsClient({ summary }: ReportsClientProps) {
+export default function ReportsClient({ financialSummary, tenantsByOrigin }: ReportsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -57,10 +59,10 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
     router.push(pathname);
   };
 
-  const hasArsData = summary.ars.some(s => 
+  const hasArsData = financialSummary.ars.some(s => 
     s.totalIncome !== 0 || s.totalPayments !== 0 || s.balance !== 0 || s.totalPropertyExpenses !== 0 || s.totalBookingExpenses !== 0 || s.netResult !== 0
   );
-  const hasUsdData = summary.usd.some(s => 
+  const hasUsdData = financialSummary.usd.some(s => 
     s.totalIncome !== 0 || s.totalPayments !== 0 || s.balance !== 0 || s.totalPropertyExpenses !== 0 || s.totalBookingExpenses !== 0 || s.netResult !== 0
   );
 
@@ -68,9 +70,9 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
     <div className="space-y-4">
        <Card>
         <CardHeader>
-          <CardTitle>Filtros</CardTitle>
+          <CardTitle>Filtros de Reportes Financieros</CardTitle>
           <CardDescription>
-            Selecciona un rango de fechas para filtrar el reporte.
+            Selecciona un rango de fechas para filtrar los reportes financieros.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -79,6 +81,19 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
         </CardContent>
       </Card>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle>Distribución de Inquilinos por Origen</CardTitle>
+            <CardDescription>
+                Visualiza de dónde provienen tus inquilinos.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <TenantsByOriginChart data={tenantsByOrigin} />
+        </CardContent>
+      </Card>
+
 
       {hasArsData && (
         <>
@@ -90,7 +105,7 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <FinancialSummaryChart summary={summary.ars} currency="ARS" />
+              <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
             </CardContent>
           </Card>
           <Card>
@@ -101,7 +116,7 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <FinancialSummaryTable summary={summary.ars} currency="ARS" />
+              <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
             </CardContent>
           </Card>
         </>
@@ -117,7 +132,7 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <FinancialSummaryChart summary={summary.usd} currency="USD" />
+              <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
             </CardContent>
           </Card>
           <Card>
@@ -128,7 +143,7 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <FinancialSummaryTable summary={summary.usd} currency="USD" />
+              <FinancialSummaryTable summary={financialSummary.usd} currency="USD" />
             </CardContent>
           </Card>
         </>
