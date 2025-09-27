@@ -28,6 +28,9 @@ import {
     updateEmailTemplate as dbUpdateEmailTemplate,
     deleteEmailTemplate as dbDeleteEmailTemplate,
     updateEmailSettings as dbUpdateEmailSettings,
+    addOrigin as dbAddOrigin,
+    updateOrigin as dbUpdateOrigin,
+    deleteOrigin as dbDeleteOrigin,
     getBookingById,
     getPropertyById,
     getTenantById,
@@ -135,7 +138,7 @@ export async function deleteProperty(previousState: any, formData: FormData) {
 
 
 export async function addTenant(previousState: any, formData: FormData) {
-  const newTenant = {
+  const newTenant: Omit<Tenant, 'id'> = {
     name: formData.get("name") as string,
     dni: formData.get("dni") as string,
     email: formData.get("email") as string,
@@ -144,6 +147,7 @@ export async function addTenant(previousState: any, formData: FormData) {
     city: formData.get("city") as string,
     country: (formData.get("country") as string) || "Argentina",
     notes: formData.get("notes") as string || "",
+    originId: formData.get("originId") as string || undefined,
   };
 
   try {
@@ -166,6 +170,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
     city: formData.get("city") as string,
     country: formData.get("country") as string,
     notes: formData.get("notes") as string,
+    originId: formData.get("originId") as string || undefined,
   };
 
   try {
@@ -875,4 +880,54 @@ export async function updateEmailSettings(previousState: any, formData: FormData
     } catch (error) {
         return { success: false, message: 'Error al guardar la configuración de email.' };
     }
+}
+
+// --- Origin Actions ---
+
+export async function addOrigin(previousState: any, formData: FormData) {
+  const name = formData.get('name') as string;
+  const color = formData.get('color') as string;
+  if (!name || !color) {
+    return { success: false, message: 'El nombre y el color son obligatorios.' };
+  }
+  try {
+    await dbAddOrigin({ name, color });
+    revalidatePath('/settings');
+    revalidatePath('/tenants');
+    return { success: true, message: 'Origen añadido.' };
+  } catch (error) {
+    return { success: false, message: 'Error al añadir el origen.' };
+  }
+}
+
+export async function updateOrigin(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const name = formData.get('name') as string;
+  const color = formData.get('color') as string;
+  if (!id || !name || !color) {
+    return { success: false, message: 'Faltan datos para actualizar el origen.' };
+  }
+  try {
+    await dbUpdateOrigin({ id, name, color });
+    revalidatePath('/settings');
+    revalidatePath('/tenants');
+    return { success: true, message: 'Origen actualizado.' };
+  } catch (error) {
+    return { success: false, message: 'Error al actualizar el origen.' };
+  }
+}
+
+export async function deleteOrigin(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    return { success: false, message: 'ID de origen no válido.' };
+  }
+  try {
+    await dbDeleteOrigin(id);
+    revalidatePath('/settings');
+    revalidatePath('/tenants');
+    return { success: true, message: 'Origen eliminado.' };
+  } catch (error) {
+    return { success: false, message: 'Error al eliminar el origen.' };
+  }
 }

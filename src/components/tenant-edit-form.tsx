@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
@@ -15,9 +16,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateTenant } from '@/lib/actions';
-import { Tenant } from '@/lib/data';
+import { Tenant, Origin, getOrigins } from '@/lib/data';
 import { Pencil, Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 const initialState = {
   message: '',
@@ -43,12 +45,19 @@ function SubmitButton() {
 export function TenantEditForm({ tenant }: { tenant: Tenant }) {
   const [state, formAction] = useActionState(updateTenant, initialState);
   const [isOpen, setIsOpen] = useState(false);
+  const [origins, setOrigins] = useState<Origin[]>([]);
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
     }
   }, [state]);
+
+  useEffect(() => {
+    if (isOpen) {
+      getOrigins().then(setOrigins);
+    }
+  }, [isOpen]);
 
   return (
     <>
@@ -110,6 +119,24 @@ export function TenantEditForm({ tenant }: { tenant: Tenant }) {
                       País
                       </Label>
                       <Input id="country" name="country" defaultValue={tenant.country} className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="originId" className="text-right">
+                          Origen
+                      </Label>
+                      <Select name="originId" defaultValue={tenant.originId}>
+                          <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder="Selecciona un origen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="none">Ninguno</SelectItem>
+                              {origins.map(origin => (
+                                  <SelectItem key={origin.id} value={origin.id}>
+                                      {origin.name}
+                                  </SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
                   </div>
                   <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="notes" className="text-right pt-2">

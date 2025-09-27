@@ -44,6 +44,12 @@ export type Property = {
   contractSignatureUrl?: string;
 };
 
+export type Origin = {
+  id: string;
+  name: string;
+  color: string;
+};
+
 export type Tenant = {
   id: string;
   name: string;
@@ -54,6 +60,7 @@ export type Tenant = {
   email: string;
   phone: string;
   notes?: string;
+  originId?: string;
 };
 
 export type ContractStatus = 'not_sent' | 'sent' | 'signed' | 'not_required';
@@ -188,6 +195,7 @@ const paymentsCollection = collection(db, 'payments');
 const expenseCategoriesCollection = collection(db, 'expenseCategories');
 const emailTemplatesCollection = collection(db, 'emailTemplates');
 const settingsCollection = collection(db, 'settings');
+const originsCollection = collection(db, 'origins');
 
 
 // Helper function to add default data only if the collection is empty
@@ -844,4 +852,39 @@ export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): 
     return { id: 'email', ...settings };
 }
 
-    
+// --- Origin Functions ---
+
+export async function getOrigins(): Promise<Origin[]> {
+  const snapshot = await getDocs(query(originsCollection, orderBy('name')));
+  return snapshot.docs.map(processDoc) as Origin[];
+}
+
+export async function addOrigin(origin: Omit<Origin, 'id'>): Promise<Origin> {
+  const docRef = await addDoc(originsCollection, origin);
+  return { id: docRef.id, ...origin };
+}
+
+export async function updateOrigin(updatedOrigin: Origin): Promise<Origin> {
+  const { id, ...data } = updatedOrigin;
+  const docRef = doc(db, 'origins', id);
+  await updateDoc(docRef, data);
+  return updatedOrigin;
+}
+
+export async function deleteOrigin(id: string): Promise<void> {
+  // Find tenants with this originId and unset it
+  const tenantsToUpdateQuery = query(tenantsCollection, where('originId', '==', id));
+  const tenantsSnapshot = await getDocs(tenantsToUpdateQuery);
+  
+  const batch = writeBatch(db);
+  tenantsSnapshot.forEach(tenantDoc => {
+    const tenantRef = doc(db, 'tenants', tenantDoc.id);
+    batch.update(tenantRef, { originId: null });
+  });
+
+  // Delete the origin itself
+  const originRef = doc(db, 'origins', id);
+  batch.delete(originRef);
+
+  await batch.commit();
+}

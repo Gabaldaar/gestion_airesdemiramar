@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Tenant, BookingWithDetails, getEmailSettings } from '@/lib/data';
+import { Tenant, BookingWithDetails, getEmailSettings, Origin } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
@@ -15,10 +15,12 @@ type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed';
 interface TenantsClientProps {
   initialTenants: Tenant[];
   allBookings: BookingWithDetails[];
+  origins: Origin[];
 }
 
-export default function TenantsClient({ initialTenants, allBookings }: TenantsClientProps) {
+export default function TenantsClient({ initialTenants, allBookings, origins }: TenantsClientProps) {
   const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
+  const [originFilter, setOriginFilter] = useState<string>('all');
   const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   
@@ -31,37 +33,45 @@ export default function TenantsClient({ initialTenants, allBookings }: TenantsCl
   }, []);
 
   const filteredTenants = useMemo(() => {
-    if (statusFilter === 'all') {
-      return initialTenants;
+    let tenants = initialTenants;
+
+    // Filter by Origin
+    if (originFilter !== 'all') {
+      tenants = tenants.filter(tenant => tenant.originId === originFilter);
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Filter by Booking Status
+    if (statusFilter !== 'all') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const tenantIdsWithMatchingBookings = new Set<string>();
+      const tenantIdsWithMatchingBookings = new Set<string>();
 
-    allBookings.forEach(booking => {
-      const bookingStartDate = new Date(booking.startDate);
-      const bookingEndDate = new Date(booking.endDate);
+      allBookings.forEach(booking => {
+        const bookingStartDate = new Date(booking.startDate);
+        const bookingEndDate = new Date(booking.endDate);
 
-      const isCurrent = bookingStartDate <= today && bookingEndDate >= today;
-      const isUpcoming = bookingStartDate > today;
-      const isClosed = bookingEndDate < today;
+        const isCurrent = bookingStartDate <= today && bookingEndDate >= today;
+        const isUpcoming = bookingStartDate > today;
+        const isClosed = bookingEndDate < today;
 
-      if (statusFilter === 'current' && isCurrent) {
-        tenantIdsWithMatchingBookings.add(booking.tenantId);
-      } else if (statusFilter === 'upcoming' && isUpcoming) {
-        tenantIdsWithMatchingBookings.add(booking.tenantId);
-      } else if (statusFilter === 'closed' && isClosed) {
-        tenantIdsWithMatchingBookings.add(booking.tenantId);
-      }
-    });
-
-    return initialTenants.filter(tenant => tenantIdsWithMatchingBookings.has(tenant.id));
-  }, [initialTenants, allBookings, statusFilter]);
+        if (statusFilter === 'current' && isCurrent) {
+          tenantIdsWithMatchingBookings.add(booking.tenantId);
+        } else if (statusFilter === 'upcoming' && isUpcoming) {
+          tenantIdsWithMatchingBookings.add(booking.tenantId);
+        } else if (statusFilter === 'closed' && isClosed) {
+          tenantIdsWithMatchingBookings.add(booking.tenantId);
+        }
+      });
+      tenants = tenants.filter(tenant => tenantIdsWithMatchingBookings.has(tenant.id));
+    }
+    
+    return tenants;
+  }, [initialTenants, allBookings, statusFilter, originFilter]);
 
   const handleClearFilters = () => {
     setStatusFilter('all');
+    setOriginFilter('all');
   };
   
   const handleEmailAll = () => {
@@ -108,6 +118,20 @@ export default function TenantsClient({ initialTenants, allBookings }: TenantsCl
                 </SelectContent>
             </Select>
         </div>
+         <div className="grid gap-2">
+            <Label>Origen</Label>
+            <Select value={originFilter} onValueChange={setOriginFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filtrar por origen" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {origins.map(origin => (
+                      <SelectItem key={origin.id} value={origin.id}>{origin.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
         <div className="flex gap-2">
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
             <Button onClick={handleEmailAll}>
@@ -116,7 +140,7 @@ export default function TenantsClient({ initialTenants, allBookings }: TenantsCl
             </Button>
         </div>
       </div>
-      <TenantsList tenants={filteredTenants} />
+      <TenantsList tenants={filteredTenants} origins={origins} />
     </div>
   );
 }

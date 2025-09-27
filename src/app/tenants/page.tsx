@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getTenants, getBookings, Tenant, BookingWithDetails } from "@/lib/data";
+import { getTenants, getBookings, Tenant, BookingWithDetails, Origin, getOrigins } from "@/lib/data";
 import { TenantAddForm } from "@/components/tenant-add-form";
 import TenantsClient from "@/components/tenants-client";
 import { useAuth } from "@/components/auth-provider";
@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 interface TenantsData {
     tenants: Tenant[];
     bookings: BookingWithDetails[];
+    origins: Origin[];
 }
 
 export default function TenantsPage() {
@@ -29,9 +30,10 @@ export default function TenantsPage() {
             setLoading(true);
             Promise.all([
                 getTenants(),
-                getBookings()
-            ]).then(([tenants, bookings]) => {
-                setData({ tenants, bookings });
+                getBookings(),
+                getOrigins()
+            ]).then(([tenants, bookings, origins]) => {
+                setData({ tenants, bookings, origins });
                 setLoading(false);
             });
         }
@@ -53,7 +55,11 @@ export default function TenantsPage() {
             <TenantAddForm />
         </CardHeader>
         <CardContent>
-            <TenantsClient initialTenants={data.tenants} allBookings={data.bookings} />
+            <TenantsClient 
+                initialTenants={data.tenants} 
+                allBookings={data.bookings}
+                origins={data.origins}
+            />
         </CardContent>
         </Card>
     );

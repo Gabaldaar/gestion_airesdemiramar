@@ -9,18 +9,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings } from "@/lib/data";
+import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings, Origin, getOrigins } from "@/lib/data";
 import { PropertyEditForm } from "@/components/property-edit-form";
 import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
 import { EmailSettingsManager } from "@/components/email-settings-manager";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState } from "react";
+import OriginManager from "@/components/origin-manager";
 
 interface SettingsData {
     properties: Property[];
     expenseCategories: ExpenseCategory[];
     emailSettings: EmailSettings | null;
+    origins: Origin[];
 }
 
 export default function SettingsPage() {
@@ -35,8 +37,9 @@ export default function SettingsPage() {
                 getProperties(),
                 getExpenseCategories(),
                 getEmailSettings(),
-            ]).then(([properties, expenseCategories, emailSettings]) => {
-                setData({ properties, expenseCategories, emailSettings });
+                getOrigins(),
+            ]).then(([properties, expenseCategories, emailSettings, origins]) => {
+                setData({ properties, expenseCategories, emailSettings, origins });
                 setLoading(false);
             });
         }
@@ -46,7 +49,7 @@ export default function SettingsPage() {
         return <p>Cargando configuración...</p>
     }
     
-    const { properties, expenseCategories, emailSettings } = data;
+    const { properties, expenseCategories, emailSettings, origins } = data;
 
   return (
     <Tabs defaultValue="properties" className="space-y-4">
@@ -57,6 +60,7 @@ export default function SettingsPage() {
             </div>
             <TabsList>
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
+                <TabsTrigger value="origins">Orígenes</TabsTrigger>
                 <TabsTrigger value="expense-categories">Cat. de Gastos</TabsTrigger>
                 <TabsTrigger value="email">Email</TabsTrigger>
             </TabsList>
@@ -86,6 +90,19 @@ export default function SettingsPage() {
                         <p className="text-sm text-muted-foreground">¡Crea tu primera propiedad para empezar!</p>
                     </div>
                     )}
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="origins">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Orígenes de Inquilinos</CardTitle>
+                    <CardDescription>
+                        Crea y gestiona las fuentes de tus inquilinos (ej. Airbnb, Booking.com).
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <OriginManager initialOrigins={origins} />
                 </CardContent>
             </Card>
         </TabsContent>
