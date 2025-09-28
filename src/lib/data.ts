@@ -202,6 +202,20 @@ export type TenantsByOriginSummary = {
   fill: string;
 };
 
+export type ExpensesByCategorySummary = {
+  name: string;
+  totalAmountUSD: number;
+  percentage: number;
+  fill: string;
+};
+
+export type ExpensesByPropertySummary = {
+  name: string;
+  totalAmountUSD: number;
+  percentage: number;
+  fill: string;
+};
+
 
 
 // --- DATA ACCESS FUNCTIONS ---
@@ -966,4 +980,114 @@ export async function getTenantsByOriginSummary(): Promise<TenantsByOriginSummar
   });
 
   return summary.sort((a,b) => b.count - a.count);
+}
+
+
+// --- New Expense Summary Functions ---
+
+// Generates a color from a string. Simple hash function.
+const stringToColor = (str: string) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = '#';
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xFF;
+    color += ('00' + value.toString(16)).substr(-2);
+  }
+  return color;
+}
+
+export async function getExpensesByCategorySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByCategorySummary[]> {
+    const [allExpenses, categories] = await Promise.all([
+        getAllExpensesUnified(),
+        getExpenseCategories()
+    ]);
+    
+    const startDate = options?.startDate;
+    const endDate = options?.endDate;
+    const fromDate = startDate ? new Date(startDate) : null;
+    if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
+    const toDate = endDate ? new Date(endDate) : null;
+    if (toDate) toDate.setUTCHours(23, 59, 59, 999);
+
+    const isWithinDateRange = (dateStr: string) => {
+        if (!dateStr || (!fromDate && !toDate)) return true;
+        const itemDate = new Date(dateStr);
+        if (fromDate && itemDate < fromDate) return false;
+        if (toDate && itemDate > toDate) return false;
+        return true;
+    };
+
+    const filteredExpenses = allExpenses.filter(e => isWithinDateRange(e.date));
+
+    if (filteredExpenses.length === 0) return [];
+
+    const summaryMap = new Map<string, number>();
+    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
+    summaryMap.set('Sin Categoría', 0); // Initialize uncategorized
+
+    filteredExpenses.forEach(expense => {
+        const categoryName = expense.categoryId ? categoriesMap.get(expense.categoryId) || 'Sin Categoría' : 'Sin Categoría';
+        const currentTotal = summaryMap.get(categoryName) || 0;
+        summaryMap.set(categoryName, currentTotal + expense.amountUSD);
+    });
+
+    const totalExpenses = Array.from(summaryMap.values()).reduce((acc, val) => acc + val, 0);
+    if (totalExpenses === 0) return [];
+
+    const result = Array.from(summaryMap.entries()).map(([name, totalAmountUSD]) => ({
+        name,
+        totalAmountUSD,
+        percentage: (totalAmountUSD / totalExpenses) * 100,
+        fill: stringToColor(name)
+    })).filter(item => item.totalAmountUSD > 0).sort((a,b) => b.totalAmountUSD - a.totalAmountUSD);
+
+    return result;
+}
+
+export async function getExpensesByPropertySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByPropertySummary[]> {
+    const allExpenses = await getAllExpensesUnified();
+    const properties = await getProperties();
+    
+    const startDate = options?.startDate;
+    const endDate = options?.endDate;
+    const fromDate = startDate ? new Date(startDate) : null;
+    if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
+    const toDate = endDate ? new Date(endDate) : null;
+    if (toDate) toDate.setUTCHours(23, 59, 59, 999);
+
+    const isWithinDateRange = (dateStr: string) => {
+        if (!dateStr || (!fromDate && !toDate)) return true;
+        const itemDate = new Date(dateStr);
+        if (fromDate && itemDate < fromDate) return false;
+        if (toDate && itemDate > toDate) return false;
+        return true;
+    };
+
+    const filteredExpenses = allExpenses.filter(e => isWithinDateRange(e.date));
+    if (filteredExpenses.length === 0) return [];
+
+    const summaryMap = new Map<string, number>();
+    properties.forEach(p => summaryMap.set(p.name, 0)); // Initialize all properties
+
+    filteredExpenses.forEach(expense => {
+        if (expense.propertyName !== 'N/A') {
+            const currentTotal = summaryMap.get(expense.propertyName) || 0;
+            summaryMap.set(expense.propertyName, currentTotal + expense.amountUSD);
+        }
+    });
+    
+    const totalExpenses = Array.from(summaryMap.values()).reduce((acc, val) => acc + val, 0);
+    if (totalExpenses === 0) return [];
+    
+    const result = Array.from(summaryMap.entries()).map(([name, totalAmountUSD]) => ({
+        name,
+        totalAmountUSD,
+        percentage: (totalAmountUSD / totalExpenses) * 100,
+        fill: stringToColor(name)
+    })).filter(item => item.totalAmountUSD > 0).sort((a,b) => b.totalAmountUSD - a.totalAmountUSD);
+
+    return result;
 }

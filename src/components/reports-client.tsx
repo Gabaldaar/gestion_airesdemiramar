@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FinancialSummaryByCurrency, TenantsByOriginSummary } from "@/lib/data";
+import { FinancialSummaryByCurrency, TenantsByOriginSummary, ExpensesByCategorySummary, ExpensesByPropertySummary } from "@/lib/data";
 import FinancialSummaryTable from "@/components/financial-summary-table";
 import FinancialSummaryChart from "@/components/financial-summary-chart";
 import { DatePicker } from "./ui/date-picker";
@@ -17,13 +17,17 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from "./ui/button";
 import TenantsByOriginChart from "./tenants-by-origin-chart";
 import NetIncomeDistributionChart from "./net-income-distribution-chart";
+import ExpensesByCategoryChart from "./expenses-by-category-chart";
+import ExpensesByPropertyChart from "./expenses-by-property-chart";
 
 interface ReportsClientProps {
   financialSummary: FinancialSummaryByCurrency;
   tenantsByOrigin: TenantsByOriginSummary[];
+  expensesByCategory: ExpensesByCategorySummary[];
+  expensesByProperty: ExpensesByPropertySummary[];
 }
 
-export default function ReportsClient({ financialSummary, tenantsByOrigin }: ReportsClientProps) {
+export default function ReportsClient({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty }: ReportsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -83,18 +87,42 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin }: Rep
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-            <CardTitle>Distribución de Inquilinos por Origen</CardTitle>
-            <CardDescription>
-                Visualiza de dónde provienen tus inquilinos.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <TenantsByOriginChart data={tenantsByOrigin} />
-        </CardContent>
-      </Card>
+        <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Distribución de Inquilinos por Origen</CardTitle>
+                    <CardDescription>
+                        Visualiza de dónde provienen tus inquilinos.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <TenantsByOriginChart data={tenantsByOrigin} />
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Distribución de Gastos por Categoría</CardTitle>
+                    <CardDescription>
+                        Visualiza cómo se distribuyen tus gastos totales (en USD).
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ExpensesByCategoryChart data={expensesByCategory} />
+                </CardContent>
+            </Card>
+        </div>
 
+        <Card>
+            <CardHeader>
+                <CardTitle>Distribución de Gastos por Propiedad</CardTitle>
+                <CardDescription>
+                    Comparativa de gastos totales por propiedad (en USD).
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ExpensesByPropertyChart data={expensesByProperty} />
+            </CardContent>
+        </Card>
 
       {hasArsData && (
         <>

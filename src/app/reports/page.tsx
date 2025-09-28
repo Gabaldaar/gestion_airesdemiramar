@@ -2,7 +2,7 @@
 
 'use client';
 
-import { getFinancialSummaryByProperty, FinancialSummaryByCurrency, getTenantsByOriginSummary, TenantsByOriginSummary } from "@/lib/data";
+import { getFinancialSummaryByProperty, FinancialSummaryByCurrency, getTenantsByOriginSummary, TenantsByOriginSummary, getExpensesByCategorySummary, ExpensesByCategorySummary, getExpensesByPropertySummary, ExpensesByPropertySummary } from "@/lib/data";
 import ReportsClient from "@/components/reports-client";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -11,6 +11,8 @@ import { useAuth } from "@/components/auth-provider";
 interface ReportsData {
     financialSummary: FinancialSummaryByCurrency;
     tenantsByOrigin: TenantsByOriginSummary[];
+    expensesByCategory: ExpensesByCategorySummary[];
+    expensesByProperty: ExpensesByPropertySummary[];
 }
 
 function ReportsPageContent() {
@@ -27,9 +29,11 @@ function ReportsPageContent() {
         setLoading(true);
         Promise.all([
             getFinancialSummaryByProperty({ startDate: from, endDate: to }),
-            getTenantsByOriginSummary()
-        ]).then(([financialSummary, tenantsByOrigin]) => {
-            setData({ financialSummary, tenantsByOrigin });
+            getTenantsByOriginSummary(),
+            getExpensesByCategorySummary({ startDate: from, endDate: to }),
+            getExpensesByPropertySummary({ startDate: from, endDate: to }),
+        ]).then(([financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty]) => {
+            setData({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty });
             setLoading(false);
         });
     }
@@ -40,7 +44,12 @@ function ReportsPageContent() {
       return <p>Cargando reporte...</p>
   }
   
-  return <ReportsClient financialSummary={data.financialSummary} tenantsByOrigin={data.tenantsByOrigin} />;
+  return <ReportsClient 
+    financialSummary={data.financialSummary} 
+    tenantsByOrigin={data.tenantsByOrigin}
+    expensesByCategory={data.expensesByCategory}
+    expensesByProperty={data.expensesByProperty}
+     />;
 }
 
 
