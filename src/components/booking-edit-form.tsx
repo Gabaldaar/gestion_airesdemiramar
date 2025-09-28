@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { updateBooking } from '@/lib/actions';
-import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins } from '@/lib/data';
+import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins, BookingWithDetails } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -40,7 +40,7 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { DatePicker } from './ui/date-picker';
 
 
-const initialState = {
+const initialState: { message: string, success: boolean, updatedBooking?: Booking } = {
   message: '',
   success: false,
 };
@@ -69,10 +69,11 @@ interface BookingEditFormProps {
     children?: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    onBookingUpdated: (booking: Booking) => void;
 }
 
 
-export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange }: BookingEditFormProps) {
+export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange, onBookingUpdated }: BookingEditFormProps) {
   const [state, formAction] = useActionState(updateBooking, initialState);
   const [origins, setOrigins] = useState<Origin[]>([]);
   const [date, setDate] = useState<DateRange | undefined>({
@@ -102,10 +103,11 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   };
 
   useEffect(() => {
-    if (state.success) {
+    if (state.success && state.updatedBooking) {
+      onBookingUpdated(state.updatedBooking);
       onOpenChange(false);
     }
-  }, [state, onOpenChange]);
+  }, [state, onOpenChange, onBookingUpdated]);
 
   useEffect(() => {
     if (isOpen) {

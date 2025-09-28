@@ -51,12 +51,11 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-function BookingRow({ booking, properties, tenants, showProperty, origin }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[], showProperty: boolean, origin?: Origin }) {
+function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[], showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void }) {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
   const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
   const [isExpensesOpen, setIsExpensesOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
 
@@ -268,19 +267,17 @@ function BookingRow({ booking, properties, tenants, showProperty, origin }: { bo
                   </TooltipProvider>
               </BookingExpensesManager>
 
-              <BookingEditForm booking={booking} tenants={tenants} properties={properties} allBookings={[]} isOpen={isEditOpen} onOpenChange={setIsEditOpen}>
-                  <TooltipProvider>
-                      <Tooltip>
-                          <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditOpen(true)}>
-                                  <Pencil className="h-4 w-4" />
-                                  <span className="sr-only">Editar Reserva</span>
-                              </Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Editar Reserva</p></TooltipContent>
-                      </Tooltip>
-                  </TooltipProvider>
-              </BookingEditForm>
+              <TooltipProvider>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(booking)}>
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Editar Reserva</span>
+                          </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Editar Reserva</p></TooltipContent>
+                  </Tooltip>
+              </TooltipProvider>
               
               <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                   <TooltipProvider>
@@ -303,12 +300,47 @@ function BookingRow({ booking, properties, tenants, showProperty, origin }: { bo
 
 
 export default function BookingsList({ bookings, properties, tenants, origins, showProperty = false }: BookingsListProps) {
+  const [localBookings, setLocalBookings] = useState(bookings);
+  const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
-  if (bookings.length === 0) {
+  // When bookings prop changes from parent, update local state
+  useState(() => {
+    setLocalBookings(bookings);
+  });
+
+  if (localBookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
   }
 
   const originsMap = new Map(origins.map(o => [o.id, o]));
+
+  const handleEditClick = (booking: BookingWithDetails) => {
+    setEditingBooking(booking);
+    setIsEditOpen(true);
+  };
+
+  const handleUpdate = (updatedBooking: Booking) => {
+    setLocalBookings(prevBookings => {
+      // Logic to get full details for the updated booking
+      const tenant = tenants.find(t => t.id === updatedBooking.tenantId);
+      const property = properties.find(p => p.id === updatedBooking.propertyId);
+      // NOTE: This is a simplified balance/totalPaid calculation.
+      // A full refresh from DB would be more accurate but this avoids a full page reload.
+      const existingDetails = prevBookings.find(b => b.id === updatedBooking.id);
+
+      const newBookingDetails: BookingWithDetails = {
+        ...updatedBooking,
+        tenant: tenant,
+        property: property,
+        balance: existingDetails?.balance ?? 0, // Keep existing balance for now
+        totalPaid: existingDetails?.totalPaid ?? 0
+      };
+
+      return prevBookings.map(b => b.id === updatedBooking.id ? newBookingDetails : b);
+    });
+    // For a full refresh of financial data, you might still need a reload or a more complex state update.
+  };
 
   return (
     <div>
@@ -334,7 +366,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             </TableRow>
           </TableHeader>
           <TableBody className="block md:table-row-group">
-            {bookings.map((booking) => (
+            {localBookings.map((booking) => (
                 <BookingRow 
                     key={booking.id}
                     booking={booking} 
@@ -342,10 +374,24 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     tenants={tenants} 
                     showProperty={showProperty} 
                     origin={booking.originId ? originsMap.get(booking.originId) : undefined}
+                    onEdit={handleEditClick}
                 />
             ))}
           </TableBody>
         </Table>
+
+        {editingBooking && (
+            <BookingEditForm
+                booking={editingBooking}
+                tenants={tenants}
+                properties={properties}
+                allBookings={localBookings}
+                isOpen={isEditOpen}
+                onOpenChange={setIsEditOpen}
+                onBookingUpdated={handleUpdate}
+            />
+        )}
+
         <style jsx>{`
             @media (max-width: 767px) {
                 .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row {

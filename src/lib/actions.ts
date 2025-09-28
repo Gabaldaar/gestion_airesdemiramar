@@ -293,7 +293,7 @@ export async function addBooking(previousState: any, formData: FormData) {
     }
 }
 
-export async function updateBooking(previousState: any, formData: FormData): Promise<{ success: boolean; message: string; }> {
+export async function updateBooking(previousState: any, formData: FormData): Promise<{ success: boolean; message: string; updatedBooking?: Booking; }> {
     const id = formData.get("id") as string;
     if (!id) {
         return { success: false, message: "ID de reserva no proporcionado." };
@@ -358,7 +358,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
         // Merge the old booking data with the new data to ensure no fields are lost
         const finalBookingState = { ...oldBooking, ...updatedBookingData };
 
-        await dbUpdateBooking(finalBookingState);
+        const updatedBookingFromDb = await dbUpdateBooking(finalBookingState);
 
         const calendarFieldsChanged = finalBookingState.startDate !== oldBooking.startDate || 
                                      finalBookingState.endDate !== oldBooking.endDate || 
@@ -389,7 +389,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
                     }
                 } catch (calendarError) {
                     console.error(`Calendar sync failed for booking ${id}, but the booking was updated:`, calendarError);
-                    return { success: true, message: "Reserva actualizada, pero falló la sincronización con el calendario. Revise las credenciales." };
+                    return { success: true, message: "Reserva actualizada, pero falló la sincronización con el calendario. Revise las credenciales.", updatedBooking: updatedBookingFromDb };
                 }
             }
         }
@@ -398,7 +398,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
         revalidatePath(`/properties`);
         revalidatePath('/bookings');
         revalidatePath('/');
-        return { success: true, message: "Reserva actualizada correctamente." };
+        return { success: true, message: "Reserva actualizada correctamente.", updatedBooking: updatedBookingFromDb };
 
     } catch (dbError) {
          console.error("Error updating booking in DB:", dbError);
