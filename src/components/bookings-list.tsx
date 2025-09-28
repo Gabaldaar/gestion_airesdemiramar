@@ -32,7 +32,7 @@ interface BookingsListProps {
   bookings: BookingWithDetails[];
   properties: Property[];
   tenants: Tenant[];
-  origins: Origin[];
+  origins?: Origin[];
   showProperty?: boolean;
 }
 
@@ -307,7 +307,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
   }
 
-  const originsMap = new Map(origins.map(o => [o.id, o]));
+  const originsMap = origins ? new Map(origins.map(o => [o.id, o])) : new Map();
 
   const handleEditClick = (booking: BookingWithDetails) => {
     setEditingBooking(booking);
@@ -402,4 +402,3 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
-

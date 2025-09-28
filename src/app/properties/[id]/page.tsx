@@ -16,7 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory } from "@/lib/data";
+import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
@@ -32,6 +32,7 @@ interface PropertyDetailData {
     bookings: BookingWithDetails[];
     expenses: PropertyExpense[];
     categories: ExpenseCategory[];
+    origins: Origin[];
 }
 
 export default function PropertyDetailPage({ params }: { params: { id: string } }) {
@@ -44,20 +45,21 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     if (user) {
         const fetchData = async () => {
             setLoading(true);
-            const [property, properties, tenants, bookings, expenses, categories] = await Promise.all([
+            const [property, properties, tenants, bookings, expenses, categories, origins] = await Promise.all([
                 getPropertyById(propertyId),
                 getProperties(),
                 getTenants(),
                 getBookingsByPropertyId(propertyId),
                 getPropertyExpensesByPropertyId(propertyId),
                 getExpenseCategories(),
+                getOrigins(),
             ]);
 
             if (!property) {
                 notFound();
                 return;
             }
-            setData({ property, properties, tenants, bookings, expenses, categories });
+            setData({ property, properties, tenants, bookings, expenses, categories, origins });
             setLoading(false);
         };
         fetchData();
@@ -69,7 +71,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     return <p>Cargando detalles de la propiedad...</p>;
   }
   
-  const { property, properties, tenants, bookings, expenses, categories } = data;
+  const { property, properties, tenants, bookings, expenses, categories, origins } = data;
 
   const calendarSrc = property.googleCalendarId 
     ? `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(property.googleCalendarId)}&ctz=America/Argentina/Buenos_Aires`
@@ -154,7 +156,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <BookingsList bookings={bookings} properties={properties} tenants={tenants} />
+                <BookingsList bookings={bookings} properties={properties} tenants={tenants} origins={origins} />
                 </CardContent>
             </Card>
             </TabsContent>
