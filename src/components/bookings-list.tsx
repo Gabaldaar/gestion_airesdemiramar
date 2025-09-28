@@ -300,16 +300,10 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
 
 
 export default function BookingsList({ bookings, properties, tenants, origins, showProperty = false }: BookingsListProps) {
-  const [localBookings, setLocalBookings] = useState(bookings);
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  // When bookings prop changes from parent, update local state
-  useEffect(() => {
-    setLocalBookings(bookings);
-  }, [bookings]);
-
-  if (localBookings.length === 0) {
+  if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
   }
 
@@ -320,26 +314,9 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     setIsEditOpen(true);
   };
 
-  const handleUpdate = (updatedBooking: Booking) => {
-    setLocalBookings(prevBookings => {
-      // Logic to get full details for the updated booking
-      const tenant = tenants.find(t => t.id === updatedBooking.tenantId);
-      const property = properties.find(p => p.id === updatedBooking.propertyId);
-      // NOTE: This is a simplified balance/totalPaid calculation.
-      // A full refresh from DB would be more accurate but this avoids a full page reload.
-      const existingDetails = prevBookings.find(b => b.id === updatedBooking.id);
-
-      const newBookingDetails: BookingWithDetails = {
-        ...updatedBooking,
-        tenant: tenant,
-        property: property,
-        balance: existingDetails?.balance ?? 0, // Keep existing balance for now
-        totalPaid: existingDetails?.totalPaid ?? 0
-      };
-
-      return prevBookings.map(b => b.id === updatedBooking.id ? newBookingDetails : b);
-    });
-    // For a full refresh of financial data, you might still need a reload or a more complex state update.
+  const handleUpdate = () => {
+    // A simple page refresh is enough when server actions handle revalidation
+    window.location.reload();
   };
 
   return (
@@ -366,7 +343,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             </TableRow>
           </TableHeader>
           <TableBody className="block md:table-row-group">
-            {localBookings.map((booking) => (
+            {bookings.map((booking) => (
                 <BookingRow 
                     key={booking.id}
                     booking={booking} 
@@ -385,7 +362,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                 booking={editingBooking}
                 tenants={tenants}
                 properties={properties}
-                allBookings={localBookings}
+                allBookings={bookings}
                 isOpen={isEditOpen}
                 onOpenChange={setIsEditOpen}
                 onBookingUpdated={handleUpdate}
@@ -425,3 +402,4 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
+

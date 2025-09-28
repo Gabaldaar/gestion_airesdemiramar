@@ -69,7 +69,7 @@ interface BookingEditFormProps {
     children?: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    onBookingUpdated: (booking: Booking) => void;
+    onBookingUpdated: () => void;
 }
 
 
@@ -103,11 +103,11 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   };
 
   useEffect(() => {
-    if (state.success && state.updatedBooking) {
-      onBookingUpdated(state.updatedBooking);
+    if (state.success) {
+      onBookingUpdated();
       onOpenChange(false);
     }
-  }, [state, onOpenChange, onBookingUpdated]);
+  }, [state.success, onOpenChange, onBookingUpdated]);
 
   useEffect(() => {
     if (isOpen) {
@@ -365,3 +365,4 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     </>
   );
 }
+
