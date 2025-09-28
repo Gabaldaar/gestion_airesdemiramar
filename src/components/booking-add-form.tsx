@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { addBooking } from '@/lib/actions';
-import { Tenant, Booking } from '@/lib/data';
+import { Tenant, Booking, Origin, getOrigins } from '@/lib/data';
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -63,6 +63,7 @@ function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
 export function BookingAddForm({ propertyId, tenants, existingBookings }: { propertyId: string, tenants: Tenant[], existingBookings: Booking[] }) {
   const [state, formAction] = useActionState(addBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
+  const [origins, setOrigins] = useState<Origin[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<DateRange | undefined>(undefined);
   const [conflict, setConflict] = useState<Booking | null>(null);
@@ -88,6 +89,12 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
         setConflict(null);
     }
   }, [date, existingBookings]);
+  
+   useEffect(() => {
+    if (isOpen) {
+      getOrigins().then(setOrigins);
+    }
+  }, [isOpen]);
 
   const disabledDays = useMemo(() => {
     return existingBookings.flatMap(booking => {
@@ -119,7 +126,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
           Nueva Reserva
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Crear Nueva Reserva</DialogTitle>
           <DialogDescription>
@@ -139,12 +146,10 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
 
         <form action={formAction} ref={formRef}>
             <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="tenantId" className="text-right">
-                    Inquilino
-                    </Label>
+                <div className="space-y-2">
+                    <Label htmlFor="tenantId">Inquilino</Label>
                     <Select name="tenantId" required>
-                        <SelectTrigger className="col-span-3">
+                        <SelectTrigger>
                             <SelectValue placeholder="Selecciona un inquilino" />
                         </SelectTrigger>
                         <SelectContent>
@@ -156,17 +161,15 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                         </SelectContent>
                     </Select>
                 </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="dates" className="text-right">
-                        Fechas
-                    </Label>
+                 <div className="space-y-2">
+                    <Label htmlFor="dates">Fechas</Label>
                      <Popover>
                         <PopoverTrigger asChild>
                         <Button
                             id="date"
                             variant={"outline"}
                             className={cn(
-                            "col-span-3 justify-start text-left font-normal",
+                            "w-full justify-start text-left font-normal",
                             !date && "text-muted-foreground"
                             )}
                         >
@@ -201,32 +204,43 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                     <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
                     <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                 </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="amount" className="text-right">
-                    Monto
-                    </Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="currency" className="text-right">
-                    Moneda
-                    </Label>
-                    <Select name="currency" defaultValue='USD' required>
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue />
+                <div className="space-y-2">
+                    <Label htmlFor="originId">Origen</Label>
+                    <Select name="originId">
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecciona un origen" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="ARS">ARS</SelectItem>
-                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="none">Ninguno</SelectItem>
+                            {origins.map(origin => (
+                                <SelectItem key={origin.id} value={origin.id}>
+                                    {origin.name}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="notes" className="text-right pt-2">
-                        Notas
-                    </Label>
-                    <Textarea id="notes" name="notes" className="col-span-3" />
+                <div className="flex gap-4">
+                    <div className="space-y-2 flex-1">
+                        <Label htmlFor="amount">Monto</Label>
+                        <Input id="amount" name="amount" type="number" step="0.01" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="currency">Moneda</Label>
+                        <Select name="currency" defaultValue='USD' required>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ARS">ARS</SelectItem>
+                                <SelectItem value="USD">USD</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="notes">Notas</Label>
+                    <Textarea id="notes" name="notes" />
                 </div>
                 <input type="hidden" name="propertyId" value={propertyId} />
             </div>

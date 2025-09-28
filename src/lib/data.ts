@@ -90,6 +90,7 @@ export type Booking = {
   notes?: string;
   contractStatus?: ContractStatus;
   googleCalendarEventId?: string;
+  originId?: string;
   // New Guarantee Fields
   guaranteeStatus?: GuaranteeStatus;
   guaranteeAmount?: number;
@@ -196,6 +197,13 @@ export type EmailSettings = {
 }
 
 export type TenantsByOriginSummary = {
+  name: string;
+  count: number;
+  percentage: number;
+  fill: string;
+};
+
+export type BookingsByOriginSummary = {
   name: string;
   count: number;
   percentage: number;
@@ -1090,4 +1098,59 @@ export async function getExpensesByPropertySummary(options?: { startDate?: strin
     })).filter(item => item.totalAmountUSD > 0).sort((a,b) => b.totalAmountUSD - a.totalAmountUSD);
 
     return result;
+}
+
+export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSummary[]> {
+  const [bookings, origins] = await Promise.all([
+    getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
+    getOrigins(),
+  ]);
+
+  const totalBookings = bookings.length;
+  if (totalBookings === 0) {
+    return [];
+  }
+
+  const originsMap = new Map(origins.map(o => [o.id, o]));
+  const summaryMap = new Map<string, number>();
+
+  // Initialize map with all existing origins to include those with 0 bookings
+  origins.forEach(origin => {
+    summaryMap.set(origin.id, 0);
+  });
+  summaryMap.set('none', 0); // For bookings without an origin
+
+  // Count bookings for each origin
+  bookings.forEach(booking => {
+    const originId = booking.originId || 'none';
+    summaryMap.set(originId, (summaryMap.get(originId) || 0) + 1);
+  });
+  
+  const summary: BookingsByOriginSummary[] = [];
+  
+  summaryMap.forEach((count, originId) => {
+    if (count > 0) {
+      let name = "Sin Origen";
+      let color = "#808080"; // Grey for 'none'
+
+      if (originId !== 'none') {
+        const origin = originsMap.get(originId);
+        if (origin) {
+          name = origin.name;
+          color = origin.color;
+        } else {
+          name = "Origen Desconocido";
+        }
+      }
+      
+      summary.push({
+        name: name,
+        count: count,
+        percentage: (count / totalBookings) * 100,
+        fill: color,
+      });
+    }
+  });
+
+  return summary.sort((a,b) => b.count - a.count);
 }

@@ -2,7 +2,7 @@
 
 'use client';
 
-import { getFinancialSummaryByProperty, FinancialSummaryByCurrency, getTenantsByOriginSummary, TenantsByOriginSummary, getExpensesByCategorySummary, ExpensesByCategorySummary, getExpensesByPropertySummary, ExpensesByPropertySummary } from "@/lib/data";
+import { getFinancialSummaryByProperty, FinancialSummaryByCurrency, getTenantsByOriginSummary, TenantsByOriginSummary, getExpensesByCategorySummary, ExpensesByCategorySummary, getExpensesByPropertySummary, ExpensesByPropertySummary, getBookingsByOriginSummary, BookingsByOriginSummary } from "@/lib/data";
 import ReportsClient from "@/components/reports-client";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -13,6 +13,7 @@ interface ReportsData {
     tenantsByOrigin: TenantsByOriginSummary[];
     expensesByCategory: ExpensesByCategorySummary[];
     expensesByProperty: ExpensesByPropertySummary[];
+    bookingsByOrigin: BookingsByOriginSummary[];
 }
 
 function ReportsPageContent() {
@@ -32,8 +33,9 @@ function ReportsPageContent() {
             getTenantsByOriginSummary(),
             getExpensesByCategorySummary({ startDate: from, endDate: to }),
             getExpensesByPropertySummary({ startDate: from, endDate: to }),
-        ]).then(([financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty]) => {
-            setData({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty });
+            getBookingsByOriginSummary(),
+        ]).then(([financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty, bookingsByOrigin]) => {
+            setData({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty, bookingsByOrigin });
             setLoading(false);
         });
     }
@@ -49,6 +51,7 @@ function ReportsPageContent() {
     tenantsByOrigin={data.tenantsByOrigin}
     expensesByCategory={data.expensesByCategory}
     expensesByProperty={data.expensesByProperty}
+    bookingsByOrigin={data.bookingsByOrigin}
      />;
 }
 

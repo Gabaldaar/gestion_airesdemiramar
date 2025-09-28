@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FinancialSummaryByCurrency, TenantsByOriginSummary, ExpensesByCategorySummary, ExpensesByPropertySummary } from "@/lib/data";
+import { FinancialSummaryByCurrency, TenantsByOriginSummary, ExpensesByCategorySummary, ExpensesByPropertySummary, BookingsByOriginSummary } from "@/lib/data";
 import FinancialSummaryTable from "@/components/financial-summary-table";
 import FinancialSummaryChart from "@/components/financial-summary-chart";
 import { DatePicker } from "./ui/date-picker";
@@ -19,15 +19,17 @@ import TenantsByOriginChart from "./tenants-by-origin-chart";
 import NetIncomeDistributionChart from "./net-income-distribution-chart";
 import ExpensesByCategoryChart from "./expenses-by-category-chart";
 import ExpensesByPropertyChart from "./expenses-by-property-chart";
+import BookingsByOriginChart from "./bookings-by-origin-chart";
 
 interface ReportsClientProps {
   financialSummary: FinancialSummaryByCurrency;
   tenantsByOrigin: TenantsByOriginSummary[];
   expensesByCategory: ExpensesByCategorySummary[];
   expensesByProperty: ExpensesByPropertySummary[];
+  bookingsByOrigin: BookingsByOriginSummary[];
 }
 
-export default function ReportsClient({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty }: ReportsClientProps) {
+export default function ReportsClient({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty, bookingsByOrigin }: ReportsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -108,6 +110,17 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                 </CardHeader>
                 <CardContent>
                     <ExpensesByCategoryChart data={expensesByCategory} />
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Distribución de Reservas por Origen</CardTitle>
+                    <CardDescription>
+                        Visualiza qué canales generan más reservas.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <BookingsByOriginChart data={bookingsByOrigin} />
                 </CardContent>
             </Card>
         </div>

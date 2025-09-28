@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { getBookings, getProperties, getTenants, BookingWithDetails, Property, Tenant } from "@/lib/data";
+import { getBookings, getProperties, getTenants, BookingWithDetails, Property, Tenant, Origin, getOrigins } from "@/lib/data";
 import BookingsClient from "@/components/bookings-client";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState } from "react";
@@ -18,6 +18,7 @@ interface BookingsData {
     allBookings: BookingWithDetails[];
     properties: Property[];
     tenants: Tenant[];
+    origins: Origin[];
 }
 
 export default function BookingsPage() {
@@ -34,8 +35,9 @@ export default function BookingsPage() {
             getBookings(),
             getProperties(),
             getTenants(),
-        ]).then(([allBookings, properties, tenants]) => {
-            setData({ allBookings, properties, tenants });
+            getOrigins(),
+        ]).then(([allBookings, properties, tenants, origins]) => {
+            setData({ allBookings, properties, tenants, origins });
             setLoading(false);
         });
     }
@@ -46,7 +48,7 @@ export default function BookingsPage() {
       return <p>Cargando reservas...</p>;
   }
 
-  const { allBookings, properties, tenants } = data;
+  const { allBookings, properties, tenants, origins } = data;
 
   const tenant = tenantId ? tenants.find(t => t.id === tenantId) : null;
   const pageTitle = tenant ? `Reservas de ${tenant.name}` : 'Reservas';
@@ -66,6 +68,7 @@ export default function BookingsPage() {
         initialBookings={allBookings} 
         properties={properties} 
         tenants={tenants} 
+        origins={origins}
         initialTenantIdFilter={tenantId}
         />
     </CardContent>

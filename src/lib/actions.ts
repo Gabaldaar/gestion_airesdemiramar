@@ -233,6 +233,7 @@ export async function addBooking(previousState: any, formData: FormData) {
     const amount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const notes = formData.get("notes") as string || "";
+    const originId = formData.get("originId") as string || undefined;
 
     if (!propertyId || !tenantId || !startDate || !endDate || !amount || !currency) {
         return { success: false, message: "Todos los campos son obligatorios." };
@@ -246,6 +247,7 @@ export async function addBooking(previousState: any, formData: FormData) {
         amount,
         currency,
         notes,
+        originId,
         contractStatus: 'not_sent' as ContractStatus,
         guaranteeStatus: 'not_solicited' as GuaranteeStatus,
     };
@@ -315,6 +317,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             notes: formData.get("notes") as string,
             contractStatus: formData.get("contractStatus") as ContractStatus,
             googleCalendarEventId: oldBooking.googleCalendarEventId, // Preserve existing event ID
+            originId: formData.get("originId") as string || undefined,
             guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus,
             guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS',
         };

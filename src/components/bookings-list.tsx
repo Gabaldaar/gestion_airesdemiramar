@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -9,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus } from "@/lib/data";
+import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin } from "@/lib/data";
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ interface BookingsListProps {
   bookings: BookingWithDetails[];
   properties: Property[];
   tenants: Tenant[];
+  origins: Origin[];
   showProperty?: boolean;
 }
 
@@ -49,7 +51,7 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-function BookingRow({ booking, properties, tenants, showProperty }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[], showProperty: boolean }) {
+function BookingRow({ booking, properties, tenants, showProperty, origin }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[], showProperty: boolean, origin?: Origin }) {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
   const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
@@ -147,6 +149,13 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
               <span>{formatDate(booking.endDate)}</span>
           </div>
           <span className="block text-xs text-muted-foreground">{nights} noches</span>
+      </TableCell>
+      <TableCell data-label="Origen">
+        {origin ? (
+            <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
+                {origin.name}
+            </Badge>
+        ) : null}
       </TableCell>
       <TableCell data-label="Contrato">
         <TooltipProvider>
@@ -293,11 +302,13 @@ function BookingRow({ booking, properties, tenants, showProperty }: { booking: B
 }
 
 
-export default function BookingsList({ bookings, properties, tenants, showProperty = false }: BookingsListProps) {
+export default function BookingsList({ bookings, properties, tenants, origins, showProperty = false }: BookingsListProps) {
 
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
   }
+
+  const originsMap = new Map(origins.map(o => [o.id, o]));
 
   return (
     <div>
@@ -314,6 +325,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
               {showProperty && <TableHead>Propiedad</TableHead>}
               <TableHead>Inquilino</TableHead>
               <TableHead>Estadía</TableHead>
+              <TableHead>Origen</TableHead>
               <TableHead>Contrato</TableHead>
               <TableHead>Garantía</TableHead>
               <TableHead>Monto</TableHead>
@@ -329,6 +341,7 @@ export default function BookingsList({ bookings, properties, tenants, showProper
                     properties={properties} 
                     tenants={tenants} 
                     showProperty={showProperty} 
+                    origin={booking.originId ? originsMap.get(booking.originId) : undefined}
                 />
             ))}
           </TableBody>

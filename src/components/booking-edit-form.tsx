@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { updateBooking } from '@/lib/actions';
-import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus } from '@/lib/data';
+import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -74,6 +74,7 @@ interface BookingEditFormProps {
 
 export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange }: BookingEditFormProps) {
   const [state, formAction] = useActionState(updateBooking, initialState);
+  const [origins, setOrigins] = useState<Origin[]>([]);
   const [date, setDate] = useState<DateRange | undefined>({
       from: new Date(booking.startDate),
       to: new Date(booking.endDate)
@@ -105,6 +106,12 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
       onOpenChange(false);
     }
   }, [state, onOpenChange]);
+
+  useEffect(() => {
+    if (isOpen) {
+      getOrigins().then(setOrigins);
+    }
+  }, [isOpen]);
 
    useEffect(() => {
     if (date?.from && date?.to && allBookings) {
@@ -166,9 +173,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                 <input type="hidden" name="id" value={booking.id} />
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="propertyId">
-                        Propiedad
-                        </Label>
+                        <Label htmlFor="propertyId">Propiedad</Label>
                         <Select name="propertyId" defaultValue={String(booking.propertyId)} required>
                             <SelectTrigger>
                                 <SelectValue />
@@ -183,9 +188,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="tenantId">
-                        Inquilino
-                        </Label>
+                        <Label htmlFor="tenantId">Inquilino</Label>
                         <Select name="tenantId" defaultValue={String(booking.tenantId)} required>
                             <SelectTrigger>
                                 <SelectValue />
@@ -200,9 +203,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="dates">
-                            Fechas
-                        </Label>
+                        <Label htmlFor="dates">Fechas</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                             <Button
@@ -244,17 +245,28 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                         <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
                         <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                     </div>
-
+                     <div className="space-y-2">
+                        <Label htmlFor="originId">Origen</Label>
+                        <Select name="originId" defaultValue={booking.originId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un origen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Ninguno</SelectItem>
+                                {origins.map(origin => (
+                                    <SelectItem key={origin.id} value={origin.id}>
+                                        {origin.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <div className="space-y-2">
-                        <Label htmlFor="amount">
-                        Monto
-                        </Label>
+                        <Label htmlFor="amount">Monto</Label>
                         <Input id="amount" name="amount" type="number" step="0.01" defaultValue={booking.amount} required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="currency">
-                        Moneda
-                        </Label>
+                        <Label htmlFor="currency">Moneda</Label>
                         <Select name="currency" defaultValue={booking.currency} required>
                             <SelectTrigger>
                                 <SelectValue />
@@ -266,9 +278,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="contractStatus">
-                        Contrato
-                        </Label>
+                        <Label htmlFor="contractStatus">Contrato</Label>
                         <Select name="contractStatus" defaultValue={booking.contractStatus || 'not_sent'} required>
                             <SelectTrigger>
                                 <SelectValue />
@@ -282,9 +292,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                         </Select>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="notes">
-                            Notas
-                        </Label>
+                        <Label htmlFor="notes">Notas</Label>
                         <Textarea id="notes" name="notes" defaultValue={booking.notes} />
                     </div>
                     

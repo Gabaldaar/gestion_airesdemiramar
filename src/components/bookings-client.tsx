@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { BookingWithDetails, ContractStatus, Property, Tenant, getEmailSettings } from '@/lib/data';
+import { BookingWithDetails, ContractStatus, Property, Tenant, getEmailSettings, Origin } from '@/lib/data';
 import BookingsList from '@/components/bookings-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -20,15 +20,17 @@ interface BookingsClientProps {
   initialBookings: BookingWithDetails[];
   properties: Property[];
   tenants: Tenant[];
+  origins: Origin[];
   initialTenantIdFilter?: string;
 }
 
-export default function BookingsClient({ initialBookings, properties, tenants, initialTenantIdFilter }: BookingsClientProps) {
+export default function BookingsClient({ initialBookings, properties, tenants, origins, initialTenantIdFilter }: BookingsClientProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
   const [contractStatusFilter, setContractStatusFilter] = useState<ContractStatusFilter>('all');
+  const [originIdFilter, setOriginIdFilter] = useState<string>('all');
   const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
@@ -67,6 +69,11 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
           return false;
       }
 
+      // Origin Filter
+      if (originIdFilter !== 'all' && (booking.originId || 'none') !== originIdFilter) {
+        return false;
+      }
+
       // Date Range Filter
       if (fromDate && bookingStartDate < fromDate) {
         return false;
@@ -90,7 +97,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
       
       return true;
     });
-  }, [bookingsForTenant, fromDate, toDate, statusFilter, propertyIdFilter, contractStatusFilter]);
+  }, [bookingsForTenant, fromDate, toDate, statusFilter, propertyIdFilter, contractStatusFilter, originIdFilter]);
 
   const handleClearFilters = () => {
     setFromDate(undefined);
@@ -98,6 +105,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
     setStatusFilter('all');
     setPropertyIdFilter('all');
     setContractStatusFilter('all');
+    setOriginIdFilter('all');
   };
 
   const handleDownloadCSV = () => {
@@ -169,7 +177,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="grid gap-2">
                 <Label>Desde</Label>
                 <DatePicker date={fromDate} onDateSelect={setFromDate} placeholder="Desde" />
@@ -178,9 +186,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
                 <Label>Hasta</Label>
                 <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Hasta" />
             </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-wrap">
-          <div className="grid gap-2">
+            <div className="grid gap-2">
               <Label>Propiedad</Label>
               <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
                   <SelectTrigger>
@@ -224,6 +230,21 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
                   </SelectContent>
               </Select>
           </div>
+          <div className="grid gap-2">
+              <Label>Origen</Label>
+              <Select value={originIdFilter} onValueChange={setOriginIdFilter}>
+                  <SelectTrigger>
+                      <SelectValue placeholder="Origen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="none">Sin Origen</SelectItem>
+                      {origins.map(o => (
+                          <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+          </div>
         </div>
          <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
               <Button variant="outline" onClick={handleClearFilters} className="w-full sm:w-auto">Limpiar Filtros</Button>
@@ -237,7 +258,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, i
               </Button>
           </div>
       </div>
-      <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} showProperty={true} />
+      <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} origins={origins} showProperty={true} />
     </div>
   );
 }
