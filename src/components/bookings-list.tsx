@@ -24,7 +24,7 @@ import { BookingDeleteForm } from './booking-delete-form';
 import { NotesViewer } from './notes-viewer';
 import { GuaranteeManager } from './guarantee-manager';
 import { Landmark, Wallet, Pencil, Trash2, FileText } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EmailSender } from "./email-sender";
 
 
@@ -305,9 +305,9 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   // When bookings prop changes from parent, update local state
-  useState(() => {
+  useEffect(() => {
     setLocalBookings(bookings);
-  });
+  }, [bookings]);
 
   if (localBookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
