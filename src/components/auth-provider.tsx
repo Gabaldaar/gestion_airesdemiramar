@@ -39,14 +39,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await signInWithPopup(auth, provider);
     } catch (error) {
-      if (error instanceof FirebaseError && error.code === 'auth/cancelled-popup-request') {
-        // User closed the popup, this is not a critical error.
-        console.log("Sign-in popup closed by user.");
-      } else {
-        // Handle other errors
-        console.error("Error signing in with Google: ", error);
-        throw error;
-      }
+      // Simplificado para evitar el crash. El error de "popup cancelado" se mostrará en consola pero no bloqueará la app.
+      console.error("Error signing in with Google: ", error);
     }
   };
 
