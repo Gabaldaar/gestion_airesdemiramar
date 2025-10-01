@@ -52,10 +52,15 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
     const calendar = getCalendarClient();
     
     try {
-        // Correctly handle dates by splitting the ISO string and ignoring timezones
+        // Use the date part of the ISO string to avoid timezone issues.
         const startDateString = eventDetails.startDate.split('T')[0];
-        // The end date for all-day events is exclusive, so we add 1 day to the checkout date.
-        const endDateExclusive = addDays(new Date(eventDetails.endDate.split('T')[0]), 1);
+        
+        // The end date for all-day events is exclusive. We must add 1 day to the checkout date.
+        // new Date(string) can be tricky. new Date('2024-08-15') creates a date in the local timezone.
+        // By splitting and re-joining, we ensure consistency.
+        const endDateParts = eventDetails.endDate.split('T')[0].split('-').map(Number);
+        const endDateObj = new Date(endDateParts[0], endDateParts[1] - 1, endDateParts[2]);
+        const endDateExclusive = addDays(endDateObj, 1);
         const endDateString = format(endDateExclusive, 'yyyy-MM-dd');
 
 
@@ -95,10 +100,13 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
     const calendar = getCalendarClient();
 
     try {
-        // Correctly handle dates by splitting the ISO string and ignoring timezones
+        // Use the date part of the ISO string to avoid timezone issues.
         const startDateString = eventDetails.startDate.split('T')[0];
-        // The end date for all-day events is exclusive, so we add 1 day to the checkout date.
-        const endDateExclusive = addDays(new Date(eventDetails.endDate.split('T')[0]), 1);
+        
+        // The end date for all-day events is exclusive. We must add 1 day to the checkout date.
+        const endDateParts = eventDetails.endDate.split('T')[0].split('-').map(Number);
+        const endDateObj = new Date(endDateParts[0], endDateParts[1] - 1, endDateParts[2]);
+        const endDateExclusive = addDays(endDateObj, 1);
         const endDateString = format(endDateExclusive, 'yyyy-MM-dd');
 
         const event = {
