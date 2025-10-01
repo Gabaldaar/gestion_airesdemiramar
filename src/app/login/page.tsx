@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
+  const isPublicPage = true;
 
   useEffect(() => {
     if (!loading && user) {
@@ -96,7 +97,6 @@ export default function LoginPage() {
     );
   }
   
-  const isPublicPage = true;
 
 
   return (
@@ -199,5 +199,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
