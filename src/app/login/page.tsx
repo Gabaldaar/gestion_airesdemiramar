@@ -28,7 +28,10 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     try {
       await signInWithGoogle();
-    } catch (error) {
+    } catch (error: any) {
+       if (error.code === 'auth/cancelled-popup-request') {
+            return;
+        }
       console.error('Error during Google sign-in:', error);
       setError('Error al iniciar sesión con Google.');
     }
