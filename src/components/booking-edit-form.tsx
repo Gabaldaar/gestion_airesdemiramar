@@ -137,7 +137,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
         const dayAfterStart = addDays(startDate, 1);
         const dayBeforeEnd = subDays(endDate, 1);
 
-        if (dayAfterStart > dayBeforeEnd) {
+        if (isSameDay(dayAfterStart, dayBeforeEnd) || dayAfterStart > dayBeforeEnd) {
             return [];
         }
 
@@ -252,7 +252,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="originId">Origen</Label>
-                        <Select name="originId" defaultValue={booking.originId}>
+                        <Select name="originId" defaultValue={booking.originId || 'none'}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un origen" />
                             </SelectTrigger>

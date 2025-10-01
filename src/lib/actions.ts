@@ -329,25 +329,21 @@ export async function updateBooking(
       };
     }
 
-    // Merge old booking with form data to create the full updated object
+    // Create a complete, updated object by merging the old booking with form data
     const updatedBookingData: Booking = {
-      ...oldBooking,
-      id: id,
-      propertyId: formData.get('propertyId') as string,
-      tenantId: formData.get('tenantId') as string,
-      startDate: formData.get('startDate') as string,
-      endDate: formData.get('endDate') as string,
-      amount: parseFloat(formData.get('amount') as string),
-      currency: formData.get('currency') as 'USD' | 'ARS',
-      notes: (formData.get('notes') as string) || '',
-      contractStatus: formData.get('contractStatus') as ContractStatus,
-      originId:
-        formData.get('originId') === 'none'
-          ? undefined
-          : (formData.get('originId') as string),
-      guaranteeStatus: formData.get('guaranteeStatus') as GuaranteeStatus,
-      guaranteeCurrency: formData.get('guaranteeCurrency') as 'USD' | 'ARS',
-      googleCalendarEventId: formData.get('googleCalendarEventId') as string || oldBooking.googleCalendarEventId,
+        ...oldBooking,
+        propertyId: formData.get('propertyId') as string,
+        tenantId: formData.get('tenantId') as string,
+        startDate: formData.get('startDate') as string,
+        endDate: formData.get('endDate') as string,
+        amount: parseFloat(formData.get('amount') as string),
+        currency: formData.get('currency') as 'USD' | 'ARS',
+        notes: (formData.get('notes') as string) ?? oldBooking.notes,
+        contractStatus: (formData.get('contractStatus') as ContractStatus) ?? oldBooking.contractStatus,
+        originId: formData.get('originId') === 'none' ? undefined : (formData.get('originId') as string) ?? oldBooking.originId,
+        guaranteeStatus: (formData.get('guaranteeStatus') as GuaranteeStatus) ?? oldBooking.guaranteeStatus,
+        guaranteeCurrency: (formData.get('guaranteeCurrency') as 'USD' | 'ARS') ?? oldBooking.guaranteeCurrency,
+        googleCalendarEventId: (formData.get('googleCalendarEventId') as string) ?? oldBooking.googleCalendarEventId,
     };
     
     const guaranteeAmountStr = formData.get('guaranteeAmount') as string;

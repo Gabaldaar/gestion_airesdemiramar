@@ -140,7 +140,7 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
               <input type="hidden" name="notes" value={booking.notes || ''} />
               <input type="hidden" name="contractStatus" value={booking.contractStatus || 'not_sent'} />
               <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
-              <input type="hidden" name="originId" value={booking.originId || 'none'} />
+              <input type="hidden" name="originId" value={booking.originId || ''} />
               
               <input type="hidden" name="guaranteeReceivedDate" value={receivedDate ? receivedDate.toISOString().split('T')[0] : ''} />
               <input type="hidden" name="guaranteeReturnedDate" value={returnedDate ? returnedDate.toISOString().split('T')[0] : ''} />
