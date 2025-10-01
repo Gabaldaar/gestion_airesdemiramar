@@ -249,7 +249,7 @@ export async function addBooking(previousState: any, formData: FormData) {
       ? undefined
       : (formData.get('originId') as string);
 
-  if (!propertyId || !tenantId || !startDate || !endDate || !amount || !currency) {
+  if (!propertyId || !tenantId || !startDate || !endDate || isNaN(amount) || !currency) {
     return { success: false, message: 'Todos los campos son obligatorios.' };
   }
 
@@ -283,18 +283,14 @@ export async function addBooking(previousState: any, formData: FormData) {
         });
 
         if (eventId) {
-          await dbUpdateBooking({ ...newBooking, id: newBooking.id, googleCalendarEventId: eventId });
+          await dbUpdateBooking({ id: newBooking.id, googleCalendarEventId: eventId });
         }
       } catch (calendarError) {
         console.error(
           'Calendar sync failed on booking creation, but the booking was saved:',
           calendarError
         );
-        return {
-          success: true,
-          message:
-            'Reserva creada, pero falló la sincronización con el calendario. Revise las credenciales.',
-        };
+        // Do not return here, let the success message at the end be the main one
       }
     }
 
@@ -328,71 +324,70 @@ export async function updateBooking(
         message: 'No se encontró la reserva para actualizar.',
       };
     }
+    
+    const dataToUpdate: Partial<Booking> = {};
+    
+    // Iterate over form data to build the update object
+    for (const [key, value] of formData.entries()) {
+        if (key === 'id' || key.startsWith('$ACTION_ID')) continue;
 
-    // Create a complete, updated object by merging the old booking with form data
-    const updatedBookingData: Booking = {
-        ...oldBooking,
-        propertyId: formData.get('propertyId') as string,
-        tenantId: formData.get('tenantId') as string,
-        startDate: formData.get('startDate') as string,
-        endDate: formData.get('endDate') as string,
-        amount: parseFloat(formData.get('amount') as string),
-        currency: formData.get('currency') as 'USD' | 'ARS',
-        notes: (formData.get('notes') as string) ?? oldBooking.notes,
-        contractStatus: (formData.get('contractStatus') as ContractStatus) ?? oldBooking.contractStatus,
-        originId: formData.get('originId') === 'none' ? undefined : (formData.get('originId') as string) ?? oldBooking.originId,
-        guaranteeStatus: (formData.get('guaranteeStatus') as GuaranteeStatus) ?? oldBooking.guaranteeStatus,
-        guaranteeCurrency: (formData.get('guaranteeCurrency') as 'USD' | 'ARS') ?? oldBooking.guaranteeCurrency,
-        googleCalendarEventId: (formData.get('googleCalendarEventId') as string) ?? oldBooking.googleCalendarEventId,
+        if (value === '' || value === null) {
+            // Firestore cannot store undefined. Unsetting a field is done by not including it or using FieldValue.delete()
+            // Here, we just won't add it to dataToUpdate, unless we want to clear it.
+            if (key === 'notes' || key === 'googleCalendarEventId') dataToUpdate[key as keyof Booking] = '';
+            if (key === 'originId') dataToUpdate.originId = undefined;
+            if (key.startsWith('guarantee')) dataToUpdate[key as keyof Booking] = undefined;
+            continue;
+        }
+
+        switch (key) {
+            case 'amount':
+            case 'guaranteeAmount':
+                dataToUpdate[key] = parseFloat(value as string);
+                break;
+            case 'originId':
+                 dataToUpdate[key] = value === 'none' ? undefined : value as string;
+                 break;
+            default:
+                dataToUpdate[key as keyof Booking] = value as any;
+        }
+    }
+
+    // Merge with old data to get a complete object for calendar logic
+    const mergedDataForCalendar: Booking = {
+      ...oldBooking,
+      ...dataToUpdate,
     };
     
-    const guaranteeAmountStr = formData.get('guaranteeAmount') as string;
-    updatedBookingData.guaranteeAmount =
-      guaranteeAmountStr && guaranteeAmountStr !== ''
-        ? parseFloat(guaranteeAmountStr)
-        : undefined;
-
-    const guaranteeReceivedDateStr = formData.get('guaranteeReceivedDate') as string;
-    updatedBookingData.guaranteeReceivedDate =
-      guaranteeReceivedDateStr && guaranteeReceivedDateStr !== ''
-        ? guaranteeReceivedDateStr
-        : undefined;
-
-    const guaranteeReturnedDateStr = formData.get('guaranteeReturnedDate') as string;
-    updatedBookingData.guaranteeReturnedDate =
-      guaranteeReturnedDateStr && guaranteeReturnedDateStr !== ''
-        ? guaranteeReturnedDateStr
-        : undefined;
-
-    const updatedBookingFromDb = await dbUpdateBooking(updatedBookingData);
-    if (!updatedBookingFromDb) {
-      throw new Error('Database update returned null');
+    const updatedBooking = await dbUpdateBooking({id, ...dataToUpdate});
+    if (!updatedBooking) {
+        throw new Error('Database update returned null');
     }
 
     const calendarFieldsChanged =
-      updatedBookingData.startDate !== oldBooking.startDate ||
-      updatedBookingData.endDate !== oldBooking.endDate ||
-      updatedBookingData.tenantId !== oldBooking.tenantId ||
-      updatedBookingData.notes !== oldBooking.notes;
+      dataToUpdate.startDate ||
+      dataToUpdate.endDate ||
+      dataToUpdate.tenantId ||
+      dataToUpdate.notes !== undefined;
 
     if (calendarFieldsChanged) {
-      const property = await getPropertyById(updatedBookingData.propertyId);
-      const tenant = await getTenantById(updatedBookingData.tenantId);
+      const property = await getPropertyById(mergedDataForCalendar.propertyId);
+      const tenant = await getTenantById(mergedDataForCalendar.tenantId);
 
       if (property && property.googleCalendarId && tenant) {
         try {
           const eventDetails = {
-            startDate: updatedBookingData.startDate,
-            endDate: updatedBookingData.endDate,
+            startDate: mergedDataForCalendar.startDate,
+            endDate: mergedDataForCalendar.endDate,
             tenantName: tenant.name,
             propertyName: property.name,
-            notes: updatedBookingData.notes,
+            notes: mergedDataForCalendar.notes,
           };
 
-          if (updatedBookingData.googleCalendarEventId) {
+          if (mergedDataForCalendar.googleCalendarEventId) {
             await updateEventInCalendar(
               property.googleCalendarId,
-              updatedBookingData.googleCalendarEventId,
+              mergedDataForCalendar.googleCalendarEventId,
               eventDetails
             );
           } else {
@@ -401,7 +396,7 @@ export async function updateBooking(
               eventDetails
             );
             if (newEventId) {
-              await dbUpdateBooking({ ...updatedBookingData, googleCalendarEventId: newEventId });
+              await dbUpdateBooking({ ...mergedDataForCalendar, id, googleCalendarEventId: newEventId });
             }
           }
         } catch (calendarError) {
@@ -409,24 +404,18 @@ export async function updateBooking(
             `Calendar sync failed for booking ${id}, but the booking was updated:`,
             calendarError
           );
-          return {
-            success: true,
-            message:
-              'Reserva actualizada, pero falló la sincronización con el calendario. Revise las credenciales.',
-            updatedBooking: updatedBookingFromDb,
-          };
         }
       }
     }
 
-    revalidatePath(`/properties/${updatedBookingData.propertyId}`);
+    revalidatePath(`/properties/${mergedDataForCalendar.propertyId}`);
     revalidatePath(`/properties`);
     revalidatePath('/bookings');
     revalidatePath('/');
     return {
       success: true,
       message: 'Reserva actualizada correctamente.',
-      updatedBooking: updatedBookingFromDb,
+      updatedBooking: updatedBooking,
     };
   } catch (dbError) {
     console.error('Error updating booking in DB:', dbError);
