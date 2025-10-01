@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User, FirebaseError } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
@@ -39,8 +39,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await signInWithPopup(auth, provider);
     } catch (error) {
-      console.error("Error signing in with Google: ", error);
-      throw error;
+      if (error instanceof FirebaseError && error.code === 'auth/cancelled-popup-request') {
+        // User closed the popup, this is not a critical error.
+        console.log("Sign-in popup closed by user.");
+      } else {
+        // Handle other errors
+        console.error("Error signing in with Google: ", error);
+        throw error;
+      }
     }
   };
 
