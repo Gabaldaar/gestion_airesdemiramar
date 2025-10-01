@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import {
   collection,
@@ -16,7 +17,6 @@ import {
   collectionGroup,
   setDoc
 } from 'firebase/firestore';
-import { addDays } from 'date-fns';
 
 // --- TYPE DEFINITIONS ---
 
@@ -470,15 +470,13 @@ export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking>
     return { id: docRef.id, ...booking };
 }
 
-export async function dbUpdateBooking(updatedBookingData: Partial<Booking>): Promise<Booking | null> {
-    const { id, ...data } = updatedBookingData;
+export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
+    const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
-    
     const docRef = doc(db, 'bookings', id);
     await updateDoc(docRef, data);
-
-    const newDocSnap = await getDoc(docRef);
-    return newDocSnap.exists() ? processDoc(newDocSnap) as Booking : null;
+    const newDoc = await getDoc(docRef);
+    return newDoc.exists() ? processDoc(newDoc) as Booking : null;
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {
@@ -655,8 +653,8 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
   const fromDate = startDate ? new Date(startDate) : null;
   if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
   
-  const toDate = endDate ? addDays(new Date(endDate), 1) : null;
-  if (toDate) toDate.setUTCHours(0, 0, 0, 0);
+  const toDate = endDate ? new Date(endDate) : null;
+  if (toDate) toDate.setUTCHours(23, 59, 59, 999);
 
   const [allProperties, allBookingsData, allPropertyExpenses, allBookingExpenses, allPayments] = await Promise.all([
     getProperties(),
@@ -672,7 +670,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
       if (!dateStr || (!fromDate && !toDate)) return true;
       const itemDate = new Date(dateStr);
       if (fromDate && itemDate < fromDate) return false;
-      if (toDate && itemDate >= toDate) return false;
+      if (toDate && itemDate > toDate) return false;
       return true;
   };
   
@@ -1019,14 +1017,14 @@ export async function getExpensesByCategorySummary(options?: { startDate?: strin
     const endDate = options?.endDate;
     const fromDate = startDate ? new Date(startDate) : null;
     if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
-    const toDate = endDate ? addDays(new Date(endDate), 1) : null;
-    if (toDate) toDate.setUTCHours(0, 0, 0, 0);
+    const toDate = endDate ? new Date(endDate) : null;
+    if (toDate) toDate.setUTCHours(23, 59, 59, 999);
 
     const isWithinDateRange = (dateStr: string) => {
         if (!dateStr || (!fromDate && !toDate)) return true;
         const itemDate = new Date(dateStr);
         if (fromDate && itemDate < fromDate) return false;
-        if (toDate && itemDate >= toDate) return false;
+        if (toDate && itemDate > toDate) return false;
         return true;
     };
 
@@ -1065,14 +1063,14 @@ export async function getExpensesByPropertySummary(options?: { startDate?: strin
     const endDate = options?.endDate;
     const fromDate = startDate ? new Date(startDate) : null;
     if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
-    const toDate = endDate ? addDays(new Date(endDate), 1) : null;
-    if (toDate) toDate.setUTCHours(0, 0, 0, 0);
+    const toDate = endDate ? new Date(endDate) : null;
+    if (toDate) toDate.setUTCHours(23, 59, 59, 999);
 
     const isWithinDateRange = (dateStr: string) => {
         if (!dateStr || (!fromDate && !toDate)) return true;
         const itemDate = new Date(dateStr);
         if (fromDate && itemDate < fromDate) return false;
-        if (toDate && itemDate >= toDate) return false;
+        if (toDate && itemDate > toDate) return false;
         return true;
     };
 
