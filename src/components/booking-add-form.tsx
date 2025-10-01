@@ -99,21 +99,17 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   const disabledDays = useMemo(() => {
     return existingBookings.flatMap(booking => {
         const startDate = new Date(booking.startDate);
+        // The last night is the day before checkout. Checkout day is available for a new check-in.
         const lastNight = subDays(new Date(booking.endDate), 1);
-        if (startDate > lastNight) return [];
+        if (isSameDay(startDate, lastNight) || startDate > lastNight) {
+            return [startDate];
+        }
         return [{ from: startDate, to: lastNight }];
     });
   }, [existingBookings]);
   
   const getConflictMessage = (): string => {
-    if (!conflict || !date?.from) return "";
-    
-    const conflictEndDate = new Date(conflict.endDate);
-    
-    if (isSameDay(date.from, conflictEndDate)) {
-        return "Atención: La fecha de check-in coincide con un check-out el mismo día.";
-    }
-
+    if (!conflict) return "";
     return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
@@ -248,7 +244,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 <DialogClose asChild>
                     <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 </DialogClose>
-                <SubmitButton isDisabled={!date?.from || !date?.to} />
+                <SubmitButton isDisabled={!date?.from || !date?.to || !!conflict} />
             </DialogFooter>
         </form>
          {state.message && !state.success && (

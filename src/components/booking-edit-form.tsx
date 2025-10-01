@@ -133,19 +133,15 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     return otherBookings.flatMap(otherBooking => {
         const startDate = new Date(otherBooking.startDate);
         const lastNight = subDays(new Date(otherBooking.endDate), 1);
-        if (startDate > lastNight) return [];
+        if (isSameDay(startDate, lastNight) || startDate > lastNight) {
+            return [startDate];
+        }
         return [{ from: startDate, to: lastNight }];
     });
   }, [allBookings, booking.id, booking.propertyId]);
 
   const getConflictMessage = (): string => {
-    if (!conflict || !date?.from) return "";
-    
-    const conflictEndDate = new Date(conflict.endDate);
-    if (isSameDay(date.from, conflictEndDate)) {
-        return "Atención: La fecha de check-in coincide con un check-out el mismo día.";
-    }
-
+    if (!conflict) return "";
     return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
@@ -354,7 +350,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                     <DialogClose asChild>
                         <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                     </DialogClose>
-                    <SubmitButton isDisabled={!date?.from || !date?.to} />
+                    <SubmitButton isDisabled={!date?.from || !date?.to || !!conflict} />
                 </DialogFooter>
             </form>
             {state.message && !state.success && (
@@ -365,4 +361,3 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     </>
   );
 }
-
