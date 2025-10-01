@@ -60,8 +60,8 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
                 date: format(new Date(eventDetails.startDate), 'yyyy-MM-dd'),
             },
             end: {
-                 // Use 'date' for all-day events. The end date is exclusive.
-                date: format(new Date(eventDetails.endDate), 'yyyy-MM-dd'),
+                 // Use 'date' for all-day events. The end date is exclusive, so we add one day.
+                date: format(addDays(new Date(eventDetails.endDate), 1), 'yyyy-MM-dd'),
             },
         };
 
@@ -97,7 +97,7 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
                 date: format(new Date(eventDetails.startDate), 'yyyy-MM-dd'),
             },
             end: {
-                date: format(new Date(eventDetails.endDate), 'yyyy-MM-dd'),
+                date: format(addDays(new Date(eventDetails.endDate), 1), 'yyyy-MM-dd'),
             },
         };
 
