@@ -237,191 +237,165 @@ export async function deleteTenant(previousState: any, formData: FormData) {
 }
 
 export async function addBooking(previousState: any, formData: FormData) {
-  const propertyId = formData.get('propertyId') as string;
-  const tenantId = formData.get('tenantId') as string;
-  const startDate = formData.get('startDate') as string;
-  const endDate = formData.get('endDate') as string;
-  const amount = parseFloat(formData.get('amount') as string);
-  const currency = formData.get('currency') as 'USD' | 'ARS';
-  const notes = (formData.get('notes') as string) || '';
-  const originId =
-    formData.get('originId') === 'none'
-      ? undefined
-      : (formData.get('originId') as string);
+  // --- 1. Validate and Build Booking Object ---
+  const amountStr = formData.get('amount') as string;
+  const bookingData: Omit<Booking, 'id'> = {
+    propertyId: formData.get('propertyId') as string,
+    tenantId: formData.get('tenantId') as string,
+    startDate: formData.get('startDate') as string,
+    endDate: formData.get('endDate') as string,
+    amount: amountStr ? parseFloat(amountStr) : 0,
+    currency: (formData.get('currency') as 'USD' | 'ARS') || 'USD',
+    notes: (formData.get('notes') as string) || '',
+    originId: formData.get('originId') === 'none' ? undefined : (formData.get('originId') as string),
+    contractStatus: 'not_sent',
+    guaranteeStatus: 'not_solicited',
+  };
 
-  if (!propertyId || !tenantId || !startDate || !endDate || isNaN(amount) || !currency) {
-    return { success: false, message: 'Todos los campos son obligatorios.' };
+  if (!bookingData.propertyId || !bookingData.tenantId || !bookingData.startDate || !bookingData.endDate || isNaN(bookingData.amount)) {
+    return { success: false, message: 'Datos de la reserva incompletos o inválidos.' };
   }
 
   try {
-    const newBooking = await dbAddBooking({
-      propertyId,
-      tenantId,
-      startDate,
-      endDate,
-      amount,
-      currency,
-      notes,
-      originId,
-      contractStatus: 'not_sent' as ContractStatus,
-      guaranteeStatus: 'not_solicited' as GuaranteeStatus,
-    });
+    // --- 2. Save to Database ---
+    const newBooking = await dbAddBooking(bookingData);
 
+    // --- 3. Google Calendar Sync ---
     const [property, tenant] = await Promise.all([
-      getPropertyById(propertyId),
-      getTenantById(tenantId)
+      getPropertyById(newBooking.propertyId),
+      getTenantById(newBooking.tenantId)
     ]);
-
-    if (property && property.googleCalendarId && tenant) {
+    
+    if (property?.googleCalendarId && tenant) {
       try {
-        const eventId = await addEventToCalendar(property.googleCalendarId, {
-          startDate,
-          endDate,
+        const eventDetails = {
+          startDate: newBooking.startDate,
+          endDate: newBooking.endDate,
           tenantName: tenant.name,
           propertyName: property.name,
-          notes,
-        });
-
+          notes: newBooking.notes,
+        };
+        const eventId = await addEventToCalendar(property.googleCalendarId, eventDetails);
         if (eventId) {
+          // Update booking with the new event ID
           await dbUpdateBooking({ id: newBooking.id, googleCalendarEventId: eventId });
         }
       } catch (calendarError) {
-        console.error(
-          'Calendar sync failed on booking creation, but the booking was saved:',
-          calendarError
-        );
+        console.error('Calendar sync failed on booking creation, but the booking was saved:', calendarError);
+        // We don't return an error to the user, as the core booking was successful.
       }
     }
 
-    revalidatePath(`/properties/${propertyId}`);
+    revalidatePath(`/properties/${newBooking.propertyId}`);
     revalidatePath('/bookings');
     revalidatePath('/');
     return { success: true, message: 'Reserva creada correctamente.' };
+
   } catch (dbError) {
     console.error('Error creating booking in DB:', dbError);
-    return {
-      success: false,
-      message: 'Error al guardar la reserva en la base de datos.',
-    };
+    return { success: false, message: 'Error al guardar la reserva en la base de datos.' };
   }
 }
 
-export async function updateBooking(
-  previousState: any,
-  formData: FormData
-): Promise<{ success: boolean; message: string; updatedBooking?: Booking }> {
+export async function updateBooking(previousState: any, formData: FormData) {
   const id = formData.get('id') as string;
   if (!id) {
     return { success: false, message: 'ID de reserva no proporcionado.' };
   }
 
   try {
+    // --- 1. Fetch old booking ---
     const oldBooking = await getBookingById(id);
     if (!oldBooking) {
       return { success: false, message: 'No se encontró la reserva para actualizar.' };
     }
 
-    const dataToUpdate: Partial<Booking> = { ...oldBooking };
-
-    // Explicitly update fields from formData
-    const formKeys = Array.from(formData.keys());
-    for (const key of formKeys) {
-        const value = formData.get(key) as string;
-
-        if (key === 'id') continue;
-
-        if (key === 'amount' || key === 'guaranteeAmount') {
-             (dataToUpdate as any)[key] = value ? parseFloat(value) : undefined;
-        } else if (key === 'originId' && value === 'none') {
-             dataToUpdate.originId = undefined;
-        } else if (value !== null && value !== undefined) {
-             (dataToUpdate as any)[key] = value;
-        }
-    }
+    // --- 2. Build updated booking object from form data ---
+    const amountStr = formData.get('amount') as string;
+    const guaranteeAmountStr = formData.get('guaranteeAmount') as string;
     
+    const dataToUpdate: Partial<Booking> = {
+      id,
+      propertyId: formData.get('propertyId') as string,
+      tenantId: formData.get('tenantId') as string,
+      startDate: formData.get('startDate') as string,
+      endDate: formData.get('endDate') as string,
+      amount: amountStr ? parseFloat(amountStr) : oldBooking.amount,
+      currency: (formData.get('currency') as 'USD' | 'ARS') || oldBooking.currency,
+      notes: (formData.get('notes') as string),
+      contractStatus: (formData.get('contractStatus') as ContractStatus) || oldBooking.contractStatus,
+      googleCalendarEventId: (formData.get('googleCalendarEventId') as string) || oldBooking.googleCalendarEventId,
+      originId: formData.get('originId') === 'none' ? undefined : (formData.get('originId') as string || oldBooking.originId),
+      guaranteeStatus: (formData.get('guaranteeStatus') as GuaranteeStatus) || oldBooking.guaranteeStatus,
+      guaranteeAmount: guaranteeAmountStr ? parseFloat(guaranteeAmountStr) : undefined,
+      guaranteeCurrency: (formData.get('guaranteeCurrency') as 'USD' | 'ARS') || oldBooking.guaranteeCurrency,
+      guaranteeReceivedDate: (formData.get('guaranteeReceivedDate') as string) || undefined,
+      guaranteeReturnedDate: (formData.get('guaranteeReturnedDate') as string) || undefined,
+    };
+
+    // --- 3. Save to Database ---
     const updatedBooking = await dbUpdateBooking(dataToUpdate);
     if (!updatedBooking) {
-        throw new Error('Database update returned null');
+      throw new Error('Database update returned null');
     }
 
+    // --- 4. Google Calendar Sync ---
     const calendarFieldsChanged =
       updatedBooking.startDate !== oldBooking.startDate ||
       updatedBooking.endDate !== oldBooking.endDate ||
       updatedBooking.tenantId !== oldBooking.tenantId ||
       updatedBooking.notes !== oldBooking.notes ||
       updatedBooking.propertyId !== oldBooking.propertyId;
-    
-    if (calendarFieldsChanged) {
-        const [newProperty, oldProperty, tenant] = await Promise.all([
-            getPropertyById(updatedBooking.propertyId),
-            getPropertyById(oldBooking.propertyId),
-            getTenantById(updatedBooking.tenantId)
-        ]);
 
-      if (newProperty && tenant) {
-        try {
-          const eventDetails = {
+    if (calendarFieldsChanged) {
+      const [newProperty, oldProperty, tenant] = await Promise.all([
+        getPropertyById(updatedBooking.propertyId),
+        getPropertyById(oldBooking.propertyId),
+        getTenantById(updatedBooking.tenantId)
+      ]);
+
+      if (tenant) { // Tenant is required for calendar event name
+        const eventDetails = {
             startDate: updatedBooking.startDate,
             endDate: updatedBooking.endDate,
             tenantName: tenant.name,
-            propertyName: newProperty.name,
+            propertyName: newProperty?.name || oldProperty?.name || 'Propiedad Desconocida',
             notes: updatedBooking.notes,
-          };
-          
-          const eventMoved = oldProperty && newProperty.id !== oldProperty.id;
+        };
+        const eventMoved = newProperty && oldProperty && newProperty.id !== oldProperty.id;
 
-          // Case 1: Event moved to a different property. Delete old, create new.
+        try {
+          // Case 1: Event moved to a different property (delete old, create new)
           if (eventMoved && oldProperty?.googleCalendarId && oldBooking.googleCalendarEventId) {
-             await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
-             if (newProperty.googleCalendarId) {
-                const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
-                if (newEventId) {
-                    await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
-                }
-             }
-          } 
-          // Case 2: Event exists, just update it in the same calendar.
-          else if (updatedBooking.googleCalendarEventId && newProperty.googleCalendarId) {
-            await updateEventInCalendar(
-              newProperty.googleCalendarId,
-              updatedBooking.googleCalendarEventId,
-              eventDetails
-            );
-          } 
-          // Case 3: No event existed, but now we can create one.
-          else if (!updatedBooking.googleCalendarEventId && newProperty.googleCalendarId) {
-            const newEventId = await addEventToCalendar(
-              newProperty.googleCalendarId,
-              eventDetails
-            );
-            if (newEventId) {
+            await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
+            if (newProperty?.googleCalendarId) {
+              const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
               await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
             }
+          } 
+          // Case 2: Event exists, update it
+          else if (updatedBooking.googleCalendarEventId && newProperty?.googleCalendarId) {
+            await updateEventInCalendar(newProperty.googleCalendarId, updatedBooking.googleCalendarEventId, eventDetails);
+          } 
+          // Case 3: No event existed, create one now
+          else if (!updatedBooking.googleCalendarEventId && newProperty?.googleCalendarId) {
+            const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
+            await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
           }
         } catch (calendarError) {
-          console.error(
-            `Calendar sync failed for booking ${id}, but the booking was updated:`,
-            calendarError
-          );
+          console.error(`Calendar sync failed for booking ${id}, but the booking was updated:`, calendarError);
         }
       }
     }
 
     revalidatePath(`/properties/${updatedBooking.propertyId}`);
-    revalidatePath(`/properties`);
     revalidatePath('/bookings');
     revalidatePath('/');
-    return {
-      success: true,
-      message: 'Reserva actualizada correctamente.',
-      updatedBooking: updatedBooking,
-    };
+    return { success: true, message: 'Reserva actualizada correctamente.' };
+    
   } catch (dbError) {
     console.error('Error updating booking in DB:', dbError);
-    return {
-      success: false,
-      message: 'Error al actualizar la reserva en la base de datos.',
-    };
+    return { success: false, message: 'Error al actualizar la reserva en la base de datos.' };
   }
 }
 
