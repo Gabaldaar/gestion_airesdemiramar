@@ -45,8 +45,9 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
     try {
         const startDateString = eventDetails.startDate.split('T')[0];
         
+        // Timezone-safe way to add a day for the exclusive end date
         const [year, month, day] = eventDetails.endDate.split('T')[0].split('-').map(Number);
-        const endDateObj = new Date(year, month - 1, day);
+        const endDateObj = new Date(Date.UTC(year, month - 1, day));
         const endDateExclusive = addDays(endDateObj, 1);
         const endDateString = format(endDateExclusive, 'yyyy-MM-dd');
 
@@ -83,7 +84,7 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
         const startDateString = eventDetails.startDate.split('T')[0];
         
         const [year, month, day] = eventDetails.endDate.split('T')[0].split('-').map(Number);
-        const endDateObj = new Date(year, month - 1, day);
+        const endDateObj = new Date(Date.UTC(year, month - 1, day));
         const endDateExclusive = addDays(endDateObj, 1);
         const endDateString = format(endDateExclusive, 'yyyy-MM-dd');
 
