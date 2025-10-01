@@ -475,7 +475,6 @@ export async function dbUpdateBooking(updatedBooking: Partial<Booking>): Promise
     if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
 
-    // Create a clean data object by removing any undefined keys
     const cleanData: { [key: string]: any } = {};
     for (const key in data) {
         if ((data as any)[key] !== undefined) {
@@ -483,7 +482,9 @@ export async function dbUpdateBooking(updatedBooking: Partial<Booking>): Promise
         }
     }
     
-    await updateDoc(docRef, cleanData);
+    if (Object.keys(cleanData).length > 0) {
+        await updateDoc(docRef, cleanData);
+    }
 
     const newDoc = await getDoc(docRef);
     return newDoc.exists() ? processDoc(newDoc) as Booking : null;
@@ -1164,5 +1165,3 @@ export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSumm
 
   return summary.sort((a,b) => b.count - a.count);
 }
-
-    
