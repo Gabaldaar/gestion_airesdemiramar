@@ -475,8 +475,6 @@ export async function dbUpdateBooking(updatedBookingData: Partial<Booking>): Pro
     if (!id) throw new Error("Update booking requires an ID.");
     
     const docRef = doc(db, 'bookings', id);
-    
-    // Firestore's updateDoc automatically ignores undefined fields.
     await updateDoc(docRef, data);
 
     const newDocSnap = await getDoc(docRef);
