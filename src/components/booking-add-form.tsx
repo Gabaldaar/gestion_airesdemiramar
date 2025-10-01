@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useMemo } from 'react';
@@ -101,8 +102,8 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
         const startDate = new Date(booking.startDate);
         // The last night is the day before checkout. Checkout day is available for a new check-in.
         const lastNight = subDays(new Date(booking.endDate), 1);
-        if (isSameDay(startDate, lastNight) || startDate > lastNight) {
-            return [startDate];
+        if (startDate > lastNight) {
+            return []; // Invalid range, ignore
         }
         return [{ from: startDate, to: lastNight }];
     });
