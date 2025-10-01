@@ -25,7 +25,7 @@ import {
 import { updateBooking } from '@/lib/actions';
 import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins, BookingWithDetails } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
-import { format, subDays, isSameDay } from "date-fns"
+import { format, addDays, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
@@ -132,11 +132,16 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     
     return otherBookings.flatMap(otherBooking => {
         const startDate = new Date(otherBooking.startDate);
-        const lastNight = subDays(new Date(otherBooking.endDate), 1);
-        if (startDate > lastNight) {
-            return []; // Invalid range, ignore
+        const endDate = new Date(otherBooking.endDate);
+
+        const dayAfterStart = addDays(startDate, 1);
+        const dayBeforeEnd = subDays(endDate, 1);
+
+        if (dayAfterStart > dayBeforeEnd) {
+            return [];
         }
-        return [{ from: startDate, to: lastNight }];
+
+        return [{ from: dayAfterStart, to: dayBeforeEnd }];
     });
   }, [allBookings, booking.id, booking.propertyId]);
 

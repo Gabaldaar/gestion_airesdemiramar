@@ -26,7 +26,7 @@ import {
 import { addBooking } from '@/lib/actions';
 import { Tenant, Booking, Origin, getOrigins } from '@/lib/data';
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { format, subDays, isSameDay } from "date-fns"
+import { format, addDays, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
@@ -100,12 +100,16 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   const disabledDays = useMemo(() => {
     return existingBookings.flatMap(booking => {
         const startDate = new Date(booking.startDate);
-        // The last night is the day before checkout. Checkout day is available for a new check-in.
-        const lastNight = subDays(new Date(booking.endDate), 1);
-        if (startDate > lastNight) {
-            return []; // Invalid range, ignore
+        const endDate = new Date(booking.endDate);
+        
+        const dayAfterStart = addDays(startDate, 1);
+        const dayBeforeEnd = subDays(endDate, 1);
+
+        if (dayAfterStart > dayBeforeEnd) {
+            return []; // The booking is for 1 or 2 nights, so no days in between are blocked
         }
-        return [{ from: startDate, to: lastNight }];
+        
+        return [{ from: dayAfterStart, to: dayBeforeEnd }];
     });
   }, [existingBookings]);
   
