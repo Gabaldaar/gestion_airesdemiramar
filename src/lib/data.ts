@@ -1,5 +1,4 @@
 
-
 import { db } from './firebase';
 import {
   collection,
@@ -474,18 +473,12 @@ export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking>
 export async function dbUpdateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
     const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
-    const docRef = doc(db, 'bookings', id);
-
-    const cleanData: { [key: string]: any } = {};
-    for (const key in data) {
-        if ((data as any)[key] !== undefined) {
-            cleanData[key] = (data as any)[key];
-        }
-    }
     
-    if (Object.keys(cleanData).length > 0) {
-        await updateDoc(docRef, cleanData);
-    }
+    const docRef = doc(db, 'bookings', id);
+    
+    // Firestore's updateDoc handles undefined fields by ignoring them.
+    // Null values will remove the field. This is the desired behavior.
+    await updateDoc(docRef, data);
 
     const newDoc = await getDoc(docRef);
     return newDoc.exists() ? processDoc(newDoc) as Booking : null;
