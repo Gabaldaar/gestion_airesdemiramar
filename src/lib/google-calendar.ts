@@ -56,10 +56,10 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
         const startDateString = eventDetails.startDate.split('T')[0];
         
         // The end date for all-day events is exclusive. We must add 1 day to the checkout date.
-        // new Date(string) can be tricky. new Date('2024-08-15') creates a date in the local timezone.
-        // By splitting and re-joining, we ensure consistency.
-        const endDateParts = eventDetails.endDate.split('T')[0].split('-').map(Number);
-        const endDateObj = new Date(endDateParts[0], endDateParts[1] - 1, endDateParts[2]);
+        // new Date('YYYY-MM-DD') can be off by a day due to timezone.
+        // We parse manually to avoid this.
+        const [year, month, day] = eventDetails.endDate.split('T')[0].split('-').map(Number);
+        const endDateObj = new Date(year, month - 1, day);
         const endDateExclusive = addDays(endDateObj, 1);
         const endDateString = format(endDateExclusive, 'yyyy-MM-dd');
 
@@ -104,8 +104,8 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
         const startDateString = eventDetails.startDate.split('T')[0];
         
         // The end date for all-day events is exclusive. We must add 1 day to the checkout date.
-        const endDateParts = eventDetails.endDate.split('T')[0].split('-').map(Number);
-        const endDateObj = new Date(endDateParts[0], endDateParts[1] - 1, endDateParts[2]);
+        const [year, month, day] = eventDetails.endDate.split('T')[0].split('-').map(Number);
+        const endDateObj = new Date(year, month - 1, day);
         const endDateExclusive = addDays(endDateObj, 1);
         const endDateString = format(endDateExclusive, 'yyyy-MM-dd');
 
