@@ -14,14 +14,8 @@ const firebaseConfig = {
   "messagingSenderId": "720916580948"
 };
 
-// Initialize Firebase for SSR
-let app: FirebaseApp;
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
-
+// Initialize Firebase for SSR and prevent multiple instances
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
