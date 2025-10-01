@@ -20,6 +20,7 @@ import NetIncomeDistributionChart from "./net-income-distribution-chart";
 import ExpensesByCategoryChart from "./expenses-by-category-chart";
 import ExpensesByPropertyChart from "./expenses-by-property-chart";
 import BookingsByOriginChart from "./bookings-by-origin-chart";
+import { addDays } from "date-fns";
 
 interface ReportsClientProps {
   financialSummary: FinancialSummaryByCurrency;
@@ -37,8 +38,6 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
   const from = searchParams.get('from') || undefined;
   const to = searchParams.get('to') || undefined;
 
-  // Since we fetch data in the parent, this component is now just for presentation.
-  // The date change logic will trigger a re-render in the parent component.
   const handleDateChange = (newFrom?: string, newTo?: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (newFrom) {
@@ -72,6 +71,22 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
   const hasUsdData = financialSummary.usd.some(s => 
     s.totalIncome !== 0 || s.totalPayments !== 0 || s.balance !== 0 || s.totalPropertyExpenses !== 0 || s.totalBookingExpenses !== 0 || s.netResult !== 0
   );
+  
+  // Need to adjust date from search params because they are UTC.
+  // The 'T' separator indicates UTC, so splitting by it and taking the first part works,
+  // but `new Date()` will interpret that as local time if there's no timezone info.
+  // Example: '2024-01-01' from params becomes `new Date('2024-01-01')` which is local midnight.
+  // To avoid timezone issues from the server, we can treat them as UTC by adding 'T00:00:00Z'
+  // but a simpler fix is to just use the string and know the server handles it.
+  // For the client-side DatePicker, creating a new Date from a YYYY-MM-DD string
+  // can be off by one day depending on the user's timezone.
+  // `new Date('2024-08-01')` becomes `2024-08-01T00:00:00` in the *local* timezone.
+  // If the user is in GMT-3, this is `2024-08-01T03:00:00Z` in UTC.
+  // A safer way is to construct the date from parts or use a library that handles this better.
+  // `new Date(year, monthIndex, day)` is safer.
+  const fromDate = from ? new Date(from.replace(/-/g, '/')) : undefined;
+  const toDate = to ? new Date(to.replace(/-/g, '/')) : undefined;
+
 
   return (
     <div className="space-y-4">
@@ -79,12 +94,12 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
         <CardHeader>
           <CardTitle>Filtros de Reportes Financieros</CardTitle>
           <CardDescription>
-            Selecciona un rango de fechas para filtrar los reportes financieros.
+            Selecciona un rango de fechas para filtrar los reportes financieros. Las fechas son inclusivas.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <DatePicker date={from ? new Date(from.replace(/-/g, '/')) : undefined} onDateSelect={handleFromDateSelect} placeholder="Desde"/>
-            <DatePicker date={to ? new Date(to.replace(/-/g, '/')) : undefined} onDateSelect={handleToDateSelect} placeholder="Hasta"/>
+            <DatePicker date={fromDate} onDateSelect={handleFromDateSelect} placeholder="Desde"/>
+            <DatePicker date={toDate} onDateSelect={handleToDateSelect} placeholder="Hasta"/>
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
         </CardContent>
       </Card>

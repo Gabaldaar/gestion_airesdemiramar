@@ -52,16 +52,23 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
     const calendar = getCalendarClient();
     
     try {
+        // Correctly handle dates to avoid timezone issues.
+        // We take the ISO string 'YYYY-MM-DDTHH:mm:ss.sssZ' and just grab the date part.
+        const startDateString = eventDetails.startDate.split('T')[0];
+
+        // The end date for an all-day event is exclusive. So, if a booking ends on the 15th, 
+        // the last night is the 14th, and the calendar event should end on the 15th.
+        const endDateObject = new Date(eventDetails.endDate); // Create date object to manipulate it
+        const endDateString = format(endDateObject, 'yyyy-MM-dd');
+
         const event = {
             summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
-                // Use 'date' for all-day events. The format must be YYYY-MM-DD.
-                date: format(new Date(eventDetails.startDate), 'yyyy-MM-dd'),
+                date: startDateString,
             },
             end: {
-                 // Use 'date' for all-day events. The end date is exclusive, so we add one day.
-                date: format(addDays(new Date(eventDetails.endDate), 1), 'yyyy-MM-dd'),
+                date: endDateString,
             },
         };
 
@@ -90,14 +97,18 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
     const calendar = getCalendarClient();
 
     try {
+        const startDateString = eventDetails.startDate.split('T')[0];
+        const endDateObject = new Date(eventDetails.endDate);
+        const endDateString = format(endDateObject, 'yyyy-MM-dd');
+
         const event = {
             summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
-                date: format(new Date(eventDetails.startDate), 'yyyy-MM-dd'),
+                date: startDateString,
             },
             end: {
-                date: format(addDays(new Date(eventDetails.endDate), 1), 'yyyy-MM-dd'),
+                date: endDateString,
             },
         };
 
