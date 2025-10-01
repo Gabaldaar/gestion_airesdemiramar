@@ -296,6 +296,7 @@ export async function addBooking(previousState: any, formData: FormData) {
           'Calendar sync failed on booking creation, but the booking was saved:',
           calendarError
         );
+        // Do not return error to user, just log it. The booking is saved.
       }
     }
 
@@ -318,43 +319,67 @@ export async function updateBooking(previousState: any, formData: FormData) {
     return { success: false, message: 'ID de reserva no proporcionado.' };
   }
 
-  try {
-    const oldBooking = await getBookingById(id);
-    if (!oldBooking) {
-      return {
-        success: false,
-        message: 'No se encontró la reserva para actualizar.',
-      };
-    }
-
-    const amountStr = formData.get('amount') as string;
-    const guaranteeAmountStr = formData.get('guaranteeAmount') as string;
-    
-    const dataToUpdate: Partial<Booking> = {
-        id,
-        propertyId: formData.get('propertyId') as string || oldBooking.propertyId,
-        tenantId: formData.get('tenantId') as string || oldBooking.tenantId,
-        startDate: formData.get('startDate') as string || oldBooking.startDate,
-        endDate: formData.get('endDate') as string || oldBooking.endDate,
-        amount: amountStr ? parseFloat(amountStr) : oldBooking.amount,
-        currency: (formData.get('currency') as 'USD' | 'ARS') || oldBooking.currency,
-        notes: formData.get('notes') as string,
-        contractStatus: (formData.get('contractStatus') as ContractStatus) || oldBooking.contractStatus,
-        googleCalendarEventId: (formData.get('googleCalendarEventId') as string) || oldBooking.googleCalendarEventId,
-        originId: formData.get('originId') as string,
-        guaranteeStatus: (formData.get('guaranteeStatus') as GuaranteeStatus) || oldBooking.guaranteeStatus,
-        guaranteeAmount: guaranteeAmountStr ? parseFloat(guaranteeAmountStr) : undefined,
-        guaranteeCurrency: (formData.get('guaranteeCurrency') as 'USD' | 'ARS') || oldBooking.guaranteeCurrency,
-        guaranteeReceivedDate: (formData.get('guaranteeReceivedDate') as string) || undefined,
-        guaranteeReturnedDate: (formData.get('guaranteeReturnedDate') as string) || undefined,
+  const oldBooking = await getBookingById(id);
+  if (!oldBooking) {
+    return {
+      success: false,
+      message: 'No se encontró la reserva para actualizar.',
     };
-    
-    // Handle unsetting optional fields
-    if (formData.get('originId') === 'none') {
-        dataToUpdate.originId = undefined;
-    }
+  }
+
+  const amountStr = formData.get('amount') as string;
+  const guaranteeAmountStr = formData.get('guaranteeAmount') as string;
+
+  const dataToUpdate: Partial<Booking> = {
+    id,
+    propertyId: (formData.get('propertyId') as string) || oldBooking.propertyId,
+    tenantId: (formData.get('tenantId') as string) || oldBooking.tenantId,
+    startDate: (formData.get('startDate') as string) || oldBooking.startDate,
+    endDate: (formData.get('endDate') as string) || oldBooking.endDate,
+    amount: amountStr ? parseFloat(amountStr) : oldBooking.amount,
+    currency:
+      (formData.get('currency') as 'USD' | 'ARS') || oldBooking.currency,
+    notes: formData.has('notes')
+      ? (formData.get('notes') as string)
+      : oldBooking.notes,
+    contractStatus:
+      (formData.get('contractStatus') as ContractStatus) ||
+      oldBooking.contractStatus,
+    googleCalendarEventId:
+      (formData.get('googleCalendarEventId') as string) ||
+      oldBooking.googleCalendarEventId,
+    originId: formData.has('originId')
+      ? (formData.get('originId') as string)
+      : oldBooking.originId,
+    guaranteeStatus:
+      (formData.get('guaranteeStatus') as GuaranteeStatus) ||
+      oldBooking.guaranteeStatus,
+    guaranteeAmount: guaranteeAmountStr
+      ? parseFloat(guaranteeAmountStr)
+      : oldBooking.guaranteeAmount,
+    guaranteeCurrency:
+      (formData.get('guaranteeCurrency') as 'USD' | 'ARS') ||
+      oldBooking.guaranteeCurrency,
+    guaranteeReceivedDate: formData.has('guaranteeReceivedDate')
+      ? (formData.get('guaranteeReceivedDate') as string)
+      : oldBooking.guaranteeReceivedDate,
+    guaranteeReturnedDate: formData.has('guaranteeReturnedDate')
+      ? (formData.get('guaranteeReturnedDate') as string)
+      : oldBooking.guaranteeReturnedDate,
+  };
+
+  if (formData.get('originId') === 'none') {
+    dataToUpdate.originId = undefined;
+  }
+   if (formData.get('guaranteeReceivedDate') === '') {
+    dataToUpdate.guaranteeReceivedDate = undefined;
+  }
+  if (formData.get('guaranteeReturnedDate') === '') {
+    dataToUpdate.guaranteeReturnedDate = undefined;
+  }
 
 
+  try {
     const updatedBooking = await dbUpdateBooking(dataToUpdate);
     if (!updatedBooking) {
       throw new Error('Database update returned null');
@@ -380,24 +405,26 @@ export async function updateBooking(previousState: any, formData: FormData) {
                 endDate: updatedBooking.endDate,
                 tenantName: tenant.name,
                 propertyName: newProperty?.name || 'Propiedad Desconocida',
-                notes: updatedBooking.notes,
+                notes: updatedBooking.notes || '',
             };
 
-            const eventMoved = newProperty?.id !== oldProperty?.id;
+            const propertyChanged = newProperty?.id !== oldProperty?.id;
 
             try {
-                if (eventMoved) {
+                if (propertyChanged) {
+                    // Delete from old calendar if it exists
                     if (oldProperty?.googleCalendarId && oldBooking.googleCalendarEventId) {
                         await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
                     }
+                    // Add to new calendar if it exists
                     if (newProperty?.googleCalendarId) {
                         const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
                         await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
                     }
-                } else if (newProperty?.googleCalendarId) {
+                } else if (newProperty?.googleCalendarId) { // Property is the same, just update
                     if (updatedBooking.googleCalendarEventId) {
                          await updateEventInCalendar(newProperty.googleCalendarId, updatedBooking.googleCalendarEventId, eventDetails);
-                    } else {
+                    } else { // Event didn't exist, create it
                         const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
                         await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
                     }
@@ -471,7 +498,9 @@ export async function deleteBooking(previousState: any, formData: FormData) {
 }
 
 const handleExpenseData = (formData: FormData) => {
-  const originalAmount = parseFloat(formData.get('amount') as string);
+  const originalAmountStr = formData.get('amount') as string;
+  const originalAmount = originalAmountStr ? parseFloat(originalAmountStr) : 0;
+  
   const currency = formData.get('currency') as 'USD' | 'ARS';
   const description = formData.get('description') as string;
   const exchangeRateStr = formData.get('exchangeRate') as string;
@@ -489,7 +518,7 @@ const handleExpenseData = (formData: FormData) => {
   };
 
   if (currency === 'USD') {
-    const rate = parseFloat(exchangeRateStr);
+    const rate = exchangeRateStr ? parseFloat(exchangeRateStr) : 0;
     if (!rate || rate <= 0) {
       throw new Error(
         'El valor del USD es obligatorio y debe ser mayor a cero para gastos en USD.'
@@ -518,10 +547,6 @@ const handleExpenseData = (formData: FormData) => {
   } else {
     expensePayload.categoryId = null;
   }
-
-  if (expensePayload.exchangeRate === undefined) delete expensePayload.exchangeRate;
-  if (expensePayload.originalUsdAmount === undefined)
-    delete expensePayload.originalUsdAmount;
 
   return expensePayload;
 };
@@ -705,7 +730,9 @@ export async function deleteBookingExpense(
 
 export async function addPayment(previousState: any, formData: FormData) {
   const bookingId = formData.get('bookingId') as string;
-  const originalAmount = parseFloat(formData.get('amount') as string);
+  const originalAmountStr = formData.get('amount') as string;
+  const originalAmount = originalAmountStr ? parseFloat(originalAmountStr) : 0;
+  
   const currency = formData.get('currency') as 'USD' | 'ARS';
   const date = formData.get('date') as string;
   const description = formData.get('description') as string;
@@ -732,7 +759,7 @@ export async function addPayment(previousState: any, formData: FormData) {
   };
 
   if (currency === 'ARS') {
-    const rate = parseFloat(exchangeRateStr);
+    const rate = exchangeRateStr ? parseFloat(exchangeRateStr) : 0;
     if (!rate || rate <= 0) {
       return {
         success: false,
@@ -758,11 +785,6 @@ export async function addPayment(previousState: any, formData: FormData) {
       : autoDescription;
   }
 
-  // Remove undefined fields
-  if (paymentPayload.exchangeRate === undefined) delete paymentPayload.exchangeRate;
-  if (paymentPayload.originalArsAmount === undefined)
-    delete paymentPayload.originalArsAmount;
-
   try {
     await dbAddPayment(paymentPayload as Omit<Payment, 'id'>);
     revalidatePath(`/bookings`);
@@ -779,7 +801,9 @@ export async function addPayment(previousState: any, formData: FormData) {
 export async function updatePayment(previousState: any, formData: FormData) {
   const id = formData.get('id') as string;
   const bookingId = formData.get('bookingId') as string;
-  const originalAmount = parseFloat(formData.get('amount') as string);
+  const originalAmountStr = formData.get('amount') as string;
+  const originalAmount = originalAmountStr ? parseFloat(originalAmountStr) : 0;
+  
   const currency = formData.get('currency') as 'USD' | 'ARS';
   const date = formData.get('date') as string;
   const description = formData.get('description') as string;
@@ -808,7 +832,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
   };
 
   if (currency === 'ARS') {
-    const rate = parseFloat(exchangeRateStr);
+    const rate = exchangeRateStr ? parseFloat(exchangeRateStr) : 0;
     if (!rate || rate <= 0) {
       return {
         success: false,
@@ -833,11 +857,6 @@ export async function updatePayment(previousState: any, formData: FormData) {
       ? `${description} | ${autoDescription}`
       : autoDescription;
   }
-
-  // Remove undefined fields
-  if (paymentPayload.exchangeRate === undefined) delete paymentPayload.exchangeRate;
-  if (paymentPayload.originalArsAmount === undefined)
-    delete paymentPayload.originalArsAmount;
 
   try {
     await dbUpdatePayment(paymentPayload as Payment);

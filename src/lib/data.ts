@@ -475,6 +475,7 @@ export async function dbUpdateBooking(updatedBooking: Partial<Booking>): Promise
     if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
 
+    // This is the crucial part: remove any keys with 'undefined' values
     const cleanData: { [key: string]: any } = {};
     for (const key in data) {
         if ((data as any)[key] !== undefined) {
