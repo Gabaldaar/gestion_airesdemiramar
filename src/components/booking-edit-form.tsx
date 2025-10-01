@@ -174,6 +174,8 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
 
             <form action={formAction}>
                 <input type="hidden" name="id" value={booking.id} />
+                <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
+
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="propertyId">Propiedad</Label>

@@ -283,7 +283,7 @@ export async function addBooking(previousState: any, formData: FormData) {
         });
 
         if (eventId) {
-          await dbUpdateBooking({ id: newBooking.id, googleCalendarEventId: eventId });
+          await dbUpdateBooking({ ...newBooking, id: newBooking.id, googleCalendarEventId: eventId });
         }
       } catch (calendarError) {
         console.error(
@@ -329,14 +329,17 @@ export async function updateBooking(
       };
     }
 
-    const updatedBookingData: Partial<Booking> = {
+    // Merge old booking with form data to create the full updated object
+    const updatedBookingData: Booking = {
+      ...oldBooking,
+      id: id,
       propertyId: formData.get('propertyId') as string,
       tenantId: formData.get('tenantId') as string,
       startDate: formData.get('startDate') as string,
       endDate: formData.get('endDate') as string,
       amount: parseFloat(formData.get('amount') as string),
       currency: formData.get('currency') as 'USD' | 'ARS',
-      notes: formData.get('notes') as string,
+      notes: (formData.get('notes') as string) || '',
       contractStatus: formData.get('contractStatus') as ContractStatus,
       originId:
         formData.get('originId') === 'none'
@@ -344,53 +347,56 @@ export async function updateBooking(
           : (formData.get('originId') as string),
       guaranteeStatus: formData.get('guaranteeStatus') as GuaranteeStatus,
       guaranteeCurrency: formData.get('guaranteeCurrency') as 'USD' | 'ARS',
+      googleCalendarEventId: formData.get('googleCalendarEventId') as string || oldBooking.googleCalendarEventId,
     };
-
+    
     const guaranteeAmountStr = formData.get('guaranteeAmount') as string;
     updatedBookingData.guaranteeAmount =
       guaranteeAmountStr && guaranteeAmountStr !== ''
         ? parseFloat(guaranteeAmountStr)
-        : null;
+        : undefined;
 
     const guaranteeReceivedDateStr = formData.get('guaranteeReceivedDate') as string;
     updatedBookingData.guaranteeReceivedDate =
       guaranteeReceivedDateStr && guaranteeReceivedDateStr !== ''
         ? guaranteeReceivedDateStr
-        : null;
+        : undefined;
 
     const guaranteeReturnedDateStr = formData.get('guaranteeReturnedDate') as string;
     updatedBookingData.guaranteeReturnedDate =
       guaranteeReturnedDateStr && guaranteeReturnedDateStr !== ''
         ? guaranteeReturnedDateStr
-        : null;
+        : undefined;
 
-    const finalBookingState = { ...oldBooking, ...updatedBookingData, id };
-    const updatedBookingFromDb = await dbUpdateBooking(finalBookingState);
+    const updatedBookingFromDb = await dbUpdateBooking(updatedBookingData);
+    if (!updatedBookingFromDb) {
+      throw new Error('Database update returned null');
+    }
 
     const calendarFieldsChanged =
-      finalBookingState.startDate !== oldBooking.startDate ||
-      finalBookingState.endDate !== oldBooking.endDate ||
-      finalBookingState.tenantId !== oldBooking.tenantId ||
-      finalBookingState.notes !== oldBooking.notes;
+      updatedBookingData.startDate !== oldBooking.startDate ||
+      updatedBookingData.endDate !== oldBooking.endDate ||
+      updatedBookingData.tenantId !== oldBooking.tenantId ||
+      updatedBookingData.notes !== oldBooking.notes;
 
     if (calendarFieldsChanged) {
-      const property = await getPropertyById(finalBookingState.propertyId);
-      const tenant = await getTenantById(finalBookingState.tenantId);
+      const property = await getPropertyById(updatedBookingData.propertyId);
+      const tenant = await getTenantById(updatedBookingData.tenantId);
 
       if (property && property.googleCalendarId && tenant) {
         try {
           const eventDetails = {
-            startDate: finalBookingState.startDate,
-            endDate: finalBookingState.endDate,
+            startDate: updatedBookingData.startDate,
+            endDate: updatedBookingData.endDate,
             tenantName: tenant.name,
             propertyName: property.name,
-            notes: finalBookingState.notes,
+            notes: updatedBookingData.notes,
           };
 
-          if (finalBookingState.googleCalendarEventId) {
+          if (updatedBookingData.googleCalendarEventId) {
             await updateEventInCalendar(
               property.googleCalendarId,
-              finalBookingState.googleCalendarEventId,
+              updatedBookingData.googleCalendarEventId,
               eventDetails
             );
           } else {
@@ -399,7 +405,7 @@ export async function updateBooking(
               eventDetails
             );
             if (newEventId) {
-              await dbUpdateBooking({ id, googleCalendarEventId: newEventId });
+              await dbUpdateBooking({ ...updatedBookingData, googleCalendarEventId: newEventId });
             }
           }
         } catch (calendarError) {
@@ -417,7 +423,7 @@ export async function updateBooking(
       }
     }
 
-    revalidatePath(`/properties/${finalBookingState.propertyId}`);
+    revalidatePath(`/properties/${updatedBookingData.propertyId}`);
     revalidatePath(`/properties`);
     revalidatePath('/bookings');
     revalidatePath('/');
@@ -1077,5 +1083,3 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: 'Error al eliminar el origen.' };
   }
 }
-
-    
