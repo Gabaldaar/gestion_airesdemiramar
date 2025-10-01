@@ -39,11 +39,11 @@ export default function RegisterPage() {
     } catch (error: any) {
       console.error('Error during sign-up:', error);
       if (error.code === 'auth/email-already-in-use') {
-        setError('Este email ya está registrado.');
+        setError('Este email ya está registrado. Intenta iniciar sesión.');
       } else if (error.code === 'auth/weak-password') {
         setError('La contraseña debe tener al menos 6 caracteres.');
       } else {
-        setError('Error al registrar la cuenta.');
+        setError('Error al registrar la cuenta. Por favor, intenta de nuevo.');
       }
     }
   };
@@ -98,3 +98,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    
