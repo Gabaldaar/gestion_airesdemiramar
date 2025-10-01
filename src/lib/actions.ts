@@ -318,37 +318,32 @@ export async function updateBooking(
   try {
     const oldBooking = await getBookingById(id);
     if (!oldBooking) {
-      return {
-        success: false,
-        message: 'No se encontró la reserva para actualizar.',
-      };
+      return { success: false, message: 'No se encontró la reserva para actualizar.' };
     }
 
-    const dataToUpdate: Partial<Booking> = {};
+    const dataToUpdate: Partial<Booking> = { ...oldBooking };
+
+    // Explicitly update fields from formData
     const formKeys = Array.from(formData.keys());
-
     for (const key of formKeys) {
-        if (key === 'id') continue;
-
         const value = formData.get(key) as string;
+
+        if (key === 'id') continue;
 
         if (key === 'amount' || key === 'guaranteeAmount') {
              (dataToUpdate as any)[key] = value ? parseFloat(value) : undefined;
         } else if (key === 'originId' && value === 'none') {
-             dataToUpdate[key] = undefined;
-        } else if (value === '' && ['notes', 'googleCalendarEventId', 'guaranteeReceivedDate', 'guaranteeReturnedDate'].includes(key)) {
-             (dataToUpdate as any)[key] = undefined;
+             dataToUpdate.originId = undefined;
         } else if (value !== null && value !== undefined) {
              (dataToUpdate as any)[key] = value;
         }
     }
-
-    const updatedBooking = await dbUpdateBooking({ id, ...dataToUpdate });
-     if (!updatedBooking) {
+    
+    const updatedBooking = await dbUpdateBooking(dataToUpdate);
+    if (!updatedBooking) {
         throw new Error('Database update returned null');
     }
 
-    // --- Calendar Sync Logic ---
     const calendarFieldsChanged =
       updatedBooking.startDate !== oldBooking.startDate ||
       updatedBooking.endDate !== oldBooking.endDate ||
@@ -378,9 +373,11 @@ export async function updateBooking(
           // Case 1: Event moved to a different property. Delete old, create new.
           if (eventMoved && oldProperty?.googleCalendarId && oldBooking.googleCalendarEventId) {
              await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
-             const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
-             if (newEventId) {
-                await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
+             if (newProperty.googleCalendarId) {
+                const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
+                if (newEventId) {
+                    await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
+                }
              }
           } 
           // Case 2: Event exists, just update it in the same calendar.
@@ -427,6 +424,7 @@ export async function updateBooking(
     };
   }
 }
+
 
 export async function deleteBooking(previousState: any, formData: FormData) {
   const id = formData.get('id') as string;
@@ -1070,3 +1068,5 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: 'Error al eliminar el origen.' };
   }
 }
+
+    
