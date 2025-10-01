@@ -2,6 +2,7 @@
 'use server';
 
 import { google } from 'googleapis';
+import { addDays, format } from 'date-fns';
 
 interface CalendarEventDetails {
     startDate: string;
@@ -55,12 +56,12 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
             summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
-                dateTime: eventDetails.startDate,
-                timeZone: 'America/Argentina/Buenos_Aires',
+                // Use 'date' for all-day events. The format must be YYYY-MM-DD.
+                date: format(new Date(eventDetails.startDate), 'yyyy-MM-dd'),
             },
             end: {
-                dateTime: eventDetails.endDate,
-                timeZone: 'America/Argentina/Buenos_Aires',
+                 // Use 'date' for all-day events. The end date is exclusive.
+                date: format(new Date(eventDetails.endDate), 'yyyy-MM-dd'),
             },
         };
 
@@ -93,12 +94,10 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
             summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
-                dateTime: eventDetails.startDate,
-                timeZone: 'America/Argentina/Buenos_Aires',
+                date: format(new Date(eventDetails.startDate), 'yyyy-MM-dd'),
             },
             end: {
-                dateTime: eventDetails.endDate,
-                timeZone: 'America/Argentina/Buenos_Aires',
+                date: format(new Date(eventDetails.endDate), 'yyyy-MM-dd'),
             },
         };
 
