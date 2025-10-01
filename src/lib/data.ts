@@ -470,11 +470,21 @@ export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking>
     return { id: docRef.id, ...booking };
 }
 
-export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
+export async function dbUpdateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
     const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
-    await updateDoc(docRef, data);
+
+    // Create a clean data object by removing any undefined keys
+    const cleanData: { [key: string]: any } = {};
+    for (const key in data) {
+        if ((data as any)[key] !== undefined) {
+            cleanData[key] = (data as any)[key];
+        }
+    }
+    
+    await updateDoc(docRef, cleanData);
+
     const newDoc = await getDoc(docRef);
     return newDoc.exists() ? processDoc(newDoc) as Booking : null;
 }

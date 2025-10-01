@@ -7,7 +7,7 @@ import {
   updateTenant as dbUpdateTenant,
   deleteTenant as dbDeleteTenant,
   addBooking as dbAddBooking,
-  updateBooking as dbUpdateBooking,
+  dbUpdateBooking,
   deleteBooking as dbDeleteBooking,
   addPropertyExpense as dbAddPropertyExpense,
   updatePropertyExpense as dbUpdatePropertyExpense,
@@ -325,40 +325,32 @@ export async function updateBooking(
       };
     }
     
+    // Create a mutable copy of the old booking data
     const dataToUpdate: Partial<Booking> = {};
-    
-    // Iterate over form data to build the update object
-    for (const [key, value] of formData.entries()) {
-        if (key === 'id' || key.startsWith('$ACTION_ID')) continue;
 
-        if (value === '' || value === null) {
-            // Firestore cannot store undefined. Unsetting a field is done by not including it or using FieldValue.delete()
-            // Here, we just won't add it to dataToUpdate, unless we want to clear it.
-            if (key === 'notes' || key === 'googleCalendarEventId') dataToUpdate[key as keyof Booking] = '';
-            if (key === 'originId') dataToUpdate.originId = undefined;
-            if (key.startsWith('guarantee')) dataToUpdate[key as keyof Booking] = undefined;
-            continue;
+    // Explicitly handle all fields from the form
+    const fields: (keyof Booking)[] = [
+        'propertyId', 'tenantId', 'startDate', 'endDate', 'amount', 'currency', 'notes', 
+        'contractStatus', 'googleCalendarEventId', 'originId', 'guaranteeStatus', 
+        'guaranteeAmount', 'guaranteeCurrency', 'guaranteeReceivedDate', 'guaranteeReturnedDate'
+    ];
+
+    fields.forEach(key => {
+        if (formData.has(key)) {
+            const value = formData.get(key) as string;
+            if (key === 'amount' || key === 'guaranteeAmount') {
+                 (dataToUpdate as any)[key] = value ? parseFloat(value) : undefined;
+            } else if (key === 'originId') {
+                 (dataToUpdate as any)[key] = value === 'none' ? null : value; // Use null to unset in Firestore
+            } else if (key.endsWith('Date')) {
+                 (dataToUpdate as any)[key] = value || undefined;
+            }
+            else {
+                (dataToUpdate as any)[key] = value;
+            }
         }
+    });
 
-        switch (key) {
-            case 'amount':
-            case 'guaranteeAmount':
-                dataToUpdate[key] = parseFloat(value as string);
-                break;
-            case 'originId':
-                 dataToUpdate[key] = value === 'none' ? undefined : value as string;
-                 break;
-            default:
-                dataToUpdate[key as keyof Booking] = value as any;
-        }
-    }
-
-    // Merge with old data to get a complete object for calendar logic
-    const mergedDataForCalendar: Booking = {
-      ...oldBooking,
-      ...dataToUpdate,
-    };
-    
     const updatedBooking = await dbUpdateBooking({id, ...dataToUpdate});
     if (!updatedBooking) {
         throw new Error('Database update returned null');
@@ -371,23 +363,23 @@ export async function updateBooking(
       dataToUpdate.notes !== undefined;
 
     if (calendarFieldsChanged) {
-      const property = await getPropertyById(mergedDataForCalendar.propertyId);
-      const tenant = await getTenantById(mergedDataForCalendar.tenantId);
+      const property = await getPropertyById(updatedBooking.propertyId);
+      const tenant = await getTenantById(updatedBooking.tenantId);
 
       if (property && property.googleCalendarId && tenant) {
         try {
           const eventDetails = {
-            startDate: mergedDataForCalendar.startDate,
-            endDate: mergedDataForCalendar.endDate,
+            startDate: updatedBooking.startDate,
+            endDate: updatedBooking.endDate,
             tenantName: tenant.name,
             propertyName: property.name,
-            notes: mergedDataForCalendar.notes,
+            notes: updatedBooking.notes,
           };
 
-          if (mergedDataForCalendar.googleCalendarEventId) {
+          if (updatedBooking.googleCalendarEventId) {
             await updateEventInCalendar(
               property.googleCalendarId,
-              mergedDataForCalendar.googleCalendarEventId,
+              updatedBooking.googleCalendarEventId,
               eventDetails
             );
           } else {
@@ -396,7 +388,7 @@ export async function updateBooking(
               eventDetails
             );
             if (newEventId) {
-              await dbUpdateBooking({ ...mergedDataForCalendar, id, googleCalendarEventId: newEventId });
+              await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
             }
           }
         } catch (calendarError) {
@@ -408,7 +400,7 @@ export async function updateBooking(
       }
     }
 
-    revalidatePath(`/properties/${mergedDataForCalendar.propertyId}`);
+    revalidatePath(`/properties/${updatedBooking.propertyId}`);
     revalidatePath(`/properties`);
     revalidatePath('/bookings');
     revalidatePath('/');
