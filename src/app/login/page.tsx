@@ -43,7 +43,10 @@ export default function LoginPage() {
       console.error('Error during email sign-in:', error);
       if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
         setError('Email o contraseña incorrectos.');
-      } else {
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setError('El inicio de sesión con email/contraseña no está habilitado. Por favor, actívalo en la consola de Firebase.');
+      }
+      else {
         setError('Error al iniciar sesión.');
       }
     }
