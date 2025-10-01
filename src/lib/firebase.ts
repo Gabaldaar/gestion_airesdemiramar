@@ -1,4 +1,3 @@
-
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
@@ -14,7 +13,7 @@ const firebaseConfig = {
   "messagingSenderId": "720916580948"
 };
 
-// Initialize Firebase for SSR and prevent multiple instances
+// Initialize Firebase
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;

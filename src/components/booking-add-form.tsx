@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useMemo } from 'react';
@@ -26,7 +25,7 @@ import {
 import { addBooking } from '@/lib/actions';
 import { Tenant, Booking, Origin, getOrigins } from '@/lib/data';
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { format, addDays, subDays, isSameDay } from "date-fns"
+import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
@@ -100,21 +99,21 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   const disabledDays = useMemo(() => {
     return existingBookings.flatMap(booking => {
         const startDate = new Date(booking.startDate);
-        const endDate = new Date(booking.endDate);
-        
-        const dayAfterStart = addDays(startDate, 1);
-        const dayBeforeEnd = subDays(endDate, 1);
-
-        if (dayAfterStart > dayBeforeEnd) {
-            return []; // The booking is for 1 or 2 nights, so no days in between are blocked
-        }
-        
-        return [{ from: dayAfterStart, to: dayBeforeEnd }];
+        const lastNight = subDays(new Date(booking.endDate), 1);
+        if (startDate > lastNight) return [];
+        return [{ from: startDate, to: lastNight }];
     });
   }, [existingBookings]);
   
   const getConflictMessage = (): string => {
-    if (!conflict) return "";
+    if (!conflict || !date?.from) return "";
+    
+    const conflictEndDate = new Date(conflict.endDate);
+    
+    if (isSameDay(date.from, conflictEndDate)) {
+        return "Atención: La fecha de check-in coincide con un check-out el mismo día.";
+    }
+
     return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
@@ -249,7 +248,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 <DialogClose asChild>
                     <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 </DialogClose>
-                <SubmitButton isDisabled={!date?.from || !date?.to || !!conflict} />
+                <SubmitButton isDisabled={!date?.from || !date?.to} />
             </DialogFooter>
         </form>
          {state.message && !state.success && (

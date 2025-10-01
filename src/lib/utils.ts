@@ -18,13 +18,12 @@ export function checkDateConflict(
     return null;
   }
 
-  // A checkout on the same day as a check-in is allowed.
-  // The conflict happens if the new booking starts *before* an existing one ends,
-  // and ends *after* an existing one starts.
-  // The last night of a booking is the day before the checkout date.
-  
-  const selectedStart = selectedRange.from;
-  const selectedEnd = selectedRange.to;
+  // Set hours to 0 to compare dates only
+  const selectedStart = new Date(selectedRange.from);
+  selectedStart.setHours(0, 0, 0, 0);
+
+  const selectedEnd = new Date(selectedRange.to);
+  selectedEnd.setHours(0, 0, 0, 0);
 
   for (const booking of existingBookings) {
     // Ignore the booking we are currently editing
@@ -33,11 +32,25 @@ export function checkDateConflict(
     }
 
     const bookingStart = new Date(booking.startDate);
+    bookingStart.setHours(0, 0, 0, 0);
+    
     const bookingEnd = new Date(booking.endDate);
+    bookingEnd.setHours(0, 0, 0, 0);
+    
+    // Case 1: Check-in on the same day as a check-out (Contiguous booking, informational)
+    if (isSameDay(selectedStart, bookingEnd)) {
+      return booking;
+    }
+    
+    // Case 2: Check-out on the same day as a check-in (Contiguous booking, informational)
+    if (isSameDay(selectedEnd, bookingStart)) {
+      return booking;
+    }
 
-    // Conflict condition:
-    // The new booking starts before the existing one ends AND the new booking ends after the existing one starts.
-    if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
+    // Case 3: True overlap
+    // A conflict exists if the selected range starts BEFORE an existing one ends,
+    // AND the selected range ends AFTER an existing one starts.
+    if (selectedStart.getTime() < bookingEnd.getTime() && selectedEnd.getTime() > bookingStart.getTime()) {
        return booking;
     }
   }

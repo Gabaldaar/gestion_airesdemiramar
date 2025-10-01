@@ -17,7 +17,7 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  const isPublicPage = pathname === '/login' || pathname === '/contract' || pathname === '/register';
+  const isPublicPage = pathname === '/login' || pathname === '/contract';
 
   useEffect(() => {
     if (!loading && !user && !isPublicPage) {

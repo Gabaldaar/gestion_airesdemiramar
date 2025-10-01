@@ -25,7 +25,7 @@ import {
 import { updateBooking } from '@/lib/actions';
 import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins, BookingWithDetails } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
-import { format, addDays, subDays, isSameDay } from "date-fns"
+import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
@@ -132,21 +132,20 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     
     return otherBookings.flatMap(otherBooking => {
         const startDate = new Date(otherBooking.startDate);
-        const endDate = new Date(otherBooking.endDate);
-
-        const dayAfterStart = addDays(startDate, 1);
-        const dayBeforeEnd = subDays(endDate, 1);
-
-        if (isSameDay(dayAfterStart, dayBeforeEnd) || dayAfterStart > dayBeforeEnd) {
-            return [];
-        }
-
-        return [{ from: dayAfterStart, to: dayBeforeEnd }];
+        const lastNight = subDays(new Date(otherBooking.endDate), 1);
+        if (startDate > lastNight) return [];
+        return [{ from: startDate, to: lastNight }];
     });
   }, [allBookings, booking.id, booking.propertyId]);
 
   const getConflictMessage = (): string => {
-    if (!conflict) return "";
+    if (!conflict || !date?.from) return "";
+    
+    const conflictEndDate = new Date(conflict.endDate);
+    if (isSameDay(date.from, conflictEndDate)) {
+        return "Atención: La fecha de check-in coincide con un check-out el mismo día.";
+    }
+
     return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
@@ -174,8 +173,6 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
 
             <form action={formAction}>
                 <input type="hidden" name="id" value={booking.id} />
-                <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
-
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="propertyId">Propiedad</Label>
@@ -252,7 +249,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="originId">Origen</Label>
-                        <Select name="originId" defaultValue={booking.originId || 'none'}>
+                        <Select name="originId" defaultValue={booking.originId}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un origen" />
                             </SelectTrigger>
@@ -357,7 +354,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                     <DialogClose asChild>
                         <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                     </DialogClose>
-                    <SubmitButton isDisabled={!date?.from || !date?.to || !!conflict} />
+                    <SubmitButton isDisabled={!date?.from || !date?.to} />
                 </DialogFooter>
             </form>
             {state.message && !state.success && (
@@ -368,3 +365,4 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     </>
   );
 }
+

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, useTransition, ReactNode } from 'react';
@@ -60,7 +59,6 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
   
   const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
   const [amount, setAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
-  const [currency, setCurrency] = useState<'USD' | 'ARS'>(booking.guaranteeCurrency || 'USD');
   const [receivedDate, setReceivedDate] = useState<Date | undefined>(
     booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined
   );
@@ -91,7 +89,6 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
     if (isOpen) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
       setAmount(booking.guaranteeAmount || undefined);
-      setCurrency(booking.guaranteeCurrency || 'USD');
       setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
       setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
       setClientError(null);
@@ -105,7 +102,6 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
     startTransition(async () => {
         const result = await updateBooking(initialState, formData);
         if (result.success) {
-            window.location.reload(); // Reload to see changes
             onOpenChange(false);
         }
     });
@@ -130,6 +126,8 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
 
           <form ref={formRef} onSubmit={handleSubmit}>
               <input type="hidden" name="id" value={booking.id} />
+              <input type="hidden" name="guaranteeReceivedDate" value={receivedDate ? receivedDate.toISOString().split('T')[0] : ''} />
+              <input type="hidden" name="guaranteeReturnedDate" value={returnedDate ? returnedDate.toISOString().split('T')[0] : ''} />
               {/* Pass through all other booking fields to avoid them being overwritten */}
               <input type="hidden" name="propertyId" value={booking.propertyId} />
               <input type="hidden" name="tenantId" value={booking.tenantId} />
@@ -137,14 +135,9 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
               <input type="hidden" name="endDate" value={booking.endDate} />
               <input type="hidden" name="amount" value={booking.amount} />
               <input type="hidden" name="currency" value={booking.currency} />
-              <input type="hidden" name="notes" value={booking.notes || ''} />
-              <input type="hidden" name="contractStatus" value={booking.contractStatus || 'not_sent'} />
+              <input type="hidden" name="notes" value={booking.notes} />
+              <input type="hidden" name="contractStatus" value={booking.contractStatus} />
               <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
-              <input type="hidden" name="originId" value={booking.originId || ''} />
-              
-              <input type="hidden" name="guaranteeReceivedDate" value={receivedDate ? receivedDate.toISOString().split('T')[0] : ''} />
-              <input type="hidden" name="guaranteeReturnedDate" value={returnedDate ? returnedDate.toISOString().split('T')[0] : ''} />
-
 
               <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -184,7 +177,7 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
                       <Label htmlFor="guaranteeCurrency" className="text-right">
                           Moneda
                       </Label>
-                      <Select name="guaranteeCurrency" value={currency} onValueChange={(val) => setCurrency(val as 'USD' | 'ARS')}>
+                      <Select name="guaranteeCurrency" defaultValue={booking.guaranteeCurrency || 'USD'}>
                           <SelectTrigger className="col-span-3">
                               <SelectValue />
                           </SelectTrigger>
