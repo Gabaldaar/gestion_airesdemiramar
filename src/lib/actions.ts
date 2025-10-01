@@ -324,51 +324,54 @@ export async function updateBooking(previousState: any, formData: FormData) {
 
   const dataToUpdate: Partial<Booking> = {
     id,
-    propertyId: (formData.get('propertyId') as string) || oldBooking.propertyId,
-    tenantId: (formData.get('tenantId') as string) || oldBooking.tenantId,
-    startDate: (formData.get('startDate') as string) || oldBooking.startDate,
-    endDate: (formData.get('endDate') as string) || oldBooking.endDate,
-    amount: amountStr ? parseFloat(amountStr) : oldBooking.amount,
+    propertyId: (formData.get('propertyId') as string) || undefined,
+    tenantId: (formData.get('tenantId') as string) || undefined,
+    startDate: (formData.get('startDate') as string) || undefined,
+    endDate: (formData.get('endDate') as string) || undefined,
+    amount: amountStr ? parseFloat(amountStr) : undefined,
     currency:
-      (formData.get('currency') as 'USD' | 'ARS') || oldBooking.currency,
+      (formData.get('currency') as 'USD' | 'ARS') || undefined,
     notes: formData.has('notes')
       ? (formData.get('notes') as string)
-      : oldBooking.notes,
+      : undefined,
     contractStatus:
       (formData.get('contractStatus') as ContractStatus) ||
-      oldBooking.contractStatus,
+      undefined,
     googleCalendarEventId:
       (formData.get('googleCalendarEventId') as string) ||
-      oldBooking.googleCalendarEventId,
+      undefined,
     originId: formData.has('originId')
       ? (formData.get('originId') as string)
-      : oldBooking.originId,
+      : undefined,
     guaranteeStatus:
       (formData.get('guaranteeStatus') as GuaranteeStatus) ||
-      oldBooking.guaranteeStatus,
+      undefined,
     guaranteeAmount: guaranteeAmountStr
       ? parseFloat(guaranteeAmountStr)
-      : oldBooking.guaranteeAmount,
+      : undefined,
     guaranteeCurrency:
       (formData.get('guaranteeCurrency') as 'USD' | 'ARS') ||
-      oldBooking.guaranteeCurrency,
+      undefined,
     guaranteeReceivedDate: formData.has('guaranteeReceivedDate')
       ? (formData.get('guaranteeReceivedDate') as string)
-      : oldBooking.guaranteeReceivedDate,
+      : undefined,
     guaranteeReturnedDate: formData.has('guaranteeReturnedDate')
       ? (formData.get('guaranteeReturnedDate') as string)
-      : oldBooking.guaranteeReturnedDate,
+      : undefined,
   };
 
   if (formData.get('originId') === 'none') {
-    dataToUpdate.originId = undefined;
+    dataToUpdate.originId = null;
   }
    if (formData.get('guaranteeReceivedDate') === '') {
-    dataToUpdate.guaranteeReceivedDate = undefined;
+    dataToUpdate.guaranteeReceivedDate = null;
   }
   if (formData.get('guaranteeReturnedDate') === '') {
-    dataToUpdate.guaranteeReturnedDate = undefined;
+    dataToUpdate.guaranteeReturnedDate = null;
   }
+
+  // Remove undefined fields to avoid overwriting with null
+  Object.keys(dataToUpdate).forEach(key => (dataToUpdate as any)[key] === undefined && delete (dataToUpdate as any)[key]);
 
 
   try {
@@ -382,7 +385,7 @@ export async function updateBooking(previousState: any, formData: FormData) {
         getPropertyById(oldBooking.propertyId),
         getTenantById(updatedBooking.tenantId)
     ]);
-
+    
     if (tenant && newProperty) {
          const eventDetails = {
             startDate: updatedBooking.startDate,
@@ -394,23 +397,29 @@ export async function updateBooking(previousState: any, formData: FormData) {
 
         const propertyChanged = newProperty.id !== oldProperty?.id;
 
+        // If property changed, delete from old and add to new
         if (propertyChanged) {
-            // Delete from old calendar if it exists
             if (oldProperty?.googleCalendarId && oldBooking.googleCalendarEventId) {
                 await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
             }
-            // Add to new calendar if it exists
             if (newProperty.googleCalendarId) {
                 const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
                 await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
             }
-        } else if (newProperty.googleCalendarId) { // Property is the same, just update
+        } 
+        // If property is the same, update or create
+        else if (newProperty.googleCalendarId) { 
             if (updatedBooking.googleCalendarEventId) {
                  await updateEventInCalendar(newProperty.googleCalendarId, updatedBooking.googleCalendarEventId, eventDetails);
             } else { // Event didn't exist, create it
                 const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
                 await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
             }
+        }
+        // If new property has no calendar, delete old event
+        else if (oldBooking.googleCalendarEventId && oldProperty?.googleCalendarId) {
+            await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
+            await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: null });
         }
     }
 
