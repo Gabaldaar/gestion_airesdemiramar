@@ -269,8 +269,10 @@ export async function addBooking(previousState: any, formData: FormData) {
   try {
     const newBooking = await dbAddBooking(newBookingData);
 
-    const property = await getPropertyById(propertyId);
-    const tenant = await getTenantById(tenantId);
+    const [property, tenant] = await Promise.all([
+        getPropertyById(propertyId),
+        getTenantById(tenantId)
+    ]);
 
     if (property && property.googleCalendarId && tenant) {
       try {
@@ -325,56 +327,39 @@ export async function updateBooking(
       };
     }
     
+    // Create a mutable copy of the old booking data
     const dataToUpdate: Partial<Booking> = { ...oldBooking };
 
-    const formFields: Array<keyof Booking> = [
-        'propertyId', 'tenantId', 'startDate', 'endDate', 'notes', 'contractStatus', 
-        'googleCalendarEventId', 'originId', 'guaranteeStatus', 'guaranteeCurrency'
-    ];
+    // Iterate over form data and update the copy
+    for (const [key, value] of formData.entries()) {
+        if (key === 'id') continue;
 
-    formFields.forEach(key => {
-        if (formData.has(key)) {
-            const value = formData.get(key) as string;
-            if (key === 'originId') {
-                (dataToUpdate as any)[key] = value === 'none' ? null : value;
-            } else {
-                (dataToUpdate as any)[key] = value;
-            }
-        }
-    });
+        if (value === null || value === undefined) continue;
 
-    const numericFields: Array<keyof Booking> = ['amount', 'guaranteeAmount'];
-    numericFields.forEach(key => {
-        if (formData.has(key)) {
-            const value = formData.get(key) as string;
-            (dataToUpdate as any)[key] = value ? parseFloat(value) : undefined;
+        if (key === 'amount' || key === 'guaranteeAmount') {
+            (dataToUpdate as any)[key] = parseFloat(value as string);
+        } else if (key === 'originId' && value === 'none') {
+             dataToUpdate[key] = undefined;
+        } else if (value === '' && (key === 'notes' || key === 'googleCalendarEventId' || key.includes('Date'))) {
+             (dataToUpdate as any)[key] = undefined;
         }
-    });
-    
-    if (formData.has('currency')) {
-        dataToUpdate.currency = formData.get('currency') as 'USD' | 'ARS';
+        else {
+            (dataToUpdate as any)[key] = value;
+        }
     }
 
-    const dateFields: Array<keyof Booking> = ['guaranteeReceivedDate', 'guaranteeReturnedDate'];
-    dateFields.forEach(key => {
-        if (formData.has(key)) {
-            const value = formData.get(key) as string;
-            (dataToUpdate as any)[key] = value || undefined;
-        }
-    });
-
-
-    const updatedBooking = await dbUpdateBooking({id, ...dataToUpdate});
+    const updatedBooking = await dbUpdateBooking(dataToUpdate);
     if (!updatedBooking) {
         throw new Error('Database update returned null');
     }
 
+    // --- Calendar Sync Logic ---
     const calendarFieldsChanged =
-      dataToUpdate.startDate !== oldBooking.startDate ||
-      dataToUpdate.endDate !== oldBooking.endDate ||
-      dataToUpdate.tenantId !== oldBooking.tenantId ||
-      dataToUpdate.notes !== oldBooking.notes ||
-      dataToUpdate.propertyId !== oldBooking.propertyId;
+      updatedBooking.startDate !== oldBooking.startDate ||
+      updatedBooking.endDate !== oldBooking.endDate ||
+      updatedBooking.tenantId !== oldBooking.tenantId ||
+      updatedBooking.notes !== oldBooking.notes ||
+      updatedBooking.propertyId !== oldBooking.propertyId;
 
     if (calendarFieldsChanged) {
         const [property, tenant, oldProperty] = await Promise.all([
