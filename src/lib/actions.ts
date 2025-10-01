@@ -171,7 +171,7 @@ export async function addTenant(previousState: any, formData: FormData) {
     city: formData.get("city") as string,
     country: (formData.get("country") as string) || "Argentina",
     notes: formData.get("notes") as string || "",
-    originId: formData.get("originId") as string || undefined,
+    originId: formData.get("originId") === 'none' ? undefined : formData.get("originId") as string,
   };
 
   try {
@@ -194,7 +194,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
     city: formData.get("city") as string,
     country: formData.get("country") as string,
     notes: formData.get("notes") as string,
-    originId: formData.get("originId") as string || undefined,
+    originId: formData.get("originId") === 'none' ? undefined : formData.get("originId") as string,
   };
 
   try {
@@ -233,7 +233,7 @@ export async function addBooking(previousState: any, formData: FormData) {
     const amount = parseFloat(formData.get("amount") as string);
     const currency = formData.get("currency") as 'USD' | 'ARS';
     const notes = formData.get("notes") as string || "";
-    const originId = formData.get("originId") as string || undefined;
+    const originId = formData.get("originId") === 'none' ? undefined : formData.get("originId") as string;
 
     if (!propertyId || !tenantId || !startDate || !endDate || !amount || !currency) {
         return { success: false, message: "Todos los campos son obligatorios." };
@@ -271,7 +271,7 @@ export async function addBooking(previousState: any, formData: FormData) {
                 });
                 // If the event is created successfully, update our booking with the event ID.
                 if (eventId) {
-                    await dbUpdateBooking({ ...newBooking, googleCalendarEventId: eventId });
+                    await dbUpdateBooking({ id: newBooking.id, googleCalendarEventId: eventId });
                 }
             } catch (calendarError) {
                  // Log the calendar error, but don't block the user. The booking is already saved.
@@ -305,7 +305,6 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             return { success: false, message: "No se encontró la reserva para actualizar." };
         }
         
-        // Construct the update object with only the fields from the form
         const updatedBookingData: Partial<Booking> = {
             id,
             propertyId: formData.get("propertyId") as string,
@@ -316,34 +315,21 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             currency: formData.get("currency") as 'USD' | 'ARS',
             notes: formData.get("notes") as string,
             contractStatus: formData.get("contractStatus") as ContractStatus,
-            googleCalendarEventId: oldBooking.googleCalendarEventId, // Preserve existing event ID
-            originId: formData.get("originId") as string || undefined,
+            googleCalendarEventId: oldBooking.googleCalendarEventId,
+            originId: formData.get("originId") === 'none' ? undefined : formData.get("originId") as string,
             guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus,
             guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS',
         };
 
         const guaranteeAmountStr = formData.get("guaranteeAmount") as string;
-        if (guaranteeAmountStr && guaranteeAmountStr !== '') {
-            updatedBookingData.guaranteeAmount = parseFloat(guaranteeAmountStr);
-        } else {
-            updatedBookingData.guaranteeAmount = null;
-        }
+        updatedBookingData.guaranteeAmount = (guaranteeAmountStr && guaranteeAmountStr !== '') ? parseFloat(guaranteeAmountStr) : null;
         
         const guaranteeReceivedDateStr = formData.get("guaranteeReceivedDate") as string;
-         if (guaranteeReceivedDateStr && guaranteeReceivedDateStr !== '') {
-            updatedBookingData.guaranteeReceivedDate = guaranteeReceivedDateStr;
-        } else {
-            updatedBookingData.guaranteeReceivedDate = null;
-        }
+        updatedBookingData.guaranteeReceivedDate = (guaranteeReceivedDateStr && guaranteeReceivedDateStr !== '') ? guaranteeReceivedDateStr : null;
 
         const guaranteeReturnedDateStr = formData.get("guaranteeReturnedDate") as string;
-        if (guaranteeReturnedDateStr && guaranteeReturnedDateStr !== '') {
-            updatedBookingData.guaranteeReturnedDate = guaranteeReturnedDateStr;
-        } else {
-            updatedBookingData.guaranteeReturnedDate = null;
-        }
+        updatedBookingData.guaranteeReturnedDate = (guaranteeReturnedDateStr && guaranteeReturnedDateStr !== '') ? guaranteeReturnedDateStr : null;
 
-        // Validation for guarantee fields
         if ((updatedBookingData.guaranteeStatus === 'solicited' || updatedBookingData.guaranteeStatus === 'received' || updatedBookingData.guaranteeStatus === 'returned') && (!updatedBookingData.guaranteeAmount || updatedBookingData.guaranteeAmount <= 0)) {
             return { success: false, message: "El 'Monto' de la garantía es obligatorio para este estado." };
         }
@@ -354,8 +340,6 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             return { success: false, message: "La 'Fecha Devuelta' es obligatoria para el estado 'Devuelta'." };
         }
 
-
-        // Merge the old booking data with the new data to ensure no fields are lost
         const finalBookingState = { ...oldBooking, ...updatedBookingData };
 
         const updatedBookingFromDb = await dbUpdateBooking(finalBookingState);
@@ -364,7 +348,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
                                      finalBookingState.endDate !== oldBooking.endDate || 
                                      finalBookingState.tenantId !== oldBooking.tenantId ||
                                      finalBookingState.notes !== oldBooking.notes;
-
+        
         if (calendarFieldsChanged) {
             const property = await getPropertyById(finalBookingState.propertyId);
             const tenant = await getTenantById(finalBookingState.tenantId);
@@ -423,7 +407,6 @@ export async function deleteBooking(previousState: any, formData: FormData) {
     try {
         const bookingToDelete = await getBookingById(id);
 
-        // First, try to delete from Google Calendar.
         if (bookingToDelete && bookingToDelete.googleCalendarEventId) {
             try {
                 const property = await getPropertyById(bookingToDelete.propertyId);
@@ -432,17 +415,14 @@ export async function deleteBooking(previousState: any, formData: FormData) {
                 }
             } catch(calendarError) {
                  console.error(`Failed to delete calendar event for booking ${id}, but deleting booking from DB anyway:`, calendarError);
-                 // We don't return here, just log the error and proceed with DB deletion.
             }
         }
 
-        // Then, delete the booking from our database.
         await dbDeleteBooking(id);
 
-        // Revalidate paths.
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/bookings');
-        revalidatePath('/'); // Revalidate dashboard
+        revalidatePath('/');
         return { success: true, message: "Reserva eliminada correctamente." };
 
     } catch (dbError) {
@@ -958,3 +938,5 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: 'Error al eliminar el origen.' };
   }
 }
+
+    
