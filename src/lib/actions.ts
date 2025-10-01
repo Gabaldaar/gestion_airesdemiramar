@@ -325,31 +325,44 @@ export async function updateBooking(
       };
     }
     
-    // Create a mutable copy of the old booking data
-    const dataToUpdate: Partial<Booking> = {};
+    const dataToUpdate: Partial<Booking> = { ...oldBooking };
 
-    // Explicitly handle all fields from the form
-    const fields: (keyof Booking)[] = [
-        'propertyId', 'tenantId', 'startDate', 'endDate', 'amount', 'currency', 'notes', 
-        'contractStatus', 'googleCalendarEventId', 'originId', 'guaranteeStatus', 
-        'guaranteeAmount', 'guaranteeCurrency', 'guaranteeReceivedDate', 'guaranteeReturnedDate'
+    const formFields: Array<keyof Booking> = [
+        'propertyId', 'tenantId', 'startDate', 'endDate', 'notes', 'contractStatus', 
+        'googleCalendarEventId', 'originId', 'guaranteeStatus', 'guaranteeCurrency'
     ];
 
-    fields.forEach(key => {
+    formFields.forEach(key => {
         if (formData.has(key)) {
             const value = formData.get(key) as string;
-            if (key === 'amount' || key === 'guaranteeAmount') {
-                 (dataToUpdate as any)[key] = value ? parseFloat(value) : undefined;
-            } else if (key === 'originId') {
-                 (dataToUpdate as any)[key] = value === 'none' ? null : value; // Use null to unset in Firestore
-            } else if (key.endsWith('Date')) {
-                 (dataToUpdate as any)[key] = value || undefined;
-            }
-            else {
+            if (key === 'originId') {
+                (dataToUpdate as any)[key] = value === 'none' ? null : value;
+            } else {
                 (dataToUpdate as any)[key] = value;
             }
         }
     });
+
+    const numericFields: Array<keyof Booking> = ['amount', 'guaranteeAmount'];
+    numericFields.forEach(key => {
+        if (formData.has(key)) {
+            const value = formData.get(key) as string;
+            (dataToUpdate as any)[key] = value ? parseFloat(value) : undefined;
+        }
+    });
+    
+    if (formData.has('currency')) {
+        dataToUpdate.currency = formData.get('currency') as 'USD' | 'ARS';
+    }
+
+    const dateFields: Array<keyof Booking> = ['guaranteeReceivedDate', 'guaranteeReturnedDate'];
+    dateFields.forEach(key => {
+        if (formData.has(key)) {
+            const value = formData.get(key) as string;
+            (dataToUpdate as any)[key] = value || undefined;
+        }
+    });
+
 
     const updatedBooking = await dbUpdateBooking({id, ...dataToUpdate});
     if (!updatedBooking) {
@@ -357,16 +370,20 @@ export async function updateBooking(
     }
 
     const calendarFieldsChanged =
-      dataToUpdate.startDate ||
-      dataToUpdate.endDate ||
-      dataToUpdate.tenantId ||
-      dataToUpdate.notes !== undefined;
+      dataToUpdate.startDate !== oldBooking.startDate ||
+      dataToUpdate.endDate !== oldBooking.endDate ||
+      dataToUpdate.tenantId !== oldBooking.tenantId ||
+      dataToUpdate.notes !== oldBooking.notes ||
+      dataToUpdate.propertyId !== oldBooking.propertyId;
 
     if (calendarFieldsChanged) {
-      const property = await getPropertyById(updatedBooking.propertyId);
-      const tenant = await getTenantById(updatedBooking.tenantId);
+        const [property, tenant, oldProperty] = await Promise.all([
+            getPropertyById(updatedBooking.propertyId),
+            getTenantById(updatedBooking.tenantId),
+            getPropertyById(oldBooking.propertyId) 
+        ]);
 
-      if (property && property.googleCalendarId && tenant) {
+      if (property && tenant) {
         try {
           const eventDetails = {
             startDate: updatedBooking.startDate,
@@ -376,13 +393,24 @@ export async function updateBooking(
             notes: updatedBooking.notes,
           };
 
-          if (updatedBooking.googleCalendarEventId) {
+          // Case 1: Property changed, so delete from old calendar and add to new one.
+          if (oldProperty && property.id !== oldProperty.id && oldBooking.googleCalendarEventId && oldProperty.googleCalendarId) {
+             await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
+             const newEventId = await addEventToCalendar(property.googleCalendarId, eventDetails);
+             if (newEventId) {
+                await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
+             }
+          } 
+          // Case 2: Event exists, just update it.
+          else if (updatedBooking.googleCalendarEventId && property.googleCalendarId) {
             await updateEventInCalendar(
               property.googleCalendarId,
               updatedBooking.googleCalendarEventId,
               eventDetails
             );
-          } else {
+          } 
+          // Case 3: No event existed, but now we can create one.
+          else if (!updatedBooking.googleCalendarEventId && property.googleCalendarId) {
             const newEventId = await addEventToCalendar(
               property.googleCalendarId,
               eventDetails
@@ -1060,3 +1088,5 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: 'Error al eliminar el origen.' };
   }
 }
+
+    
