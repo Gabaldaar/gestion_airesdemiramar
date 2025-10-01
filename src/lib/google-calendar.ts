@@ -49,12 +49,11 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
     try {
         const calendar = getCalendarClient();
         
-        // Use string splitting to avoid timezone issues. The date is already in YYYY-MM-DD format from the DB.
         const startDateString = eventDetails.startDate.split('T')[0];
         
         // Timezone-safe way to add a day for the exclusive end date
         const [year, month, day] = eventDetails.endDate.split('T')[0].split('-').map(Number);
-        const endDateObj = new Date(Date.UTC(year, month - 1, day)); // Create date in UTC
+        const endDateObj = new Date(Date.UTC(year, month - 1, day));
         const endDateExclusive = addDays(endDateObj, 1);
         const endDateString = format(endDateExclusive, 'yyyy-MM-dd');
 
@@ -64,9 +63,11 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
                 date: startDateString,
+                timeZone: 'UTC',
             },
             end: {
                 date: endDateString,
+                timeZone: 'UTC',
             },
         };
 
@@ -79,7 +80,6 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
         return response.data.id || null;
     } catch (error) {
         console.error(`Error creating calendar event in ${calendarId}:`, error);
-        // Do not throw error up to the user, just log it.
         return null;
     }
 }
@@ -102,9 +102,11 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
                 date: startDateString,
+                timeZone: 'UTC',
             },
             end: {
                 date: endDateString,
+                timeZone: 'UTC',
             },
         };
 

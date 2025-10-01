@@ -279,7 +279,8 @@ export async function addBooking(previousState: any, formData: FormData) {
   }
   
   // Calendar sync happens after DB write is confirmed.
-  const syncCalendar = async () => {
+  // Run async without awaiting to not block the UI response.
+  (async () => {
       try {
           const [property, tenant] = await Promise.all([
               getPropertyById(newBooking.propertyId),
@@ -305,9 +306,7 @@ export async function addBooking(previousState: any, formData: FormData) {
       } catch (calendarError) {
           console.error(`Calendar sync failed for new booking ${newBooking.id}, but DB was updated.`, calendarError);
       }
-  };
-
-  syncCalendar(); // Run async without awaiting
+  })();
 
   revalidatePath(`/properties/${newBooking.propertyId}`);
   revalidatePath('/bookings');
@@ -329,33 +328,32 @@ export async function updateBooking(previousState: any, formData: FormData) {
   const dataToUpdate: Partial<Booking> = { id };
   
   // Explicitly check each field from the form
-    dataToUpdate.propertyId = formData.get('propertyId') as string;
-    dataToUpdate.tenantId = formData.get('tenantId') as string;
-    dataToUpdate.startDate = formData.get('startDate') as string;
-    dataToUpdate.endDate = formData.get('endDate') as string;
-    dataToUpdate.currency = formData.get('currency') as 'USD' | 'ARS';
-    dataToUpdate.notes = formData.get('notes') as string;
-    dataToUpdate.contractStatus = formData.get('contractStatus') as ContractStatus;
-    dataToUpdate.guaranteeStatus = formData.get('guaranteeStatus') as GuaranteeStatus;
-    dataToUpdate.guaranteeCurrency = formData.get('guaranteeCurrency') as 'USD' | 'ARS';
+  dataToUpdate.propertyId = formData.get('propertyId') as string;
+  dataToUpdate.tenantId = formData.get('tenantId') as string;
+  dataToUpdate.startDate = formData.get('startDate') as string;
+  dataToUpdate.endDate = formData.get('endDate') as string;
+  dataToUpdate.currency = formData.get('currency') as 'USD' | 'ARS';
+  dataToUpdate.notes = formData.get('notes') as string;
+  dataToUpdate.contractStatus = formData.get('contractStatus') as ContractStatus;
+  dataToUpdate.guaranteeStatus = formData.get('guaranteeStatus') as GuaranteeStatus;
+  dataToUpdate.guaranteeCurrency = formData.get('guaranteeCurrency') as 'USD' | 'ARS';
 
   if (formData.get('amount')) {
       dataToUpdate.amount = parseFloat(formData.get('amount') as string);
   }
-  if (formData.get('guaranteeAmount')) {
-      dataToUpdate.guaranteeAmount = parseFloat(formData.get('guaranteeAmount') as string);
-  } else {
-      dataToUpdate.guaranteeAmount = undefined;
-  }
+
+  const guaranteeAmount = formData.get('guaranteeAmount');
+  dataToUpdate.guaranteeAmount = guaranteeAmount ? parseFloat(guaranteeAmount as string) : undefined;
+
 
   const originId = formData.get('originId');
-  dataToUpdate.originId = (originId === 'none' || !originId) ? undefined : originId as string;
+  dataToUpdate.originId = (originId === 'none' || !originId) ? null : originId as string;
 
   const receivedDate = formData.get('guaranteeReceivedDate');
-  dataToUpdate.guaranteeReceivedDate = receivedDate ? receivedDate as string : undefined;
+  dataToUpdate.guaranteeReceivedDate = receivedDate ? receivedDate as string : null;
 
   const returnedDate = formData.get('guaranteeReturnedDate');
-  dataToUpdate.guaranteeReturnedDate = returnedDate ? returnedDate as string : undefined;
+  dataToUpdate.guaranteeReturnedDate = returnedDate ? returnedDate as string : null;
 
   let updatedBooking;
   try {
@@ -372,31 +370,31 @@ export async function updateBooking(previousState: any, formData: FormData) {
   }
 
   // --- Calendar Synchronization (run separately, don't block UI response) ---
-  const syncCalendar = async () => {
+  (async () => {
     try {
       const [newProperty, oldProperty, tenant] = await Promise.all([
-        getPropertyById(updatedBooking!.propertyId),
+        getPropertyById(updatedBooking.propertyId),
         getPropertyById(oldBooking.propertyId),
-        getTenantById(updatedBooking!.tenantId)
+        getTenantById(updatedBooking.tenantId)
       ]);
       
       if (!tenant) return;
 
       const eventDetails = {
-        startDate: updatedBooking!.startDate,
-        endDate: updatedBooking!.endDate,
+        startDate: updatedBooking.startDate,
+        endDate: updatedBooking.endDate,
         tenantName: tenant.name,
         propertyName: newProperty?.name || 'N/A',
-        notes: updatedBooking!.notes,
+        notes: updatedBooking.notes,
       };
 
-      const propertyChanged = oldBooking.propertyId !== updatedBooking!.propertyId;
+      const propertyChanged = oldBooking.propertyId !== updatedBooking.propertyId;
       let currentEventId = oldBooking.googleCalendarEventId;
 
       // Case 1: Property changed. Delete from old calendar.
       if (propertyChanged && oldProperty?.googleCalendarId && currentEventId) {
         await deleteEventFromCalendar(oldProperty.googleCalendarId, currentEventId);
-        await dbUpdateBooking({ id: updatedBooking!.id, googleCalendarEventId: undefined });
+        await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: null });
         currentEventId = undefined; // Event is gone, needs recreation.
       }
 
@@ -409,20 +407,18 @@ export async function updateBooking(previousState: any, formData: FormData) {
           // Create new event
           const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
           if (newEventId) {
-            await dbUpdateBooking({ id: updatedBooking!.id, googleCalendarEventId: newEventId });
+            await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
           }
         }
       } else if (currentEventId && oldProperty?.googleCalendarId) {
         // Case 3: Calendar was removed from property. Delete old event.
         await deleteEventFromCalendar(oldProperty.googleCalendarId, currentEventId);
-        await dbUpdateBooking({ id: updatedBooking!.id, googleCalendarEventId: undefined });
+        await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: null });
       }
     } catch (calendarError) {
       console.error(`Calendar sync failed for booking ${id}, but DB was updated.`, calendarError);
     }
-  };
-
-  syncCalendar(); // Run async without awaiting
+  })();
 
   revalidatePath(`/properties/${updatedBooking.propertyId}`);
   if (oldBooking.propertyId !== updatedBooking.propertyId) {
@@ -460,7 +456,7 @@ export async function deleteBooking(previousState: any, formData: FormData) {
   }
 
   // Calendar sync after DB delete is confirmed
-  const syncCalendar = async () => {
+  (async () => {
     if (bookingToDelete?.googleCalendarEventId) {
         try {
           const property = await getPropertyById(bookingToDelete.propertyId);
@@ -477,9 +473,7 @@ export async function deleteBooking(previousState: any, formData: FormData) {
           );
         }
     }
-  };
-
-  syncCalendar();
+  })();
 
   revalidatePath(`/properties/${propertyId}`);
   revalidatePath('/bookings');

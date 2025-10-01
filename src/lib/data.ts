@@ -477,7 +477,6 @@ export async function dbUpdateBooking(updatedBookingData: Partial<Booking>): Pro
     const docRef = doc(db, 'bookings', id);
     
     // Firestore's updateDoc automatically ignores undefined fields.
-    // It will, however, set fields to null if null is passed. This is desired.
     await updateDoc(docRef, data);
 
     const newDocSnap = await getDoc(docRef);
