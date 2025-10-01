@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, AuthCredential } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, AuthCredential } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
@@ -12,6 +12,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email:string, pass:string) => Promise<any>;
   signInWithEmail: (email:string, pass:string) => Promise<any>;
+  sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => {},
   signUpWithEmail: async () => {},
   signInWithEmail: async () => {},
+  sendPasswordReset: async () => {},
   signOut: async () => {},
 });
 
@@ -58,6 +60,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return signInWithEmailAndPassword(auth,email,pass)
   };
 
+  const sendPasswordReset = async (email: string) => {
+    return sendPasswordResetEmail(auth, email);
+  };
+
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
@@ -66,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const value = { user, loading, signInWithGoogle, signOut, signUpWithEmail, signInWithEmail };
+  const value = { user, loading, signInWithGoogle, signOut, signUpWithEmail, signInWithEmail, sendPasswordReset };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
