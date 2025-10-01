@@ -52,7 +52,9 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
     const calendar = getCalendarClient();
     
     try {
+        // Correctly handle dates by splitting the ISO string and ignoring timezones
         const startDateString = eventDetails.startDate.split('T')[0];
+        // The end date for all-day events is exclusive, so we add 1 day to the checkout date.
         const endDateExclusive = addDays(new Date(eventDetails.endDate.split('T')[0]), 1);
         const endDateString = format(endDateExclusive, 'yyyy-MM-dd');
 
@@ -93,8 +95,10 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
     const calendar = getCalendarClient();
 
     try {
+        // Correctly handle dates by splitting the ISO string and ignoring timezones
         const startDateString = eventDetails.startDate.split('T')[0];
-        const endDateExclusive = addDays(new Date(eventDetails.endDate.split('T')['0']), 1);
+        // The end date for all-day events is exclusive, so we add 1 day to the checkout date.
+        const endDateExclusive = addDays(new Date(eventDetails.endDate.split('T')[0]), 1);
         const endDateString = format(endDateExclusive, 'yyyy-MM-dd');
 
         const event = {
