@@ -470,18 +470,18 @@ export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking>
     return { id: docRef.id, ...booking };
 }
 
-export async function dbUpdateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
-    const { id, ...data } = updatedBooking;
+export async function dbUpdateBooking(updatedBookingData: Partial<Booking>): Promise<Booking | null> {
+    const { id, ...data } = updatedBookingData;
     if (!id) throw new Error("Update booking requires an ID.");
     
     const docRef = doc(db, 'bookings', id);
     
-    // Firestore's updateDoc handles undefined fields by ignoring them.
-    // Null values will remove the field. This is the desired behavior.
+    // Firestore's updateDoc automatically ignores undefined fields.
+    // It will, however, set fields to null if null is passed. This is desired.
     await updateDoc(docRef, data);
 
-    const newDoc = await getDoc(docRef);
-    return newDoc.exists() ? processDoc(newDoc) as Booking : null;
+    const newDocSnap = await getDoc(docRef);
+    return newDocSnap.exists() ? processDoc(newDocSnap) as Booking : null;
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {

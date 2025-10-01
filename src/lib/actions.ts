@@ -276,6 +276,7 @@ export async function addBooking(previousState: any, formData: FormData) {
     ]);
 
     if (property?.googleCalendarId && tenant) {
+      try {
         const eventDetails = {
           startDate: newBooking.startDate,
           endDate: newBooking.endDate,
@@ -290,6 +291,10 @@ export async function addBooking(previousState: any, formData: FormData) {
         if (eventId) {
           await dbUpdateBooking({ id: newBooking.id, googleCalendarEventId: eventId });
         }
+      } catch (calendarError) {
+        console.error("Failed to sync new booking with Google Calendar, but booking was saved in DB.", calendarError);
+        // Don't block the success message for a calendar failure
+      }
     }
 
     revalidatePath(`/properties/${newBooking.propertyId}`);
@@ -310,47 +315,42 @@ export async function updateBooking(previousState: any, formData: FormData) {
   if (!id) {
     return { success: false, message: 'ID de reserva no proporcionado.' };
   }
-
+  
   const oldBooking = await getBookingById(id);
   if (!oldBooking) {
-    return {
-      success: false,
-      message: 'No se encontró la reserva para actualizar.',
-    };
+    return { success: false, message: 'No se encontró la reserva para actualizar.' };
   }
-  
-  const amountStr = formData.get('amount') as string;
-  const guaranteeAmountStr = formData.get('guaranteeAmount') as string;
 
-  const dataToUpdate: Partial<Booking> = { id };
+  // Build a clean update object
+  const dataToUpdate: { [key: string]: any } = { id };
+  const fields: (keyof Booking)[] = ['propertyId', 'tenantId', 'startDate', 'endDate', 'currency', 'notes', 'contractStatus', 'guaranteeStatus', 'guaranteeCurrency'];
+  fields.forEach(field => {
+      if (formData.has(field)) {
+          dataToUpdate[field] = formData.get(field);
+      }
+  });
+  if (formData.has('amount')) {
+      dataToUpdate.amount = parseFloat(formData.get('amount') as string);
+  }
+  if (formData.has('guaranteeAmount') && formData.get('guaranteeAmount')) {
+      dataToUpdate.guaranteeAmount = parseFloat(formData.get('guaranteeAmount') as string);
+  } else {
+      dataToUpdate.guaranteeAmount = null; // Explicitly set to null if empty
+  }
 
-  // Explicitly check and add each field from formData
-  if (formData.has('propertyId')) dataToUpdate.propertyId = formData.get('propertyId') as string;
-  if (formData.has('tenantId')) dataToUpdate.tenantId = formData.get('tenantId') as string;
-  if (formData.has('startDate')) dataToUpdate.startDate = formData.get('startDate') as string;
-  if (formData.has('endDate')) dataToUpdate.endDate = formData.get('endDate') as string;
-  if (amountStr) dataToUpdate.amount = parseFloat(amountStr);
-  if (formData.has('currency')) dataToUpdate.currency = formData.get('currency') as 'USD' | 'ARS';
-  if (formData.has('notes')) dataToUpdate.notes = formData.get('notes') as string;
-  if (formData.has('contractStatus')) dataToUpdate.contractStatus = formData.get('contractStatus') as ContractStatus;
-  if (formData.has('googleCalendarEventId')) dataToUpdate.googleCalendarEventId = formData.get('googleCalendarEventId') as string;
-  
   const originId = formData.get('originId');
-  dataToUpdate.originId = originId === 'none' ? null : originId as string;
-  
-  if (formData.has('guaranteeStatus')) dataToUpdate.guaranteeStatus = formData.get('guaranteeStatus') as GuaranteeStatus;
-  if (guaranteeAmountStr) dataToUpdate.guaranteeAmount = parseFloat(guaranteeAmountStr);
-  if (formData.has('guaranteeCurrency')) dataToUpdate.guaranteeCurrency = formData.get('guaranteeCurrency') as 'USD' | 'ARS';
-  
+  dataToUpdate.originId = (originId === 'none' || !originId) ? null : originId;
+
   const receivedDate = formData.get('guaranteeReceivedDate');
   dataToUpdate.guaranteeReceivedDate = receivedDate ? receivedDate as string : null;
 
   const returnedDate = formData.get('guaranteeReturnedDate');
   dataToUpdate.guaranteeReturnedDate = returnedDate ? returnedDate as string : null;
 
+  dataToUpdate.googleCalendarEventId = formData.get('googleCalendarEventId') || null;
 
   try {
-    const updatedBooking = await dbUpdateBooking(dataToUpdate);
+    const updatedBooking = await dbUpdateBooking(dataToUpdate as Partial<Booking>);
     if (!updatedBooking) {
       throw new Error('Database update returned null');
     }
@@ -370,28 +370,27 @@ export async function updateBooking(previousState: any, formData: FormData) {
         notes: updatedBooking.notes,
     };
 
-    const propertyChanged = oldProperty?.id !== newProperty?.id;
+    const propertyChanged = oldBooking.propertyId !== updatedBooking.propertyId;
 
-    if (propertyChanged) {
-        // Delete from old calendar if it exists
-        if (oldProperty?.googleCalendarId && oldBooking.googleCalendarEventId) {
-            await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
-        }
-        // Add to new calendar if it exists
-        if (newProperty?.googleCalendarId) {
-            const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
-            await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
-        }
-    } else if (newProperty?.googleCalendarId) { // Property is the same, calendar exists
-        if (updatedBooking.googleCalendarEventId) {
-            // Update existing event
-            await updateEventInCalendar(newProperty.googleCalendarId, updatedBooking.googleCalendarEventId, eventDetails);
+    // Delete from old calendar if property changed
+    if (propertyChanged && oldProperty?.googleCalendarId && oldBooking.googleCalendarEventId) {
+        await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
+        // Ensure the event ID is cleared before potential re-creation
+        await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: null });
+        updatedBooking.googleCalendarEventId = undefined; 
+    }
+
+    // Add or Update event on the new/current property's calendar
+    if (newProperty?.googleCalendarId) {
+        const eventIdToUpdate = propertyChanged ? null : updatedBooking.googleCalendarEventId;
+
+        if (eventIdToUpdate) {
+            await updateEventInCalendar(newProperty.googleCalendarId, eventIdToUpdate, eventDetails);
         } else {
-            // Event didn't exist before, create it
             const newEventId = await addEventToCalendar(newProperty.googleCalendarId, eventDetails);
             await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: newEventId });
         }
-    } else if (oldBooking.googleCalendarEventId && oldProperty?.googleCalendarId) {
+    } else if (!newProperty?.googleCalendarId && oldBooking.googleCalendarEventId && oldProperty?.googleCalendarId) {
         // Calendar was removed from property, delete old event
         await deleteEventFromCalendar(oldProperty.googleCalendarId, oldBooking.googleCalendarEventId);
         await dbUpdateBooking({ id: updatedBooking.id, googleCalendarEventId: null });
@@ -1044,5 +1043,3 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: 'Error al eliminar el origen.' };
   }
 }
-
-    
