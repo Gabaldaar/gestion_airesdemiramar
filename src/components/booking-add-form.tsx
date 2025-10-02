@@ -101,9 +101,9 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
         
-        // A booking from 5 to 10 occupies the property overnight on the 5, 6, 7, 8, 9.
-        // The day of checkout (10) is free. The day of check-in (5) is also free for another checkout.
-        // Therefore, we must disable the range from startDate to the day BEFORE endDate.
+        // Block the nights. A booking from 5 to 10 occupies nights of 5,6,7,8,9.
+        // Day 5 is unavailable for new check-in, Day 10 is available for new check-in.
+        // Visually, this means we should disable the range from startDate to the day BEFORE endDate.
         const firstDayToBlock = startDate; 
         const lastDayToBlock = addDays(endDate, -1);
         
