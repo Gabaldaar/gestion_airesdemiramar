@@ -1,9 +1,44 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Rules for collections
+    match /properties/{propertyId} {
+      allow read, write: if isSignedIn();
+    }
+    match /tenants/{tenantId} {
+      allow read, write: if isSignedIn();
+    }
+    match /bookings/{bookingId} {
+      allow read, write: if isSignedIn();
+    }
+    match /payments/{paymentId} {
+      allow read, write: if isSignedIn();
+    }
+    match /propertyExpenses/{expenseId} {
+      allow read, write: if isSignedIn();
+    }
+    match /bookingExpenses/{expenseId} {
+      allow read, write: if isSignedIn();
+    }
+    match /expenseCategories/{categoryId} {
+      allow read, write: if isSignedIn();
+    }
+    match /emailTemplates/{templateId} {
+        allow read, write: if isSignedIn();
+    }
+    match /settings/{settingId} {
+        allow read, write: if isSignedIn();
+    }
+    match /origins/{originId} {
+        allow read, write: if isSignedIn();
     }
   }
 }
