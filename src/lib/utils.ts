@@ -18,7 +18,6 @@ export function checkDateConflict(
     return null;
   }
 
-  // Set hours to 0 to compare dates only
   const selectedStart = new Date(selectedRange.from);
   selectedStart.setUTCHours(0, 0, 0, 0);
 
@@ -26,7 +25,6 @@ export function checkDateConflict(
   selectedEnd.setUTCHours(0, 0, 0, 0);
 
   for (const booking of existingBookings) {
-    // Ignore the booking we are currently editing
     if (booking.id === currentBookingId) {
       continue;
     }

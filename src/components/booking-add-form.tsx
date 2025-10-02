@@ -25,7 +25,7 @@ import {
 import { addBooking } from '@/lib/actions';
 import { Tenant, Booking, Origin, getOrigins } from '@/lib/data';
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { format, subDays, isSameDay } from "date-fns"
+import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
@@ -99,11 +99,17 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   const disabledDays = useMemo(() => {
     return existingBookings.flatMap(booking => {
         const startDate = new Date(booking.startDate);
-        const lastNight = subDays(new Date(booking.endDate), 1);
-        if (isSameDay(startDate, lastNight) || startDate > lastNight) {
-             return [startDate];
+        const endDate = new Date(booking.endDate);
+        
+        // Block only the nights in between, not the check-in or check-out day itself
+        const firstNight = addDays(startDate, 0); 
+        const lastNight = addDays(endDate, -1);
+        
+        if (firstNight > lastNight) {
+            return []; // No nights to block if start is after end
         }
-        return [{ from: startDate, to: lastNight }];
+        
+        return [{ from: firstNight, to: lastNight }];
     });
   }, [existingBookings]);
   
@@ -115,8 +121,12 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     const selectedStart = new Date(date.from);
     const selectedEnd = new Date(date.to);
     
-    if (isSameDay(selectedStart, conflictEnd) || isSameDay(selectedEnd, conflictStart)) {
-        return { message: "Atención: La fecha de check-in/out coincide con otra reserva.", isOverlap: false };
+    // Check if it's a "back-to-back" booking rather than a true overlap
+    if (isSameDay(selectedEnd, conflictStart)) {
+      return { message: "Atención: El check-out coincide con el check-in de otra reserva.", isOverlap: false };
+    }
+    if (isSameDay(selectedStart, conflictEnd)) {
+        return { message: "Atención: El check-in coincide con el check-out de otra reserva.", isOverlap: false };
     }
 
     return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.", isOverlap: true };
