@@ -17,24 +17,25 @@ export default function LoginPage() {
   const [origin, setOrigin] = useState<string | null>(null);
 
   useEffect(() => {
-    // This code runs only in the browser
+    // Este efecto se ejecuta solo en el cliente para obtener el origen del dominio.
     const currentOrigin = window.location.origin;
     setOrigin(currentOrigin);
-    // Log the origin to help debug domain authorization issues
-    console.log("El dominio que debes autorizar en Firebase es:", currentOrigin);
+  }, []);
 
-    if (!loading && user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
+  // La redirección después del login ahora es manejada por LayoutManager.
+  // useEffect(() => {
+  //   if (!loading && user) {
+  //     router.push('/');
+  //   }
+  // }, [user, loading, router]);
 
   const handleLogin = async () => {
     try {
       await signInWithGoogle();
-      router.push('/');
+      // La redirección ocurrirá automáticamente gracias al LayoutManager
     } catch (error) {
       console.error('Error during sign-in:', error);
-      // Optionally, show an error message to the user
+      // Opcionalmente, muestra un mensaje de error al usuario
     }
   };
 
