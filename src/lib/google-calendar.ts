@@ -1,6 +1,5 @@
 
 'use server';
 
-// This file is being left blank intentionally.
-// The Google Calendar integration has been removed to simplify the application
-// and remove the dependency on server-side environment variables that were not configured.
+// This file is intentionally left blank. 
+// The native Google Calendar integration has been replaced with a more robust iCal feed system.

@@ -117,6 +117,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
     revalidatePath("/settings");
     revalidatePath("/properties");
     revalidatePath(`/properties/${propertyData.id}`);
+    revalidatePath(`/api/ical/${propertyData.id}`);
     revalidatePath("/");
     revalidatePath("/bookings");
     revalidatePath("/expenses");
@@ -352,6 +353,7 @@ export async function deleteBooking(previousState: any, formData: FormData) {
 
 const revalidatePathsAfterBooking = (propertyId: string) => {
     revalidatePath(`/properties/${propertyId}`);
+    revalidatePath(`/api/ical/${propertyId}`);
     revalidatePath('/bookings');
     revalidatePath('/'); // Revalidate dashboard
     revalidatePath('/reports');

@@ -24,6 +24,11 @@ import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { Button } from '@/components/ui/button';
+import { Copy, Calendar } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface PropertyDetailData {
     property: Property;
@@ -40,6 +45,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   const { id: propertyId } = use(params);
   const [data, setData] = useState<PropertyDetailData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [baseUrl, setBaseUrl] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -65,6 +72,20 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         fetchData();
     }
   }, [user, propertyId]);
+  
+  useEffect(() => {
+    // This runs on the client, so `window` is available
+    setBaseUrl(window.location.origin);
+  }, []);
+  
+  const handleCopyIcalUrl = () => {
+    const icalUrl = `${baseUrl}/api/ical/${propertyId}`;
+    navigator.clipboard.writeText(icalUrl);
+    toast({
+        title: "Copiado",
+        description: "El enlace iCal ha sido copiado al portapapeles.",
+    });
+  }
 
 
   if (loading || !data) {
@@ -72,37 +93,49 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   }
   
   const { property, properties, tenants, bookings, expenses, categories, origins } = data;
+  
+  const icalUrl = `${baseUrl}/api/ical/${property.id}`;
 
   return (
     <div className="flex-1 space-y-4">
-    <div className="flex items-center justify-between space-y-2">
-        <div>
-            <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
-            <p className="text-muted-foreground">{property.address}</p>
-        </div>
-        <PropertyNotesForm property={property} />
-    </div>
-
-    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-        <div className="lg:col-span-1">
-        <Card>
-            <CardHeader className="p-0">
-            <div className="relative aspect-video w-full">
-                <Image
-                src={property.imageUrl || 'https://picsum.photos/600/400'}
-                alt={`Foto de ${property.name}`}
-                fill
-                className="rounded-t-lg object-cover"
-                data-ai-hint="apartment building interior"
-                />
+        <div className="flex items-center justify-between space-y-2">
+            <div>
+                <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
+                <p className="text-muted-foreground">{property.address}</p>
             </div>
+            <PropertyNotesForm property={property} />
+        </div>
+
+        <Card>
+             <CardHeader>
+                <CardTitle>Sincronización de Calendario (iCal)</CardTitle>
+                <CardDescription>
+                    Usa este enlace para suscribirte al calendario de esta propiedad desde Google Calendar, Apple Calendar o cualquier otro servicio compatible.
+                </CardDescription>
             </CardHeader>
-            <CardContent className="p-4">
-            <CardTitle>{property.name}</CardTitle>
-            <CardDescription>{property.address}</CardDescription>
+            <CardContent>
+                 <div className="flex w-full max-w-sm items-center space-x-2">
+                    <div className="grid flex-1 gap-2">
+                        <Label htmlFor="link" className="sr-only">
+                        Enlace
+                        </Label>
+                        <Input
+                        id="link"
+                        defaultValue={icalUrl}
+                        readOnly
+                        />
+                    </div>
+                    <Button type="button" size="icon" onClick={handleCopyIcalUrl}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                     <Button type="button" size="icon" asChild>
+                        <a href={icalUrl} target="_blank" rel="noopener noreferrer">
+                            <Calendar className="h-4 w-4" />
+                        </a>
+                    </Button>
+                </div>
             </CardContent>
         </Card>
-        </div>
 
         <div className="lg:col-span-1">
         <Tabs defaultValue="bookings" className="space-y-4">
@@ -144,7 +177,6 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
             </TabsContent>
         </Tabs>
         </div>
-    </div>
     </div>
   );
 }
