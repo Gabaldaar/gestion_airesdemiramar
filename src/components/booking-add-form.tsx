@@ -101,12 +101,14 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
         
-        // Block only the nights in between, not the check-in or check-out day itself
+        // Block only the nights in between. 
+        // A booking from 5 -> 10 occupies nights of 5,6,7,8,9. Day 10 is free.
+        // We need to block days from startDate to endDate-1
         const firstNight = addDays(startDate, 0); 
         const lastNight = addDays(endDate, -1);
         
         if (firstNight > lastNight) {
-            return []; // No nights to block if start is after end
+            return [];
         }
         
         return [{ from: firstNight, to: lastNight }];
