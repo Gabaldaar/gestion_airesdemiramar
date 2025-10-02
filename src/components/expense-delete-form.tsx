@@ -1,7 +1,7 @@
+
 'use client';
 
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useTransition } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,19 +14,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { deletePropertyExpense } from '@/lib/actions';
+import { deletePropertyExpense } from '@/lib/data';
 import { Trash2, Loader2 } from 'lucide-react';
+import { useToast } from './ui/use-toast';
 
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function DeleteButton() {
-    const { pending } = useFormStatus();
+function DeleteButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" variant="destructive" disabled={pending}>
-            {pending ? (
+        <Button type="button" variant="destructive" disabled={isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Borrando...
@@ -39,7 +34,20 @@ function DeleteButton() {
 }
 
 export function ExpenseDeleteForm({ expenseId, propertyId }: { expenseId: string; propertyId: string }) {
-  const [state, formAction] = useActionState(deletePropertyExpense, initialState);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  const handleDelete = () => {
+    startTransition(async () => {
+        try {
+            await deletePropertyExpense(expenseId);
+            toast({ title: 'Éxito', description: 'Gasto eliminado.' });
+            window.location.reload();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `No se pudo eliminar el gasto: ${error.message}`});
+        }
+    });
+  }
 
   return (
     <AlertDialog>
@@ -58,15 +66,13 @@ export function ExpenseDeleteForm({ expenseId, propertyId }: { expenseId: string
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <form action={formAction}>
-            <input type="hidden" name="id" value={expenseId} />
-            <input type="hidden" name="propertyId" value={propertyId} />
-            <AlertDialogAction asChild>
-               <DeleteButton />
-            </AlertDialogAction>
-          </form>
+          <AlertDialogAction onClick={handleDelete} asChild>
+               <DeleteButton isPending={isPending} />
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
+
+    

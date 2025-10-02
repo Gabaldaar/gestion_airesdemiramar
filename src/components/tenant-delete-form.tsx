@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useTransition } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,19 +14,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { deleteTenant } from '@/lib/actions';
+import { deleteTenant } from '@/lib/data';
 import { Trash2, Loader2 } from 'lucide-react';
+import { useToast } from './ui/use-toast';
 
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function DeleteButton() {
-    const { pending } = useFormStatus();
+function DeleteButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" variant="destructive" disabled={pending}>
-            {pending ? (
+        <Button type="button" variant="destructive" disabled={isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Borrando...
@@ -40,13 +34,20 @@ function DeleteButton() {
 }
 
 export function TenantDeleteForm({ tenantId, onTenantDeleted }: { tenantId: string; onTenantDeleted: () => void; }) {
-  const [state, formAction] = useActionState(deleteTenant, initialState);
-  
-  useEffect(() => {
-    if (state.success) {
-      onTenantDeleted();
-    }
-  }, [state, onTenantDeleted]);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  const handleDelete = () => {
+    startTransition(async () => {
+        try {
+            await deleteTenant(tenantId);
+            toast({ title: 'Éxito', description: 'Inquilino eliminado.' });
+            onTenantDeleted();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `No se pudo eliminar el inquilino: ${error.message}`});
+        }
+    });
+  }
 
   return (
     <AlertDialog>
@@ -65,17 +66,13 @@ export function TenantDeleteForm({ tenantId, onTenantDeleted }: { tenantId: stri
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <form action={formAction}>
-            <input type="hidden" name="id" value={tenantId} />
-            <AlertDialogAction asChild>
-               <DeleteButton />
-            </AlertDialogAction>
-          </form>
+          <AlertDialogAction onClick={handleDelete} asChild>
+               <DeleteButton isPending={isPending} />
+          </AlertDialogAction>
         </AlertDialogFooter>
-         {state.message && !state.success && (
-            <p className="text-red-500 text-sm mt-2">{state.message}</p>
-        )}
       </AlertDialogContent>
     </AlertDialog>
   );
 }
+
+    

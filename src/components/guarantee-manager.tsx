@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useTransition, ReactNode } from 'react';
@@ -19,16 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { updateBooking } from '@/lib/actions';
+import { updateBooking } from '@/lib/data';
 import { Booking, GuaranteeStatus } from '@/lib/data';
 import { Shield, Loader2 } from 'lucide-react';
 import { DatePicker } from './ui/date-picker';
 import { Alert, AlertDescription } from './ui/alert';
+import { useToast } from './ui/use-toast';
 
-const initialState: { message: string; success: boolean, error?: string } = {
-  message: '',
-  success: false,
-};
 
 function SubmitButton({ isPending }: { isPending: boolean }) {
     return (
@@ -56,6 +54,7 @@ interface GuaranteeManagerProps {
 export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: GuaranteeManagerProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const { toast } = useToast();
   
   const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
   const [amount, setAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
@@ -84,7 +83,6 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
     return true;
   };
 
-  // Effect to reset form fields when dialog opens or booking data changes
   useEffect(() => {
     if (isOpen) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
@@ -98,11 +96,26 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validateForm()) return;
+    
     const formData = new FormData(event.currentTarget);
+    const guaranteeData: Partial<Booking> = {
+        id: booking.id,
+        guaranteeStatus: formData.get('guaranteeStatus') as GuaranteeStatus,
+        guaranteeCurrency: formData.get('guaranteeCurrency') as 'USD' | 'ARS',
+        guaranteeAmount: amount,
+        guaranteeReceivedDate: receivedDate?.toISOString().split('T')[0],
+        guaranteeReturnedDate: returnedDate?.toISOString().split('T')[0],
+    };
+
+
     startTransition(async () => {
-        const result = await updateBooking(initialState, formData);
-        if (result.success) {
+        try {
+            await updateBooking(guaranteeData);
+            toast({ title: 'Éxito', description: 'Garantía actualizada.' });
             onOpenChange(false);
+            window.location.reload();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `No se pudo actualizar la garantía: ${error.message}` });
         }
     });
   };
@@ -125,20 +138,6 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
           </DialogHeader>
 
           <form ref={formRef} onSubmit={handleSubmit}>
-              <input type="hidden" name="id" value={booking.id} />
-              <input type="hidden" name="guaranteeReceivedDate" value={receivedDate ? receivedDate.toISOString().split('T')[0] : ''} />
-              <input type="hidden" name="guaranteeReturnedDate" value={returnedDate ? returnedDate.toISOString().split('T')[0] : ''} />
-              {/* Pass through all other booking fields to avoid them being overwritten */}
-              <input type="hidden" name="propertyId" value={booking.propertyId} />
-              <input type="hidden" name="tenantId" value={booking.tenantId} />
-              <input type="hidden" name="startDate" value={booking.startDate} />
-              <input type="hidden" name="endDate" value={booking.endDate} />
-              <input type="hidden" name="amount" value={booking.amount} />
-              <input type="hidden" name="currency" value={booking.currency} />
-              <input type="hidden" name="notes" value={booking.notes} />
-              <input type="hidden" name="contractStatus" value={booking.contractStatus} />
-              <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
-
               <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="guaranteeStatus" className="text-right">
@@ -224,3 +223,5 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
     </>
   );
 }
+
+    

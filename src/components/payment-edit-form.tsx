@@ -1,7 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { updatePayment } from '@/lib/actions';
+import { updatePayment } from '@/lib/data';
 import { Payment } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -30,18 +30,12 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Textarea } from './ui/textarea';
+import { useToast } from './ui/use-toast';
 
-
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
+function SubmitButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" disabled={pending}>
-            {pending ? (
+        <Button type="submit" disabled={isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Guardando...
@@ -54,17 +48,55 @@ function SubmitButton() {
 }
 
 export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Payment, onPaymentUpdated: () => void }) {
-  const [state, formAction] = useActionState(updatePayment, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(payment.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(payment.originalArsAmount ? 'ARS' : 'USD');
-  
-  useEffect(() => {
-    if (state.success) {
-      setIsOpen(false);
-      onPaymentUpdated();
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    const originalAmount = parseFloat(formData.get('amount') as string);
+    const selectedCurrency = formData.get('currency') as 'ARS' | 'USD';
+    const exchangeRateStr = formData.get('exchangeRate') as string;
+    const exchangeRate = exchangeRateStr ? parseFloat(exchangeRateStr) : undefined;
+    
+    let updatedData: Partial<Payment> = {
+        id: payment.id,
+        bookingId: payment.bookingId,
+        date: date?.toISOString() || new Date().toISOString(),
+        description: formData.get('description') as string,
+        amount: 0, // final USD amount
+        currency: 'USD',
+    };
+
+    if (selectedCurrency === 'ARS') {
+        if (!exchangeRate || exchangeRate <= 0) {
+             toast({ variant: 'destructive', title: 'Error', description: 'El valor del USD es obligatorio para pagos en ARS.'});
+            return;
+        }
+        updatedData.originalArsAmount = originalAmount;
+        updatedData.exchangeRate = exchangeRate;
+        updatedData.amount = originalAmount / exchangeRate;
+    } else {
+        updatedData.amount = originalAmount;
+        updatedData.originalArsAmount = undefined;
+        updatedData.exchangeRate = undefined;
     }
-  }, [state, onPaymentUpdated]);
+
+    startTransition(async () => {
+        try {
+            await updatePayment(updatedData as Payment);
+            toast({ title: 'Éxito', description: 'Pago actualizado.' });
+            setIsOpen(false);
+            onPaymentUpdated();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `No se pudo actualizar el pago: ${error.message}` });
+        }
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -81,18 +113,16 @@ export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Paymen
             Modifica los datos del pago.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction}>
-            <input type="hidden" name="id" value={payment.id} />
-            <input type="hidden" name="bookingId" value={payment.bookingId} />
-            <input type="hidden" name="date" value={date?.toISOString() || ''} />
+        <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-right">
+                    <Label htmlFor="date-picker" className="text-right">
                         Fecha
                     </Label>
                     <Popover>
                         <PopoverTrigger asChild>
                         <Button
+                            id="date-picker"
                             variant={"outline"}
                             className={cn(
                             "col-span-3 justify-start text-left font-normal",
@@ -151,13 +181,12 @@ export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Paymen
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                <SubmitButton />
+                <SubmitButton isPending={isPending}/>
             </DialogFooter>
         </form>
-         {state.message && !state.success && (
-            <p className="text-red-500 text-sm mt-2">{state.message}</p>
-        )}
       </DialogContent>
     </Dialog>
   );
 }
+
+    

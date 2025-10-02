@@ -17,6 +17,7 @@ import {
   collectionGroup,
   setDoc
 } from 'firebase/firestore';
+import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
 
 // --- TYPE DEFINITIONS ---
 
@@ -396,10 +397,15 @@ async function getBookingDetails(booking: Booking, allPayments?: Payment[], allP
             if (p.originalArsAmount) {
                 return acc + p.originalArsAmount;
             }
+            // Fallback for older payments that might not have originalArsAmount
+            // This part is tricky if exchange rates are not stored reliably.
             if (p.exchangeRate) {
                 return acc + (p.amount * p.exchangeRate);
             }
-            return acc; // Don't add if no rate is available
+            // If an ARS booking has USD payments without an exchange rate, the calculation is ambiguous.
+            // We'll assume the USD amount was considered equivalent to ARS amount which is not ideal.
+            // A better approach would be to enforce exchange rates for all non-USD payments.
+            return acc; 
         }, 0);
         balance = booking.amount - totalPaidInARS;
     }
@@ -460,20 +466,113 @@ export async function getBookingById(id: string): Promise<Booking | undefined> {
 
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
-    const docRef = await addDoc(bookingsCollection, booking);
-    return { id: docRef.id, ...booking };
+    // Firestore doesn't support 'undefined'. We must remove keys if they are undefined.
+    const cleanBooking: { [key: string]: any } = {};
+    for (const key in booking) {
+        if ((booking as any)[key] !== undefined) {
+            cleanBooking[key] = (booking as any)[key];
+        }
+    }
+    
+    const docRef = await addDoc(bookingsCollection, cleanBooking);
+    
+    const newBooking: Booking = { id: docRef.id, ...booking } as Booking;
+
+    // Calendar sync is now best-effort and won't block success
+    try {
+        const property = await getPropertyById(newBooking.propertyId);
+        const tenant = await getTenantById(newBooking.tenantId);
+        if (property?.googleCalendarId && tenant) {
+            const eventId = await addEventToCalendar(property.googleCalendarId, {
+                startDate: newBooking.startDate,
+                endDate: newBooking.endDate,
+                tenantName: tenant.name,
+                propertyName: property.name,
+                notes: newBooking.notes,
+            });
+            if (eventId) {
+                // Update the booking with the event ID, but don't fail if this errors
+                await updateDoc(docRef, { googleCalendarEventId: eventId }).catch(e => console.error("Failed to save event ID to booking:", e));
+                newBooking.googleCalendarEventId = eventId;
+            }
+        }
+    } catch (calendarError: any) {
+        console.error("Calendar sync failed on booking creation, but the booking was saved:", calendarError);
+        // We can optionally re-throw a custom error or just log it and move on.
+        // For a better user experience, we'll just log it.
+    }
+    
+    return newBooking;
 }
+
 
 export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
     const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
-    await updateDoc(docRef, data);
+
+    // Firestore doesn't like 'undefined'. Let's convert to null for updates.
+    const cleanData: { [key: string]: any } = {};
+    for (const key in data) {
+        if ((data as any)[key] !== undefined) {
+            cleanData[key] = (data as any)[key];
+        } else {
+            cleanData[key] = null; // Convert undefined to null
+        }
+    }
+
+    const oldBooking = await getBookingById(id);
+
+    await updateDoc(docRef, cleanData);
+    
     const newDoc = await getDoc(docRef);
-    return newDoc.exists() ? processDoc(newDoc) as Booking : null;
+    const finalBookingState = newDoc.exists() ? processDoc(newDoc) as Booking : null;
+
+    if (!finalBookingState) return null;
+
+    // Calendar sync is now best-effort
+    try {
+        if (!oldBooking) throw new Error("Booking disappeared after update");
+
+        const calendarFieldsChanged = finalBookingState.startDate !== oldBooking.startDate || 
+                                     finalBookingState.endDate !== oldBooking.endDate || 
+                                     finalBookingState.tenantId !== oldBooking.tenantId ||
+                                     finalBookingState.notes !== oldBooking.notes;
+        
+        if (calendarFieldsChanged) {
+            const property = await getPropertyById(finalBookingState.propertyId);
+            const tenant = await getTenantById(finalBookingState.tenantId);
+            
+            if (property?.googleCalendarId && tenant) {
+                const eventDetails = { 
+                    startDate: finalBookingState.startDate, 
+                    endDate: finalBookingState.endDate, 
+                    tenantName: tenant.name, 
+                    propertyName: property.name,
+                    notes: finalBookingState.notes 
+                };
+                
+                if (finalBookingState.googleCalendarEventId) {
+                    await updateEventInCalendar(property.googleCalendarId, finalBookingState.googleCalendarEventId, eventDetails);
+                } else {
+                    const newEventId = await addEventToCalendar(property.googleCalendarId, eventDetails);
+                    if (newEventId) {
+                        await updateDoc(docRef, { googleCalendarEventId: newEventId }).catch(e => console.error("Failed to save event ID to booking:", e));
+                        finalBookingState.googleCalendarEventId = newEventId;
+                    }
+                }
+            }
+        }
+    } catch (calendarError: any) {
+        console.error(`Calendar sync failed for booking ${id}, but the booking was updated:`, calendarError);
+    }
+    
+    return finalBookingState;
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {
+    const bookingToDelete = await getBookingById(id);
+
     const batch = writeBatch(db);
     
     const bookingRef = doc(db, 'bookings', id);
@@ -488,6 +587,19 @@ export async function deleteBooking(id: string): Promise<boolean> {
     expensesSnapshot.forEach(doc => batch.delete(doc.ref));
     
     await batch.commit();
+
+    // Calendar sync is now best-effort
+    try {
+        if (bookingToDelete?.googleCalendarEventId) {
+            const property = await getPropertyById(bookingToDelete.propertyId);
+            if (property?.googleCalendarId) {
+                await deleteEventFromCalendar(property.googleCalendarId, bookingToDelete.googleCalendarEventId);
+            }
+        }
+    } catch(calendarError: any) {
+         console.error(`Failed to delete calendar event for booking ${id}, but booking was deleted from DB:`, calendarError);
+    }
+
     return true;
 }
 

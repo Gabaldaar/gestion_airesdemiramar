@@ -1,7 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useTransition } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,19 +14,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { deletePayment } from '@/lib/actions';
+import { deletePayment } from '@/lib/data';
 import { Trash2, Loader2 } from 'lucide-react';
+import { useToast } from './ui/use-toast';
 
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function DeleteButton() {
-    const { pending } = useFormStatus();
+function DeleteButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" variant="destructive" disabled={pending}>
-            {pending ? (
+        <Button type="button" variant="destructive" disabled={isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Borrando...
@@ -39,13 +34,20 @@ function DeleteButton() {
 }
 
 export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: string; onPaymentDeleted: () => void }) {
-  const [state, formAction] = useActionState(deletePayment, initialState);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    if (state.success) {
-      onPaymentDeleted();
-    }
-  }, [state, onPaymentDeleted]);
+  const handleDelete = () => {
+    startTransition(async () => {
+        try {
+            await deletePayment(paymentId);
+            toast({ title: 'Éxito', description: 'Pago eliminado.' });
+            onPaymentDeleted();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `No se pudo eliminar el pago: ${error.message}`});
+        }
+    });
+  }
 
   return (
     <AlertDialog>
@@ -64,14 +66,13 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <form action={formAction}>
-            <input type="hidden" name="id" value={paymentId} />
-            <AlertDialogAction asChild>
-               <DeleteButton />
-            </AlertDialogAction>
-          </form>
+          <AlertDialogAction onClick={handleDelete} asChild>
+               <DeleteButton isPending={isPending}/>
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
+
+    

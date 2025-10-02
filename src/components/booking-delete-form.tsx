@@ -1,7 +1,7 @@
+
 'use client';
 
-import { useActionState, useState, useEffect, useRef, ReactNode } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useTransition } from 'react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -9,24 +9,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { deleteBooking } from '@/lib/actions';
-import { Trash2, Loader2 } from 'lucide-react';
+import { deleteBooking } from '@/lib/data';
+import { Loader2 } from 'lucide-react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { useToast } from './ui/use-toast';
 
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
-    const { pending } = useFormStatus();
+function DeleteButton({ isDisabled, isPending }: { isDisabled: boolean, isPending: boolean }) {
     return (
-        <Button type="submit" variant="destructive" disabled={isDisabled || pending}>
-            {pending ? (
+        <Button type="button" variant="destructive" disabled={isDisabled || isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Borrando...
@@ -40,68 +34,76 @@ function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
 
 interface BookingDeleteFormProps {
     bookingId: string;
-    propertyId: string;
-    children?: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
 }
 
-export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onOpenChange }: BookingDeleteFormProps) {
-  const [state, formAction] = useActionState(deleteBooking, initialState);
+export function BookingDeleteForm({ bookingId, isOpen, onOpenChange }: BookingDeleteFormProps) {
   const [confirmationInput, setConfirmationInput] = useState('');
-  const formRef = useRef<HTMLFormElement>(null);
-  
+  const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+
   const isButtonDisabled = confirmationInput !== 'Eliminar';
 
-  useEffect(() => {
-    if (state.success) {
-      onOpenChange(false);
-    }
-  }, [state.success, onOpenChange]);
+  const handleCancel = () => {
+    onOpenChange(false);
+    setConfirmationInput('');
+  }
 
-  useEffect(() => {
-    if (!isOpen) {
-      setConfirmationInput('');
-    }
-  }, [isOpen]);
+  const handleDelete = () => {
+    if (isButtonDisabled) return;
+
+    startTransition(async () => {
+        try {
+            await deleteBooking(bookingId);
+            toast({ title: "Éxito", description: "Reserva eliminada correctamente." });
+            onOpenChange(false);
+            window.location.reload();
+        } catch (error: any) {
+            console.error("Error deleting booking:", error);
+            toast({ variant: "destructive", title: "Error", description: `No se pudo eliminar la reserva: ${error.message}` });
+        }
+    });
+  };
 
   return (
-    <>
-      {children}
-      <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-        <AlertDialogContent>
-          <form action={formAction} ref={formRef}>
-              <input type="hidden" name="id" value={bookingId} />
-              <input type="hidden" name="propertyId" value={propertyId} />
-              <AlertDialogHeader>
-              <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
-              <AlertDialogDescription>
-                  Esta acción es irreversible. Se eliminará permanentemente la reserva, junto con sus pagos y gastos asociados.
-                  <br/><br/>
-                  Para confirmar, por favor escribe <strong className='text-foreground'>Eliminar</strong> en el campo de abajo.
-              </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="my-4">
-                  <Label htmlFor="confirmation" className="sr-only">Confirmación</Label>
-                  <Input 
-                      id="confirmation"
-                      name="confirmation"
-                      value={confirmationInput}
-                      onChange={(e) => setConfirmationInput(e.target.value)}
-                      placeholder='Escribe "Eliminar"'
-                      autoComplete='off'
-                  />
-                  {state.message && !state.success && (
-                      <p className="text-red-500 text-sm mt-2">{state.message}</p>
-                  )}
-              </div>
-              <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <DeleteButton isDisabled={isButtonDisabled} />
-              </AlertDialogFooter>
-          </form>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+        <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+        <AlertDialogDescription>
+            Esta acción es irreversible. Se eliminará permanentemente la reserva, junto con sus pagos y gastos asociados.
+            <br/><br/>
+            Para confirmar, por favor escribe <strong className='text-foreground'>Eliminar</strong> en el campo de abajo.
+        </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="my-4">
+            <Label htmlFor="confirmation" className="sr-only">Confirmación</Label>
+            <Input 
+                id="confirmation"
+                name="confirmation"
+                value={confirmationInput}
+                onChange={(e) => setConfirmationInput(e.target.value)}
+                placeholder='Escribe "Eliminar"'
+                autoComplete='off'
+            />
+        </div>
+        <AlertDialogFooter>
+            <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isButtonDisabled || isPending}>
+                {isPending ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Borrando...
+                    </>
+                ) : (
+                    'Entiendo, eliminar esta reserva'
+                )}
+            </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
+
+    

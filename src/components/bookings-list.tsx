@@ -279,7 +279,7 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
                   </Tooltip>
               </TooltipProvider>
               
-              <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+              <BookingDeleteForm bookingId={booking.id} isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
@@ -315,7 +315,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   };
 
   const handleUpdate = () => {
-    // A simple page refresh is enough when server actions handle revalidation
     window.location.reload();
   };
 
@@ -402,3 +401,5 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
+
+    

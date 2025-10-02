@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { updateBookingExpense } from '@/lib/actions';
+import { updateBookingExpense } from '@/lib/data';
 import { BookingExpense, ExpenseCategory } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -25,17 +24,11 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
+import { useToast } from './ui/use-toast';
 
-
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
+function SubmitButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={isPending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -49,16 +42,56 @@ function SubmitButton() {
 }
 
 export function BookingExpenseEditForm({ expense, categories }: { expense: BookingExpense, categories: ExpenseCategory[] }) {
-  const [state, formAction] = useActionState(updateBookingExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(expense.originalUsdAmount ? 'USD' : 'ARS');
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    if (state.success) {
-      setIsOpen(false);
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    
+    const originalAmount = parseFloat(formData.get('amount') as string);
+    const selectedCurrency = formData.get('currency') as 'ARS' | 'USD';
+    const exchangeRateStr = formData.get('exchangeRate') as string;
+    const exchangeRate = exchangeRateStr ? parseFloat(exchangeRateStr) : undefined;
+    
+    let updatedData: Partial<BookingExpense> = {
+        id: expense.id,
+        bookingId: expense.bookingId,
+        date: date?.toISOString() || new Date().toISOString(),
+        categoryId: formData.get('categoryId') === 'none' ? undefined : formData.get('categoryId') as string,
+        description: formData.get('description') as string,
+        amount: 0,
+        currency: 'ARS'
+    };
+
+    if (selectedCurrency === 'USD') {
+        if (!exchangeRate || exchangeRate <= 0) {
+             toast({ variant: 'destructive', title: 'Error', description: 'El valor del USD es obligatorio para gastos en USD.'});
+            return;
+        }
+        updatedData.originalUsdAmount = originalAmount;
+        updatedData.exchangeRate = exchangeRate;
+        updatedData.amount = originalAmount * exchangeRate;
+    } else {
+        updatedData.amount = originalAmount;
+        updatedData.originalUsdAmount = undefined;
+        updatedData.exchangeRate = undefined;
     }
-  }, [state]);
+
+    startTransition(async () => {
+        try {
+            await updateBookingExpense(updatedData as BookingExpense);
+            toast({ title: 'Éxito', description: 'Gasto actualizado.' });
+            setIsOpen(false);
+            window.location.reload();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `No se pudo actualizar el gasto: ${error.message}` });
+        }
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -75,18 +108,16 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
             Modifica los datos del gasto.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction}>
-            <input type="hidden" name="id" value={expense.id} />
-            <input type="hidden" name="bookingId" value={expense.bookingId} />
-            <input type="hidden" name="date" value={date?.toISOString() || ''} />
+        <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-right">
+                    <Label htmlFor="date-picker" className="text-right">
                         Fecha
                     </Label>
                     <Popover>
                         <PopoverTrigger asChild>
                         <Button
+                            id="date-picker"
                             variant={"outline"}
                             className={cn(
                             "col-span-3 justify-start text-left font-normal",
@@ -163,12 +194,9 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                <SubmitButton />
+                <SubmitButton isPending={isPending} />
             </DialogFooter>
         </form>
-         {state.message && !state.success && (
-            <p className="text-red-500 text-sm mt-2">{state.message}</p>
-        )}
       </DialogContent>
     </Dialog>
   );

@@ -1,7 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { addPayment } from '@/lib/actions';
+import { addPayment, Payment } from '@/lib/data';
 import { PlusCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
@@ -29,17 +29,12 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Textarea } from './ui/textarea';
+import { useToast } from './ui/use-toast';
 
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
+function SubmitButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" disabled={pending}>
-            {pending ? (
+        <Button type="submit" disabled={isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Añadiendo...
@@ -52,21 +47,12 @@ function SubmitButton() {
 }
 
 export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: string, onPaymentAdded: () => void }) {
-  const [state, formAction] = useActionState(addPayment, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
-
-  useEffect(() => {
-    if (state.success) {
-      setIsOpen(false);
-      formRef.current?.reset();
-      setDate(new Date());
-      setCurrency('USD');
-      onPaymentAdded();
-    }
-  }, [state, onPaymentAdded]);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   const resetForm = () => {
       formRef.current?.reset();
@@ -74,6 +60,47 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
       setCurrency('USD');
       setIsOpen(false);
   }
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    const originalAmount = parseFloat(formData.get('amount') as string);
+    const selectedCurrency = formData.get('currency') as 'ARS' | 'USD';
+    const exchangeRateStr = formData.get('exchangeRate') as string;
+    const exchangeRate = exchangeRateStr ? parseFloat(exchangeRateStr) : undefined;
+    
+    let paymentData: Omit<Payment, 'id'> = {
+        bookingId: formData.get("bookingId") as string,
+        date: date?.toISOString() || new Date().toISOString(),
+        description: formData.get('description') as string,
+        amount: 0, // This is the final USD amount
+        currency: 'USD',
+    };
+
+    if (selectedCurrency === 'ARS') {
+        if (!exchangeRate || exchangeRate <= 0) {
+            toast({ variant: 'destructive', title: 'Error', description: 'El valor del USD es obligatorio para pagos en ARS.'});
+            return;
+        }
+        paymentData.originalArsAmount = originalAmount;
+        paymentData.exchangeRate = exchangeRate;
+        paymentData.amount = originalAmount / exchangeRate;
+    } else {
+        paymentData.amount = originalAmount;
+    }
+
+    startTransition(async () => {
+        try {
+            await addPayment(paymentData);
+            toast({ title: 'Éxito', description: 'Pago añadido correctamente.' });
+            onPaymentAdded();
+            resetForm();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `No se pudo añadir el pago: ${error.message}` });
+        }
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -90,17 +117,17 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
             Completa los datos del pago recibido.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction} ref={formRef}>
+        <form onSubmit={handleSubmit} ref={formRef}>
             <input type="hidden" name="bookingId" value={bookingId} />
-            <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-right">
+                    <Label htmlFor="date-picker" className="text-right">
                         Fecha
                     </Label>
                     <Popover>
                         <PopoverTrigger asChild>
                         <Button
+                            id="date-picker"
                             variant={"outline"}
                             className={cn(
                             "col-span-3 justify-start text-left font-normal",
@@ -159,13 +186,12 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
-                <SubmitButton />
+                <SubmitButton isPending={isPending} />
             </DialogFooter>
         </form>
-         {state.message && !state.success && (
-            <p className="text-red-500 text-sm mt-2">{state.message}</p>
-        )}
       </DialogContent>
     </Dialog>
   );
 }
+
+    

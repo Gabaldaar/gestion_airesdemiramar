@@ -1,26 +1,19 @@
 
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useState, useTransition } from 'react';
 import { EmailSettings } from '@/lib/data';
-import { updateEmailSettings } from '@/lib/actions';
+import { updateEmailSettings } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
+function SubmitButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" disabled={pending}>
-            {pending ? (
+        <Button type="submit" disabled={isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Guardando...
@@ -33,22 +26,36 @@ function SubmitButton() {
 }
 
 export function EmailSettingsManager({ initialSettings }: { initialSettings: EmailSettings | null }) {
-    const [state, formAction] = useActionState(updateEmailSettings, initialState);
     const [replyToEmail, setReplyToEmail] = useState(initialSettings?.replyToEmail || '');
+    const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
-    useEffect(() => {
-        if (state.message) {
-            toast({
-                title: state.success ? 'Éxito' : 'Error',
-                description: state.message,
-                variant: state.success ? 'default' : 'destructive',
-            });
-        }
-    }, [state, toast]);
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const settings: Omit<EmailSettings, 'id'> = {
+            replyToEmail: formData.get('replyToEmail') as string
+        };
+
+        startTransition(async () => {
+            try {
+                await updateEmailSettings(settings);
+                toast({
+                    title: 'Éxito',
+                    description: 'Configuración de email guardada.',
+                });
+            } catch (error: any) {
+                toast({
+                    title: 'Error',
+                    description: `No se pudo guardar la configuración: ${error.message}`,
+                    variant: 'destructive',
+                });
+            }
+        });
+    }
 
     return (
-        <form action={formAction} className="space-y-4 max-w-md">
+        <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
             <div className="space-y-2">
                 <Label htmlFor="replyToEmail">Email de Respuesta</Label>
                 <p className="text-sm text-muted-foreground">
@@ -63,7 +70,9 @@ export function EmailSettingsManager({ initialSettings }: { initialSettings: Ema
                     placeholder="tu@email.com" 
                 />
             </div>
-            <SubmitButton />
+            <SubmitButton isPending={isPending} />
         </form>
     );
 }
+
+    

@@ -1,7 +1,7 @@
+
 'use client';
 
-import { useActionState, useState, useEffect, useRef } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useEffect, useRef, useTransition } from 'react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -13,21 +13,17 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { deleteProperty } from '@/lib/actions';
+import { deleteProperty } from '@/lib/data';
 import { Trash2, Loader2 } from 'lucide-react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { useToast } from './ui/use-toast';
+import { useRouter } from 'next/navigation';
 
-const initialState = {
-  message: '',
-  success: false,
-};
-
-function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
-    const { pending } = useFormStatus();
+function DeleteButton({ isDisabled, isPending }: { isDisabled: boolean, isPending: boolean }) {
     return (
-        <Button type="submit" variant="destructive" disabled={isDisabled || pending}>
-            {pending ? (
+        <Button type="button" variant="destructive" disabled={isDisabled || isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Eliminando...
@@ -40,26 +36,34 @@ function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
 }
 
 export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: string; propertyName: string }) {
-  const [state, formAction] = useActionState(deleteProperty, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [confirmationInput, setConfirmationInput] = useState('');
-  const formRef = useRef<HTMLFormElement>(null);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+  const router = useRouter();
   
   const isButtonDisabled = confirmationInput !== 'Eliminar';
 
   useEffect(() => {
-    // If the deletion was successful, close the dialog
-    if (state.success) {
-      setIsOpen(false);
-    }
-  }, [state.success]);
-
-  useEffect(() => {
-    // Reset confirmation when dialog is closed
     if (!isOpen) {
       setConfirmationInput('');
     }
   }, [isOpen]);
+
+  const handleDelete = () => {
+    if(isButtonDisabled) return;
+
+    startTransition(async () => {
+        try {
+            await deleteProperty(propertyId);
+            toast({ title: 'Éxito', description: 'Propiedad eliminada.'});
+            setIsOpen(false);
+            router.push('/settings'); // Redirect to a safe page
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `No se pudo eliminar la propiedad: ${error.message}`});
+        }
+    });
+  };
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
@@ -70,8 +74,6 @@ export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: s
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
-        <form action={formAction} ref={formRef}>
-            <input type="hidden" name="id" value={propertyId} />
             <AlertDialogHeader>
             <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -90,16 +92,16 @@ export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: s
                     placeholder='Escribe "Eliminar"'
                     autoComplete='off'
                 />
-                 {state.message && !state.success && (
-                    <p className="text-red-500 text-sm mt-2">{state.message}</p>
-                )}
             </div>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <DeleteButton isDisabled={isButtonDisabled} />
+                <Button onClick={handleDelete} variant="destructive" disabled={isButtonDisabled || isPending}>
+                    {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Eliminando...</> : 'Entiendo las consecuencias, eliminar esta propiedad'}
+                </Button>
             </AlertDialogFooter>
-        </form>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
+
+    
