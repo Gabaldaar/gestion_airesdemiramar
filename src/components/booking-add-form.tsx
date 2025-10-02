@@ -100,7 +100,9 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     return existingBookings.flatMap(booking => {
         const startDate = new Date(booking.startDate);
         const lastNight = subDays(new Date(booking.endDate), 1);
-        if (startDate > lastNight) return [];
+        if (isSameDay(startDate, lastNight) || startDate > lastNight) {
+             return [startDate];
+        }
         return [{ from: startDate, to: lastNight }];
     });
   }, [existingBookings]);

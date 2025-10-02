@@ -133,7 +133,9 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     return otherBookings.flatMap(otherBooking => {
         const startDate = new Date(otherBooking.startDate);
         const lastNight = subDays(new Date(otherBooking.endDate), 1);
-        if (startDate > lastNight) return [];
+        if (isSameDay(startDate, lastNight) || startDate > lastNight) {
+             return [startDate];
+        }
         return [{ from: startDate, to: lastNight }];
     });
   }, [allBookings, booking.id, booking.propertyId]);
