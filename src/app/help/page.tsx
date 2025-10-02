@@ -50,7 +50,7 @@ export default function HelpPage() {
                 <CardTitle>Preguntas Frecuentes</CardTitle>
             </CardHeader>
             <CardContent>
-                 <Accordion type="single" collapsible className="w-full" defaultValue="item-6">
+                 <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
                     <AccordionItem value="item-1">
                         <AccordionTrigger>¿Cómo agrego una nueva propiedad?</AccordionTrigger>
                         <AccordionContent>
@@ -101,38 +101,20 @@ export default function HelpPage() {
                         </AccordionContent>
                     </AccordionItem>
                      <AccordionItem value="item-6">
-                        <AccordionTrigger>¿Cómo configuro la sincronización con Google Calendar?</AccordionTrigger>
+                        <AccordionTrigger>¿Cómo sincronizo mis reservas con Google Calendar (u otro)?</AccordionTrigger>
                         <AccordionContent>
-                        <p>Para que la aplicación pueda sincronizar las reservas con tu calendario, debes compartir tu Google Calendar con la siguiente cuenta de servicio:</p>
-                        {serviceAccountEmail ? (
-                            <Alert className="my-4">
-                                <AlertTitle className="flex items-center justify-between">
-                                    <span>Email de la Cuenta de Servicio</span>
-                                    <Button variant="ghost" size="icon" onClick={copyToClipboard}>
-                                        <Copy className="h-4 w-4" />
-                                    </Button>
-                                </AlertTitle>
-                                <AlertDescription>
-                                    <code className="font-mono text-sm">{serviceAccountEmail}</code>
-                                </AlertDescription>
-                            </Alert>
-                        ) : (
-                            <Alert variant="destructive" className="my-4">
-                                <AlertTitle>Error</AlertTitle>
-                                <AlertDescription>
-                                    La variable de entorno para el email de la cuenta de servicio no está configurada. Contacta a soporte.
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                        <p><strong>Pasos a seguir:</strong></p>
-                        <ol className="list-decimal list-inside space-y-2 mt-2">
-                            <li>Copia el email de arriba.</li>
-                            <li>Abre tu Google Calendar y ve a la configuración del calendario que quieres sincronizar.</li>
-                            <li>En la sección "Compartir con personas y grupos específicos", añade el email que copiaste.</li>
-                            <li>Asegúrate de darle el permiso <strong>"Hacer cambios a los eventos"</strong>.</li>
-                            <li>Guarda los cambios.</li>
-                        </ol>
-                        <p className="mt-4"><strong>Importante:</strong> También necesitas el ID del Calendario. Puedes añadirlo al crear o editar una propiedad en <strong>Configuración &gt; Propiedades</strong>.</p>
+                            <p>Puedes sincronizar las reservas de cada propiedad con cualquier calendario que soporte el formato iCal (como Google Calendar, Apple Calendar, Outlook, etc.).</p>
+                            <ol className="list-decimal list-inside space-y-2 mt-2">
+                                <li>Ve a la página de <strong>Propiedades</strong> y selecciona la propiedad que deseas sincronizar.</li>
+                                <li>Busca la sección <strong>"Sincronización de Calendario (iCal)"</strong>. Verás un enlace único para esa propiedad.</li>
+                                <li>Haz clic en el botón de <strong>Copiar</strong> para guardar el enlace.</li>
+                                <li>Abre tu aplicación de calendario (por ejemplo, Google Calendar).</li>
+                                <li>Busca la opción para <strong>"Añadir otro calendario"</strong> y elige la opción <strong>"Desde una URL"</strong>.</li>
+                                <li>Pega el enlace que copiaste y confirma.</li>
+                            </ol>
+                            <p className="mt-4 text-sm text-muted-foreground">
+                                <strong>Nota:</strong> La frecuencia de actualización depende de tu proveedor de calendario (Google, Apple, etc.). Puede que los cambios no aparezcan instantáneamente.
+                            </p>
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>
