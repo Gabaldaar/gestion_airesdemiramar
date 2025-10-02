@@ -2,7 +2,7 @@
 import { getBookingsByPropertyId, getPropertyById, getTenantById } from '@/lib/data';
 import { NextRequest } from 'next/server';
 
-function formatICalDate(date: Date): string {
+function formatICalDateTime(date: Date): string {
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 }
 
@@ -46,19 +46,22 @@ export async function GET(
     bookings.forEach(booking => {
       const tenant = tenantsMap.get(booking.tenantId);
       const tenantName = tenant ? tenant.name : 'Inquilino Desconocido';
+      
       const startDate = new Date(booking.startDate);
-      const endDate = new Date(booking.endDate);
-      const now = new Date();
+      // Set check-in time, e.g., 3 PM UTC
+      startDate.setUTCHours(15, 0, 0, 0);
 
-      // For all-day events, the end date should be the day *after* the last day of the event.
-      // We assume bookings are for the full day.
-      const eventEndDate = new Date(endDate);
+      const endDate = new Date(booking.endDate);
+      // Set check-out time, e.g., 11 AM UTC
+      endDate.setUTCHours(11, 0, 0, 0);
+
+      const now = new Date();
 
       icalContent.push('BEGIN:VEVENT');
       icalContent.push(`UID:${booking.id}@airesdemiramar.app`);
-      icalContent.push(`DTSTAMP:${formatICalDate(now)}`);
-      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(startDate).substring(0, 8)}`);
-      icalContent.push(`DTEND;VALUE=DATE:${formatICalDate(eventEndDate).substring(0, 8)}`);
+      icalContent.push(`DTSTAMP:${formatICalDateTime(now)}`);
+      icalContent.push(`DTSTART:${formatICalDateTime(startDate)}`);
+      icalContent.push(`DTEND:${formatICalDateTime(endDate)}`);
       icalContent.push(`SUMMARY:${escapeICalText(tenantName)}`);
       
       let description = `Reserva para ${escapeICalText(tenantName)} en la propiedad ${escapeICalText(property.name)}.`;
