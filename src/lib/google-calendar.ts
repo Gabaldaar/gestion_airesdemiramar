@@ -20,6 +20,13 @@ const getGoogleAuth = () => {
     const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
     const serviceAccountPrivateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
+    // --- DEBUGGING LOG ---
+    console.log('--- GOOGLE CALENDAR DEBUG ---');
+    console.log('Service Account Email Loaded:', !!serviceAccountEmail);
+    console.log('Private Key Loaded:', !!serviceAccountPrivateKey);
+    console.log('-----------------------------');
+
+
     if (!serviceAccountEmail || !serviceAccountPrivateKey) {
         throw new Error("Google service account credentials are not set in environment variables.");
     }
