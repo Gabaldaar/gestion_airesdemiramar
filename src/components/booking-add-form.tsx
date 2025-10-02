@@ -1,7 +1,7 @@
-
 'use client';
 
-import { useEffect, useRef, useState, useMemo, useTransition } from 'react';
+import { useActionState, useEffect, useRef, useState, useMemo } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -22,8 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { addBooking } from '@/lib/data';
-import { Tenant, Booking, Origin, getOrigins, ContractStatus, GuaranteeStatus } from '@/lib/data';
+import { addBooking } from '@/lib/actions';
+import { Tenant, Booking, Origin, getOrigins } from '@/lib/data';
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -37,13 +37,18 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DateRange } from 'react-day-picker';
 import { Textarea } from './ui/textarea';
-import { useToast } from './ui/use-toast';
 
 
-function SubmitButton({ isDisabled, isPending }: { isDisabled: boolean, isPending: boolean }) {
+const initialState = {
+  message: '',
+  success: false,
+};
+
+function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
+    const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={isDisabled || isPending}>
-            {isPending ? (
+        <Button type="submit" disabled={isDisabled || pending}>
+            {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creando...
@@ -56,19 +61,25 @@ function SubmitButton({ isDisabled, isPending }: { isDisabled: boolean, isPendin
 }
 
 export function BookingAddForm({ propertyId, tenants, existingBookings }: { propertyId: string, tenants: Tenant[], existingBookings: Booking[] }) {
+  const [state, formAction] = useActionState(addBooking, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [origins, setOrigins] = useState<Origin[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<DateRange | undefined>(undefined);
   const [conflict, setConflict] = useState<Booking | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
 
   const resetForm = () => {
     formRef.current?.reset();
     setDate(undefined);
     setConflict(null);
   };
+
+  useEffect(() => {
+    if (state.success) {
+      setIsOpen(false);
+      resetForm();
+    }
+  }, [state]);
 
   useEffect(() => {
     if (date?.from && date?.to) {
@@ -106,42 +117,6 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    
-    const bookingData = {
-        propertyId: formData.get("propertyId") as string,
-        tenantId: formData.get("tenantId") as string,
-        startDate: formData.get("startDate") as string,
-        endDate: formData.get("endDate") as string,
-        amount: parseFloat(formData.get("amount") as string),
-        currency: formData.get("currency") as 'USD' | 'ARS',
-        notes: formData.get("notes") as string || "",
-        originId: formData.get("originId") === 'none' ? undefined : formData.get("originId") as string,
-        contractStatus: 'not_sent' as ContractStatus,
-        guaranteeStatus: 'not_solicited' as GuaranteeStatus,
-    };
-
-    if (!bookingData.propertyId || !bookingData.tenantId || !bookingData.startDate || !bookingData.endDate || isNaN(bookingData.amount)) {
-        toast({ variant: "destructive", title: "Error", description: "Todos los campos obligatorios deben ser completados." });
-        return;
-    }
-    
-    startTransition(async () => {
-        try {
-            await addBooking(bookingData);
-            toast({ title: "Éxito", description: "Reserva creada correctamente." });
-            setIsOpen(false);
-            resetForm();
-            window.location.reload(); // Simple way to refresh data
-        } catch (error: any) {
-            console.error("Error adding booking:", error);
-            toast({ variant: "destructive", title: "Error", description: `No se pudo crear la reserva: ${error.message}` });
-        }
-    });
-  };
-
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; setIsOpen(open)}}>
@@ -169,7 +144,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
             </Alert>
         )}
 
-        <form onSubmit={handleSubmit} ref={formRef}>
+        <form action={formAction} ref={formRef}>
             <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                     <Label htmlFor="tenantId">Inquilino</Label>
@@ -231,7 +206,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="originId">Origen</Label>
-                    <Select name="originId" defaultValue="none">
+                    <Select name="originId">
                         <SelectTrigger>
                             <SelectValue placeholder="Selecciona un origen" />
                         </SelectTrigger>
@@ -273,9 +248,12 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 <DialogClose asChild>
                     <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 </DialogClose>
-                <SubmitButton isDisabled={!date?.from || !date?.to} isPending={isPending} />
+                <SubmitButton isDisabled={!date?.from || !date?.to} />
             </DialogFooter>
         </form>
+         {state.message && !state.success && (
+            <p className="text-red-500 text-sm mt-2">{state.message}</p>
+        )}
       </DialogContent>
     </Dialog>
   );

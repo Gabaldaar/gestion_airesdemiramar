@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useEffect, useState, useMemo, ReactNode, useTransition } from 'react';
+import { useActionState, useEffect, useRef, useState, useMemo, ReactNode } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -21,9 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { updateBooking } from '@/lib/data';
-import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins } from '@/lib/data';
-import { Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
+import { updateBooking } from '@/lib/actions';
+import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins, BookingWithDetails } from '@/lib/data';
+import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, subDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
@@ -37,13 +38,18 @@ import { DateRange } from 'react-day-picker';
 import { Textarea } from './ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { DatePicker } from './ui/date-picker';
-import { useToast } from './ui/use-toast';
 
 
-function SubmitButton({ isDisabled, isPending }: { isDisabled: boolean, isPending: boolean }) {
+const initialState: { message: string, success: boolean, updatedBooking?: Booking } = {
+  message: '',
+  success: false,
+};
+
+function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
+    const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={isDisabled || isPending}>
-            {isPending ? (
+        <Button type="submit" disabled={isDisabled || pending}>
+            {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Guardando...
@@ -68,22 +74,17 @@ interface BookingEditFormProps {
 
 
 export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange, onBookingUpdated }: BookingEditFormProps) {
+  const [state, formAction] = useActionState(updateBooking, initialState);
   const [origins, setOrigins] = useState<Origin[]>([]);
   const [date, setDate] = useState<DateRange | undefined>({
       from: new Date(booking.startDate),
       to: new Date(booking.endDate)
   });
   const [conflict, setConflict] = useState<Booking | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
 
   // Guarantee state
   const [guaranteeStatus, setGuaranteeStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
-  const [guaranteeAmount, setGuaranteeAmount] = useState<string | undefined>(
-    booking.guaranteeAmount !== null && booking.guaranteeAmount !== undefined 
-      ? String(booking.guaranteeAmount) 
-      : undefined
-  );
+  const [guaranteeAmount, setGuaranteeAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
   const [guaranteeReceivedDate, setGuaranteeReceivedDate] = useState<Date | undefined>(
     booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined
   );
@@ -96,17 +97,23 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
     setConflict(null);
     setGuaranteeStatus(booking.guaranteeStatus || 'not_solicited');
-    setGuaranteeAmount(booking.guaranteeAmount ? String(booking.guaranteeAmount) : undefined);
+    setGuaranteeAmount(booking.guaranteeAmount || undefined);
     setGuaranteeReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
     setGuaranteeReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
   };
 
   useEffect(() => {
+    if (state.success) {
+      onBookingUpdated();
+      onOpenChange(false);
+    }
+  }, [state.success, onOpenChange, onBookingUpdated]);
+
+  useEffect(() => {
     if (isOpen) {
       getOrigins().then(setOrigins);
-      resetForm(); // Reset form state every time it opens
     }
-  }, [isOpen, booking]); // Rerun when booking changes as well
+  }, [isOpen]);
 
    useEffect(() => {
     if (date?.from && date?.to && allBookings) {
@@ -142,47 +149,6 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
   }
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    
-    const updatedBookingData: Partial<Booking> = {
-        id: formData.get("id") as string,
-        propertyId: formData.get("propertyId") as string,
-        tenantId: formData.get("tenantId") as string,
-        startDate: date?.from?.toISOString(),
-        endDate: date?.to?.toISOString(),
-        amount: parseFloat(formData.get("amount") as string),
-        currency: formData.get("currency") as 'USD' | 'ARS',
-        notes: formData.get("notes") as string,
-        contractStatus: formData.get("contractStatus") as ContractStatus,
-        originId: formData.get("originId") === 'none' ? undefined : formData.get("originId") as string,
-        guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus,
-        guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS',
-    };
-
-    const guaranteeAmountStr = formData.get("guaranteeAmount") as string;
-    updatedBookingData.guaranteeAmount = (guaranteeAmountStr && guaranteeAmountStr !== '') ? parseFloat(guaranteeAmountStr) : undefined;
-    
-    const guaranteeReceivedDateStr = guaranteeReceivedDate ? guaranteeReceivedDate.toISOString().split('T')[0] : undefined;
-    updatedBookingData.guaranteeReceivedDate = guaranteeReceivedDateStr;
-
-    const guaranteeReturnedDateStr = guaranteeReturnedDate ? guaranteeReturnedDate.toISOString().split('T')[0] : undefined;
-    updatedBookingData.guaranteeReturnedDate = guaranteeReturnedDateStr;
-
-    startTransition(async () => {
-        try {
-            await updateBooking(updatedBookingData);
-            toast({ title: "Éxito", description: "Reserva actualizada." });
-            onBookingUpdated();
-            onOpenChange(false);
-        } catch (error: any) {
-            console.error("Error updating booking:", error);
-            toast({ variant: "destructive", title: "Error", description: `No se pudo actualizar la reserva: ${error.message}` });
-        }
-    });
-  };
-
   return (
     <>
       {children}
@@ -205,7 +171,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                 </Alert>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form action={formAction}>
                 <input type="hidden" name="id" value={booking.id} />
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
@@ -278,10 +244,12 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                             />
                             </PopoverContent>
                         </Popover>
+                        <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
+                        <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="originId">Origen</Label>
-                        <Select name="originId" defaultValue={booking.originId || 'none'}>
+                        <Select name="originId" defaultValue={booking.originId}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un origen" />
                             </SelectTrigger>
@@ -353,7 +321,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                          <div className='flex gap-2'>
                             <div className="space-y-2 flex-grow">
                                 <Label htmlFor="guaranteeAmount">Monto</Label>
-                                <Input id="guaranteeAmount" name="guaranteeAmount" type="number" step="0.01" value={guaranteeAmount || ''} onChange={(e) => setGuaranteeAmount(e.target.value)} />
+                                <Input id="guaranteeAmount" name="guaranteeAmount" type="number" step="0.01" value={guaranteeAmount || ''} onChange={(e) => setGuaranteeAmount(e.target.value ? parseFloat(e.target.value) : undefined)} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="guaranteeCurrency">Moneda</Label>
@@ -371,10 +339,12 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                          <div className="space-y-2">
                              <Label>Fecha Recibida</Label>
                             <DatePicker date={guaranteeReceivedDate} onDateSelect={setGuaranteeReceivedDate} placeholder='Fecha de recepción' />
+                             <input type="hidden" name="guaranteeReceivedDate" value={guaranteeReceivedDate ? guaranteeReceivedDate.toISOString().split('T')[0] : ''} />
                          </div>
                          <div className="space-y-2">
                              <Label>Fecha Devuelta</Label>
                             <DatePicker date={guaranteeReturnedDate} onDateSelect={setGuaranteeReturnedDate} placeholder='Fecha de devolución' />
+                             <input type="hidden" name="guaranteeReturnedDate" value={guaranteeReturnedDate ? guaranteeReturnedDate.toISOString().split('T')[0] : ''} />
                          </div>
                      </div>
 
@@ -384,11 +354,15 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                     <DialogClose asChild>
                         <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                     </DialogClose>
-                    <SubmitButton isDisabled={!date?.from || !date?.to} isPending={isPending} />
+                    <SubmitButton isDisabled={!date?.from || !date?.to} />
                 </DialogFooter>
             </form>
+            {state.message && !state.success && (
+                <p className="text-red-500 text-sm mt-2">{state.message}</p>
+            )}
         </DialogContent>
         </Dialog>
     </>
   );
 }
+

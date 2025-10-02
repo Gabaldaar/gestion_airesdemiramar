@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useActionState, useEffect, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -14,17 +15,22 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { updateTenant } from '@/lib/data';
+import { updateTenant } from '@/lib/actions';
 import { Tenant, Origin, getOrigins } from '@/lib/data';
 import { Pencil, Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { useToast } from './ui/use-toast';
 
-function SubmitButton({ isPending }: { isPending: boolean }) {
+const initialState = {
+  message: '',
+  success: false,
+};
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={isPending}>
-            {isPending ? (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Guardando...
@@ -37,44 +43,22 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
 }
 
 export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, onTenantUpdated: () => void }) {
+  const [state, formAction] = useActionState(updateTenant, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [origins, setOrigins] = useState<Origin[]>([]);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
+
+  useEffect(() => {
+    if (state.success) {
+      setIsOpen(false);
+      onTenantUpdated();
+    }
+  }, [state, onTenantUpdated]);
 
   useEffect(() => {
     if (isOpen) {
       getOrigins().then(setOrigins);
     }
   }, [isOpen]);
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const updatedTenant: Tenant = {
-        id: tenant.id,
-        name: formData.get('name') as string,
-        dni: formData.get('dni') as string,
-        email: formData.get('email') as string,
-        phone: formData.get('phone') as string,
-        address: formData.get('address') as string,
-        city: formData.get('city') as string,
-        country: formData.get('country') as string,
-        notes: formData.get('notes') as string,
-        originId: formData.get('originId') === 'none' ? undefined : formData.get('originId') as string,
-    };
-
-    startTransition(async () => {
-        try {
-            await updateTenant(updatedTenant);
-            toast({ title: 'Éxito', description: 'Inquilino actualizado.' });
-            setIsOpen(false);
-            onTenantUpdated();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: `No se pudo actualizar el inquilino: ${error.message}` });
-        }
-    });
-  }
 
   return (
     <>
@@ -92,7 +76,8 @@ export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, on
               Modifica los datos del inquilino. Haz clic en guardar cuando termines.
           </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
+          <form action={formAction}>
+              <input type="hidden" name="id" value={tenant.id} />
               <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="name" className="text-right">
@@ -140,7 +125,7 @@ export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, on
                       <Label htmlFor="originId" className="text-right">
                           Origen
                       </Label>
-                      <Select name="originId" defaultValue={tenant.originId || 'none'}>
+                      <Select name="originId" defaultValue={tenant.originId}>
                           <SelectTrigger className="col-span-3">
                               <SelectValue placeholder="Selecciona un origen" />
                           </SelectTrigger>
@@ -162,13 +147,14 @@ export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, on
                 </div>
               </div>
               <DialogFooter>
-                  <SubmitButton isPending={isPending} />
+                  <SubmitButton />
               </DialogFooter>
           </form>
+          {state.message && !state.success && (
+              <p className="text-red-500 text-sm mt-2">{state.message}</p>
+          )}
       </DialogContent>
       </Dialog>
     </>
   );
 }
-
-    

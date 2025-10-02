@@ -17,7 +17,6 @@ import {
   collectionGroup,
   setDoc
 } from 'firebase/firestore';
-import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
 
 // --- TYPE DEFINITIONS ---
 
@@ -374,40 +373,26 @@ export async function deleteTenant(id: string): Promise<boolean> {
     return true;
 }
 
-async function getBookingDetails(booking: Booking, allPayments?: Payment[], allProperties?: Property[], allTenants?: Tenant[]): Promise<BookingWithDetails> {
-    const tenant = allTenants 
-        ? allTenants.find(t => t.id === booking.tenantId) 
-        : await getTenantById(booking.tenantId);
+async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> {
+    const tenant = await getTenantById(booking.tenantId);
+    const property = await getPropertyById(booking.propertyId);
 
-    const property = allProperties 
-        ? allProperties.find(p => p.id === booking.propertyId)
-        : await getPropertyById(booking.propertyId);
+    const allPayments = await getPaymentsByBookingId(booking.id);
+    const totalPaidInUSD = allPayments.reduce((acc, payment) => acc + payment.amount, 0);
 
-    const paymentsForBooking = allPayments 
-        ? allPayments.filter(p => p.bookingId === booking.id)
-        : await getPaymentsByBookingId(booking.id);
-
-    const totalPaidInUSD = paymentsForBooking.reduce((acc, payment) => acc + payment.amount, 0);
-    
     let balance = 0;
     if (booking.currency === 'USD') {
         balance = booking.amount - totalPaidInUSD;
     } else { // currency is ARS
-        const totalPaidInARS = paymentsForBooking.reduce((acc, p) => {
+        const totalPaidInArs = allPayments.reduce((acc, p) => {
             if (p.originalArsAmount) {
                 return acc + p.originalArsAmount;
             }
-            // Fallback for older payments that might not have originalArsAmount
-            // This part is tricky if exchange rates are not stored reliably.
-            if (p.exchangeRate) {
-                return acc + (p.amount * p.exchangeRate);
-            }
-            // If an ARS booking has USD payments without an exchange rate, the calculation is ambiguous.
-            // We'll assume the USD amount was considered equivalent to ARS amount which is not ideal.
-            // A better approach would be to enforce exchange rates for all non-USD payments.
-            return acc; 
+            // Fallback: if a USD payment has no rate, we can't convert it accurately
+            // For now, we'll assume it doesn't contribute to the ARS balance in that edge case
+            return p.exchangeRate ? acc + (p.amount * p.exchangeRate) : acc;
         }, 0);
-        balance = booking.amount - totalPaidInARS;
+        balance = booking.amount - totalPaidInArs;
     }
 
     return { 
@@ -420,38 +405,53 @@ async function getBookingDetails(booking: Booking, allPayments?: Payment[], allP
 }
 
 
-
 export async function getBookings(): Promise<BookingWithDetails[]> {
-    const [bookingsSnapshot, allPayments, allProperties, allTenants] = await Promise.all([
-        getDocs(query(bookingsCollection, orderBy('startDate', 'asc'))),
-        getAllPayments(),
-        getProperties(),
-        getTenants(),
-    ]);
+    const snapshot = await getDocs(query(bookingsCollection, orderBy('startDate', 'asc')));
+    const allBookings = snapshot.docs.map(processDoc) as Booking[];
+    const allPayments = await getAllPayments();
     
-    const allBookings = bookingsSnapshot.docs.map(processDoc) as Booking[];
-    
-    const detailedBookings = await Promise.all(
-        allBookings.map(booking => getBookingDetails(booking, allPayments, allProperties, allTenants))
-    );
+    const detailedBookings = await Promise.all(allBookings.map(async (booking) => {
+        const [tenant, property] = await Promise.all([
+            getTenantById(booking.tenantId),
+            getPropertyById(booking.propertyId)
+        ]);
+        const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
+        const totalPaid = paymentsForBooking.reduce((acc, payment) => acc + payment.amount, 0);
+        
+        let balance;
+        if (booking.currency === 'USD') {
+             balance = booking.amount - totalPaid;
+        } else {
+             // For ARS bookings, the balance is best represented in ARS.
+             // Here we assume payments are converted to ARS at some rate for a true balance,
+             // but for simplicity, we just show the remaining ARS amount.
+             // A more complex system would track payments in both currencies or convert at payment time.
+             // For now, let's just subtract the USD payments converted at *some* rate.
+             const lastPaymentRate = paymentsForBooking.find(p => p.exchangeRate)?.exchangeRate || booking.exchangeRate;
+             if (lastPaymentRate) {
+                const totalPaidInArs = totalPaid * lastPaymentRate;
+                balance = booking.amount - totalPaidInArs;
+             } else {
+                // If no exchange rate, we can't calculate a meaningful mixed-currency balance.
+                // Show the original amount as the balance.
+                balance = booking.amount;
+             }
+        }
+
+        return { ...booking, tenant, property, totalPaid, balance };
+    }));
 
     return detailedBookings;
 }
 
 export async function getBookingsByPropertyId(propertyId: string): Promise<BookingWithDetails[]> {
     const q = query(bookingsCollection, where('propertyId', '==', propertyId));
-    const [snapshot, allPayments, allProperties, allTenants] = await Promise.all([
-        getDocs(q),
-        getAllPayments(),
-        getProperties(),
-        getTenants(),
-    ]);
+    const snapshot = await getDocs(q);
     const propertyBookings = snapshot.docs.map(processDoc) as Booking[];
     
-    const detailedBookings = await Promise.all(
-        propertyBookings.map(booking => getBookingDetails(booking, allPayments, allProperties, allTenants))
-    );
+    const detailedBookings = await Promise.all(propertyBookings.map(booking => getBookingDetails(booking)));
     
+    // Sort in application code to avoid needing a composite index
     detailedBookings.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     
     return detailedBookings;
@@ -466,113 +466,20 @@ export async function getBookingById(id: string): Promise<Booking | undefined> {
 
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
-    // Firestore doesn't support 'undefined'. We must remove keys if they are undefined.
-    const cleanBooking: { [key: string]: any } = {};
-    for (const key in booking) {
-        if ((booking as any)[key] !== undefined) {
-            cleanBooking[key] = (booking as any)[key];
-        }
-    }
-    
-    const docRef = await addDoc(bookingsCollection, cleanBooking);
-    
-    const newBooking: Booking = { id: docRef.id, ...booking } as Booking;
-
-    // Calendar sync is now best-effort and won't block success
-    try {
-        const property = await getPropertyById(newBooking.propertyId);
-        const tenant = await getTenantById(newBooking.tenantId);
-        if (property?.googleCalendarId && tenant) {
-            const eventId = await addEventToCalendar(property.googleCalendarId, {
-                startDate: newBooking.startDate,
-                endDate: newBooking.endDate,
-                tenantName: tenant.name,
-                propertyName: property.name,
-                notes: newBooking.notes,
-            });
-            if (eventId) {
-                // Update the booking with the event ID, but don't fail if this errors
-                await updateDoc(docRef, { googleCalendarEventId: eventId }).catch(e => console.error("Failed to save event ID to booking:", e));
-                newBooking.googleCalendarEventId = eventId;
-            }
-        }
-    } catch (calendarError: any) {
-        console.error("Calendar sync failed on booking creation, but the booking was saved:", calendarError);
-        // We can optionally re-throw a custom error or just log it and move on.
-        // For a better user experience, we'll just log it.
-    }
-    
-    return newBooking;
+    const docRef = await addDoc(bookingsCollection, booking);
+    return { id: docRef.id, ...booking };
 }
-
 
 export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
     const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
-
-    // Firestore doesn't like 'undefined'. Let's convert to null for updates.
-    const cleanData: { [key: string]: any } = {};
-    for (const key in data) {
-        if ((data as any)[key] !== undefined) {
-            cleanData[key] = (data as any)[key];
-        } else {
-            cleanData[key] = null; // Convert undefined to null
-        }
-    }
-
-    const oldBooking = await getBookingById(id);
-
-    await updateDoc(docRef, cleanData);
-    
+    await updateDoc(docRef, data);
     const newDoc = await getDoc(docRef);
-    const finalBookingState = newDoc.exists() ? processDoc(newDoc) as Booking : null;
-
-    if (!finalBookingState) return null;
-
-    // Calendar sync is now best-effort
-    try {
-        if (!oldBooking) throw new Error("Booking disappeared after update");
-
-        const calendarFieldsChanged = finalBookingState.startDate !== oldBooking.startDate || 
-                                     finalBookingState.endDate !== oldBooking.endDate || 
-                                     finalBookingState.tenantId !== oldBooking.tenantId ||
-                                     finalBookingState.notes !== oldBooking.notes;
-        
-        if (calendarFieldsChanged) {
-            const property = await getPropertyById(finalBookingState.propertyId);
-            const tenant = await getTenantById(finalBookingState.tenantId);
-            
-            if (property?.googleCalendarId && tenant) {
-                const eventDetails = { 
-                    startDate: finalBookingState.startDate, 
-                    endDate: finalBookingState.endDate, 
-                    tenantName: tenant.name, 
-                    propertyName: property.name,
-                    notes: finalBookingState.notes 
-                };
-                
-                if (finalBookingState.googleCalendarEventId) {
-                    await updateEventInCalendar(property.googleCalendarId, finalBookingState.googleCalendarEventId, eventDetails);
-                } else {
-                    const newEventId = await addEventToCalendar(property.googleCalendarId, eventDetails);
-                    if (newEventId) {
-                        await updateDoc(docRef, { googleCalendarEventId: newEventId }).catch(e => console.error("Failed to save event ID to booking:", e));
-                        finalBookingState.googleCalendarEventId = newEventId;
-                    }
-                }
-            }
-        }
-    } catch (calendarError: any) {
-        console.error(`Calendar sync failed for booking ${id}, but the booking was updated:`, calendarError);
-    }
-    
-    return finalBookingState;
+    return newDoc.exists() ? processDoc(newDoc) as Booking : null;
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {
-    const bookingToDelete = await getBookingById(id);
-
     const batch = writeBatch(db);
     
     const bookingRef = doc(db, 'bookings', id);
@@ -587,19 +494,6 @@ export async function deleteBooking(id: string): Promise<boolean> {
     expensesSnapshot.forEach(doc => batch.delete(doc.ref));
     
     await batch.commit();
-
-    // Calendar sync is now best-effort
-    try {
-        if (bookingToDelete?.googleCalendarEventId) {
-            const property = await getPropertyById(bookingToDelete.propertyId);
-            if (property?.googleCalendarId) {
-                await deleteEventFromCalendar(property.googleCalendarId, bookingToDelete.googleCalendarEventId);
-            }
-        }
-    } catch(calendarError: any) {
-         console.error(`Failed to delete calendar event for booking ${id}, but booking was deleted from DB:`, calendarError);
-    }
-
     return true;
 }
 

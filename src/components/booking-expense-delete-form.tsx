@@ -1,7 +1,7 @@
-
 'use client';
 
-import { useTransition, useState } from 'react';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,14 +14,19 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { deleteBookingExpense } from '@/lib/data';
+import { deleteBookingExpense } from '@/lib/actions';
 import { Trash2, Loader2 } from 'lucide-react';
-import { useToast } from './ui/use-toast';
 
-function DeleteButton({ isPending }: { isPending: boolean }) {
+const initialState = {
+  message: '',
+  success: false,
+};
+
+function DeleteButton() {
+    const { pending } = useFormStatus();
     return (
-        <Button type="button" variant="destructive" disabled={isPending}>
-            {isPending ? (
+        <Button type="submit" variant="destructive" disabled={pending}>
+            {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Borrando...
@@ -34,20 +39,7 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
 }
 
 export function BookingExpenseDeleteForm({ expenseId, bookingId }: { expenseId: string; bookingId: string }) {
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
-
-  const handleDelete = () => {
-    startTransition(async () => {
-        try {
-            await deleteBookingExpense(expenseId);
-            toast({ title: 'Éxito', description: 'Gasto eliminado.' });
-            window.location.reload();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: `No se pudo eliminar el gasto: ${error.message}`});
-        }
-    });
-  }
+  const [state, formAction] = useActionState(deleteBookingExpense, initialState);
 
   return (
     <AlertDialog>
@@ -66,13 +58,15 @@ export function BookingExpenseDeleteForm({ expenseId, bookingId }: { expenseId: 
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} asChild>
-             <DeleteButton isPending={isPending} />
-          </AlertDialogAction>
+          <form action={formAction}>
+            <input type="hidden" name="id" value={expenseId} />
+            <input type="hidden" name="bookingId" value={bookingId} />
+            <AlertDialogAction asChild>
+               <DeleteButton />
+            </AlertDialogAction>
+          </form>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
-
-    

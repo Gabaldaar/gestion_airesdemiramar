@@ -1,8 +1,9 @@
-
 'use client';
 
-import { useState, useRef, useEffect, useTransition } from 'react';
-import { ExpenseCategory, addExpenseCategory, updateExpenseCategory, deleteExpenseCategory } from '@/lib/data';
+import { useState, useRef, useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
+import { ExpenseCategory } from '@/lib/data';
+import { addExpenseCategory, updateExpenseCategory, deleteExpenseCategory } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,53 +26,48 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useToast } from './ui/use-toast';
 
-function AddCategoryButton({ isPending }: { isPending: boolean }) {
+const initialState = {
+  message: '',
+  success: false,
+};
+
+function AddCategoryButton() {
+    const { pending } = useFormStatus();
     return (
-        <Button type="submit" size="icon" disabled={isPending}>
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+        <Button type="submit" size="icon" disabled={pending}>
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
         </Button>
     )
 }
 
 function CategoryAddRow({ onCategoryAdded }: { onCategoryAdded: () => void }) {
+  const [state, formAction] = useActionState(addExpenseCategory, initialState);
   const formRef = useRef<HTMLFormElement>(null);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const newCategory: Omit<ExpenseCategory, 'id'> = { name: formData.get('name') as string };
-
-    startTransition(async () => {
-        try {
-            await addExpenseCategory(newCategory);
-            toast({ title: 'Éxito', description: 'Categoría añadida.' });
-            formRef.current?.reset();
-            onCategoryAdded();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: `No se pudo añadir la categoría: ${error.message}` });
-        }
-    });
-  };
+  useEffect(() => {
+    if (state.success) {
+      formRef.current?.reset();
+      onCategoryAdded();
+    }
+  }, [state, onCategoryAdded]);
   
   return (
-    <form onSubmit={handleSubmit} ref={formRef} className="flex items-center gap-2 p-2 border-t">
+    <form action={formAction} ref={formRef} className="flex items-center gap-2 p-2 border-t">
         <Input name="name" placeholder="Nombre de la nueva categoría" className="flex-grow" required />
-        <AddCategoryButton isPending={isPending}/>
+        <AddCategoryButton />
     </form>
   );
 }
 
-function EditCategoryButtons({ onCancel, isPending }: { onCancel: () => void, isPending: boolean }) {
+function EditCategoryButtons({ onCancel }: { onCancel: () => void }) {
+    const { pending } = useFormStatus();
     return (
         <>
-            <Button type="submit" variant="ghost" size="icon" disabled={isPending}>
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 text-green-600" />}
+            <Button type="submit" variant="ghost" size="icon" disabled={pending}>
+                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 text-green-600" />}
             </Button>
-            <Button type="button" variant="ghost" size="icon" onClick={onCancel} disabled={isPending}>
+            <Button type="button" variant="ghost" size="icon" onClick={onCancel} disabled={pending}>
                 <X className="h-4 w-4 text-red-600" />
             </Button>
         </>
@@ -79,41 +75,33 @@ function EditCategoryButtons({ onCancel, isPending }: { onCancel: () => void, is
 }
 
 function CategoryEditRow({ category, onCancel, onUpdated }: { category: ExpenseCategory, onCancel: () => void, onUpdated: () => void }) {
-    const [isPending, startTransition] = useTransition();
-    const { toast } = useToast();
+    const [state, formAction] = useActionState(updateExpenseCategory, initialState);
+    const formRef = useRef<HTMLFormElement>(null);
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        const updatedCategory: ExpenseCategory = { id: category.id, name: formData.get('name') as string };
-
-        startTransition(async () => {
-            try {
-                await updateExpenseCategory(updatedCategory);
-                toast({ title: 'Éxito', description: 'Categoría actualizada.' });
-                onUpdated();
-            } catch(error: any) {
-                toast({ variant: 'destructive', title: 'Error', description: `No se pudo actualizar: ${error.message}` });
-            }
-        });
-    }
+    useEffect(() => {
+        if (state.success) {
+            onUpdated();
+        }
+    }, [state, onUpdated]);
 
     return (
          <TableRow>
             <TableCell colSpan={2}>
-                <form onSubmit={handleSubmit} className="flex items-center gap-2">
+                <form action={formAction} ref={formRef} className="flex items-center gap-2">
+                    <input type="hidden" name="id" value={category.id} />
                     <Input name="name" defaultValue={category.name} className="flex-grow" required />
-                    <EditCategoryButtons onCancel={onCancel} isPending={isPending} />
+                    <EditCategoryButtons onCancel={onCancel} />
                 </form>
             </TableCell>
         </TableRow>
     )
 }
 
-function DeleteCategoryButton({ isPending, onClick }: { isPending: boolean, onClick: () => void }) {
+function DeleteCategoryButton() {
+    const { pending } = useFormStatus();
     return (
-         <Button type="button" variant="destructive" disabled={isPending} onClick={onClick}>
-             {isPending ? (
+         <Button type="submit" variant="destructive" disabled={pending}>
+             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Eliminando...
@@ -126,20 +114,13 @@ function DeleteCategoryButton({ isPending, onClick }: { isPending: boolean, onCl
 }
 
 function CategoryDeleteAction({ categoryId, onDeleted }: { categoryId: string, onDeleted: () => void }) {
-    const [isPending, startTransition] = useTransition();
-    const { toast } = useToast();
+    const [state, formAction] = useActionState(deleteExpenseCategory, initialState);
 
-    const handleDelete = () => {
-        startTransition(async () => {
-            try {
-                await deleteExpenseCategory(categoryId);
-                toast({ title: 'Éxito', description: 'Categoría eliminada.' });
-                onDeleted();
-            } catch (error: any) {
-                toast({ variant: 'destructive', title: 'Error', description: `No se pudo eliminar: ${error.message}` });
-            }
-        });
-    }
+    useEffect(() => {
+        if (state.success) {
+            onDeleted();
+        }
+    }, [state, onDeleted]);
     
     return (
         <AlertDialog>
@@ -149,18 +130,21 @@ function CategoryDeleteAction({ categoryId, onDeleted }: { categoryId: string, o
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                 <AlertDialogHeader>
-                 <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                 <AlertDialogDescription>
-                     Esta acción no se puede deshacer. La categoría será eliminada permanentemente. Los gastos asociados no serán eliminados, pero quedarán sin categoría.
-                 </AlertDialogDescription>
-                 </AlertDialogHeader>
-                 <AlertDialogFooter>
-                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                 <AlertDialogAction asChild>
-                    <DeleteCategoryButton isPending={isPending} onClick={handleDelete} />
-                 </AlertDialogAction>
-                 </AlertDialogFooter>
+                 <form action={formAction}>
+                    <input type="hidden" name="id" value={categoryId} />
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta acción no se puede deshacer. La categoría será eliminada permanentemente. Los gastos asociados no serán eliminados, pero quedarán sin categoría.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                        <DeleteCategoryButton />
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </form>
             </AlertDialogContent>
         </AlertDialog>
     )
@@ -172,8 +156,12 @@ export default function ExpenseCategoryManager({ initialCategories }: { initialC
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   
   const handleCategoryAction = () => {
-     setEditingCategoryId(null);
-     window.location.reload();
+    // This is a dummy function to force a re-render by updating state.
+    // The actual data revalidation happens on the server via revalidatePath.
+    // In a real client-side state management scenario, you'd re-fetch here.
+     setEditingCategoryId(null); // Exit edit mode
+     // In a full client-side app, you'd re-fetch here.
+     // For this app, we rely on the page reload triggered by the server action.
   };
 
   return (
@@ -211,5 +199,3 @@ export default function ExpenseCategoryManager({ initialCategories }: { initialC
     </div>
   );
 }
-
-    

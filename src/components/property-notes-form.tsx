@@ -1,19 +1,24 @@
-
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
-import { updateProperty } from '@/lib/data';
+import { useActionState, useEffect, useState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { updateProperty } from '@/lib/actions';
 import { Property } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { NotebookPen, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from './ui/textarea';
-import { useToast } from './ui/use-toast';
 
-function SubmitButton({ isPending }: { isPending: boolean }) {
+const initialState = {
+  message: '',
+  success: false,
+};
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={isPending}>
-            {isPending ? (
+        <Button type="submit" disabled={pending}>
+            {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Guardando...
@@ -26,27 +31,15 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
 }
 
 export function PropertyNotesForm({ property }: { property: Property }) {
+  const [state, formAction] = useActionState(updateProperty, initialState);
   const formId = `property-notes-form-${property.id}`;
   const [isOpen, setIsOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const notes = formData.get('notes') as string;
-
-    startTransition(async () => {
-        try {
-            await updateProperty({ ...property, notes });
-            toast({ title: 'Éxito', description: 'Notas actualizadas.' });
-            setIsOpen(false);
-            window.location.reload();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: `No se pudieron guardar las notas: ${error.message}` });
-        }
-    });
-  }
+  useEffect(() => {
+    if (state.success) {
+      setIsOpen(false);
+    }
+  }, [state]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -63,7 +56,13 @@ export function PropertyNotesForm({ property }: { property: Property }) {
             Añade o edita las notas. Los cambios se guardarán al presionar el botón de Guardar.
           </DialogDescription>
         </DialogHeader>
-        <form id={formId} onSubmit={handleSubmit} className="space-y-4">
+        <form id={formId} action={formAction} className="space-y-4">
+          <input type="hidden" name="id" value={property.id} />
+          {/* Pass all existing property data to avoid accidental deletion */}
+          <input type="hidden" name="name" defaultValue={property.name} />
+          <input type="hidden" name="address" defaultValue={property.address} />
+          <input type="hidden" name="googleCalendarId" defaultValue={property.googleCalendarId} />
+          <input type="hidden" name="imageUrl" defaultValue={property.imageUrl} />
           <Textarea
             name="notes"
             defaultValue={property.notes}
@@ -72,12 +71,13 @@ export function PropertyNotesForm({ property }: { property: Property }) {
           />
            <DialogFooter>
               <Button variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-              <SubmitButton isPending={isPending} />
+              <SubmitButton />
           </DialogFooter>
+           {state.message && !state.success && (
+              <p className="text-red-500 text-sm mt-2">{state.message}</p>
+          )}
         </form>
       </DialogContent>
     </Dialog>
   );
 }
-
-    

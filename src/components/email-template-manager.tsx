@@ -1,8 +1,10 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect, useTransition } from 'react';
-import { EmailTemplate, getEmailTemplates, addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/data';
+import React, { useState, useRef, useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
+import { EmailTemplate, getEmailTemplates } from '@/lib/data';
+import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +39,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
-import { useToast } from './ui/use-toast';
 
 const placeholderHelpText = "Marcadores disponibles: {{inquilino.nombre}}, {{propiedad.nombre}}, {{propiedad.direccion}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}, {{propiedad.customField1Label}}, {{propiedad.customField1Value}} ...hasta el 6";
 
@@ -49,10 +50,10 @@ function SubmitButton({ isPending, text, pendingText }: { isPending: boolean, te
     );
 }
 
-function DeleteButton({ isPending, onClick }: { isPending: boolean, onClick: () => void }) {
+function DeleteButton({ isPending }: { isPending: boolean }) {
      return (
-        <Button type="button" variant="destructive" disabled={isPending} onClick={onClick}>
-             {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Eliminando...</> : 'Continuar'}
+        <Button type="submit" variant="destructive" disabled={isPending}>
+            {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Eliminando...</> : 'Continuar'}
         </Button>
     );
 }
@@ -69,8 +70,8 @@ function TemplateDialog({
   onActionComplete: () => void;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
+  const action = template ? updateEmailTemplate : addEmailTemplate;
+  const [state, formAction, isPending] = useActionState(action, { success: false, message: '' });
 
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
@@ -90,37 +91,13 @@ function TemplateDialog({
     }
   }, [template, isOpen]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
 
-    startTransition(async () => {
-        try {
-            if (template) {
-                const updatedTemplate: EmailTemplate = {
-                    id: template.id,
-                    name: formData.get('name') as string,
-                    subject: formData.get('subject') as string,
-                    body: formData.get('body') as string,
-                };
-                await updateEmailTemplate(updatedTemplate);
-                toast({ title: 'Éxito', description: 'Plantilla actualizada.' });
-            } else {
-                 const newTemplate: Omit<EmailTemplate, 'id'> = {
-                    name: formData.get('name') as string,
-                    subject: formData.get('subject') as string,
-                    body: formData.get('body') as string,
-                };
-                await addEmailTemplate(newTemplate);
-                toast({ title: 'Éxito', description: 'Plantilla creada.' });
-            }
-            setIsOpen(false);
-            onActionComplete();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: `No se pudo guardar la plantilla: ${error.message}` });
-        }
-    });
-  };
+  useEffect(() => {
+    if (state.success) {
+      setIsOpen(false);
+      onActionComplete();
+    }
+  }, [state, setIsOpen, onActionComplete]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -136,7 +113,11 @@ function TemplateDialog({
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
-        <form ref={formRef} onSubmit={handleSubmit}>
+        <form
+          ref={formRef}
+          action={formAction}
+        >
+          {template && <input type="hidden" name="id" value={template.id} />}
           <DialogHeader>
             <DialogTitle>{template ? 'Editar' : 'Añadir Nueva'} Plantilla</DialogTitle>
             <DialogDescription>
@@ -162,6 +143,7 @@ function TemplateDialog({
             <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
             <SubmitButton isPending={isPending} text={template ? 'Guardar Cambios' : 'Crear Plantilla'} pendingText={template ? 'Guardando...' : 'Creando...'} />
           </DialogFooter>
+          {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
         </form>
       </DialogContent>
     </Dialog>
@@ -170,20 +152,13 @@ function TemplateDialog({
 
 
 function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: string, onActionComplete: () => void }) {
-    const [isPending, startTransition] = useTransition();
-    const { toast } = useToast();
+    const [state, formAction, isPending] = useActionState(deleteEmailTemplate, { success: false, message: '' });
 
-    const handleDelete = () => {
-        startTransition(async () => {
-            try {
-                await deleteEmailTemplate(templateId);
-                toast({ title: 'Éxito', description: 'Plantilla eliminada.' });
-                onActionComplete();
-            } catch (error: any) {
-                toast({ variant: 'destructive', title: 'Error', description: `No se pudo eliminar la plantilla: ${error.message}` });
-            }
-        });
-    }
+    useEffect(() => {
+        if (state.success) {
+            onActionComplete();
+        }
+    }, [state, onActionComplete]);
 
     return (
         <AlertDialog>
@@ -191,18 +166,22 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
                 <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Esta acción no se puede deshacer. La plantilla será eliminada permanentemente.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className='mt-4'>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction asChild>
-                        <DeleteButton isPending={isPending} onClick={handleDelete} />
-                    </AlertDialogAction>
-                </AlertDialogFooter>
+                <form action={formAction}>
+                    <input type="hidden" name="id" value={templateId} />
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción no se puede deshacer. La plantilla será eliminada permanentemente.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className='mt-4'>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction asChild>
+                            <DeleteButton isPending={isPending} />
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                    {state.message && !state.success && <p className="text-red-500 text-sm mt-2">{state.message}</p>}
+                </form>
             </AlertDialogContent>
         </AlertDialog>
     );
@@ -279,5 +258,3 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
         </div>
     );
 }
-
-    
