@@ -44,6 +44,7 @@ import {
     ExpenseCategory,
     GuaranteeStatus,
     EmailTemplate,
+    db
 } from "./data";
 import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
 
@@ -196,7 +197,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
     city: formData.get("city") as string,
     country: formData.get("country") as string,
     notes: formData.get("notes") as string,
-    originId: originIdValue === 'none' ? undefined : originIdValue,
+    originId: originIdValue === 'none' ? null : originIdValue,
   };
 
   try {
@@ -246,6 +247,11 @@ export async function addBooking(previousState: any, formData: FormData) {
         return { success: false, message: "Todos los campos son obligatorios." };
     }
     
+    // Explicitly remove originId if it's undefined to prevent Firestore error
+    if (bookingData.originId === undefined) {
+        delete (bookingData as Partial<typeof bookingData>).originId;
+    }
+
     try {
         // First, save the booking to our database.
         const newBooking = await dbAddBooking(bookingData);
@@ -307,7 +313,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             notes: formData.get("notes") as string,
             contractStatus: formData.get("contractStatus") as ContractStatus,
             googleCalendarEventId: oldBooking.googleCalendarEventId, // Preserve existing event ID
-            originId: originIdValue === 'none' ? undefined : originIdValue,
+            originId: originIdValue === 'none' ? null : originIdValue,
             guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus,
             guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS',
         };
@@ -332,6 +338,14 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
         }
 
         const finalBookingState = { ...oldBooking, ...updatedBookingData };
+        
+        // Explicitly handle null for originId to avoid 'undefined'
+        if (finalBookingState.originId === null) {
+            finalBookingState.originId = null;
+        } else if (finalBookingState.originId === undefined) {
+             delete (finalBookingState as Partial<Booking>).originId;
+        }
+        
         const updatedBookingFromDb = await dbUpdateBooking(finalBookingState);
 
         const calendarFieldsChanged = finalBookingState.startDate !== oldBooking.startDate || 
@@ -914,5 +928,7 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
+
+    
 
     
