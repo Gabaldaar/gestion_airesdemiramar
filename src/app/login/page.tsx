@@ -14,6 +14,9 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Log the origin to help debug domain authorization issues
+    console.log("El dominio que debes autorizar en Firebase es:", window.location.origin);
+
     if (!loading && user) {
       router.push('/');
     }
