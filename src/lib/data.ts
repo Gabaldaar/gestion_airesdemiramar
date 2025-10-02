@@ -373,26 +373,35 @@ export async function deleteTenant(id: string): Promise<boolean> {
     return true;
 }
 
-async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> {
-    const tenant = await getTenantById(booking.tenantId);
-    const property = await getPropertyById(booking.propertyId);
+async function getBookingDetails(booking: Booking, allPayments?: Payment[], allProperties?: Property[], allTenants?: Tenant[]): Promise<BookingWithDetails> {
+    const tenant = allTenants 
+        ? allTenants.find(t => t.id === booking.tenantId) 
+        : await getTenantById(booking.tenantId);
 
-    const allPayments = await getPaymentsByBookingId(booking.id);
-    const totalPaidInUSD = allPayments.reduce((acc, payment) => acc + payment.amount, 0);
+    const property = allProperties 
+        ? allProperties.find(p => p.id === booking.propertyId)
+        : await getPropertyById(booking.propertyId);
 
+    const paymentsForBooking = allPayments 
+        ? allPayments.filter(p => p.bookingId === booking.id)
+        : await getPaymentsByBookingId(booking.id);
+
+    const totalPaidInUSD = paymentsForBooking.reduce((acc, payment) => acc + payment.amount, 0);
+    
     let balance = 0;
     if (booking.currency === 'USD') {
         balance = booking.amount - totalPaidInUSD;
     } else { // currency is ARS
-        const totalPaidInArs = allPayments.reduce((acc, p) => {
+        const totalPaidInARS = paymentsForBooking.reduce((acc, p) => {
             if (p.originalArsAmount) {
                 return acc + p.originalArsAmount;
             }
-            // Fallback: if a USD payment has no rate, we can't convert it accurately
-            // For now, we'll assume it doesn't contribute to the ARS balance in that edge case
-            return p.exchangeRate ? acc + (p.amount * p.exchangeRate) : acc;
+            if (p.exchangeRate) {
+                return acc + (p.amount * p.exchangeRate);
+            }
+            return acc; // Don't add if no rate is available
         }, 0);
-        balance = booking.amount - totalPaidInArs;
+        balance = booking.amount - totalPaidInARS;
     }
 
     return { 
@@ -405,53 +414,38 @@ async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> 
 }
 
 
-export async function getBookings(): Promise<BookingWithDetails[]> {
-    const snapshot = await getDocs(query(bookingsCollection, orderBy('startDate', 'asc')));
-    const allBookings = snapshot.docs.map(processDoc) as Booking[];
-    const allPayments = await getAllPayments();
-    
-    const detailedBookings = await Promise.all(allBookings.map(async (booking) => {
-        const [tenant, property] = await Promise.all([
-            getTenantById(booking.tenantId),
-            getPropertyById(booking.propertyId)
-        ]);
-        const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
-        const totalPaid = paymentsForBooking.reduce((acc, payment) => acc + payment.amount, 0);
-        
-        let balance;
-        if (booking.currency === 'USD') {
-             balance = booking.amount - totalPaid;
-        } else {
-             // For ARS bookings, the balance is best represented in ARS.
-             // Here we assume payments are converted to ARS at some rate for a true balance,
-             // but for simplicity, we just show the remaining ARS amount.
-             // A more complex system would track payments in both currencies or convert at payment time.
-             // For now, let's just subtract the USD payments converted at *some* rate.
-             const lastPaymentRate = paymentsForBooking.find(p => p.exchangeRate)?.exchangeRate || booking.exchangeRate;
-             if (lastPaymentRate) {
-                const totalPaidInArs = totalPaid * lastPaymentRate;
-                balance = booking.amount - totalPaidInArs;
-             } else {
-                // If no exchange rate, we can't calculate a meaningful mixed-currency balance.
-                // Show the original amount as the balance.
-                balance = booking.amount;
-             }
-        }
 
-        return { ...booking, tenant, property, totalPaid, balance };
-    }));
+export async function getBookings(): Promise<BookingWithDetails[]> {
+    const [bookingsSnapshot, allPayments, allProperties, allTenants] = await Promise.all([
+        getDocs(query(bookingsCollection, orderBy('startDate', 'asc'))),
+        getAllPayments(),
+        getProperties(),
+        getTenants(),
+    ]);
+    
+    const allBookings = bookingsSnapshot.docs.map(processDoc) as Booking[];
+    
+    const detailedBookings = await Promise.all(
+        allBookings.map(booking => getBookingDetails(booking, allPayments, allProperties, allTenants))
+    );
 
     return detailedBookings;
 }
 
 export async function getBookingsByPropertyId(propertyId: string): Promise<BookingWithDetails[]> {
     const q = query(bookingsCollection, where('propertyId', '==', propertyId));
-    const snapshot = await getDocs(q);
+    const [snapshot, allPayments, allProperties, allTenants] = await Promise.all([
+        getDocs(q),
+        getAllPayments(),
+        getProperties(),
+        getTenants(),
+    ]);
     const propertyBookings = snapshot.docs.map(processDoc) as Booking[];
     
-    const detailedBookings = await Promise.all(propertyBookings.map(booking => getBookingDetails(booking)));
+    const detailedBookings = await Promise.all(
+        propertyBookings.map(booking => getBookingDetails(booking, allPayments, allProperties, allTenants))
+    );
     
-    // Sort in application code to avoid needing a composite index
     detailedBookings.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     
     return detailedBookings;
