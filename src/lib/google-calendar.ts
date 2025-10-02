@@ -2,6 +2,7 @@
 'use server';
 
 import { google } from 'googleapis';
+import { addDays } from 'date-fns';
 
 interface CalendarEventDetails {
     startDate: string;
@@ -19,13 +20,6 @@ const getGoogleAuth = () => {
     // These environment variables need to be set in your deployment environment
     const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
     const serviceAccountPrivateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-    // --- DEBUGGING LOG ---
-    console.log('--- GOOGLE CALENDAR DEBUG ---');
-    console.log('Service Account Email Loaded:', !!serviceAccountEmail);
-    console.log('Private Key Loaded:', !!serviceAccountPrivateKey);
-    console.log('-----------------------------');
-
 
     if (!serviceAccountEmail || !serviceAccountPrivateKey) {
         throw new Error("Google service account credentials are not set in environment variables.");
@@ -58,16 +52,17 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
     const calendar = getCalendarClient();
     
     try {
+        // Google Calendar API expects the end date to be exclusive. 
+        // If a booking is from the 15th to the 18th, the event should end ON the 18th, not start on the 18th.
+        // The `endDate` in our app is the check-out day, so it's already correct.
         const event = {
             summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
-                dateTime: eventDetails.startDate,
-                timeZone: 'America/Argentina/Buenos_Aires',
+                date: eventDetails.startDate.split('T')[0], // Use date for all-day events
             },
             end: {
-                dateTime: eventDetails.endDate,
-                timeZone: 'America/Argentina/Buenos_Aires',
+                date: eventDetails.endDate.split('T')[0], // Use date for all-day events
             },
         };
 
@@ -100,12 +95,10 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
             summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
-                dateTime: eventDetails.startDate,
-                timeZone: 'America/Argentina/Buenos_Aires',
+                date: eventDetails.startDate.split('T')[0],
             },
             end: {
-                dateTime: eventDetails.endDate,
-                timeZone: 'America/Argentina/Buenos_Aires',
+                date: eventDetails.endDate.split('T')[0],
             },
         };
 
