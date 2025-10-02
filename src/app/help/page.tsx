@@ -15,8 +15,26 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { CircleHelp } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Copy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function HelpPage() {
+    const { toast } = useToast();
+    const serviceAccountEmail = process.env.NEXT_PUBLIC_GOOGLE_SERVICE_ACCOUNT_EMAIL;
+
+    const copyToClipboard = () => {
+        if (serviceAccountEmail) {
+            navigator.clipboard.writeText(serviceAccountEmail);
+            toast({
+                title: "Copiado",
+                description: "El email de la cuenta de servicio ha sido copiado al portapapeles.",
+            });
+        }
+    };
+
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
@@ -32,7 +50,7 @@ export default function HelpPage() {
                 <CardTitle>Preguntas Frecuentes</CardTitle>
             </CardHeader>
             <CardContent>
-                 <Accordion type="single" collapsible className="w-full">
+                 <Accordion type="single" collapsible className="w-full" defaultValue="item-6">
                     <AccordionItem value="item-1">
                         <AccordionTrigger>¿Cómo agrego una nueva propiedad?</AccordionTrigger>
                         <AccordionContent>
@@ -83,12 +101,38 @@ export default function HelpPage() {
                         </AccordionContent>
                     </AccordionItem>
                      <AccordionItem value="item-6">
-                        <AccordionTrigger>¿Para qué sirve el ID del Calendario de Google?</AccordionTrigger>
+                        <AccordionTrigger>¿Cómo configuro la sincronización con Google Calendar?</AccordionTrigger>
                         <AccordionContent>
-                        <p>Si configuras el ID de un Calendario de Google para una propiedad, la aplicación sincronizará automáticamente las reservas.</p>
-                        <p>Cuando creas, modificas o eliminas una reserva en la aplicación, el evento correspondiente se creará, modificará o eliminará en tu Calendario de Google.</p>
-                        <p>Esto te permite tener una vista centralizada de tu disponibilidad y compartirla fácilmente.</p>
-                        <p><strong>Importante:</strong> Debes compartir el calendario desde tu cuenta de Google con el email de la cuenta de servicio (`process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL`) y darle permisos de "Hacer cambios a los eventos".</p>
+                        <p>Para que la aplicación pueda sincronizar las reservas con tu calendario, debes compartir tu Google Calendar con la siguiente cuenta de servicio:</p>
+                        {serviceAccountEmail ? (
+                            <Alert className="my-4">
+                                <AlertTitle className="flex items-center justify-between">
+                                    <span>Email de la Cuenta de Servicio</span>
+                                    <Button variant="ghost" size="icon" onClick={copyToClipboard}>
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </AlertTitle>
+                                <AlertDescription>
+                                    <code className="font-mono text-sm">{serviceAccountEmail}</code>
+                                </AlertDescription>
+                            </Alert>
+                        ) : (
+                            <Alert variant="destructive" className="my-4">
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>
+                                    La variable de entorno para el email de la cuenta de servicio no está configurada. Contacta a soporte.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        <p><strong>Pasos a seguir:</strong></p>
+                        <ol className="list-decimal list-inside space-y-2 mt-2">
+                            <li>Copia el email de arriba.</li>
+                            <li>Abre tu Google Calendar y ve a la configuración del calendario que quieres sincronizar.</li>
+                            <li>En la sección "Compartir con personas y grupos específicos", añade el email que copiaste.</li>
+                            <li>Asegúrate de darle el permiso <strong>"Hacer cambios a los eventos"</strong>.</li>
+                            <li>Guarda los cambios.</li>
+                        </ol>
+                        <p className="mt-4"><strong>Importante:</strong> También necesitas el ID del Calendario. Puedes añadirlo al crear o editar una propiedad en <strong>Configuración &gt; Propiedades</strong>.</p>
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>
