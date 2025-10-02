@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -79,12 +80,6 @@ export function PropertyAddForm() {
                     Dirección
                     </Label>
                     <Input id="address" name="address" className="col-span-3" required />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="googleCalendarId" className="text-right">
-                    ID Calendario Google
-                    </Label>
-                    <Input id="googleCalendarId" name="googleCalendarId" className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="imageUrl" className="text-right">

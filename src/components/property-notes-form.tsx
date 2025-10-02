@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
@@ -61,7 +62,6 @@ export function PropertyNotesForm({ property }: { property: Property }) {
           {/* Pass all existing property data to avoid accidental deletion */}
           <input type="hidden" name="name" defaultValue={property.name} />
           <input type="hidden" name="address" defaultValue={property.address} />
-          <input type="hidden" name="googleCalendarId" defaultValue={property.googleCalendarId} />
           <input type="hidden" name="imageUrl" defaultValue={property.imageUrl} />
           <Textarea
             name="notes"

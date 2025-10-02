@@ -73,10 +73,6 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   
   const { property, properties, tenants, bookings, expenses, categories, origins } = data;
 
-  const calendarSrc = property.googleCalendarId 
-    ? `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(property.googleCalendarId)}&ctz=America/Argentina/Buenos_Aires`
-    : null;
-
   return (
     <div className="flex-1 space-y-4">
     <div className="flex items-center justify-between space-y-2">
@@ -112,7 +108,6 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         <Tabs defaultValue="bookings" className="space-y-4">
             <div className="flex justify-between items-center">
             <TabsList>
-                <TabsTrigger value="calendar">Calendario</TabsTrigger>
                 <TabsTrigger value="bookings">Reservas</TabsTrigger>
                 <TabsTrigger value="expenses">Gastos</TabsTrigger>
             </TabsList>
@@ -121,32 +116,6 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 <ExpenseAddForm propertyId={property.id} categories={categories} />
             </div>
             </div>
-            <TabsContent value="calendar" className="space-y-4">
-            <Card>
-                <CardHeader>
-                <CardTitle>Calendario de Disponibilidad</CardTitle>
-                <CardDescription>
-                    Disponibilidad de la propiedad.
-                </CardDescription>
-                </CardHeader>
-                <CardContent>
-                {calendarSrc ? (
-                    <div className="relative h-[600px] w-full">
-                        <iframe
-                            src={calendarSrc}
-                            style={{ borderWidth: 0 }}
-                            width="100%"
-                            height="600"
-                            frameBorder="0"
-                            scrolling="no"
-                        ></iframe>
-                    </div>
-                ) : (
-                    <p>No hay un calendario de Google configurado para esta propiedad.</p>
-                )}
-                </CardContent>
-            </Card>
-            </TabsContent>
             <TabsContent value="bookings" className="space-y-4">
             <Card>
                 <CardHeader>

@@ -46,14 +46,12 @@ import {
     EmailTemplate,
     db
 } from "./data";
-import { addEventToCalendar, deleteEventFromCalendar, updateEventInCalendar } from "./google-calendar";
 
 
 export async function addProperty(previousState: any, formData: FormData) {
   const newPropertyData = {
     name: formData.get("name") as string,
     address: formData.get("address") as string,
-    googleCalendarId: formData.get("googleCalendarId") as string,
     imageUrl: formData.get("imageUrl") as string,
     notes: formData.get("notes") as string || "",
     contractTemplate: formData.get("contractTemplate") as string || "",
@@ -89,11 +87,10 @@ export async function addProperty(previousState: any, formData: FormData) {
 
 
 export async function updateProperty(previousState: any, formData: FormData) {
-  const propertyData: Property = {
+  const propertyData: Omit<Property, 'googleCalendarId'> = {
     id: formData.get("id") as string,
     name: formData.get("name") as string,
     address: formData.get("address") as string,
-    googleCalendarId: formData.get("googleCalendarId") as string,
     imageUrl: formData.get("imageUrl") as string,
     notes: formData.get("notes") as string,
     contractTemplate: formData.get("contractTemplate") as string,
@@ -253,36 +250,9 @@ export async function addBooking(previousState: any, formData: FormData) {
     }
 
     try {
-        // First, save the booking to our database.
-        const newBooking = await dbAddBooking(bookingData);
-        
-        // Then, try to sync with Google Calendar.
-        const property = await getPropertyById(bookingData.propertyId);
-        const tenant = await getTenantById(bookingData.tenantId);
-
-        if (property && property.googleCalendarId && tenant) {
-            try {
-                const eventId = await addEventToCalendar(property.googleCalendarId, {
-                    startDate: bookingData.startDate,
-                    endDate: bookingData.endDate,
-                    tenantName: tenant.name,
-                    propertyName: property.name,
-                    notes: bookingData.notes,
-                });
-                // If the event is created successfully, update our booking with the event ID.
-                if (eventId) {
-                    await dbUpdateBooking({ ...newBooking, googleCalendarEventId: eventId });
-                }
-            } catch (calendarError: any) {
-                 console.error("Calendar sync failed on booking creation:", calendarError);
-                 revalidatePathsAfterBooking(bookingData.propertyId);
-                 return { success: true, message: `Reserva creada, pero falló la sincronización del calendario. Causa: ${calendarError.message}` };
-            }
-        }
-    
+        await dbAddBooking(bookingData);
         revalidatePathsAfterBooking(bookingData.propertyId);
         return { success: true, message: "Reserva creada correctamente." };
-
     } catch (dbError: any) {
         console.error("Error creating booking in DB:", dbError);
         return { success: false, message: `Error de base de datos: ${dbError.message}` };
@@ -312,7 +282,6 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             currency: formData.get("currency") as 'USD' | 'ARS',
             notes: formData.get("notes") as string,
             contractStatus: formData.get("contractStatus") as ContractStatus,
-            googleCalendarEventId: oldBooking.googleCalendarEventId, // Preserve existing event ID
             originId: originIdValue === 'none' ? null : originIdValue,
             guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus,
             guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS',
@@ -348,40 +317,6 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
         
         const updatedBookingFromDb = await dbUpdateBooking(finalBookingState);
 
-        const calendarFieldsChanged = finalBookingState.startDate !== oldBooking.startDate || 
-                                     finalBookingState.endDate !== oldBooking.endDate || 
-                                     finalBookingState.tenantId !== oldBooking.tenantId ||
-                                     finalBookingState.notes !== oldBooking.notes;
-
-        if (calendarFieldsChanged) {
-            const property = await getPropertyById(finalBookingState.propertyId);
-            const tenant = await getTenantById(finalBookingState.tenantId);
-            
-            if (property && property.googleCalendarId && tenant) {
-                 try {
-                    const eventDetails = { 
-                        startDate: finalBookingState.startDate, 
-                        endDate: finalBookingState.endDate, 
-                        tenantName: tenant.name, 
-                        propertyName: property.name,
-                        notes: finalBookingState.notes 
-                    };
-                    
-                    if (finalBookingState.googleCalendarEventId) {
-                        await updateEventInCalendar(property.googleCalendarId, finalBookingState.googleCalendarEventId, eventDetails);
-                    } else {
-                        const newEventId = await addEventToCalendar(property.googleCalendarId, eventDetails);
-                        if (newEventId) {
-                            await dbUpdateBooking({ id, googleCalendarEventId: newEventId });
-                        }
-                    }
-                } catch (calendarError: any) {
-                    console.error(`Calendar sync failed for booking ${id}:`, calendarError);
-                    revalidatePathsAfterBooking(finalBookingState.propertyId);
-                    return { success: true, message: `Reserva actualizada, pero falló la sincronización del calendario. Causa: ${calendarError.message}`, updatedBooking: updatedBookingFromDb };
-                }
-            }
-        }
         revalidatePathsAfterBooking(finalBookingState.propertyId);
         return { success: true, message: "Reserva actualizada correctamente.", updatedBooking: updatedBookingFromDb };
 
@@ -406,27 +341,9 @@ export async function deleteBooking(previousState: any, formData: FormData) {
     }
 
     try {
-        const bookingToDelete = await getBookingById(id);
-
-        if (bookingToDelete && bookingToDelete.googleCalendarEventId) {
-            try {
-                const property = await getPropertyById(bookingToDelete.propertyId);
-                if (property && property.googleCalendarId) {
-                    await deleteEventFromCalendar(property.googleCalendarId, bookingToDelete.googleCalendarEventId);
-                }
-            } catch(calendarError: any) {
-                 console.error(`Failed to delete calendar event for booking ${id}:`, calendarError);
-                 // Don't block deletion, but inform the user in the success message
-                 await dbDeleteBooking(id);
-                 revalidatePathsAfterBooking(propertyId);
-                 return { success: true, message: `Reserva eliminada, pero falló la eliminación del evento de calendario. Causa: ${calendarError.message}` };
-            }
-        }
-
         await dbDeleteBooking(id);
         revalidatePathsAfterBooking(propertyId);
         return { success: true, message: "Reserva eliminada correctamente." };
-
     } catch (dbError: any) {
         console.error("Error deleting booking from DB:", dbError);
         return { success: false, message: `Error de base de datos: ${dbError.message}` };
@@ -928,7 +845,3 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
-
-    
-
-    

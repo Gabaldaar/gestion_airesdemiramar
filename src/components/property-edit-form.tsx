@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState } from 'react';
@@ -50,10 +51,6 @@ export function PropertyEditForm({ property }: { property: Property }) {
                 <div>
                     <Label htmlFor={`address-${property.id}`}>Dirección</Label>
                     <Input id={`address-${property.id}`} type="text" name="address" defaultValue={property.address} />
-                </div>
-                <div>
-                    <Label htmlFor={`googleCalendarId-${property.id}`}>ID Calendario Google</Label>
-                    <Input id={`googleCalendarId-${property.id}`} type="text" name="googleCalendarId" defaultValue={property.googleCalendarId} />
                 </div>
                 <div>
                     <Label htmlFor={`imageUrl-${property.id}`}>URL de Foto</Label>

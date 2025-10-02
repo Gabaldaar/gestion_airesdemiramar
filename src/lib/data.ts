@@ -1,5 +1,4 @@
 
-
 import { db } from './firebase';
 import {
   collection,
@@ -36,7 +35,6 @@ export type Property = {
   id: string;
   name: string;
   address: string;
-  googleCalendarId: string;
   imageUrl: string;
   notes?: string;
   contractTemplate?: string;
@@ -89,7 +87,6 @@ export type Booking = {
   exchangeRate?: number;
   notes?: string;
   contractStatus?: ContractStatus;
-  googleCalendarEventId?: string;
   originId?: string;
   // New Guarantee Fields
   guaranteeStatus?: GuaranteeStatus;
@@ -297,11 +294,13 @@ export async function addProperty(property: Omit<Property, 'id'>): Promise<Prope
     return { id: docRef.id, ...property };
 }
 
-export async function updateProperty(updatedProperty: Property): Promise<Property | null> {
+export async function updateProperty(updatedProperty: Partial<Property>): Promise<Property | null> {
     const { id, ...data } = updatedProperty;
+    if (!id) throw new Error("Update property requires an ID.");
     const docRef = doc(db, 'properties', id);
     await updateDoc(docRef, data);
-    return updatedProperty;
+    const newDoc = await getDoc(docRef);
+    return newDoc.exists() ? processDoc(newDoc) as Property : null;
 }
 
 export async function deleteProperty(propertyId: string): Promise<void> {
