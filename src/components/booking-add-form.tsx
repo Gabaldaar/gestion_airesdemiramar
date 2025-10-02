@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useMemo } from 'react';
@@ -206,7 +207,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="originId">Origen</Label>
-                    <Select name="originId">
+                    <Select name="originId" defaultValue="none">
                         <SelectTrigger>
                             <SelectValue placeholder="Selecciona un origen" />
                         </SelectTrigger>
@@ -258,3 +259,5 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     </Dialog>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
@@ -111,7 +112,7 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
                     <Label htmlFor="categoryId" className="text-right">
                         Categoría
                     </Label>
-                    <Select name="categoryId" defaultValue={expense.categoryId}>
+                    <Select name="categoryId" defaultValue={expense.categoryId || 'none'}>
                         <SelectTrigger className="col-span-3">
                             <SelectValue placeholder="Selecciona una categoría" />
                         </SelectTrigger>
@@ -172,3 +173,5 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
     </Dialog>
   );
 }
+
+    

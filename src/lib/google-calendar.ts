@@ -2,7 +2,6 @@
 'use server';
 
 import { google } from 'googleapis';
-import { addDays } from 'date-fns';
 
 interface CalendarEventDetails {
     startDate: string;
@@ -52,17 +51,16 @@ export async function addEventToCalendar(calendarId: string, eventDetails: Calen
     const calendar = getCalendarClient();
     
     try {
-        // Google Calendar API expects the end date to be exclusive. 
-        // If a booking is from the 15th to the 18th, the event should end ON the 18th, not start on the 18th.
-        // The `endDate` in our app is the check-out day, so it's already correct.
         const event = {
             summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
-                date: eventDetails.startDate.split('T')[0], // Use date for all-day events
+                dateTime: eventDetails.startDate,
+                timeZone: 'America/Argentina/Buenos_Aires',
             },
             end: {
-                date: eventDetails.endDate.split('T')[0], // Use date for all-day events
+                dateTime: eventDetails.endDate,
+                timeZone: 'America/Argentina/Buenos_Aires',
             },
         };
 
@@ -95,10 +93,12 @@ export async function updateEventInCalendar(calendarId: string, eventId: string,
             summary: `Reserva - ${eventDetails.tenantName} - ${eventDetails.propertyName}`,
             description: `Notas: ${eventDetails.notes || 'N/A'}`,
             start: {
-                date: eventDetails.startDate.split('T')[0],
+                dateTime: eventDetails.startDate,
+                timeZone: 'America/Argentina/Buenos_Aires',
             },
             end: {
-                date: eventDetails.endDate.split('T')[0],
+                dateTime: eventDetails.endDate,
+                timeZone: 'America/Argentina/Buenos_Aires',
             },
         };
 

@@ -125,7 +125,7 @@ export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, on
                       <Label htmlFor="originId" className="text-right">
                           Origen
                       </Label>
-                      <Select name="originId" defaultValue={tenant.originId}>
+                      <Select name="originId" defaultValue={tenant.originId || 'none'}>
                           <SelectTrigger className="col-span-3">
                               <SelectValue placeholder="Selecciona un origen" />
                           </SelectTrigger>
@@ -158,3 +158,5 @@ export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, on
     </>
   );
 }
+
+    

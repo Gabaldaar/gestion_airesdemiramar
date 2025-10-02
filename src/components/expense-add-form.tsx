@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -121,7 +122,7 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
                     <Label htmlFor="categoryId" className="text-right">
                         Categoría
                     </Label>
-                    <Select name="categoryId">
+                    <Select name="categoryId" defaultValue="none">
                         <SelectTrigger className="col-span-3">
                             <SelectValue placeholder="Selecciona una categoría" />
                         </SelectTrigger>
@@ -182,3 +183,5 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
     </Dialog>
   );
 }
+
+    

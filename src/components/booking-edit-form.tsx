@@ -84,7 +84,11 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
 
   // Guarantee state
   const [guaranteeStatus, setGuaranteeStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
-  const [guaranteeAmount, setGuaranteeAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
+  const [guaranteeAmount, setGuaranteeAmount] = useState<string | undefined>(
+    booking.guaranteeAmount !== null && booking.guaranteeAmount !== undefined 
+      ? String(booking.guaranteeAmount) 
+      : undefined
+  );
   const [guaranteeReceivedDate, setGuaranteeReceivedDate] = useState<Date | undefined>(
     booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined
   );
@@ -97,7 +101,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
     setConflict(null);
     setGuaranteeStatus(booking.guaranteeStatus || 'not_solicited');
-    setGuaranteeAmount(booking.guaranteeAmount || undefined);
+    setGuaranteeAmount(booking.guaranteeAmount ? String(booking.guaranteeAmount) : undefined);
     setGuaranteeReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
     setGuaranteeReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
   };
@@ -112,8 +116,9 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   useEffect(() => {
     if (isOpen) {
       getOrigins().then(setOrigins);
+      resetForm(); // Reset form state every time it opens
     }
-  }, [isOpen]);
+  }, [isOpen, booking]); // Rerun when booking changes as well
 
    useEffect(() => {
     if (date?.from && date?.to && allBookings) {
@@ -249,7 +254,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="originId">Origen</Label>
-                        <Select name="originId" defaultValue={booking.originId}>
+                        <Select name="originId" defaultValue={booking.originId || 'none'}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un origen" />
                             </SelectTrigger>
@@ -321,7 +326,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                          <div className='flex gap-2'>
                             <div className="space-y-2 flex-grow">
                                 <Label htmlFor="guaranteeAmount">Monto</Label>
-                                <Input id="guaranteeAmount" name="guaranteeAmount" type="number" step="0.01" value={guaranteeAmount || ''} onChange={(e) => setGuaranteeAmount(e.target.value ? parseFloat(e.target.value) : undefined)} />
+                                <Input id="guaranteeAmount" name="guaranteeAmount" type="number" step="0.01" value={guaranteeAmount || ''} onChange={(e) => setGuaranteeAmount(e.target.value)} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="guaranteeCurrency">Moneda</Label>
@@ -366,3 +371,4 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   );
 }
 
+    

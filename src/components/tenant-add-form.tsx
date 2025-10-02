@@ -124,7 +124,7 @@ export function TenantAddForm() {
                     <Label htmlFor="originId" className="text-right">
                         Origen
                     </Label>
-                    <Select name="originId">
+                    <Select name="originId" defaultValue="none">
                         <SelectTrigger className="col-span-3">
                             <SelectValue placeholder="Selecciona un origen" />
                         </SelectTrigger>
@@ -156,3 +156,5 @@ export function TenantAddForm() {
     </Dialog>
   );
 }
+
+    
