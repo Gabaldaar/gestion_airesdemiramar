@@ -134,10 +134,9 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
         const startDate = new Date(otherBooking.startDate);
         const endDate = new Date(otherBooking.endDate);
         
-        // Block the nights. A booking from 5 to 10 occupies nights of 5,6,7,8,9.
-        // Day 5 is unavailable for new check-in, Day 10 is available for new check-in.
-        // Visually, this means we should disable the range from startDate to the day BEFORE endDate.
-        const firstDayToBlock = startDate;
+        // Block only the nights between check-in and check-out.
+        // For a booking from 5th to 10th, we block 6, 7, 8, 9.
+        const firstDayToBlock = addDays(startDate, 1);
         const lastDayToBlock = addDays(endDate, -1);
         
         if (firstDayToBlock > lastDayToBlock) {
