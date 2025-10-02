@@ -254,9 +254,9 @@ export async function addBooking(previousState: any, formData: FormData) {
             contractStatus: 'not_sent' as ContractStatus,
             guaranteeStatus: 'not_solicited' as GuaranteeStatus,
         });
-    } catch (dbError) {
+    } catch (dbError: any) {
         console.error("Error creating booking in DB:", dbError);
-        return { success: false, message: "Error al guardar la reserva en la base de datos." };
+        return { success: false, message: `Error de base de datos: ${dbError.message}` };
     }
 
     // Calendar sync is now best-effort and won't block success
@@ -276,11 +276,11 @@ export async function addBooking(previousState: any, formData: FormData) {
                 await dbUpdateBooking({ id: newBooking.id, googleCalendarEventId: eventId }).catch(e => console.error("Failed to save event ID to booking:", e));
             }
         }
-    } catch (calendarError) {
+    } catch (calendarError: any) {
         console.error("Calendar sync failed on booking creation, but the booking was saved:", calendarError);
         revalidatePaths(propertyId);
         // Return a success message with a warning about the calendar
-        return { success: true, message: "Reserva creada, pero falló la sincronización con el calendario." };
+        return { success: true, message: `Reserva creada, pero falló la sincronización con el calendario: ${calendarError.message}` };
     }
 
     revalidatePaths(propertyId);
@@ -331,9 +331,9 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
         finalBookingState = { ...oldBooking, ...updatedBookingData };
         updatedBookingFromDb = await dbUpdateBooking(finalBookingState);
 
-    } catch (dbError) {
+    } catch (dbError: any) {
          console.error("Error updating booking in DB:", dbError);
-         return { success: false, message: "Error al actualizar la reserva en la base de datos." };
+         return { success: false, message: `Error de base de datos: ${dbError.message}` };
     }
 
     // Calendar sync is now best-effort
@@ -369,10 +369,10 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
                 }
             }
         }
-    } catch (calendarError) {
+    } catch (calendarError: any) {
         console.error(`Calendar sync failed for booking ${id}, but the booking was updated:`, calendarError);
         revalidatePaths(finalBookingState.propertyId);
-        return { success: true, message: "Reserva actualizada, pero falló la sincronización con el calendario.", updatedBooking: updatedBookingFromDb };
+        return { success: true, message: `Reserva actualizada, pero falló la sincronización con el calendario: ${calendarError.message}`, updatedBooking: updatedBookingFromDb };
     }
 
     revalidatePaths(finalBookingState.propertyId);
@@ -397,9 +397,9 @@ export async function deleteBooking(previousState: any, formData: FormData) {
 
     try {
         await dbDeleteBooking(id);
-    } catch (dbError) {
+    } catch (dbError: any) {
         console.error("Error deleting booking from DB:", dbError);
-        return { success: false, message: "Error al eliminar la reserva de la base de datos." };
+        return { success: false, message: `Error de base de datos: ${dbError.message}` };
     }
 
     // Calendar sync is now best-effort
