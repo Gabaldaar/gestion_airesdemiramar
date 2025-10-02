@@ -20,10 +20,10 @@ export function checkDateConflict(
 
   // Set hours to 0 to compare dates only
   const selectedStart = new Date(selectedRange.from);
-  selectedStart.setHours(0, 0, 0, 0);
+  selectedStart.setUTCHours(0, 0, 0, 0);
 
   const selectedEnd = new Date(selectedRange.to);
-  selectedEnd.setHours(0, 0, 0, 0);
+  selectedEnd.setUTCHours(0, 0, 0, 0);
 
   for (const booking of existingBookings) {
     // Ignore the booking we are currently editing
@@ -32,25 +32,15 @@ export function checkDateConflict(
     }
 
     const bookingStart = new Date(booking.startDate);
-    bookingStart.setHours(0, 0, 0, 0);
+    bookingStart.setUTCHours(0, 0, 0, 0);
     
     const bookingEnd = new Date(booking.endDate);
-    bookingEnd.setHours(0, 0, 0, 0);
+    bookingEnd.setUTCHours(0, 0, 0, 0);
     
-    // Case 1: Check-in on the same day as a check-out (Contiguous booking, informational)
-    if (isSameDay(selectedStart, bookingEnd)) {
-      return booking;
-    }
-    
-    // Case 2: Check-out on the same day as a check-in (Contiguous booking, informational)
-    if (isSameDay(selectedEnd, bookingStart)) {
-      return booking;
-    }
-
-    // Case 3: True overlap
     // A conflict exists if the selected range starts BEFORE an existing one ends,
     // AND the selected range ends AFTER an existing one starts.
-    if (selectedStart.getTime() < bookingEnd.getTime() && selectedEnd.getTime() > bookingStart.getTime()) {
+    // This allows the end of one booking to be the start of another.
+    if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
        return booking;
     }
   }

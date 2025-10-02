@@ -139,17 +139,24 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
         return [{ from: startDate, to: lastNight }];
     });
   }, [allBookings, booking.id, booking.propertyId]);
-
-  const getConflictMessage = (): string => {
-    if (!conflict || !date?.from) return "";
+  
+  const getConflictMessage = (): { message: string, isOverlap: boolean } => {
+    if (!conflict || !date?.from || !date?.to) return { message: "", isOverlap: false };
     
-    const conflictEndDate = new Date(conflict.endDate);
-    if (isSameDay(date.from, conflictEndDate)) {
-        return "Atención: La fecha de check-in coincide con un check-out el mismo día.";
+    const conflictStart = new Date(conflict.startDate);
+    const conflictEnd = new Date(conflict.endDate);
+    const selectedStart = new Date(date.from);
+    const selectedEnd = new Date(date.to);
+    
+    if (isSameDay(selectedStart, conflictEnd) || isSameDay(selectedEnd, conflictStart)) {
+        return { message: "Atención: La fecha de check-in/out coincide con otra reserva.", isOverlap: false };
     }
 
-    return "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.";
+    return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.", isOverlap: true };
   }
+  
+  const { message: conflictMessage, isOverlap: isDateOverlap } = getConflictMessage();
+
 
   return (
     <>
@@ -164,11 +171,11 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
             </DialogHeader>
 
             {conflict && (
-                <Alert variant="destructive">
+                <Alert variant={isDateOverlap ? "destructive" : "default"}>
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Alerta de Fechas</AlertTitle>
+                    <AlertTitle>{isDateOverlap ? "Conflicto de Fechas" : "Aviso de Fechas"}</AlertTitle>
                     <AlertDescription>
-                        {getConflictMessage()}
+                        {conflictMessage}
                     </AlertDescription>
                 </Alert>
             )}
@@ -356,7 +363,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                     <DialogClose asChild>
                         <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                     </DialogClose>
-                    <SubmitButton isDisabled={!date?.from || !date?.to} />
+                    <SubmitButton isDisabled={!date?.from || !date?.to || isDateOverlap} />
                 </DialogFooter>
             </form>
             {state.message && !state.success && (
@@ -367,4 +374,3 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     </>
   );
 }
-
