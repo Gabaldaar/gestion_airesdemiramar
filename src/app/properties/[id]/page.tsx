@@ -29,6 +29,7 @@ import { Copy, Calendar } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface PropertyDetailData {
     property: Property;
@@ -125,14 +126,32 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                         readOnly
                         />
                     </div>
-                    <Button type="button" size="icon" onClick={handleCopyIcalUrl}>
-                        <Copy className="h-4 w-4" />
-                    </Button>
-                     <Button type="button" size="icon" asChild>
-                        <a href={icalUrl} target="_blank" rel="noopener noreferrer">
-                            <Calendar className="h-4 w-4" />
-                        </a>
-                    </Button>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button type="button" size="icon" onClick={handleCopyIcalUrl}>
+                                    <Copy className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Copiar enlace de suscripción</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button type="button" size="icon" asChild>
+                                    <a href={icalUrl} target="_blank" rel="noopener noreferrer">
+                                        <Calendar className="h-4 w-4" />
+                                    </a>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Descargar archivo .ics</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
             </CardContent>
         </Card>
