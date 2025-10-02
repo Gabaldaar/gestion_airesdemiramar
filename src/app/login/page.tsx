@@ -17,35 +17,38 @@ export default function LoginPage() {
   const [origin, setOrigin] = useState<string | null>(null);
 
   useEffect(() => {
-    // Este efecto se ejecuta solo en el cliente para obtener el origen del dominio.
-    const currentOrigin = window.location.origin;
-    setOrigin(currentOrigin);
+    // This effect runs only on the client to get the domain origin.
+    if (typeof window !== 'undefined') {
+        setOrigin(window.location.origin);
+    }
   }, []);
-
-  // La redirección después del login ahora es manejada por LayoutManager.
-  // useEffect(() => {
-  //   if (!loading && user) {
-  //     router.push('/');
-  //   }
-  // }, [user, loading, router]);
 
   const handleLogin = async () => {
     try {
       await signInWithGoogle();
-      // La redirección ocurrirá automáticamente gracias al LayoutManager
+      // The redirection will be handled by LayoutManager
     } catch (error) {
       console.error('Error during sign-in:', error);
-      // Opcionalmente, muestra un mensaje de error al usuario
+      // Optionally, show an error message to the user
     }
   };
 
-  if (loading || user) {
+  // If we are loading, show a generic loading screen.
+  // The redirect logic is now fully in LayoutManager.
+  if (loading) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
             <p className="text-muted-foreground">Cargando...</p>
         </div>
     );
   }
+  
+  // If there is a user, LayoutManager should have already redirected.
+  // If we reach here with a user, it means we are in a redirect state, so we show nothing to avoid flicker.
+  if (user) {
+      return null;
+  }
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
