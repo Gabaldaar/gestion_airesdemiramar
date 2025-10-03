@@ -25,11 +25,14 @@ import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Copy, Calendar } from 'lucide-react';
+import { Copy, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface PropertyDetailData {
     property: Property;
@@ -96,13 +99,28 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   const { property, properties, tenants, bookings, expenses, categories, origins } = data;
   
   const icalUrl = `${baseUrl}/api/ical/${property.id}`;
+  
+  const bookedDays = bookings.map(booking => ({
+    from: new Date(booking.startDate),
+    to: new Date(booking.endDate),
+  }));
 
   return (
     <div className="flex-1 space-y-4">
         <div className="flex items-center justify-between space-y-2">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
-                <p className="text-muted-foreground">{property.address}</p>
+            <div className="flex items-center gap-4">
+                <Image
+                    src={property.imageUrl || 'https://picsum.photos/150/100'}
+                    alt={`Foto de ${property.name}`}
+                    width={150}
+                    height={100}
+                    className="rounded-lg object-cover"
+                    data-ai-hint="apartment building exterior"
+                />
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight text-primary">{property.name}</h2>
+                    <p className="text-muted-foreground">{property.address}</p>
+                </div>
             </div>
             <PropertyNotesForm property={property} />
         </div>
@@ -143,7 +161,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                             <TooltipTrigger asChild>
                                 <Button type="button" size="icon" asChild>
                                     <a href={icalUrl} target="_blank" rel="noopener noreferrer">
-                                        <Calendar className="h-4 w-4" />
+                                        <CalendarIcon className="h-4 w-4" />
                                     </a>
                                 </Button>
                             </TooltipTrigger>
@@ -162,6 +180,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
             <TabsList>
                 <TabsTrigger value="bookings">Reservas</TabsTrigger>
                 <TabsTrigger value="expenses">Gastos</TabsTrigger>
+                <TabsTrigger value="calendar">Calendario</TabsTrigger>
             </TabsList>
             <div className="flex items-center space-x-2">
                 <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
@@ -191,6 +210,30 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </CardHeader>
                 <CardContent>
                 <ExpensesList expenses={expenses} categories={categories} />
+                </CardContent>
+            </Card>
+            </TabsContent>
+            <TabsContent value="calendar" className="space-y-4">
+            <Card>
+                <CardHeader>
+                <CardTitle>Calendario de Ocupación</CardTitle>
+                <CardDescription>
+                    Vista de las fechas reservadas para esta propiedad.
+                </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                   <Calendar
+                        mode="range"
+                        selected={{ from: undefined, to: undefined }}
+                        modifiers={{ booked: bookedDays }}
+                        modifiersClassNames={{ booked: 'bg-primary/20' }}
+                        numberOfMonths={2}
+                        locale={es}
+                        disabled
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear() - 1}
+                        toYear={new Date().getFullYear() + 5}
+                    />
                 </CardContent>
             </Card>
             </TabsContent>
