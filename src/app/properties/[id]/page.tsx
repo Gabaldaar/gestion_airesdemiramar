@@ -46,7 +46,8 @@ interface PropertyDetailData {
 
 function CustomDayContent(props: DayProps) {
     const { date } = props;
-    const bookingForDay = (props.modifiers as any).booking;
+    // Check if modifiers exist before accessing them
+    const bookingForDay = props.modifiers ? (props.modifiers as any).booking : undefined;
 
     return (
         <div className="relative w-full h-full flex items-center justify-center">
@@ -295,5 +296,3 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
-
-    
