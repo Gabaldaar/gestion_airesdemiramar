@@ -1,6 +1,9 @@
 
 import { getBookingsByPropertyId, getPropertyById, getTenantById } from '@/lib/data';
 import { NextRequest } from 'next/server';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
 
 function formatICalDateTime(date: Date): string {
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -59,6 +62,9 @@ export async function GET(
 
       const summaryText = `Reserva - ${tenantName} - ${property.name}`;
 
+      const formattedStartDate = format(new Date(booking.startDate), "dd/MM/yyyy", { locale: es });
+      const formattedEndDate = format(new Date(booking.endDate), "dd/MM/yyyy", { locale: es });
+
       icalContent.push('BEGIN:VEVENT');
       icalContent.push(`UID:${booking.id}@airesdemiramar.app`);
       icalContent.push(`DTSTAMP:${formatICalDateTime(now)}`);
@@ -66,7 +72,7 @@ export async function GET(
       icalContent.push(`DTEND:${formatICalDateTime(endDate)}`);
       icalContent.push(`SUMMARY:${escapeICalText(summaryText)}`);
       
-      let description = `Reserva para ${escapeICalText(tenantName)} en la propiedad ${escapeICalText(property.name)}.`;
+      let description = `Reserva para ${escapeICalText(tenantName)} en ${escapeICalText(property.name)} desde el ${formattedStartDate} hasta el ${formattedEndDate}.`;
       if (booking.notes) {
           description += `\\n\\nNotas: ${escapeICalText(booking.notes)}`;
       }
