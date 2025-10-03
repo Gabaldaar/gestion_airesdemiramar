@@ -1,7 +1,7 @@
 
 import { getBookingsByPropertyId, getPropertyById, getTenantById } from '@/lib/data';
 import { NextRequest } from 'next/server';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 
@@ -50,7 +50,8 @@ export async function GET(
       const tenant = tenantsMap.get(booking.tenantId);
       const tenantName = tenant ? tenant.name : 'Inquilino Desconocido';
       
-      const startDate = new Date(booking.startDate);
+      // The event should start one day after check-in to keep the check-in day free.
+      const startDate = addDays(new Date(booking.startDate), 1);
       // Set check-in time, e.g., 10 PM UTC
       startDate.setUTCHours(22, 0, 0, 0);
 
