@@ -32,8 +32,11 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
-import { DayProps, DayContent } from 'react-day-picker';
+import { DayPicker, DayProps } from 'react-day-picker';
 import { isWithinInterval } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
+
 
 interface PropertyDetailData {
     property: Property;
@@ -87,18 +90,24 @@ export default function PropertyDetailPage() {
   }, [user, propertyId]);
   
   const occupiedDaysModifiers = useMemo(() => {
-    const modifiers: Record<string, any> = { booked: [] };
     if (!data?.bookings) {
       return {};
     }
     
+    const modifiers: Record<string, any> = {
+        booked: [],
+        checkin: [],
+        checkout: [],
+        booked_middle: [],
+     };
+
     data.bookings.forEach(booking => {
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
 
         modifiers.booked.push({ from: startDate, to: endDate });
-        modifiers[`checkin-${booking.id}`] = startDate;
-        modifiers[`checkout-${booking.id}`] = endDate;
+        modifiers.checkin.push(startDate);
+        modifiers.checkout.push(endDate);
         
         if (endDate > startDate) {
            const middleRange = {
@@ -106,42 +115,75 @@ export default function PropertyDetailPage() {
                 to: new Date(endDate.getTime() - 86400000) // end - 1 day
             };
             if (middleRange.from <= middleRange.to) {
-                modifiers[`booked_middle-${booking.id}`] = middleRange;
+                modifiers.booked_middle.push(middleRange);
             }
         }
     });
     return modifiers;
   }, [data?.bookings]);
 
-  function CustomDayContent(props: DayProps) {
-    let bookingForDay: BookingWithDetails | undefined = undefined;
-
-    if (props.modifiers && props.modifiers.booked && data) {
-        bookingForDay = data.bookings.find(b => 
+  function CustomDay(props: DayProps) {
+    const bookingForDay = useMemo(() => {
+        if (!props.modifiers.booked || !data?.bookings) {
+            return undefined;
+        }
+        return data.bookings.find(b => 
             isWithinInterval(props.date, { start: new Date(b.startDate), end: new Date(b.endDate) })
         );
-    }
-    
-    const tenant = bookingForDay ? data?.tenants.find(t => t.id === bookingForDay?.tenantId) : undefined;
-    const dayContent = <DayContent {...props} />;
+    }, [props.date, props.modifiers.booked, data?.bookings]);
+
+    const tenant = useMemo(() => {
+        if (!bookingForDay || !data?.tenants) {
+            return undefined;
+        }
+        return data.tenants.find(t => t.id === bookingForDay.tenantId);
+    }, [bookingForDay, data?.tenants]);
+
+    const buttonClassName = cn(
+      buttonVariants({ variant: "ghost" }),
+      "h-9 w-9 p-0 font-normal",
+      props.modifiers.today && "bg-accent text-accent-foreground",
+      (props.modifiers.selected || props.modifiers.booked) && "aria-selected:opacity-100",
+      props.modifiers.booked && "bg-accent text-accent-foreground",
+      props.modifiers.checkin && "day-checkin",
+      props.modifiers.checkout && "day-checkout",
+      props.modifiers.booked_middle && "day-booked-middle",
+      props.modifiers.disabled && "text-muted-foreground opacity-50",
+      props.modifiers.outside && "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30"
+    );
 
     if (tenant) {
-        return (
-            <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                       {dayContent}
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>{tenant.name}</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        );
+      return (
+        <TooltipProvider delayDuration={100}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className={buttonClassName}
+                disabled={props.modifiers.disabled}
+              >
+                {props.date.getDate()}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{tenant.name}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
     }
 
-    return dayContent;
-}
+    return (
+      <button
+        type="button"
+        className={buttonClassName}
+        disabled={props.modifiers.disabled}
+      >
+        {props.date.getDate()}
+      </button>
+    );
+  }
+
 
   if (loading || !data) {
     return <p>Cargando detalles de la propiedad...</p>;
@@ -276,16 +318,12 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center">
-                   <Calendar
+                   <DayPicker
                         modifiers={occupiedDaysModifiers}
                         modifiersClassNames={{
-                            ...Object.keys(occupiedDaysModifiers).reduce((acc, key) => {
-                                if (key.startsWith('checkin')) acc[key] = 'day-checkin';
-                                if (key.startsWith('checkout')) acc[key] = 'day-checkout';
-                                if (key.startsWith('booked_middle')) acc[key] = 'day-booked-middle';
-                                return acc;
-                            }, {} as Record<string, string>),
-                             booked: 'font-bold'
+                            checkin: 'day-checkin',
+                            checkout: 'day-checkout',
+                            booked_middle: 'day-booked-middle',
                         }}
                         numberOfMonths={2}
                         locale={es}
@@ -294,7 +332,7 @@ export default function PropertyDetailPage() {
                         fromYear={new Date().getFullYear() - 2}
                         toYear={new Date().getFullYear() + 5}
                         components={{
-                          Day: CustomDayContent
+                          Day: CustomDay
                         }}
                     />
                 </CardContent>
