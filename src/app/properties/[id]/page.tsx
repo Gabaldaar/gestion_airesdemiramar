@@ -114,26 +114,36 @@ export default function PropertyDetailPage() {
   }, [data?.bookings]);
 
   function CustomDayContent(props: DayProps) {
-    let bookingForDayName: string | undefined = undefined;
+    let bookingForDay: BookingWithDetails | undefined = undefined;
 
     if (props.modifiers && props.modifiers.booked && data) {
-        const booking = data.bookings.find(b => 
+        bookingForDay = data.bookings.find(b => 
             isWithinInterval(props.date, { start: new Date(b.startDate), end: new Date(b.endDate) })
         );
-        if (booking) {
-            const tenant = data.tenants.find(t => t.id === booking.tenantId);
-            bookingForDayName = tenant?.name.split(' ')[0]; // Show first name
-        }
+    }
+    
+    const tenant = bookingForDay ? data?.tenants.find(t => t.id === bookingForDay?.tenantId) : undefined;
+
+    if (tenant) {
+        return (
+            <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="relative w-full h-full flex items-center justify-center">
+                            <DayContent {...props} />
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{tenant.name}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        );
     }
 
     return (
         <div className="relative w-full h-full flex items-center justify-center">
             <DayContent {...props} />
-            {bookingForDayName && (
-                <div className="absolute bottom-0 text-[8px] font-semibold text-center leading-tight truncate w-full px-px">
-                    {bookingForDayName}
-                </div>
-            )}
         </div>
     );
 }
