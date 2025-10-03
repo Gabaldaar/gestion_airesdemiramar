@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import { notFound, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -22,7 +22,7 @@ import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, FC } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Copy, Calendar as CalendarIcon } from 'lucide-react';
@@ -32,6 +32,8 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
+import { DayPicker, DayProps } from 'react-day-picker';
+import { isWithinInterval } from 'date-fns';
 
 
 interface PropertyDetailData {
@@ -43,6 +45,37 @@ interface PropertyDetailData {
     categories: ExpenseCategory[];
     origins: Origin[];
 }
+
+const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> = ({ date, activeModifiers, data, ...props }) => {
+    const bookingForDay = useMemo(() => {
+        if (!data) return undefined;
+        return data.bookings.find(b => 
+            isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
+        );
+    }, [date, data]);
+
+    const tenant = useMemo(() => {
+        if (!bookingForDay || !data?.tenants) return undefined;
+        return data.tenants.find(t => t.id === bookingForDay.tenantId);
+    }, [bookingForDay, data?.tenants]);
+
+    if (tenant) {
+        return (
+            <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span {...props} >{date.getDate()}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{tenant.name}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        );
+    }
+    
+    return <span {...props}>{date.getDate()}</span>;
+};
 
 
 export default function PropertyDetailPage() {
@@ -64,37 +97,34 @@ export default function PropertyDetailPage() {
     if (user && propertyId) {
         const fetchData = async () => {
             setLoading(true);
-            const [property, properties, tenants, bookings, expenses, categories, origins] = await Promise.all([
-                getPropertyById(propertyId),
-                getProperties(),
-                getTenants(),
-                getBookingsByPropertyId(propertyId),
-                getPropertyExpensesByPropertyId(propertyId),
-                getExpenseCategories(),
-                getOrigins(),
-            ]);
+            try {
+                const [property, properties, tenants, bookings, expenses, categories, origins] = await Promise.all([
+                    getPropertyById(propertyId),
+                    getProperties(),
+                    getTenants(),
+                    getBookingsByPropertyId(propertyId),
+                    getPropertyExpensesByPropertyId(propertyId),
+                    getExpenseCategories(),
+                    getOrigins(),
+                ]);
 
-            if (!property) {
-                notFound();
-                return;
+                if (!property) {
+                    // Not found logic will be handled by the return below
+                    setData(null);
+                } else {
+                    setData({ property, properties, tenants, bookings, expenses, categories, origins });
+                }
+            } catch (error) {
+                console.error("Error fetching property details:", error);
+                setData(null);
+            } finally {
+                setLoading(false);
             }
-            setData({ property, properties, tenants, bookings, expenses, categories, origins });
-            setLoading(false);
         };
         fetchData();
     }
   }, [user, propertyId]);
   
-    const occupiedDays = useMemo(() => {
-        if (!data) return [];
-        return data.bookings.flatMap(booking => {
-            const startDate = new Date(booking.startDate);
-            const endDate = new Date(booking.endDate);
-            // Mark check-in and check-out days separately
-            return [{ from: startDate, to: endDate }];
-        });
-    }, [data]);
-
     const dayModifiers = useMemo(() => {
         if (!data) return {};
         
@@ -125,8 +155,12 @@ export default function PropertyDetailPage() {
     };
 
 
-  if (loading || !data) {
+  if (loading) {
     return <p>Cargando detalles de la propiedad...</p>;
+  }
+
+  if (!data) {
+    return <p>Propiedad no encontrada o error al cargar los datos.</p>;
   }
   
   const { property, properties, tenants, bookings, expenses, categories, origins } = data;
@@ -140,6 +174,10 @@ export default function PropertyDetailPage() {
         description: "El enlace iCal ha sido copiado al portapapeles.",
     });
   }
+  
+  const CustomDayContent: React.FC<DayProps> = (props) => (
+    <DayContentWithTooltip {...props} data={data} />
+  );
 
   return (
     <div className="flex-1 space-y-4">
@@ -269,6 +307,9 @@ export default function PropertyDetailPage() {
                         captionLayout="dropdown-buttons"
                         fromYear={new Date().getFullYear() - 2}
                         toYear={new Date().getFullYear() + 5}
+                        components={{
+                            DayContent: CustomDayContent
+                        }}
                     />
                 </CardContent>
             </Card>
@@ -278,4 +319,3 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
-
