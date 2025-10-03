@@ -18,15 +18,12 @@ export function checkDateConflict(
     return null;
   }
 
-  // Use dates as is, assuming they are correctly set by the calendar component
   const selectedStart = selectedRange.from;
   const selectedEnd = selectedRange.to;
-  
-  if (selectedStart >= selectedEnd) {
-    return null; // Invalid range
-  }
 
-
+  // A conflict exists if the selected range starts before an existing one ends,
+  // AND the selected range ends after an existing one starts.
+  // This is the classic interval overlap check.
   for (const booking of existingBookings) {
     if (booking.id === currentBookingId) {
       continue;
@@ -35,9 +32,6 @@ export function checkDateConflict(
     const bookingStart = new Date(booking.startDate);
     const bookingEnd = new Date(booking.endDate);
     
-    // A true overlap conflict exists if the selected range starts strictly before an existing one ends,
-    // AND the selected range ends strictly after an existing one starts.
-    // This will now correctly flag back-to-back bookings as a conflict to be interpreted by the caller.
     if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
        return booking;
     }
@@ -45,5 +39,3 @@ export function checkDateConflict(
 
   return null; // No conflict
 }
-
-

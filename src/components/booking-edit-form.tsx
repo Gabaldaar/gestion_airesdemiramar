@@ -134,7 +134,6 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
         const startDate = new Date(otherBooking.startDate);
         const endDate = new Date(otherBooking.endDate);
         
-        // Block only the nights between check-in and check-out.
         const firstDayToBlock = addDays(startDate, 1);
         const lastDayToBlock = addDays(endDate, -1);
         
@@ -146,7 +145,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     });
   }, [allBookings, booking.id, booking.propertyId]);
   
-  const getConflictMessage = (): { message: string, isOverlap: boolean } => {
+  const { message: conflictMessage, isOverlap: isDateOverlap } = useMemo(() => {
     if (!conflict || !date?.from || !date?.to) return { message: "", isOverlap: false };
     
     const conflictStart = new Date(conflict.startDate);
@@ -154,7 +153,6 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     const selectedStart = new Date(date.from);
     const selectedEnd = new Date(date.to);
     
-    // Check for back-to-back (warning, not an error)
     if (isSameDay(selectedEnd, conflictStart) || isSameDay(selectedStart, conflictEnd)) {
         const message = isSameDay(selectedEnd, conflictStart)
           ? "Atención: El check-out coincide con el check-in de otra reserva."
@@ -162,11 +160,8 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
         return { message, isOverlap: false };
     }
 
-    // Any other conflict is a true overlap
     return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.", isOverlap: true };
-  }
-  
-  const { message: conflictMessage, isOverlap: isDateOverlap } = getConflictMessage();
+  }, [conflict, date]);
 
 
   return (

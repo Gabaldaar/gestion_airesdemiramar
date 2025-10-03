@@ -115,7 +115,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     });
   }, [existingBookings]);
   
-  const getConflictMessage = (): { message: string, isOverlap: boolean } => {
+  const { message: conflictMessage, isOverlap: isDateOverlap } = useMemo(() => {
     if (!conflict || !date?.from || !date?.to) return { message: "", isOverlap: false };
     
     const conflictStart = new Date(conflict.startDate);
@@ -133,9 +133,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
 
     // Any other conflict is a true overlap
     return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.", isOverlap: true };
-  }
-  
-  const { message: conflictMessage, isOverlap: isDateOverlap } = getConflictMessage();
+  }, [conflict, date]);
 
 
   return (
