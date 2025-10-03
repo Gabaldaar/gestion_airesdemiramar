@@ -33,6 +33,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
 import { DayProps, DayContent } from 'react-day-picker';
+import { isWithinInterval } from 'date-fns';
 
 interface PropertyDetailData {
     property: Property;
@@ -44,22 +45,6 @@ interface PropertyDetailData {
     origins: Origin[];
 }
 
-function CustomDayContent(props: DayProps) {
-    const { date } = props;
-    // Check if modifiers exist before accessing them
-    const bookingForDay = props.modifiers ? (props.modifiers as any).booking : undefined;
-
-    return (
-        <div className="relative w-full h-full flex items-center justify-center">
-            <DayContent {...props} />
-            {bookingForDay && (
-                <div className="absolute bottom-0 text-[8px] font-semibold text-center leading-tight truncate w-full px-px">
-                    {bookingForDay}
-                </div>
-            )}
-        </div>
-    );
-}
 
 export default function PropertyDetailPage() {
   const { user } = useAuth();
@@ -75,39 +60,6 @@ export default function PropertyDetailPage() {
     setBaseUrl(window.location.origin);
   }, []);
 
-  const occupiedDaysModifiers = useMemo(() => {
-    const modifiers: Record<string, any> = {};
-    if (!data?.bookings || !data?.tenants) {
-      return {};
-    }
-    
-    data.bookings.forEach(booking => {
-        const tenantName = data.tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
-        const startDate = new Date(booking.startDate);
-        const endDate = new Date(booking.endDate);
-
-        modifiers[`checkin-${booking.id}`] = startDate;
-        modifiers[`checkout-${booking.id}`] = endDate;
-        
-        if (endDate > startDate) {
-           const middleRange = {
-                from: new Date(startDate.getTime() + 86400000), // start + 1 day
-                to: new Date(endDate.getTime() - 86400000) // end - 1 day
-            };
-            if (middleRange.from <= middleRange.to) {
-                modifiers[`booked_middle-${booking.id}`] = middleRange;
-            }
-        }
-        // This is a custom modifier to pass the tenant name
-        modifiers.booking = (date: Date) => {
-             if (date >= startDate && date <= endDate) {
-                return tenantName;
-            }
-            return undefined;
-        }
-    });
-    return modifiers;
-  }, [data?.bookings, data?.tenants]);
 
   useEffect(() => {
     if (user && propertyId) {
@@ -134,6 +86,58 @@ export default function PropertyDetailPage() {
     }
   }, [user, propertyId]);
   
+  const occupiedDaysModifiers = useMemo(() => {
+    const modifiers: Record<string, any> = { booked: [] };
+    if (!data?.bookings) {
+      return {};
+    }
+    
+    data.bookings.forEach(booking => {
+        const startDate = new Date(booking.startDate);
+        const endDate = new Date(booking.endDate);
+
+        modifiers.booked.push({ from: startDate, to: endDate });
+        modifiers[`checkin-${booking.id}`] = startDate;
+        modifiers[`checkout-${booking.id}`] = endDate;
+        
+        if (endDate > startDate) {
+           const middleRange = {
+                from: new Date(startDate.getTime() + 86400000), // start + 1 day
+                to: new Date(endDate.getTime() - 86400000) // end - 1 day
+            };
+            if (middleRange.from <= middleRange.to) {
+                modifiers[`booked_middle-${booking.id}`] = middleRange;
+            }
+        }
+    });
+    return modifiers;
+  }, [data?.bookings]);
+
+  function CustomDayContent(props: DayProps) {
+    let bookingForDayName: string | undefined = undefined;
+
+    if (props.modifiers.booked && data) {
+        const booking = data.bookings.find(b => 
+            isWithinInterval(props.date, { start: new Date(b.startDate), end: new Date(b.endDate) })
+        );
+        if (booking) {
+            const tenant = data.tenants.find(t => t.id === booking.tenantId);
+            bookingForDayName = tenant?.name.split(' ')[0]; // Show first name
+        }
+    }
+
+    return (
+        <div className="relative w-full h-full flex items-center justify-center">
+            <DayContent {...props} />
+            {bookingForDayName && (
+                <div className="absolute bottom-0 text-[8px] font-semibold text-center leading-tight truncate w-full px-px">
+                    {bookingForDayName}
+                </div>
+            )}
+        </div>
+    );
+}
+
   if (loading || !data) {
     return <p>Cargando detalles de la propiedad...</p>;
   }
@@ -276,7 +280,7 @@ export default function PropertyDetailPage() {
                                 if (key.startsWith('booked_middle')) acc[key] = 'day-booked-middle';
                                 return acc;
                             }, {} as Record<string, string>),
-                             booking: 'font-bold'
+                             booked: 'font-bold'
                         }}
                         numberOfMonths={2}
                         locale={es}
