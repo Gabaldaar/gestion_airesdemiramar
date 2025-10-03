@@ -135,7 +135,6 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
         const endDate = new Date(otherBooking.endDate);
         
         // Block only the nights between check-in and check-out.
-        // For a booking from 5th to 10th, we block 6, 7, 8, 9.
         const firstDayToBlock = addDays(startDate, 1);
         const lastDayToBlock = addDays(endDate, -1);
         
@@ -155,14 +154,15 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     const selectedStart = new Date(date.from);
     const selectedEnd = new Date(date.to);
     
-    // Check if it's a "back-to-back" booking rather than a true overlap
-    if (isSameDay(selectedEnd, conflictStart)) {
-      return { message: "Atención: El check-out coincide con el check-in de otra reserva.", isOverlap: false };
-    }
-    if (isSameDay(selectedStart, conflictEnd)) {
-        return { message: "Atención: El check-in coincide con el check-out de otra reserva.", isOverlap: false };
+    // Check for back-to-back (warning, not an error)
+    if (isSameDay(selectedEnd, conflictStart) || isSameDay(selectedStart, conflictEnd)) {
+        const message = isSameDay(selectedEnd, conflictStart)
+          ? "Atención: El check-out coincide con el check-in de otra reserva."
+          : "Atención: El check-in coincide con el check-out de otra reserva.";
+        return { message, isOverlap: false };
     }
 
+    // Any other conflict is a true overlap
     return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.", isOverlap: true };
   }
   
@@ -181,7 +181,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
             </DialogDescription>
             </DialogHeader>
 
-            {conflict && (
+            {conflictMessage && (
                 <Alert variant={isDateOverlap ? "destructive" : "default"}>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>{isDateOverlap ? "Conflicto de Fechas" : "Aviso de Fechas"}</AlertTitle>

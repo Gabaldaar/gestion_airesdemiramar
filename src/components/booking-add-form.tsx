@@ -102,12 +102,16 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
         
-        if (isSameDay(startDate, endDate)) {
+        // Block only the nights between check-in and check-out.
+        // For a booking from 5th to 10th, we block 6, 7, 8, 9.
+        const firstDayToBlock = addDays(startDate, 1);
+        const lastDayToBlock = addDays(endDate, -1);
+        
+        if (firstDayToBlock > lastDayToBlock) {
             return [];
         }
         
-        // Block days between check-in and check-out, but not the check-in/out days themselves
-        return [{ from: addDays(startDate, 1), to: addDays(endDate, -1) }];
+        return [{ from: firstDayToBlock, to: lastDayToBlock }];
     });
   }, [existingBookings]);
   
@@ -119,14 +123,15 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     const selectedStart = new Date(date.from);
     const selectedEnd = new Date(date.to);
     
-    // Check if it's a "back-to-back" booking rather than a true overlap
-    if (isSameDay(selectedEnd, conflictStart)) {
-      return { message: "Atención: El check-out coincide con el check-in de otra reserva.", isOverlap: false };
-    }
-    if (isSameDay(selectedStart, conflictEnd)) {
-        return { message: "Atención: El check-in coincide con el check-out de otra reserva.", isOverlap: false };
+    // Check for back-to-back (warning, not an error)
+    if (isSameDay(selectedEnd, conflictStart) || isSameDay(selectedStart, conflictEnd)) {
+      const message = isSameDay(selectedEnd, conflictStart)
+        ? "Atención: El check-out coincide con el check-in de otra reserva."
+        : "Atención: El check-in coincide con el check-out de otra reserva.";
+      return { message, isOverlap: false };
     }
 
+    // Any other conflict is a true overlap
     return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.", isOverlap: true };
   }
   
