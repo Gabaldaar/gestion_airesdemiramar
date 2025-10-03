@@ -85,13 +85,44 @@ export default function PropertyDetailPage() {
     }
   }, [user, propertyId]);
   
-  const occupiedDays = useMemo(() => {
-    if (!data) return [];
-    return data.bookings.map(booking => ({
-        from: new Date(booking.startDate),
-        to: new Date(booking.endDate)
-    }));
-  }, [data]);
+    const occupiedDays = useMemo(() => {
+        if (!data) return [];
+        return data.bookings.flatMap(booking => {
+            const startDate = new Date(booking.startDate);
+            const endDate = new Date(booking.endDate);
+            // Mark check-in and check-out days separately
+            return [{ from: startDate, to: endDate }];
+        });
+    }, [data]);
+
+    const dayModifiers = useMemo(() => {
+        if (!data) return {};
+        
+        const checkinDays = data.bookings.map(b => new Date(b.startDate));
+        const checkoutDays = data.bookings.map(b => new Date(b.endDate));
+
+        const bookedMiddleDays = data.bookings.flatMap(booking => {
+            const startDate = new Date(booking.startDate);
+            const endDate = new Date(booking.endDate);
+            if (endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
+                 return []; // Don't mark middle days for short stays
+            }
+            return { from: new Date(startDate.getTime() + 86400000), to: new Date(endDate.getTime() - 86400000) };
+        });
+
+        return {
+            checkin: checkinDays,
+            checkout: checkoutDays,
+            'booked-middle': bookedMiddleDays,
+        };
+    }, [data]);
+
+    const dayModifiersClassNames = {
+        checkin: 'day-checkin',
+        checkout: 'day-checkout',
+        'booked-middle': 'day-booked-middle',
+        disabled: 'day-disabled',
+    };
 
 
   if (loading || !data) {
@@ -229,11 +260,12 @@ export default function PropertyDetailPage() {
                 <CardContent className="flex justify-center">
                     <Calendar
                         mode="multiple"
-                        selected={occupiedDays}
+                        selected={[]}
                         onSelect={() => {}}
                         numberOfMonths={2}
                         locale={es}
-                        disabled
+                        modifiers={dayModifiers}
+                        modifiersClassNames={dayModifiersClassNames}
                         captionLayout="dropdown-buttons"
                         fromYear={new Date().getFullYear() - 2}
                         toYear={new Date().getFullYear() + 5}
@@ -246,3 +278,4 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
+

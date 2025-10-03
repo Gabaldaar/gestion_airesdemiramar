@@ -77,10 +77,10 @@
 
 @layer utilities {
     .day-checkin, .day-checkout {
-        @apply bg-blue-200 text-blue-900 font-bold;
+        @apply bg-blue-200 text-blue-900 font-bold rounded-md;
     }
     .day-booked-middle {
-        @apply bg-red-200 text-red-900;
+        @apply bg-red-200/50 text-red-900;
     }
     .day-disabled {
         @apply text-muted-foreground/80;
