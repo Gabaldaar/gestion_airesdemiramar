@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -60,9 +60,10 @@ function CustomDayContent(props: DayProps) {
     );
 }
 
-export default function PropertyDetailPage({ params }: { params: { id: string } }) {
+export default function PropertyDetailPage() {
   const { user } = useAuth();
-  const { id: propertyId } = params;
+  const params = useParams();
+  const propertyId = params.id as string;
   const [data, setData] = useState<PropertyDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [baseUrl, setBaseUrl] = useState('');
@@ -73,31 +74,6 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     setBaseUrl(window.location.origin);
   }, []);
 
-  useEffect(() => {
-    if (user) {
-        const fetchData = async () => {
-            setLoading(true);
-            const [property, properties, tenants, bookings, expenses, categories, origins] = await Promise.all([
-                getPropertyById(propertyId),
-                getProperties(),
-                getTenants(),
-                getBookingsByPropertyId(propertyId),
-                getPropertyExpensesByPropertyId(propertyId),
-                getExpenseCategories(),
-                getOrigins(),
-            ]);
-
-            if (!property) {
-                notFound();
-                return;
-            }
-            setData({ property, properties, tenants, bookings, expenses, categories, origins });
-            setLoading(false);
-        };
-        fetchData();
-    }
-  }, [user, propertyId]);
-  
   const occupiedDaysModifiers = useMemo(() => {
     const modifiers: Record<string, any> = {};
     if (!data?.bookings || !data?.tenants) {
@@ -132,7 +108,31 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     return modifiers;
   }, [data?.bookings, data?.tenants]);
 
+  useEffect(() => {
+    if (user && propertyId) {
+        const fetchData = async () => {
+            setLoading(true);
+            const [property, properties, tenants, bookings, expenses, categories, origins] = await Promise.all([
+                getPropertyById(propertyId),
+                getProperties(),
+                getTenants(),
+                getBookingsByPropertyId(propertyId),
+                getPropertyExpensesByPropertyId(propertyId),
+                getExpenseCategories(),
+                getOrigins(),
+            ]);
 
+            if (!property) {
+                notFound();
+                return;
+            }
+            setData({ property, properties, tenants, bookings, expenses, categories, origins });
+            setLoading(false);
+        };
+        fetchData();
+    }
+  }, [user, propertyId]);
+  
   if (loading || !data) {
     return <p>Cargando detalles de la propiedad...</p>;
   }
@@ -295,3 +295,5 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     </div>
   );
 }
+
+    
