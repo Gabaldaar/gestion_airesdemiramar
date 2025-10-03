@@ -69,6 +69,11 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   const { toast } = useToast();
 
   useEffect(() => {
+    // This runs on the client, so `window` is available
+    setBaseUrl(window.location.origin);
+  }, []);
+
+  useEffect(() => {
     if (user) {
         const fetchData = async () => {
             setLoading(true);
@@ -93,33 +98,14 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     }
   }, [user, propertyId]);
   
-  useEffect(() => {
-    // This runs on the client, so `window` is available
-    setBaseUrl(window.location.origin);
-  }, []);
-  
-  const handleCopyIcalUrl = () => {
-    const icalUrl = `${baseUrl}/api/ical/${propertyId}`;
-    navigator.clipboard.writeText(icalUrl);
-    toast({
-        title: "Copiado",
-        description: "El enlace iCal ha sido copiado al portapapeles.",
-    });
-  }
-
-
-  if (loading || !data) {
-    return <p>Cargando detalles de la propiedad...</p>;
-  }
-  
-  const { property, properties, tenants, bookings, expenses, categories, origins } = data;
-  
-  const icalUrl = `${baseUrl}/api/ical/${property.id}`;
-  
   const occupiedDaysModifiers = useMemo(() => {
     const modifiers: Record<string, any> = {};
-    bookings.forEach(booking => {
-        const tenantName = tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
+    if (!data?.bookings || !data?.tenants) {
+      return {};
+    }
+    
+    data.bookings.forEach(booking => {
+        const tenantName = data.tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
 
@@ -144,7 +130,24 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         }
     });
     return modifiers;
-  }, [bookings, tenants]);
+  }, [data?.bookings, data?.tenants]);
+
+
+  if (loading || !data) {
+    return <p>Cargando detalles de la propiedad...</p>;
+  }
+  
+  const { property, properties, tenants, bookings, expenses, categories, origins } = data;
+  
+  const icalUrl = `${baseUrl}/api/ical/${property.id}`;
+  
+  const handleCopyIcalUrl = () => {
+    navigator.clipboard.writeText(icalUrl);
+    toast({
+        title: "Copiado",
+        description: "El enlace iCal ha sido copiado al portapapeles.",
+    });
+  }
 
   return (
     <div className="flex-1 space-y-4">
