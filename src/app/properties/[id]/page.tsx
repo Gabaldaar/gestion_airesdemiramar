@@ -31,7 +31,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface PropertyDetailData {
@@ -43,6 +42,23 @@ interface PropertyDetailData {
     categories: ExpenseCategory[];
     origins: Origin[];
 }
+
+function CustomDayContent(props: any) {
+  const { date, activeModifiers } = props;
+  const bookingInfo = activeModifiers.booking ? JSON.parse(activeModifiers.booking) : null;
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <span>{date.getDate()}</span>
+      {bookingInfo && (
+        <div className="absolute bottom-0 text-[8px] font-semibold text-center leading-tight truncate w-full px-px">
+          {bookingInfo.tenantName}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 export default function PropertyDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
@@ -100,10 +116,51 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   
   const icalUrl = `${baseUrl}/api/ical/${property.id}`;
   
-  const bookedDays = bookings.map(booking => ({
-    from: new Date(booking.startDate),
-    to: new Date(booking.endDate),
-  }));
+  const bookingModifiers = bookings.reduce((acc, booking) => {
+    const tenantName = tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
+    const bookingData = JSON.stringify({ tenantName });
+    acc[`booking-${booking.id}`] = (date: Date) => {
+        const startDate = new Date(booking.startDate);
+        const endDate = new Date(booking.endDate);
+        return date >= startDate && date <= endDate;
+    };
+    acc.booking = (acc.booking || []).concat({
+        from: new Date(booking.startDate),
+        to: new Date(booking.endDate),
+        tenantName: tenantName
+    });
+    return acc;
+  }, {} as any);
+
+  const modifiers = bookings.reduce((acc, booking) => {
+    const key = `booking-${booking.id}`;
+    const tenantName = tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
+    
+    // Pass tenant name info through the modifier
+    acc[key] = (date: Date) => {
+      const startDate = new Date(booking.startDate);
+      const endDate = new Date(booking.endDate);
+      return date >= startDate && date <= endDate;
+    };
+
+    return acc;
+  }, {} as Record<string, any>);
+
+  const occupiedDaysModifiers = bookings.reduce((acc, booking) => {
+    const tenantName = tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
+    acc[`checkin-${booking.id}`] = new Date(booking.startDate);
+    acc[`checkout-${booking.id}`] = new Date(booking.endDate);
+    acc[`booked_middle-${booking.id}`] = {
+        from: new Date(new Date(booking.startDate).getTime() + 86400000), // start + 1 day
+        to: new Date(new Date(booking.endDate).getTime() - 86400000) // end - 1 day
+    };
+     acc['booking'] = (acc['booking'] || []).concat({
+        from: new Date(booking.startDate),
+        to: new Date(booking.endDate),
+        tenantName: tenantName
+    });
+    return acc;
+  }, {} as Record<string, any>);
 
   return (
     <div className="flex-1 space-y-4">
@@ -223,16 +280,24 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </CardHeader>
                 <CardContent className="flex justify-center">
                    <Calendar
-                        mode="range"
-                        selected={{ from: undefined, to: undefined }}
-                        modifiers={{ booked: bookedDays }}
-                        modifiersClassNames={{ booked: 'bg-primary/20' }}
+                        modifiers={occupiedDaysModifiers}
+                        modifiersClassNames={{
+                            ...Object.keys(occupiedDaysModifiers).reduce((acc, key) => {
+                                if (key.startsWith('checkin')) acc[key] = 'day-checkin';
+                                if (key.startsWith('checkout')) acc[key] = 'day-checkout';
+                                if (key.startsWith('booked_middle')) acc[key] = 'day-booked-middle';
+                                return acc;
+                            }, {} as Record<string, string>)
+                        }}
                         numberOfMonths={2}
                         locale={es}
                         disabled
                         captionLayout="dropdown-buttons"
-                        fromYear={new Date().getFullYear() - 1}
+                        fromYear={new Date().getFullYear() - 2}
                         toYear={new Date().getFullYear() + 5}
+                        components={{
+                          DayContent: CustomDayContent
+                        }}
                     />
                 </CardContent>
             </Card>
