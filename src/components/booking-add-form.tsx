@@ -102,16 +102,11 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
         
-        // Block only the nights between check-in and check-out.
-        // For a booking from 5th to 10th, we block 6, 7, 8, 9.
-        const firstDayToBlock = addDays(startDate, 1);
-        const lastDayToBlock = addDays(endDate, -1);
-        
-        if (firstDayToBlock > lastDayToBlock) {
-            return [];
+        if (endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
+             return { from: addDays(startDate, 1), to: addDays(startDate, 1) };
         }
         
-        return [{ from: firstDayToBlock, to: lastDayToBlock }];
+        return [{ from: addDays(startDate, 1), to: addDays(endDate, -1) }];
     });
   }, [existingBookings]);
   
@@ -153,7 +148,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
           </DialogDescription>
         </DialogHeader>
         
-        {conflict && (
+        {conflictMessage && (
             <Alert variant={isDateOverlap ? "destructive" : "default"}>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>{isDateOverlap ? "Conflicto de Fechas" : "Aviso de Fechas"}</AlertTitle>
