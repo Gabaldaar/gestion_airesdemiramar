@@ -123,15 +123,14 @@ export default function PropertyDetailPage() {
     }
     
     const tenant = bookingForDay ? data?.tenants.find(t => t.id === bookingForDay?.tenantId) : undefined;
+    const dayContent = <DayContent {...props} />;
 
     if (tenant) {
         return (
             <TooltipProvider delayDuration={100}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className="relative w-full h-full flex items-center justify-center">
-                            <DayContent {...props} />
-                        </div>
+                       {dayContent}
                     </TooltipTrigger>
                     <TooltipContent>
                         <p>{tenant.name}</p>
@@ -141,11 +140,7 @@ export default function PropertyDetailPage() {
         );
     }
 
-    return (
-        <div className="relative w-full h-full flex items-center justify-center">
-            <DayContent {...props} />
-        </div>
-    );
+    return dayContent;
 }
 
   if (loading || !data) {
@@ -299,7 +294,7 @@ export default function PropertyDetailPage() {
                         fromYear={new Date().getFullYear() - 2}
                         toYear={new Date().getFullYear() + 5}
                         components={{
-                          DayContent: CustomDayContent
+                          Day: CustomDayContent
                         }}
                     />
                 </CardContent>
