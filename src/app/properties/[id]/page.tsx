@@ -46,13 +46,15 @@ interface PropertyDetailData {
     origins: Origin[];
 }
 
-const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> = ({ date, activeModifiers, data, ...props }) => {
+const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> = (dayProps) => {
+    const { date, activeModifiers, data, ...rest } = dayProps;
+
     const bookingForDay = useMemo(() => {
-        if (!data) return undefined;
+        if (!data || !activeModifiers.booked) return undefined;
         return data.bookings.find(b => 
             isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
         );
-    }, [date, data]);
+    }, [date, data, activeModifiers.booked]);
 
     const tenant = useMemo(() => {
         if (!bookingForDay || !data?.tenants) return undefined;
@@ -64,7 +66,7 @@ const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> 
             <TooltipProvider delayDuration={100}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <span {...props} >{date.getDate()}</span>
+                        <span>{date.getDate()}</span>
                     </TooltipTrigger>
                     <TooltipContent>
                         <p>{tenant.name}</p>
@@ -74,7 +76,7 @@ const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> 
         );
     }
     
-    return <span {...props}>{date.getDate()}</span>;
+    return <span>{date.getDate()}</span>;
 };
 
 
@@ -128,9 +130,14 @@ export default function PropertyDetailPage() {
     const dayModifiers = useMemo(() => {
         if (!data) return {};
         
+        const bookedDays = data.bookings.map(booking => ({
+            from: new Date(booking.startDate),
+            to: new Date(booking.endDate),
+        }));
+
         const checkinDays = data.bookings.map(b => new Date(b.startDate));
         const checkoutDays = data.bookings.map(b => new Date(b.endDate));
-
+        
         const bookedMiddleDays = data.bookings.flatMap(booking => {
             const startDate = new Date(booking.startDate);
             const endDate = new Date(booking.endDate);
@@ -141,6 +148,7 @@ export default function PropertyDetailPage() {
         });
 
         return {
+            booked: bookedDays,
             checkin: checkinDays,
             checkout: checkoutDays,
             'booked-middle': bookedMiddleDays,
