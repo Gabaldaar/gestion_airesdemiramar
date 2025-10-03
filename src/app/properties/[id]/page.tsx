@@ -32,10 +32,6 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
-import { DayPicker, DayProps } from 'react-day-picker';
-import { isWithinInterval } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { buttonVariants } from '@/components/ui/button';
 
 
 interface PropertyDetailData {
@@ -89,100 +85,13 @@ export default function PropertyDetailPage() {
     }
   }, [user, propertyId]);
   
-  const occupiedDaysModifiers = useMemo(() => {
-    if (!data?.bookings) {
-      return {};
-    }
-    
-    const modifiers: Record<string, any> = {
-        booked: [],
-        checkin: [],
-        checkout: [],
-        booked_middle: [],
-     };
-
-    data.bookings.forEach(booking => {
-        const startDate = new Date(booking.startDate);
-        const endDate = new Date(booking.endDate);
-
-        modifiers.booked.push({ from: startDate, to: endDate });
-        modifiers.checkin.push(startDate);
-        modifiers.checkout.push(endDate);
-        
-        if (endDate > startDate) {
-           const middleRange = {
-                from: new Date(startDate.getTime() + 86400000), // start + 1 day
-                to: new Date(endDate.getTime() - 86400000) // end - 1 day
-            };
-            if (middleRange.from <= middleRange.to) {
-                modifiers.booked_middle.push(middleRange);
-            }
-        }
-    });
-    return modifiers;
-  }, [data?.bookings]);
-
-  function CustomDay(props: DayProps) {
-    const bookingForDay = useMemo(() => {
-        if (!props.modifiers?.booked || !data?.bookings) {
-            return undefined;
-        }
-        return data.bookings.find(b => 
-            isWithinInterval(props.date, { start: new Date(b.startDate), end: new Date(b.endDate) })
-        );
-    }, [props.date, props.modifiers, data?.bookings]);
-
-    const tenant = useMemo(() => {
-        if (!bookingForDay || !data?.tenants) {
-            return undefined;
-        }
-        return data.tenants.find(t => t.id === bookingForDay.tenantId);
-    }, [bookingForDay, data?.tenants]);
-
-    const buttonClassName = cn(
-      buttonVariants({ variant: "ghost" }),
-      "h-9 w-9 p-0 font-normal",
-      props.modifiers?.today && "bg-accent text-accent-foreground",
-      (props.modifiers?.selected || props.modifiers?.booked) && "aria-selected:opacity-100",
-      props.modifiers?.booked && "bg-accent text-accent-foreground",
-      props.modifiers?.checkin && "day-checkin",
-      props.modifiers?.checkout && "day-checkout",
-      props.modifiers?.booked_middle && "day-booked-middle",
-      props.modifiers?.disabled && "text-muted-foreground opacity-50",
-      props.modifiers?.outside && "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30"
-    );
-
-    if (tenant) {
-      return (
-        <TooltipProvider delayDuration={100}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className={buttonClassName}
-                disabled={props.modifiers?.disabled}
-              >
-                {props.date.getDate()}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{tenant.name}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-
-    return (
-      <button
-        type="button"
-        className={buttonClassName}
-        disabled={props.modifiers?.disabled}
-      >
-        {props.date.getDate()}
-      </button>
-    );
-  }
+  const occupiedDays = useMemo(() => {
+    if (!data) return [];
+    return data.bookings.map(booking => ({
+        from: new Date(booking.startDate),
+        to: new Date(booking.endDate)
+    }));
+  }, [data]);
 
 
   if (loading || !data) {
@@ -318,22 +227,16 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center">
-                   <DayPicker
-                        modifiers={occupiedDaysModifiers}
-                        modifiersClassNames={{
-                            checkin: 'day-checkin',
-                            checkout: 'day-checkout',
-                            booked_middle: 'day-booked-middle',
-                        }}
+                    <Calendar
+                        mode="multiple"
+                        selected={occupiedDays}
+                        onSelect={() => {}}
                         numberOfMonths={2}
                         locale={es}
                         disabled
                         captionLayout="dropdown-buttons"
                         fromYear={new Date().getFullYear() - 2}
                         toYear={new Date().getFullYear() + 5}
-                        components={{
-                          Day: CustomDay
-                        }}
                     />
                 </CardContent>
             </Card>
