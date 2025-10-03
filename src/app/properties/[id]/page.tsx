@@ -124,13 +124,13 @@ export default function PropertyDetailPage() {
 
   function CustomDay(props: DayProps) {
     const bookingForDay = useMemo(() => {
-        if (!props.modifiers.booked || !data?.bookings) {
+        if (!props.modifiers?.booked || !data?.bookings) {
             return undefined;
         }
         return data.bookings.find(b => 
             isWithinInterval(props.date, { start: new Date(b.startDate), end: new Date(b.endDate) })
         );
-    }, [props.date, props.modifiers.booked, data?.bookings]);
+    }, [props.date, props.modifiers, data?.bookings]);
 
     const tenant = useMemo(() => {
         if (!bookingForDay || !data?.tenants) {
@@ -142,14 +142,14 @@ export default function PropertyDetailPage() {
     const buttonClassName = cn(
       buttonVariants({ variant: "ghost" }),
       "h-9 w-9 p-0 font-normal",
-      props.modifiers.today && "bg-accent text-accent-foreground",
-      (props.modifiers.selected || props.modifiers.booked) && "aria-selected:opacity-100",
-      props.modifiers.booked && "bg-accent text-accent-foreground",
-      props.modifiers.checkin && "day-checkin",
-      props.modifiers.checkout && "day-checkout",
-      props.modifiers.booked_middle && "day-booked-middle",
-      props.modifiers.disabled && "text-muted-foreground opacity-50",
-      props.modifiers.outside && "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30"
+      props.modifiers?.today && "bg-accent text-accent-foreground",
+      (props.modifiers?.selected || props.modifiers?.booked) && "aria-selected:opacity-100",
+      props.modifiers?.booked && "bg-accent text-accent-foreground",
+      props.modifiers?.checkin && "day-checkin",
+      props.modifiers?.checkout && "day-checkout",
+      props.modifiers?.booked_middle && "day-booked-middle",
+      props.modifiers?.disabled && "text-muted-foreground opacity-50",
+      props.modifiers?.outside && "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30"
     );
 
     if (tenant) {
@@ -160,7 +160,7 @@ export default function PropertyDetailPage() {
               <button
                 type="button"
                 className={buttonClassName}
-                disabled={props.modifiers.disabled}
+                disabled={props.modifiers?.disabled}
               >
                 {props.date.getDate()}
               </button>
@@ -177,7 +177,7 @@ export default function PropertyDetailPage() {
       <button
         type="button"
         className={buttonClassName}
-        disabled={props.modifiers.disabled}
+        disabled={props.modifiers?.disabled}
       >
         {props.date.getDate()}
       </button>
