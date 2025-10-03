@@ -116,7 +116,7 @@ export default function PropertyDetailPage() {
   function CustomDayContent(props: DayProps) {
     let bookingForDayName: string | undefined = undefined;
 
-    if (props.modifiers.booked && data) {
+    if (props.modifiers && props.modifiers.booked && data) {
         const booking = data.bookings.find(b => 
             isWithinInterval(props.date, { start: new Date(b.startDate), end: new Date(b.endDate) })
         );
