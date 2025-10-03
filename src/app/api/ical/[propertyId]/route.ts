@@ -33,7 +33,7 @@ export async function GET(
     // Fetch all tenants in parallel to optimize
     const tenantIds = [...new Set(bookings.map(b => b.tenantId))];
     const tenants = await Promise.all(tenantIds.map(id => getTenantById(id)));
-    const tenantsMap = new Map(tenants.map(t => [t.id, t]));
+    const tenantsMap = new Map(tenants.map(t => [t?.id, t]));
 
     let icalContent = [
       'BEGIN:VCALENDAR',
@@ -48,8 +48,8 @@ export async function GET(
       const tenantName = tenant ? tenant.name : 'Inquilino Desconocido';
       
       const startDate = new Date(booking.startDate);
-      // Set check-in time, e.g., 3 PM UTC
-      startDate.setUTCHours(15, 0, 0, 0);
+      // Set check-in time, e.g., 10 PM UTC
+      startDate.setUTCHours(22, 0, 0, 0);
 
       const endDate = new Date(booking.endDate);
       // Set check-out time, e.g., 11 AM UTC
