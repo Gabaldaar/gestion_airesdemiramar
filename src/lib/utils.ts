@@ -18,12 +18,9 @@ export function checkDateConflict(
     return null;
   }
 
-  // Normalize selected dates to the start of the day in UTC
-  const selectedStart = new Date(selectedRange.from);
-  selectedStart.setUTCHours(0, 0, 0, 0);
-
-  const selectedEnd = new Date(selectedRange.to);
-  selectedEnd.setUTCHours(0, 0, 0, 0);
+  // Use dates as is, assuming they are correctly set by the calendar component
+  const selectedStart = selectedRange.from;
+  const selectedEnd = selectedRange.to;
   
   if (selectedStart >= selectedEnd) {
     return null; // Invalid range
@@ -36,20 +33,17 @@ export function checkDateConflict(
     }
 
     const bookingStart = new Date(booking.startDate);
-    bookingStart.setUTCHours(0, 0, 0, 0);
-    
     const bookingEnd = new Date(booking.endDate);
-    bookingEnd.setUTCHours(0, 0, 0, 0);
     
     // A true overlap conflict exists if the selected range starts strictly before an existing one ends,
     // AND the selected range ends strictly after an existing one starts.
+    // This will now correctly flag back-to-back bookings as a conflict to be interpreted by the caller.
     if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
-       // This condition detects any overlap, including back-to-back.
-       // We let the form component decide if it's a "warning" or a "blocking error".
        return booking;
     }
   }
 
   return null; // No conflict
 }
+
 

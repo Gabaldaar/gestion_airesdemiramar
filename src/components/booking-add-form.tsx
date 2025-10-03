@@ -102,10 +102,11 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
         
-        if (endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
-             return { from: addDays(startDate, 1), to: addDays(startDate, 1) };
+        if (isSameDay(startDate, endDate)) {
+            return [];
         }
         
+        // Block days between check-in and check-out, but not the check-in/out days themselves
         return [{ from: addDays(startDate, 1), to: addDays(endDate, -1) }];
     });
   }, [existingBookings]);
