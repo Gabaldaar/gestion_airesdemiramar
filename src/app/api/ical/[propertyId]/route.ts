@@ -57,12 +57,14 @@ export async function GET(
 
       const now = new Date();
 
+      const summaryText = `Reserva - ${tenantName} - ${property.name}`;
+
       icalContent.push('BEGIN:VEVENT');
       icalContent.push(`UID:${booking.id}@airesdemiramar.app`);
       icalContent.push(`DTSTAMP:${formatICalDateTime(now)}`);
       icalContent.push(`DTSTART:${formatICalDateTime(startDate)}`);
       icalContent.push(`DTEND:${formatICalDateTime(endDate)}`);
-      icalContent.push(`SUMMARY:${escapeICalText(tenantName)}`);
+      icalContent.push(`SUMMARY:${escapeICalText(summaryText)}`);
       
       let description = `Reserva para ${escapeICalText(tenantName)} en la propiedad ${escapeICalText(property.name)}.`;
       if (booking.notes) {
