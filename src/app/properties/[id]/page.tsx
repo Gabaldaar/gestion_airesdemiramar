@@ -22,7 +22,7 @@ import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Copy, Calendar as CalendarIcon } from 'lucide-react';
@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
+import { DayProps, DayContent } from 'react-day-picker';
 
 interface PropertyDetailData {
     property: Property;
@@ -43,26 +44,25 @@ interface PropertyDetailData {
     origins: Origin[];
 }
 
-function CustomDayContent(props: any) {
-  const { date, activeModifiers } = props;
-  const bookingInfo = activeModifiers.booking ? JSON.parse(activeModifiers.booking) : null;
+function CustomDayContent(props: DayProps) {
+    const { date } = props;
+    const bookingForDay = (props.modifiers as any).booking;
 
-  return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      <span>{date.getDate()}</span>
-      {bookingInfo && (
-        <div className="absolute bottom-0 text-[8px] font-semibold text-center leading-tight truncate w-full px-px">
-          {bookingInfo.tenantName}
+    return (
+        <div className="relative w-full h-full flex items-center justify-center">
+            <DayContent {...props} />
+            {bookingForDay && (
+                <div className="absolute bottom-0 text-[8px] font-semibold text-center leading-tight truncate w-full px-px">
+                    {bookingForDay}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }
-
 
 export default function PropertyDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
-  const { id: propertyId } = use(params);
+  const { id: propertyId } = params;
   const [data, setData] = useState<PropertyDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [baseUrl, setBaseUrl] = useState('');
@@ -116,51 +116,35 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   
   const icalUrl = `${baseUrl}/api/ical/${property.id}`;
   
-  const bookingModifiers = bookings.reduce((acc, booking) => {
-    const tenantName = tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
-    const bookingData = JSON.stringify({ tenantName });
-    acc[`booking-${booking.id}`] = (date: Date) => {
+  const occupiedDaysModifiers = useMemo(() => {
+    const modifiers: Record<string, any> = {};
+    bookings.forEach(booking => {
+        const tenantName = tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
-        return date >= startDate && date <= endDate;
-    };
-    acc.booking = (acc.booking || []).concat({
-        from: new Date(booking.startDate),
-        to: new Date(booking.endDate),
-        tenantName: tenantName
+
+        modifiers[`checkin-${booking.id}`] = startDate;
+        modifiers[`checkout-${booking.id}`] = endDate;
+        
+        if (endDate > startDate) {
+           const middleRange = {
+                from: new Date(startDate.getTime() + 86400000), // start + 1 day
+                to: new Date(endDate.getTime() - 86400000) // end - 1 day
+            };
+            if (middleRange.from <= middleRange.to) {
+                modifiers[`booked_middle-${booking.id}`] = middleRange;
+            }
+        }
+        // This is a custom modifier to pass the tenant name
+        modifiers.booking = (date: Date) => {
+             if (date >= startDate && date <= endDate) {
+                return tenantName;
+            }
+            return undefined;
+        }
     });
-    return acc;
-  }, {} as any);
-
-  const modifiers = bookings.reduce((acc, booking) => {
-    const key = `booking-${booking.id}`;
-    const tenantName = tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
-    
-    // Pass tenant name info through the modifier
-    acc[key] = (date: Date) => {
-      const startDate = new Date(booking.startDate);
-      const endDate = new Date(booking.endDate);
-      return date >= startDate && date <= endDate;
-    };
-
-    return acc;
-  }, {} as Record<string, any>);
-
-  const occupiedDaysModifiers = bookings.reduce((acc, booking) => {
-    const tenantName = tenants.find(t => t.id === booking.tenantId)?.name || 'Ocupado';
-    acc[`checkin-${booking.id}`] = new Date(booking.startDate);
-    acc[`checkout-${booking.id}`] = new Date(booking.endDate);
-    acc[`booked_middle-${booking.id}`] = {
-        from: new Date(new Date(booking.startDate).getTime() + 86400000), // start + 1 day
-        to: new Date(new Date(booking.endDate).getTime() - 86400000) // end - 1 day
-    };
-     acc['booking'] = (acc['booking'] || []).concat({
-        from: new Date(booking.startDate),
-        to: new Date(booking.endDate),
-        tenantName: tenantName
-    });
-    return acc;
-  }, {} as Record<string, any>);
+    return modifiers;
+  }, [bookings, tenants]);
 
   return (
     <div className="flex-1 space-y-4">
@@ -287,7 +271,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                                 if (key.startsWith('checkout')) acc[key] = 'day-checkout';
                                 if (key.startsWith('booked_middle')) acc[key] = 'day-booked-middle';
                                 return acc;
-                            }, {} as Record<string, string>)
+                            }, {} as Record<string, string>),
+                             booking: 'font-bold'
                         }}
                         numberOfMonths={2}
                         locale={es}
