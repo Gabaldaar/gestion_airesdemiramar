@@ -23,7 +23,7 @@ export function checkDateConflict(
 
   // A conflict exists if the selected range starts before an existing one ends,
   // AND the selected range ends after an existing one starts.
-  // This is the classic interval overlap check.
+  // The equality checks are crucial for detecting back-to-back bookings.
   for (const booking of existingBookings) {
     if (booking.id === currentBookingId) {
       continue;
@@ -32,6 +32,7 @@ export function checkDateConflict(
     const bookingStart = new Date(booking.startDate);
     const bookingEnd = new Date(booking.endDate);
     
+    // Check for overlap: new booking starts before old one ends AND new booking ends after old one starts
     if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
        return booking;
     }

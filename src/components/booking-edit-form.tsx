@@ -153,11 +153,11 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     const selectedStart = new Date(date.from);
     const selectedEnd = new Date(date.to);
     
-    if (isSameDay(selectedEnd, conflictStart) || isSameDay(selectedStart, conflictEnd)) {
-        const message = isSameDay(selectedEnd, conflictStart)
-          ? "Atención: El check-out coincide con el check-in de otra reserva."
-          : "Atención: El check-in coincide con el check-out de otra reserva.";
-        return { message, isOverlap: false };
+    if (isSameDay(selectedEnd, conflictStart)) {
+        return { message: "Atención: El check-out coincide con el check-in de otra reserva.", isOverlap: false };
+    }
+    if (isSameDay(selectedStart, conflictEnd)) {
+        return { message: "Atención: El check-in coincide con el check-out de otra reserva.", isOverlap: false };
     }
 
     return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.", isOverlap: true };

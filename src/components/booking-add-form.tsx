@@ -124,11 +124,11 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     const selectedEnd = new Date(date.to);
     
     // Check for back-to-back (warning, not an error)
-    if (isSameDay(selectedEnd, conflictStart) || isSameDay(selectedStart, conflictEnd)) {
-      const message = isSameDay(selectedEnd, conflictStart)
-        ? "Atención: El check-out coincide con el check-in de otra reserva."
-        : "Atención: El check-in coincide con el check-out de otra reserva.";
-      return { message, isOverlap: false };
+    if (isSameDay(selectedEnd, conflictStart)) {
+      return { message: "Atención: El check-out coincide con el check-in de otra reserva.", isOverlap: false };
+    }
+    if (isSameDay(selectedStart, conflictEnd)) {
+      return { message: "Atención: El check-in coincide con el check-out de otra reserva.", isOverlap: false };
     }
 
     // Any other conflict is a true overlap
