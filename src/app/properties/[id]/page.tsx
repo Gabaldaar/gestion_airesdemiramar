@@ -32,7 +32,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
 import { DayPicker, DayProps } from 'react-day-picker';
-import { isWithinInterval, addDays } from 'date-fns';
+import { isWithinInterval, addDays, isSameDay } from 'date-fns';
 import BookingsList from '@/components/bookings-list';
 
 
@@ -109,25 +109,18 @@ export default function PropertyDetailPage() {
     const dayModifiers = useMemo(() => {
         if (!data) return {};
         
-        const bookedDays = data.bookings.map(booking => ({
-            from: new Date(booking.startDate),
-            to: new Date(booking.endDate),
-        }));
-
         const checkinDays = data.bookings.map(b => new Date(b.startDate));
         const checkoutDays = data.bookings.map(b => new Date(b.endDate));
         
         const bookedMiddleDays = data.bookings.flatMap(booking => {
             const startDate = new Date(booking.startDate);
             const endDate = new Date(booking.endDate);
-            if (endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
-                 return []; // Don't mark middle days for short stays
-            }
+            if (isSameDay(startDate, endDate)) return [];
+            if (addDays(startDate, 1) >= endDate) return [];
             return { from: addDays(startDate, 1), to: addDays(endDate, -1) };
         });
 
         return {
-            booked: bookedDays,
             checkin: checkinDays,
             checkout: checkoutDays,
             'booked-middle': bookedMiddleDays,
@@ -138,17 +131,16 @@ export default function PropertyDetailPage() {
         checkin: 'day-checkin',
         checkout: 'day-checkout',
         'booked-middle': 'day-booked-middle',
-        disabled: 'day-disabled',
     };
 
     const CustomDay = (props: DayProps) => {
         const { date, activeModifiers } = props;
-        if (!activeModifiers || !data || !data.bookings) {
+        if (!data || !data.bookings) {
             return <DayContentWithTooltip {...props} />;
         }
         
         const bookingForDay = data.bookings.find(b => 
-            activeModifiers.booked && isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
+            isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
         );
 
         if (bookingForDay) {
