@@ -53,6 +53,7 @@ export async function addProperty(previousState: any, formData: FormData) {
     name: formData.get("name") as string,
     address: formData.get("address") as string,
     imageUrl: formData.get("imageUrl") as string,
+    propertyUrl: formData.get("propertyUrl") as string,
     notes: formData.get("notes") as string || "",
     contractTemplate: formData.get("contractTemplate") as string || "",
     customField1Label: formData.get("customField1Label") as string,
@@ -87,11 +88,12 @@ export async function addProperty(previousState: any, formData: FormData) {
 
 
 export async function updateProperty(previousState: any, formData: FormData) {
-  const propertyData: Omit<Property, 'googleCalendarId'> = {
+  const propertyData: Partial<Property> = {
     id: formData.get("id") as string,
     name: formData.get("name") as string,
     address: formData.get("address") as string,
     imageUrl: formData.get("imageUrl") as string,
+    propertyUrl: formData.get("propertyUrl") as string,
     notes: formData.get("notes") as string,
     contractTemplate: formData.get("contractTemplate") as string,
     customField1Label: formData.get("customField1Label") as string,

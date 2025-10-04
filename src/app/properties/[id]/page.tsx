@@ -3,6 +3,7 @@
 
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -25,7 +26,7 @@ import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, useMemo, FC } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Copy, Calendar as CalendarIcon } from 'lucide-react';
+import { Copy, Calendar as CalendarIcon, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,38 +47,18 @@ interface PropertyDetailData {
     origins: Origin[];
 }
 
-const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> = (dayProps) => {
-    const { date, activeModifiers, data, ...rest } = dayProps;
+const DayContentWithTooltip: FC<DayProps> = (dayProps) => {
+    const { date, ...rest } = dayProps;
 
-    const bookingForDay = useMemo(() => {
-        if (!data || !activeModifiers.booked) return undefined;
-        return data.bookings.find(b => 
-            isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
-        );
-    }, [date, data, activeModifiers.booked]);
+    // Remove non-standard DOM props before passing to the span
+    const spanProps: any = { ...rest };
+    delete spanProps.activeModifiers;
+    delete spanProps.displayMonth;
+    delete spanProps.theme; // Example of another prop to remove
 
-    const tenant = useMemo(() => {
-        if (!bookingForDay || !data?.tenants) return undefined;
-        return data.tenants.find(t => t.id === bookingForDay.tenantId);
-    }, [bookingForDay, data?.tenants]);
-
-    if (tenant) {
-        return (
-            <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span>{date.getDate()}</span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>{tenant.name}</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        );
-    }
-    
-    return <span>{date.getDate()}</span>;
+    return <span {...spanProps}>{date.getDate()}</span>;
 };
+
 
 
 export default function PropertyDetailPage() {
@@ -162,6 +143,37 @@ export default function PropertyDetailPage() {
         disabled: 'day-disabled',
     };
 
+    const CustomDay = (props: DayProps) => {
+        const { date, activeModifiers } = props;
+        if (!activeModifiers || !data || !data.bookings) {
+            return <DayContentWithTooltip {...props} />;
+        }
+        
+        const bookingForDay = data.bookings.find(b => 
+            activeModifiers.booked && isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
+        );
+
+        if (bookingForDay) {
+            const tenant = data.tenants.find(t => t.id === bookingForDay.tenantId);
+            if (tenant) {
+                return (
+                    <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div><DayContentWithTooltip {...props} /></div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{tenant.name}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                );
+            }
+        }
+
+        return <DayContentWithTooltip {...props} />;
+    };
+
 
   if (loading) {
     return <p>Cargando detalles de la propiedad...</p>;
@@ -182,10 +194,6 @@ export default function PropertyDetailPage() {
         description: "El enlace iCal ha sido copiado al portapapeles.",
     });
   }
-  
-  const CustomDayContent: React.FC<DayProps> = (props) => (
-    <DayContentWithTooltip {...props} data={data} />
-  );
 
   return (
     <div className="flex-1 space-y-4">
@@ -204,7 +212,17 @@ export default function PropertyDetailPage() {
                     <p className="text-muted-foreground">{property.address}</p>
                 </div>
             </div>
-            <PropertyNotesForm property={property} />
+            <div className="flex items-center gap-2">
+                {property.propertyUrl && (
+                    <Button asChild variant="outline">
+                        <Link href={property.propertyUrl} target="_blank">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Ver Anuncio
+                        </Link>
+                    </Button>
+                )}
+                <PropertyNotesForm property={property} />
+            </div>
         </div>
 
         <Card>
@@ -316,7 +334,7 @@ export default function PropertyDetailPage() {
                         fromYear={new Date().getFullYear() - 2}
                         toYear={new Date().getFullYear() + 5}
                         components={{
-                            DayContent: CustomDayContent
+                            Day: CustomDay
                         }}
                     />
                 </CardContent>

@@ -56,6 +56,10 @@ export function PropertyEditForm({ property }: { property: Property }) {
                     <Label htmlFor={`imageUrl-${property.id}`}>URL de Foto</Label>
                     <Input id={`imageUrl-${property.id}`} type="text" name="imageUrl" defaultValue={property.imageUrl} />
                 </div>
+                <div>
+                    <Label htmlFor={`propertyUrl-${property.id}`}>URL de Propiedad</Label>
+                    <Input id={`propertyUrl-${property.id}`} type="text" name="propertyUrl" defaultValue={property.propertyUrl} placeholder="Ej: https://airbnb.com/h/mi-depto" />
+                </div>
                 <div className="md:col-span-2">
                     <Label htmlFor={`notes-${property.id}`}>Notas</Label>
                     <Textarea id={`notes-${property.id}`} name="notes" defaultValue={property.notes} />
