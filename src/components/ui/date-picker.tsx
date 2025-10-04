@@ -30,7 +30,7 @@ export function DatePicker({ date, onDateSelect, placeholder = "Selecciona una f
   }
 
   return (
-    <div className="relative w-[280px]">
+    <div className="relative w-full sm:w-[220px]">
         <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
             <Button
