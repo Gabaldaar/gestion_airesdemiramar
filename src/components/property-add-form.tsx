@@ -87,12 +87,6 @@ export function PropertyAddForm() {
                     </Label>
                     <Input id="imageUrl" name="imageUrl" defaultValue="https://picsum.photos/600/400" className="col-span-3" />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="propertyUrl" className="text-right">
-                    URL de Propiedad
-                    </Label>
-                    <Input id="propertyUrl" name="propertyUrl" placeholder="Ej: https://airbnb.com/h/mi-depto" className="col-span-3" />
-                </div>
                  <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="notes" className="text-right pt-2">
                         Notas

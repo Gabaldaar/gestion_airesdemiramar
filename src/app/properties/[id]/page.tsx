@@ -3,7 +3,6 @@
 
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -25,7 +24,7 @@ import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, useMemo, FC } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Copy, Calendar as CalendarIcon, ExternalLink } from 'lucide-react';
+import { Copy, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -212,14 +211,6 @@ export default function PropertyDetailPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                {property.propertyUrl && (
-                    <Button asChild variant="outline">
-                        <Link href={property.propertyUrl} target="_blank">
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            Ver Anuncio
-                        </Link>
-                    </Button>
-                )}
                 <PropertyNotesForm property={property} />
             </div>
         </div>

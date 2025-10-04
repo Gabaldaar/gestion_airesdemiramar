@@ -36,7 +36,6 @@ export type Property = {
   name: string;
   address: string;
   imageUrl: string;
-  propertyUrl?: string;
   notes?: string;
   contractTemplate?: string;
   contractLogoUrl?: string;
