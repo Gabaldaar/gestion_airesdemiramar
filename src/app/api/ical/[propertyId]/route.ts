@@ -34,7 +34,7 @@ export async function GET(
     }
     
     // Filter out cancelled and pending bookings
-    const activeBookings = bookings.filter(b => b.status === 'active');
+    const activeBookings = bookings.filter(b => !b.status || b.status === 'active');
 
     // Fetch all tenants in parallel to optimize
     const tenantIds = [...new Set(activeBookings.map(b => b.tenantId))];
@@ -99,5 +99,3 @@ export async function GET(
     return new Response('Internal Server Error', { status: 500 });
   }
 }
-
-    
