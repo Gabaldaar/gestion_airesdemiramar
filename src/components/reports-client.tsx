@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FinancialSummaryByCurrency, TenantsByOriginSummary, ExpensesByCategorySummary, ExpensesByPropertySummary, BookingsByOriginSummary } from "@/lib/data";
+import { FinancialSummaryByCurrency, TenantsByOriginSummary, ExpensesByCategorySummary, ExpensesByPropertySummary, BookingsByOriginSummary, BookingStatusSummary } from "@/lib/data";
 import FinancialSummaryTable from "@/components/financial-summary-table";
 import FinancialSummaryChart from "@/components/financial-summary-chart";
 import { DatePicker } from "./ui/date-picker";
@@ -20,6 +20,7 @@ import NetIncomeDistributionChart from "./net-income-distribution-chart";
 import ExpensesByCategoryChart from "./expenses-by-category-chart";
 import ExpensesByPropertyChart from "./expenses-by-property-chart";
 import BookingsByOriginChart from "./bookings-by-origin-chart";
+import BookingStatusChart from "./booking-status-chart";
 
 interface ReportsClientProps {
   financialSummary: FinancialSummaryByCurrency;
@@ -27,9 +28,10 @@ interface ReportsClientProps {
   expensesByCategory: ExpensesByCategorySummary[];
   expensesByProperty: ExpensesByPropertySummary[];
   bookingsByOrigin: BookingsByOriginSummary[];
+  bookingStatus: BookingStatusSummary[];
 }
 
-export default function ReportsClient({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty, bookingsByOrigin }: ReportsClientProps) {
+export default function ReportsClient({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty, bookingsByOrigin, bookingStatus }: ReportsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -121,6 +123,17 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                 </CardHeader>
                 <CardContent>
                     <BookingsByOriginChart data={bookingsByOrigin} />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Estado de Reservas</CardTitle>
+                    <CardDescription>
+                        Proporción de reservas activas vs. canceladas.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <BookingStatusChart data={bookingStatus} />
                 </CardContent>
             </Card>
         </div>

@@ -2,7 +2,7 @@
 
 'use client';
 
-import { getFinancialSummaryByProperty, FinancialSummaryByCurrency, getTenantsByOriginSummary, TenantsByOriginSummary, getExpensesByCategorySummary, ExpensesByCategorySummary, getExpensesByPropertySummary, ExpensesByPropertySummary, getBookingsByOriginSummary, BookingsByOriginSummary } from "@/lib/data";
+import { getFinancialSummaryByProperty, FinancialSummaryByCurrency, getTenantsByOriginSummary, TenantsByOriginSummary, getExpensesByCategorySummary, ExpensesByCategorySummary, getExpensesByPropertySummary, ExpensesByPropertySummary, getBookingsByOriginSummary, BookingsByOriginSummary, getBookingStatusSummary, BookingStatusSummary } from "@/lib/data";
 import ReportsClient from "@/components/reports-client";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -14,6 +14,7 @@ interface ReportsData {
     expensesByCategory: ExpensesByCategorySummary[];
     expensesByProperty: ExpensesByPropertySummary[];
     bookingsByOrigin: BookingsByOriginSummary[];
+    bookingStatus: BookingStatusSummary[];
 }
 
 function ReportsPageContent() {
@@ -34,8 +35,9 @@ function ReportsPageContent() {
             getExpensesByCategorySummary({ startDate: from, endDate: to }),
             getExpensesByPropertySummary({ startDate: from, endDate: to }),
             getBookingsByOriginSummary(),
-        ]).then(([financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty, bookingsByOrigin]) => {
-            setData({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty, bookingsByOrigin });
+            getBookingStatusSummary(),
+        ]).then(([financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty, bookingsByOrigin, bookingStatus]) => {
+            setData({ financialSummary, tenantsByOrigin, expensesByCategory, expensesByProperty, bookingsByOrigin, bookingStatus });
             setLoading(false);
         });
     }
@@ -52,6 +54,7 @@ function ReportsPageContent() {
     expensesByCategory={data.expensesByCategory}
     expensesByProperty={data.expensesByProperty}
     bookingsByOrigin={data.bookingsByOrigin}
+    bookingStatus={data.bookingStatus}
      />;
 }
 

@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import {
   collection,
@@ -224,6 +225,13 @@ export type ExpensesByPropertySummary = {
   percentage: number;
   fill: string;
 };
+
+export type BookingStatusSummary = {
+  name: string;
+  count: number;
+  fill: string;
+};
+
 
 
 
@@ -1158,4 +1166,31 @@ export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSumm
   });
 
   return summary.sort((a,b) => b.count - a.count);
+}
+
+export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]> {
+  const snapshot = await getDocs(query(bookingsCollection));
+  const bookings = snapshot.docs.map(processDoc) as Booking[];
+
+  if (bookings.length === 0) {
+    return [];
+  }
+
+  let activeCount = 0;
+  let cancelledCount = 0;
+
+  bookings.forEach(booking => {
+    if (booking.status === 'cancelled') {
+      cancelledCount++;
+    } else {
+      activeCount++;
+    }
+  });
+  
+  const summary: BookingStatusSummary[] = [
+    { name: 'Activas', count: activeCount, fill: '#22c55e' },
+    { name: 'Canceladas', count: cancelledCount, fill: '#ef4444' },
+  ];
+
+  return summary.filter(item => item.count > 0);
 }
