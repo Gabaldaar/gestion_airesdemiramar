@@ -211,6 +211,13 @@ export default function PropertyDetailPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
+                {property.propertyUrl && (
+                    <Button asChild>
+                        <a href={property.propertyUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4" /> Ver Anuncio
+                        </a>
+                    </Button>
+                )}
                 <PropertyNotesForm property={property} />
             </div>
         </div>
@@ -335,3 +342,5 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
+
+    
