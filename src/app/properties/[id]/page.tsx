@@ -54,7 +54,7 @@ const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> 
     const bookingForDay = useMemo(() => {
         if (!data || !activeModifiers.booked) return undefined;
         return data.bookings.find(b => 
-            isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
+            b.status !== 'cancelled' && isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
         );
     }, [date, data, activeModifiers.booked]);
 
@@ -132,15 +132,17 @@ export default function PropertyDetailPage() {
     const dayModifiers = useMemo(() => {
         if (!data) return {};
         
-        const bookedDays = data.bookings.map(booking => ({
+        const activeBookings = data.bookings.filter(b => b.status !== 'cancelled');
+
+        const bookedDays = activeBookings.map(booking => ({
             from: new Date(booking.startDate),
             to: new Date(booking.endDate),
         }));
 
-        const checkinDays = data.bookings.map(b => new Date(b.startDate));
-        const checkoutDays = data.bookings.map(b => new Date(b.endDate));
+        const checkinDays = activeBookings.map(b => new Date(b.startDate));
+        const checkoutDays = activeBookings.map(b => new Date(b.endDate));
         
-        const bookedMiddleDays = data.bookings.flatMap(booking => {
+        const bookedMiddleDays = activeBookings.flatMap(booking => {
             const startDate = new Date(booking.startDate);
             const endDate = new Date(booking.endDate);
             if (endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
@@ -337,4 +339,3 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
-

@@ -12,7 +12,7 @@ import { Download, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from './ui/use-toast';
 
-type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt';
+type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt' | 'cancelled';
 type ContractStatusFilter = 'all' | ContractStatus;
 
 
@@ -84,15 +84,18 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
       // Status Filter
       if (statusFilter !== 'all') {
-         const isCurrent = bookingStartDate <= today && bookingEndDate >= today;
-         const isUpcoming = bookingStartDate > today;
-         const isClosed = bookingEndDate < today;
-         const hasDebt = booking.balance > 0;
+         const isCurrent = booking.status !== 'cancelled' && bookingStartDate <= today && bookingEndDate >= today;
+         const isUpcoming = booking.status !== 'cancelled' && bookingStartDate > today;
+         const isClosed = booking.status !== 'cancelled' && bookingEndDate < today;
+         const hasDebt = booking.status !== 'cancelled' && booking.balance > 0;
+         const isCancelled = booking.status === 'cancelled';
+
 
          if (statusFilter === 'current' && !isCurrent) return false;
          if (statusFilter === 'upcoming' && !isUpcoming) return false;
          if (statusFilter === 'closed' && !isClosed) return false;
          if (statusFilter === 'with-debt' && !hasDebt) return false;
+         if (statusFilter === 'cancelled' && !isCancelled) return false;
       }
       
       return true;
@@ -212,6 +215,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
                       <SelectItem value="upcoming">Próximas</SelectItem>
                       <SelectItem value="closed">Cumplidas</SelectItem>
                       <SelectItem value="with-debt">Con Deuda</SelectItem>
+                      <SelectItem value="cancelled">Canceladas</SelectItem>
                   </SelectContent>
               </Select>
           </div>

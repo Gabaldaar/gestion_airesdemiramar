@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { updateBooking } from '@/lib/actions';
-import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins, BookingWithDetails } from '@/lib/data';
+import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins, BookingWithDetails, BookingStatus } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -128,7 +128,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   const disabledDays = useMemo(() => {
     if (!allBookings) return [];
     
-    const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId);
+    const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId && b.status !== 'cancelled');
     
     return otherBookings.flatMap(otherBooking => {
         const startDate = new Date(otherBooking.startDate);
@@ -305,6 +305,18 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                                 <SelectItem value="sent">Enviado</SelectItem>
                                 <SelectItem value="signed">Firmado</SelectItem>
                                 <SelectItem value="not_required">N/A</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="status">Estado de la Reserva</Label>
+                        <Select name="status" defaultValue={booking.status || 'active'} required>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="active">Activa</SelectItem>
+                                <SelectItem value="cancelled">Cancelada</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

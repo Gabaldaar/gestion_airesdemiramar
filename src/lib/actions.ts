@@ -44,6 +44,7 @@ import {
     ExpenseCategory,
     GuaranteeStatus,
     EmailTemplate,
+    BookingStatus,
     db
 } from "./data";
 
@@ -241,6 +242,7 @@ export async function addBooking(previousState: any, formData: FormData) {
         originId: originIdValue === 'none' ? undefined : originIdValue,
         contractStatus: 'not_sent' as ContractStatus,
         guaranteeStatus: 'not_solicited' as GuaranteeStatus,
+        status: 'active' as BookingStatus,
     };
 
     if (!bookingData.propertyId || !bookingData.tenantId || !bookingData.startDate || !bookingData.endDate || !bookingData.amount || !bookingData.currency) {
@@ -288,6 +290,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
             originId: originIdValue === 'none' ? null : originIdValue,
             guaranteeStatus: formData.get("guaranteeStatus") as GuaranteeStatus,
             guaranteeCurrency: formData.get("guaranteeCurrency") as 'USD' | 'ARS',
+            status: formData.get("status") as BookingStatus,
         };
 
         const guaranteeAmountStr = formData.get("guaranteeAmount") as string;

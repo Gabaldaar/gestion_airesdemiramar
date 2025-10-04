@@ -76,6 +76,8 @@ export type Tenant = {
 
 export type ContractStatus = 'not_sent' | 'sent' | 'signed' | 'not_required';
 export type GuaranteeStatus = 'not_solicited' | 'solicited' | 'received' | 'returned' | 'not_applicable';
+export type BookingStatus = 'active' | 'cancelled';
+
 
 export type Booking = {
   id: string;
@@ -89,6 +91,7 @@ export type Booking = {
   notes?: string;
   contractStatus?: ContractStatus;
   originId?: string;
+  status?: BookingStatus;
   // New Guarantee Fields
   guaranteeStatus?: GuaranteeStatus;
   guaranteeAmount?: number;
@@ -466,8 +469,8 @@ export async function getBookingById(id: string): Promise<Booking | undefined> {
 
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
-    const docRef = await addDoc(bookingsCollection, booking);
-    return { id: docRef.id, ...booking };
+    const docRef = await addDoc(bookingsCollection, { ...booking, status: 'active' });
+    return { id: docRef.id, ...booking, status: 'active' };
 }
 
 export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
@@ -693,7 +696,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
   const createSummaryForARS = (): FinancialSummary[] => {
     return allProperties.map(property => {
-      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate));
+      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && b.status !== 'cancelled');
       
       const incomeInArsFromArsBookings = propertyBookings
         .filter(b => b.currency === 'ARS')
@@ -733,7 +736,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
   const createSummaryForUSD = (): FinancialSummary[] => {
     return allProperties.map(property => {
-      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate));
+      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && b.status !== 'cancelled');
       
       const incomeInUsdFromUsdBookings = propertyBookings
           .filter(b => b.currency === 'USD')
@@ -1106,7 +1109,9 @@ export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSumm
     getOrigins(),
   ]);
 
-  const totalBookings = bookings.length;
+  const activeBookings = bookings.filter(b => b.status !== 'cancelled');
+
+  const totalBookings = activeBookings.length;
   if (totalBookings === 0) {
     return [];
   }
@@ -1121,7 +1126,7 @@ export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSumm
   summaryMap.set('none', 0); // For bookings without an origin
 
   // Count bookings for each origin
-  bookings.forEach(booking => {
+  activeBookings.forEach(booking => {
     const originId = booking.originId || 'none';
     summaryMap.set(originId, (summaryMap.get(originId) || 0) + 1);
   });
