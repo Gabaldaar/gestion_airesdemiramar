@@ -11,8 +11,8 @@ interface BookingStatusChartProps {
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    const total = payload.reduce((acc: number, entry: any) => acc + entry.value, 0);
-    const percentage = ((data.count / total) * 100).toFixed(2);
+    const total = payload[0].payload.total; // Total is passed inside payload
+    const percentage = total > 0 ? ((data.count / total) * 100).toFixed(2) : 0;
     return (
       <div className="bg-background border shadow-md p-2 rounded-lg">
         <p className="font-bold">{`${data.name}: ${data.count} reserva(s)`}</p>
@@ -29,13 +29,15 @@ export default function BookingStatusChart({ data }: BookingStatusChartProps) {
   }
 
   const totalBookings = data.reduce((acc, entry) => acc + entry.count, 0);
+
+  const dataWithTotal = data.map(item => ({ ...item, total: totalBookings }));
   
   return (
     <div className="w-full h-[350px]">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
-            data={data}
+            data={dataWithTotal}
             cx="50%"
             cy="50%"
             labelLine={false}
@@ -43,7 +45,7 @@ export default function BookingStatusChart({ data }: BookingStatusChartProps) {
             fill="#8884d8"
             dataKey="count"
             nameKey="name"
-            label={({ name, count }) => `${name} (${((count/totalBookings) * 100).toFixed(0)}%)`}
+            label={({ name, count }) => `${name} (${totalBookings > 0 ? ((count/totalBookings) * 100).toFixed(0) : 0}%)`}
           >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -56,3 +58,5 @@ export default function BookingStatusChart({ data }: BookingStatusChartProps) {
     </div>
   );
 }
+
+    

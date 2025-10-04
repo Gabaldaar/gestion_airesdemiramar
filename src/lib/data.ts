@@ -77,7 +77,7 @@ export type Tenant = {
 
 export type ContractStatus = 'not_sent' | 'sent' | 'signed' | 'not_required';
 export type GuaranteeStatus = 'not_solicited' | 'solicited' | 'received' | 'returned' | 'not_applicable';
-export type BookingStatus = 'active' | 'cancelled';
+export type BookingStatus = 'active' | 'cancelled' | 'pending';
 
 
 export type Booking = {
@@ -704,7 +704,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
   const createSummaryForARS = (): FinancialSummary[] => {
     return allProperties.map(property => {
-      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && b.status !== 'cancelled');
+      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && b.status === 'active');
       
       const incomeInArsFromArsBookings = propertyBookings
         .filter(b => b.currency === 'ARS')
@@ -744,7 +744,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
   const createSummaryForUSD = (): FinancialSummary[] => {
     return allProperties.map(property => {
-      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && b.status !== 'cancelled');
+      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && b.status === 'active');
       
       const incomeInUsdFromUsdBookings = propertyBookings
           .filter(b => b.currency === 'USD')
@@ -1117,7 +1117,7 @@ export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSumm
     getOrigins(),
   ]);
 
-  const activeBookings = bookings.filter(b => b.status !== 'cancelled');
+  const activeBookings = bookings.filter(b => b.status === 'active');
 
   const totalBookings = activeBookings.length;
   if (totalBookings === 0) {
@@ -1178,19 +1178,30 @@ export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]>
 
   let activeCount = 0;
   let cancelledCount = 0;
+  let pendingCount = 0;
 
   bookings.forEach(booking => {
-    if (booking.status === 'cancelled') {
-      cancelledCount++;
-    } else {
-      activeCount++;
+    switch (booking.status) {
+        case 'cancelled':
+            cancelledCount++;
+            break;
+        case 'pending':
+            pendingCount++;
+            break;
+        case 'active':
+        default:
+            activeCount++;
+            break;
     }
   });
   
   const summary: BookingStatusSummary[] = [
     { name: 'Activas', count: activeCount, fill: '#22c55e' },
     { name: 'Canceladas', count: cancelledCount, fill: '#ef4444' },
+    { name: 'En Espera', count: pendingCount, fill: '#f59e0b' },
   ];
 
   return summary.filter(item => item.count > 0);
 }
+
+    

@@ -128,7 +128,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   const disabledDays = useMemo(() => {
     if (!allBookings) return [];
     
-    const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId && b.status !== 'cancelled');
+    const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId && b.status === 'active');
     
     return otherBookings.flatMap(otherBooking => {
         const startDate = new Date(otherBooking.startDate);
@@ -316,6 +316,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="active">Activa</SelectItem>
+                                <SelectItem value="pending">En Espera</SelectItem>
                                 <SelectItem value="cancelled">Cancelada</SelectItem>
                             </SelectContent>
                         </Select>
@@ -392,3 +393,5 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     </>
   );
 }
+
+    

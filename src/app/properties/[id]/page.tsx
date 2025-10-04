@@ -54,7 +54,7 @@ const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> 
     const bookingForDay = useMemo(() => {
         if (!data || !activeModifiers.booked) return undefined;
         return data.bookings.find(b => 
-            b.status !== 'cancelled' && isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
+            b.status === 'active' && isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
         );
     }, [date, data, activeModifiers.booked]);
 
@@ -132,7 +132,7 @@ export default function PropertyDetailPage() {
     const dayModifiers = useMemo(() => {
         if (!data) return {};
         
-        const activeBookings = data.bookings.filter(b => b.status !== 'cancelled');
+        const activeBookings = data.bookings.filter(b => b.status === 'active');
 
         const bookedDays = activeBookings.map(booking => ({
             from: new Date(booking.startDate),
@@ -273,7 +273,7 @@ export default function PropertyDetailPage() {
                   <Button asChild variant="secondary">
                     <Link href={property.propertyUrl} target="_blank">
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      Página Web
+                      Web de la Propiedad
                     </Link>
                   </Button>
                 )}
@@ -339,3 +339,5 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
+
+    

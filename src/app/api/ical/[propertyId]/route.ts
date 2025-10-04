@@ -33,8 +33,8 @@ export async function GET(
       return new Response('Property not found', { status: 404 });
     }
     
-    // Filter out cancelled bookings
-    const activeBookings = bookings.filter(b => b.status !== 'cancelled');
+    // Filter out cancelled and pending bookings
+    const activeBookings = bookings.filter(b => b.status === 'active');
 
     // Fetch all tenants in parallel to optimize
     const tenantIds = [...new Set(activeBookings.map(b => b.tenantId))];
@@ -99,3 +99,5 @@ export async function GET(
     return new Response('Internal Server Error', { status: 500 });
   }
 }
+
+    

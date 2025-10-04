@@ -12,7 +12,7 @@ import { Download, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from './ui/use-toast';
 
-type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt' | 'cancelled';
+type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt' | 'cancelled' | 'pending';
 type ContractStatusFilter = 'all' | ContractStatus;
 
 
@@ -84,11 +84,12 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
       // Status Filter
       if (statusFilter !== 'all') {
-         const isCurrent = booking.status !== 'cancelled' && bookingStartDate <= today && bookingEndDate >= today;
-         const isUpcoming = booking.status !== 'cancelled' && bookingStartDate > today;
-         const isClosed = booking.status !== 'cancelled' && bookingEndDate < today;
-         const hasDebt = booking.status !== 'cancelled' && booking.balance > 0;
+         const isCurrent = booking.status === 'active' && bookingStartDate <= today && bookingEndDate >= today;
+         const isUpcoming = booking.status === 'active' && bookingStartDate > today;
+         const isClosed = booking.status === 'active' && bookingEndDate < today;
+         const hasDebt = booking.status === 'active' && booking.balance > 0;
          const isCancelled = booking.status === 'cancelled';
+         const isPending = booking.status === 'pending';
 
 
          if (statusFilter === 'current' && !isCurrent) return false;
@@ -96,6 +97,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
          if (statusFilter === 'closed' && !isClosed) return false;
          if (statusFilter === 'with-debt' && !hasDebt) return false;
          if (statusFilter === 'cancelled' && !isCancelled) return false;
+         if (statusFilter === 'pending' && !isPending) return false;
       }
       
       return true;
@@ -215,6 +217,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
                       <SelectItem value="upcoming">Próximas</SelectItem>
                       <SelectItem value="closed">Cumplidas</SelectItem>
                       <SelectItem value="with-debt">Con Deuda</SelectItem>
+                      <SelectItem value="pending">En Espera</SelectItem>
                       <SelectItem value="cancelled">Canceladas</SelectItem>
                   </SelectContent>
               </Select>
@@ -266,3 +269,5 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     </div>
   );
 }
+
+    

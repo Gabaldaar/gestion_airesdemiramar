@@ -60,6 +60,9 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
   const [isEmailOpen, setIsEmailOpen] = useState(false);
 
   const isCancelled = booking.status === 'cancelled';
+  const isPending = booking.status === 'pending';
+  const isInactive = isCancelled || isPending;
+
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
   const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
@@ -85,7 +88,7 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
     }
   
   const getBookingColorClass = (booking: BookingWithDetails): string => {
-    if (booking.status === 'cancelled') return "text-destructive line-through";
+    if (booking.status !== 'active') return "";
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -118,7 +121,7 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
   };
 
   const getBalanceColorClass = () => {
-    if (isCancelled) return 'bg-gray-500 hover:bg-gray-600';
+    if (isInactive) return 'bg-gray-500 hover:bg-gray-600';
     if (booking.balance <= 0) return 'bg-green-600 hover:bg-green-700';
     if (booking.balance >= booking.amount) return 'bg-red-600 hover:bg-red-700';
     return 'bg-orange-500 hover:bg-orange-600';
@@ -126,12 +129,13 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
   
   
   return (
-    <TableRow key={booking.id} className={cn("block md:table-row border-b md:border-b-0 last:border-b-0", isCancelled && "bg-red-500/10")}>
+    <TableRow key={booking.id} className={cn("block md:table-row border-b md:border-b-0 last:border-b-0", isCancelled && "bg-red-500/10", isPending && "bg-yellow-500/10")}>
         {showProperty && <TableCell data-label="Propiedad" className={cn("font-bold", getBookingColorClass(booking))}>
             {isCancelled && <Badge variant="destructive" className="mr-2">CANCELADA</Badge>}
+            {isPending && <Badge variant="secondary" className="mr-2 bg-yellow-400 text-black">EN ESPERA</Badge>}
             {booking.property?.name || 'N/A'}
         </TableCell>}
-        <TableCell data-label="Inquilino" className={cn(isCancelled && "text-muted-foreground")}>
+        <TableCell data-label="Inquilino" className={cn(isInactive && "text-muted-foreground")}>
             <div className='flex items-center h-full'>
             <EmailSender 
                     booking={booking} 
@@ -140,14 +144,14 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
                     <button
                         onClick={() => setIsEmailOpen(true)}
                         className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2 max-w-[150px]"
-                        disabled={!booking.tenant?.email || isCancelled}
+                        disabled={!booking.tenant?.email || isInactive}
                     >
                         {booking.tenant?.name || 'N/A'}
                     </button>
                 </EmailSender>
             </div>
         </TableCell>
-        <TableCell data-label="Estadía" className={cn(isCancelled && "text-muted-foreground")}>
+        <TableCell data-label="Estadía" className={cn(isInactive && "text-muted-foreground")}>
           <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
               <span>{formatDate(booking.startDate)}</span>
               <span className="hidden md:inline">→</span>
@@ -155,19 +159,19 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
           </div>
           <span className="block text-xs text-muted-foreground">{nights} noches</span>
       </TableCell>
-      <TableCell data-label="Origen" className={cn(isCancelled && "text-muted-foreground")}>
+      <TableCell data-label="Origen" className={cn(isInactive && "text-muted-foreground")}>
         {origin ? (
             <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
                 {origin.name}
             </Badge>
         ) : null}
       </TableCell>
-      <TableCell data-label="Contrato" className={cn(isCancelled && "text-muted-foreground")}>
+      <TableCell data-label="Contrato" className={cn(isInactive && "text-muted-foreground")}>
         <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                  <Link href={`/contract?id=${booking.id}`} target="_blank" className={cn(isCancelled && "pointer-events-none")}>
-                    <Badge className={cn("cursor-pointer", isCancelled ? "bg-gray-500" : contractInfo.className)}>
+                  <Link href={`/contract?id=${booking.id}`} target="_blank" className={cn(isInactive && "pointer-events-none")}>
+                    <Badge className={cn("cursor-pointer", isInactive ? "bg-gray-500" : contractInfo.className)}>
                         {contractInfo.text}
                     </Badge>
                 </Link>
@@ -178,14 +182,14 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell data-label="Garantía" className={cn(isCancelled && "text-muted-foreground")}>
+      <TableCell data-label="Garantía" className={cn(isInactive && "text-muted-foreground")}>
         <GuaranteeManager booking={booking} isOpen={isGuaranteeOpen} onOpenChange={setIsGuaranteeOpen}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                     <Badge 
-                        className={cn("cursor-pointer", isCancelled ? "bg-gray-500" : guaranteeInfo.className)}
-                        onClick={() => !isCancelled && setIsGuaranteeOpen(true)}
+                        className={cn("cursor-pointer", isInactive ? "bg-gray-500" : guaranteeInfo.className)}
+                        onClick={() => !isInactive && setIsGuaranteeOpen(true)}
                         role="button"
                     >
                       {guaranteeInfo.text}
@@ -198,11 +202,11 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
             </TooltipProvider>
         </GuaranteeManager>
       </TableCell>
-      <TableCell data-label="Monto" className={cn(isCancelled && "text-muted-foreground")}>
+      <TableCell data-label="Monto" className={cn(isInactive && "text-muted-foreground")}>
           <TooltipProvider>
               <Tooltip>
                   <TooltipTrigger asChild>
-                      <Badge variant="secondary" className={cn("cursor-default", isCancelled && "bg-gray-400 text-muted-foreground")}>{formatCurrency(booking.amount, booking.currency)}</Badge>
+                      <Badge variant="secondary" className={cn("cursor-default", isInactive && "bg-gray-400 text-muted-foreground")}>{formatCurrency(booking.amount, booking.currency)}</Badge>
                   </TooltipTrigger>
                   <TooltipContent>
                       <p>Valor del Alquiler</p>
@@ -210,7 +214,7 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
               </Tooltip>
           </TooltipProvider>
       </TableCell>
-      <TableCell data-label="Saldo" className={cn(isCancelled && "text-muted-foreground")}>
+      <TableCell data-label="Saldo" className={cn(isInactive && "text-muted-foreground")}>
           <TooltipProvider>
               <Tooltip>
                   <TooltipTrigger asChild>
@@ -249,7 +253,7 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsPaymentsOpen(true)} disabled={isCancelled}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsPaymentsOpen(true)} disabled={isInactive}>
                                   <Landmark className="h-4 w-4" />
                                   <span className="sr-only">Gestionar Pagos</span>
                               </Button>
@@ -263,7 +267,7 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsExpensesOpen(true)} disabled={isCancelled}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsExpensesOpen(true)} disabled={isInactive}>
                                   <Wallet className="h-4 w-4" />
                                   <span className="sr-only">Gestionar Gastos</span>
                               </Button>
@@ -408,3 +412,5 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
+
+    
