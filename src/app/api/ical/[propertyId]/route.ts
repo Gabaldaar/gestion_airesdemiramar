@@ -33,8 +33,11 @@ export async function GET(
       return new Response('Property not found', { status: 404 });
     }
     
+    // Filter out cancelled bookings
+    const activeBookings = bookings.filter(b => b.status !== 'cancelled');
+
     // Fetch all tenants in parallel to optimize
-    const tenantIds = [...new Set(bookings.map(b => b.tenantId))];
+    const tenantIds = [...new Set(activeBookings.map(b => b.tenantId))];
     const tenants = await Promise.all(tenantIds.map(id => getTenantById(id)));
     const tenantsMap = new Map(tenants.map(t => [t?.id, t]));
 
@@ -46,7 +49,7 @@ export async function GET(
       'CALSCALE:GREGORIAN',
     ];
 
-    bookings.forEach(booking => {
+    activeBookings.forEach(booking => {
       const tenant = tenantsMap.get(booking.tenantId);
       const tenantName = tenant ? tenant.name : 'Inquilino Desconocido';
       
