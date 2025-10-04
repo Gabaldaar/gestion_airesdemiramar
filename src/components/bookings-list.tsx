@@ -133,7 +133,12 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
         {showProperty && <TableCell data-label="Propiedad" className={cn("font-bold", getBookingColorClass(booking))}>
             {isCancelled && <Badge variant="destructive" className="mr-2">CANCELADA</Badge>}
             {isPending && <Badge variant="secondary" className="mr-2 bg-yellow-400 text-black">EN ESPERA</Badge>}
-            {booking.property?.name || 'N/A'}
+            <span className={cn(
+                isCancelled && "text-red-600 line-through",
+                isPending && "text-amber-600"
+            )}>
+                {booking.property?.name || 'N/A'}
+            </span>
         </TableCell>}
         <TableCell data-label="Inquilino" className={cn(isInactive && "text-muted-foreground")}>
             <div className='flex items-center h-full'>
