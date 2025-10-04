@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { addBooking } from '@/lib/actions';
-import { Tenant, Booking, Origin, getOrigins } from '@/lib/data';
+import { Tenant, Booking, Origin, getOrigins, BookingStatus } from '@/lib/data';
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -98,7 +98,9 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   }, [isOpen]);
 
   const disabledDays = useMemo(() => {
-    return existingBookings.flatMap(booking => {
+    const activeBookings = existingBookings.filter(b => !b.status || b.status === 'active');
+    
+    return activeBookings.flatMap(booking => {
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
         
