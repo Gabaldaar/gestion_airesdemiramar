@@ -89,7 +89,7 @@ export function PropertyAddForm() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="propertyUrl" className="text-right">
-                    URL de Anuncio
+                    Web de la Propiedad
                     </Label>
                     <Input id="propertyUrl" name="propertyUrl" placeholder="Ej: https://airbnb.com/h/mi-depto" className="col-span-3" />
                 </div>

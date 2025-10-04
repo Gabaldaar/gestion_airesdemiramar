@@ -57,7 +57,7 @@ export function PropertyEditForm({ property }: { property: Property }) {
                     <Input id={`imageUrl-${property.id}`} type="text" name="imageUrl" defaultValue={property.imageUrl} />
                 </div>
                 <div>
-                    <Label htmlFor={`propertyUrl-${property.id}`}>URL de Anuncio</Label>
+                    <Label htmlFor={`propertyUrl-${property.id}`}>Web de la Propiedad</Label>
                     <Input id={`propertyUrl-${property.id}`} type="text" name="propertyUrl" defaultValue={property.propertyUrl} placeholder="Ej: https://airbnb.com/h/mi-depto"/>
                 </div>
                 <div className="md:col-span-2">
