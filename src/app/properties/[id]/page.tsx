@@ -24,7 +24,7 @@ import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, useMemo, FC } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Copy, Calendar as CalendarIcon } from 'lucide-react';
+import { Copy, Calendar as CalendarIcon, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
