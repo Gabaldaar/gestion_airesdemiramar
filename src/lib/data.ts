@@ -704,7 +704,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
   const createSummaryForARS = (): FinancialSummary[] => {
     return allProperties.map(property => {
-      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && b.status === 'active');
+      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && (!b.status || b.status === 'active'));
       
       const incomeInArsFromArsBookings = propertyBookings
         .filter(b => b.currency === 'ARS')
@@ -744,7 +744,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
   const createSummaryForUSD = (): FinancialSummary[] => {
     return allProperties.map(property => {
-      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && b.status === 'active');
+      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && (!b.status || b.status === 'active'));
       
       const incomeInUsdFromUsdBookings = propertyBookings
           .filter(b => b.currency === 'USD')
