@@ -56,7 +56,10 @@ export default function DashboardPage() {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const upcomingBookings = bookings
-        .filter(b => new Date(b.startDate) >= today && b.status === 'active')
+        .filter(b => {
+            const isActive = !b.status || b.status === 'active';
+            return new Date(b.startDate) >= today && isActive;
+        })
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
         .slice(0, 5);
 
@@ -64,7 +67,8 @@ export default function DashboardPage() {
         .filter(b => {
             const startDate = new Date(b.startDate);
             const endDate = new Date(b.endDate);
-            return today >= startDate && today <= endDate && b.status === 'active';
+            const isActive = !b.status || b.status === 'active';
+            return today >= startDate && today <= endDate && isActive;
         })
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
