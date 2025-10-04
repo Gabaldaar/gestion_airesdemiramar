@@ -18,13 +18,14 @@ import {
 } from "@/components/ui/tabs";
 import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
+import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, useMemo, FC } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Copy, Calendar as CalendarIcon, ExternalLink } from 'lucide-react';
+import { Copy, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,8 +33,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
 import { DayPicker, DayProps } from 'react-day-picker';
-import { isWithinInterval, addDays, isSameDay } from 'date-fns';
-import BookingsList from '@/components/bookings-list';
+import { isWithinInterval } from 'date-fns';
 
 
 interface PropertyDetailData {
@@ -46,17 +46,38 @@ interface PropertyDetailData {
     origins: Origin[];
 }
 
-const DayContentWithTooltip: FC<DayProps> = (dayProps) => {
-    const { date, ...rest } = dayProps;
+const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> = (dayProps) => {
+    const { date, activeModifiers, data, ...rest } = dayProps;
 
-    // Remove non-standard DOM props before passing to the span
-    const spanProps: any = { ...rest };
-    delete spanProps.activeModifiers;
-    delete spanProps.displayMonth;
+    const bookingForDay = useMemo(() => {
+        if (!data || !activeModifiers.booked) return undefined;
+        return data.bookings.find(b => 
+            isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
+        );
+    }, [date, data, activeModifiers.booked]);
 
-    return <span {...spanProps}>{date.getDate()}</span>;
+    const tenant = useMemo(() => {
+        if (!bookingForDay || !data?.tenants) return undefined;
+        return data.tenants.find(t => t.id === bookingForDay.tenantId);
+    }, [bookingForDay, data?.tenants]);
+
+    if (tenant) {
+        return (
+            <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span>{date.getDate()}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{tenant.name}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        );
+    }
+    
+    return <span>{date.getDate()}</span>;
 };
-
 
 
 export default function PropertyDetailPage() {
@@ -109,18 +130,25 @@ export default function PropertyDetailPage() {
     const dayModifiers = useMemo(() => {
         if (!data) return {};
         
+        const bookedDays = data.bookings.map(booking => ({
+            from: new Date(booking.startDate),
+            to: new Date(booking.endDate),
+        }));
+
         const checkinDays = data.bookings.map(b => new Date(b.startDate));
         const checkoutDays = data.bookings.map(b => new Date(b.endDate));
         
         const bookedMiddleDays = data.bookings.flatMap(booking => {
             const startDate = new Date(booking.startDate);
             const endDate = new Date(booking.endDate);
-            if (isSameDay(startDate, endDate)) return [];
-            if (addDays(startDate, 1) >= endDate) return [];
-            return { from: addDays(startDate, 1), to: addDays(endDate, -1) };
+            if (endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
+                 return []; // Don't mark middle days for short stays
+            }
+            return { from: new Date(startDate.getTime() + 86400000), to: new Date(endDate.getTime() - 86400000) };
         });
 
         return {
+            booked: bookedDays,
             checkin: checkinDays,
             checkout: checkoutDays,
             'booked-middle': bookedMiddleDays,
@@ -131,37 +159,7 @@ export default function PropertyDetailPage() {
         checkin: 'day-checkin',
         checkout: 'day-checkout',
         'booked-middle': 'day-booked-middle',
-    };
-
-    const CustomDay = (props: DayProps) => {
-        const { date, activeModifiers } = props;
-        if (!data || !data.bookings) {
-            return <DayContentWithTooltip {...props} />;
-        }
-        
-        const bookingForDay = data.bookings.find(b => 
-            isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
-        );
-
-        if (bookingForDay) {
-            const tenant = data.tenants.find(t => t.id === bookingForDay.tenantId);
-            if (tenant) {
-                return (
-                    <TooltipProvider delayDuration={100}>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div><DayContentWithTooltip {...props} /></div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{tenant.name}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                );
-            }
-        }
-
-        return <DayContentWithTooltip {...props} />;
+        disabled: 'day-disabled',
     };
 
 
@@ -184,6 +182,10 @@ export default function PropertyDetailPage() {
         description: "El enlace iCal ha sido copiado al portapapeles.",
     });
   }
+  
+  const CustomDayContent: React.FC<DayProps> = (props) => (
+    <DayContentWithTooltip {...props} data={data} />
+  );
 
   return (
     <div className="flex-1 space-y-4">
@@ -202,16 +204,7 @@ export default function PropertyDetailPage() {
                     <p className="text-muted-foreground">{property.address}</p>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
-                {property.propertyUrl && (
-                    <Button asChild>
-                        <a href={property.propertyUrl} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="mr-2 h-4 w-4" /> Ver Anuncio
-                        </a>
-                    </Button>
-                )}
-                <PropertyNotesForm property={property} />
-            </div>
+            <PropertyNotesForm property={property} />
         </div>
 
         <Card>
@@ -323,7 +316,7 @@ export default function PropertyDetailPage() {
                         fromYear={new Date().getFullYear() - 2}
                         toYear={new Date().getFullYear() + 5}
                         components={{
-                            Day: CustomDay
+                            DayContent: CustomDayContent
                         }}
                     />
                 </CardContent>

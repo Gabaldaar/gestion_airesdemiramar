@@ -88,7 +88,7 @@ export async function addProperty(previousState: any, formData: FormData) {
 
 
 export async function updateProperty(previousState: any, formData: FormData) {
-  const propertyData: Partial<Property> = {
+  const propertyData: Omit<Property, 'googleCalendarId'> = {
     id: formData.get("id") as string,
     name: formData.get("name") as string,
     address: formData.get("address") as string,

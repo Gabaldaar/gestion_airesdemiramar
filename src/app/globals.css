@@ -76,14 +76,14 @@
 }
 
 @layer utilities {
-    .day-checkin {
-        @apply bg-blue-200 text-blue-900 font-bold rounded-l-full;
-    }
-    .day-checkout {
-        @apply bg-red-200 text-red-900 font-bold rounded-r-full;
+    .day-checkin, .day-checkout {
+        @apply bg-blue-200 text-blue-900 font-bold rounded-md;
     }
     .day-booked-middle {
-        @apply bg-blue-100/50 text-blue-800 rounded-none;
+        @apply bg-red-200/50 text-red-900;
+    }
+    .day-disabled {
+        @apply text-muted-foreground/80;
     }
     .rdp-day:not(.rdp-day-disabled) {
         color: hsl(var(--foreground)) !important;
