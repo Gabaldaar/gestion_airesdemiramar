@@ -92,6 +92,21 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined
   );
 
+    // This effect runs when the dialog is opened or the booking prop changes.
+    // It resets the form state to match the currently selected booking.
+    useEffect(() => {
+        if (booking) {
+            setDate({
+                from: new Date(booking.startDate),
+                to: new Date(booking.endDate)
+            });
+            setGuaranteeStatus(booking.guaranteeStatus || 'not_solicited');
+            setGuaranteeAmount(booking.guaranteeAmount || undefined);
+            setGuaranteeReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
+            setGuaranteeReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
+        }
+    }, [booking]);
+
 
   const resetForm = () => {
     setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
@@ -128,7 +143,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   const disabledDays = useMemo(() => {
     if (!allBookings) return [];
     
-    const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId && b.status === 'active');
+    const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId && (!b.status || b.status === 'active'));
     
     return otherBookings.flatMap(otherBooking => {
         const startDate = new Date(otherBooking.startDate);
@@ -393,5 +408,3 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     </>
   );
 }
-
-    
