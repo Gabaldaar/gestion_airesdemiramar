@@ -1,7 +1,9 @@
 
+
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   Card,
@@ -25,7 +27,7 @@ import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, useMemo, FC } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Copy, Calendar as CalendarIcon } from 'lucide-react';
+import { Copy, Calendar as CalendarIcon, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -265,6 +267,14 @@ export default function PropertyDetailPage() {
                 <TabsTrigger value="calendar">Calendario</TabsTrigger>
             </TabsList>
             <div className="flex items-center space-x-2">
+                {property.propertyUrl && (
+                  <Button asChild variant="secondary">
+                    <Link href={property.propertyUrl} target="_blank">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Página Web
+                    </Link>
+                  </Button>
+                )}
                 <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
                 <ExpenseAddForm propertyId={property.id} categories={categories} />
             </div>
@@ -327,3 +337,4 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
+
