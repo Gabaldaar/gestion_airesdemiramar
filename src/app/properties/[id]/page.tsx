@@ -53,7 +53,7 @@ const DayContentWithTooltip: FC<DayProps> = (dayProps) => {
     // Remove non-standard DOM props before passing to the span
     const spanProps: any = { ...rest };
     delete spanProps.activeModifiers;
-    delete spanProps.displayMonth; // This was the cause of the console error
+    delete spanProps.displayMonth;
 
     return <span {...spanProps}>{date.getDate()}</span>;
 };
