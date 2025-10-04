@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/tabs";
 import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
-import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
@@ -35,6 +34,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
 import { DayPicker, DayProps } from 'react-day-picker';
 import { isWithinInterval, addDays } from 'date-fns';
+import BookingsList from '@/components/bookings-list';
 
 
 interface PropertyDetailData {
