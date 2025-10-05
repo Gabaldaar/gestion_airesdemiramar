@@ -39,6 +39,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
+import useWindowSize from '@/hooks/use-window-size';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from './ui/card';
 
 const placeholderHelpText = "Marcadores disponibles: {{inquilino.nombre}}, {{propiedad.nombre}}, {{propiedad.direccion}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}, {{propiedad.customField1Label}}, {{propiedad.customField1Value}} ...hasta el 6";
 
@@ -192,6 +194,8 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [editTemplate, setEditTemplate] = useState<EmailTemplate | undefined>(undefined);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const { width } = useWindowSize();
+    const isMobile = width < 768;
 
 
     const refreshTemplates = async () => {
@@ -222,39 +226,72 @@ export default function EmailTemplateManager({ initialTemplates }: { initialTemp
                  <TemplateDialog isOpen={isAddDialogOpen} setIsOpen={handleAddDialogChange} onActionComplete={refreshTemplates} />
                  {editTemplate && <TemplateDialog isOpen={isEditDialogOpen} setIsOpen={handleEditDialogChange} template={editTemplate} onActionComplete={refreshTemplates} />}
             </div>
-            <div className="border rounded-lg">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Asunto</TableHead>
-                            <TableHead className="text-right w-[100px]">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {templates && templates.length > 0 ? (
-                            templates.map((template) => (
-                                <TableRow key={template.id}>
-                                    <TableCell className="font-medium">{template.name}</TableCell>
-                                    <TableCell>{template.subject}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(template)}><Pencil className="h-4 w-4" /></Button>
-                                            <DeleteTemplateDialog templateId={template.id} onActionComplete={refreshTemplates} />
-                                        </div>
+
+            {isMobile ? (
+                 <div className="space-y-4">
+                    {templates && templates.length > 0 ? (
+                        templates.map((template) => (
+                            <Card key={template.id}>
+                                <CardHeader className="p-4">
+                                    <CardTitle className="text-lg">{template.name}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-4 grid gap-2 text-sm">
+                                    <div className="flex flex-col space-y-1">
+                                        <span className="text-muted-foreground">Asunto</span>
+                                        <p className="font-medium">{template.subject}</p>
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="p-2 justify-end">
+                                    <div className="flex items-center justify-end">
+                                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(template)}><Pencil className="h-4 w-4" /></Button>
+                                        <DeleteTemplateDialog templateId={template.id} onActionComplete={refreshTemplates} />
+                                    </div>
+                                </CardFooter>
+                            </Card>
+                        ))
+                    ) : (
+                        <Card>
+                            <CardContent className="text-center text-sm text-muted-foreground p-8">
+                                No has creado ninguna plantilla de email todavía.
+                            </CardContent>
+                        </Card>
+                    )}
+                 </div>
+            ) : (
+                 <div className="border rounded-lg">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead>Asunto</TableHead>
+                                <TableHead className="text-right w-[100px]">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {templates && templates.length > 0 ? (
+                                templates.map((template) => (
+                                    <TableRow key={template.id}>
+                                        <TableCell className="font-medium">{template.name}</TableCell>
+                                        <TableCell>{template.subject}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex items-center justify-end">
+                                                <Button variant="ghost" size="icon" onClick={() => handleEditClick(template)}><Pencil className="h-4 w-4" /></Button>
+                                                <DeleteTemplateDialog templateId={template.id} onActionComplete={refreshTemplates} />
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center text-sm text-muted-foreground p-8">
+                                        No has creado ninguna plantilla de email todavía.
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={3} className="text-center text-sm text-muted-foreground p-8">
-                                    No has creado ninguna plantilla de email todavía.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
         </div>
     );
 }
