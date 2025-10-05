@@ -9,6 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin } from "@/lib/data";
 import { format, differenceInDays } from 'date-fns';
@@ -26,6 +34,7 @@ import { GuaranteeManager } from './guarantee-manager';
 import { Landmark, Wallet, Pencil, Trash2, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { EmailSender } from "./email-sender";
+import useWindowSize from '@/hooks/use-window-size';
 
 
 interface BookingsListProps {
@@ -51,12 +60,94 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit }: { booking: BookingWithDetails, properties: Property[], tenants: Tenant[], showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void }) {
-  const [isNotesOpen, setIsNotesOpen] = useState(false);
-  const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
-  const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
-  const [isExpensesOpen, setIsExpensesOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void }) {
+    const [isNotesOpen, setIsNotesOpen] = useState(false);
+    const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
+    const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
+    const [isExpensesOpen, setIsExpensesOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    
+    const isInactive = booking.status === 'cancelled' || booking.status === 'pending';
+
+    return (
+        <div className="flex flex-wrap items-center justify-end gap-1">
+             <NotesViewer 
+                notes={booking.notes} 
+                title={`Notas sobre la reserva de ${booking.tenant?.name}`} 
+                isOpen={isNotesOpen} 
+                onOpenChange={setIsNotesOpen}
+            >
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsNotesOpen(true)} disabled={!booking.notes}>
+                                <FileText className="h-4 w-4" />
+                                <span className="sr-only">Ver Notas</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Ver Notas</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </NotesViewer>
+              
+            <BookingPaymentsManager bookingId={booking.id} isOpen={isPaymentsOpen} onOpenChange={setIsPaymentsOpen}>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsPaymentsOpen(true)} disabled={isInactive}>
+                                <Landmark className="h-4 w-4" />
+                                <span className="sr-only">Gestionar Pagos</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </BookingPaymentsManager>
+            
+            <BookingExpensesManager bookingId={booking.id} isOpen={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsExpensesOpen(true)} disabled={isInactive}>
+                                <Wallet className="h-4 w-4" />
+                                <span className="sr-only">Gestionar Gastos</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </BookingExpensesManager>
+
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(booking)}>
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Editar Reserva</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Editar Reserva</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+            
+            <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsDeleteOpen(true)}>
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Eliminar Reserva</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </BookingDeleteForm>
+        </div>
+    )
+}
+
+function BookingRow({ booking, showProperty, origin, onEdit }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void }) {
   const [isEmailOpen, setIsEmailOpen] = useState(false);
 
   const isCancelled = booking.status === 'cancelled';
@@ -129,8 +220,8 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
   
   
   return (
-    <TableRow key={booking.id} className={cn("block md:table-row border-b md:border-b-0 last:border-b-0", isCancelled && "bg-red-500/10", isPending && "bg-yellow-500/10")}>
-        {showProperty && <TableCell data-label="Propiedad" className={cn("font-bold", getBookingColorClass(booking))}>
+    <TableRow key={booking.id} className={cn(isCancelled && "bg-red-500/10", isPending && "bg-yellow-500/10")}>
+        {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>
             {isCancelled && <Badge variant="destructive" className="mr-2">CANCELADA</Badge>}
             {isPending && <Badge variant="secondary" className="mr-2 bg-yellow-400 text-black">EN ESPERA</Badge>}
             <span className={cn(
@@ -140,7 +231,7 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
                 {booking.property?.name || 'N/A'}
             </span>
         </TableCell>}
-        <TableCell data-label="Inquilino" className={cn(isInactive && "text-muted-foreground")}>
+        <TableCell className={cn(isInactive && "text-muted-foreground")}>
             <div className='flex items-center h-full'>
             <EmailSender 
                     booking={booking} 
@@ -156,22 +247,20 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
                 </EmailSender>
             </div>
         </TableCell>
-        <TableCell data-label="Estadía" className={cn(isInactive && "text-muted-foreground")}>
-          <div className="flex flex-col md:flex-row md:items-center md:gap-1 whitespace-nowrap">
-              <span>{formatDate(booking.startDate)}</span>
-              <span className="hidden md:inline">→</span>
-              <span>{formatDate(booking.endDate)}</span>
+        <TableCell className={cn("whitespace-nowrap", isInactive && "text-muted-foreground")}>
+          <div className="flex flex-col">
+              <span>{formatDate(booking.startDate)} → {formatDate(booking.endDate)}</span>
+              <span className="text-xs text-muted-foreground">{nights} noches</span>
           </div>
-          <span className="block text-xs text-muted-foreground">{nights} noches</span>
       </TableCell>
-      <TableCell data-label="Origen" className={cn(isInactive && "text-muted-foreground")}>
+      <TableCell className={cn(isInactive && "text-muted-foreground")}>
         {origin ? (
             <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
                 {origin.name}
             </Badge>
         ) : null}
       </TableCell>
-      <TableCell data-label="Contrato" className={cn(isInactive && "text-muted-foreground")}>
+      <TableCell className={cn(isInactive && "text-muted-foreground")}>
         <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -187,14 +276,14 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell data-label="Garantía" className={cn(isInactive && "text-muted-foreground")}>
-        <GuaranteeManager booking={booking} isOpen={isGuaranteeOpen} onOpenChange={setIsGuaranteeOpen}>
+      <TableCell className={cn(isInactive && "text-muted-foreground")}>
+        <GuaranteeManager booking={booking} isOpen={false} onOpenChange={()=>{}}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                     <Badge 
                         className={cn("cursor-pointer", isInactive ? "bg-gray-500" : guaranteeInfo.className)}
-                        onClick={() => !isInactive && setIsGuaranteeOpen(true)}
+                        onClick={() => {}}
                         role="button"
                     >
                       {guaranteeInfo.text}
@@ -207,7 +296,7 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
             </TooltipProvider>
         </GuaranteeManager>
       </TableCell>
-      <TableCell data-label="Monto" className={cn(isInactive && "text-muted-foreground")}>
+      <TableCell className={cn(isInactive && "text-muted-foreground")}>
           <TooltipProvider>
               <Tooltip>
                   <TooltipTrigger asChild>
@@ -219,7 +308,7 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
               </Tooltip>
           </TooltipProvider>
       </TableCell>
-      <TableCell data-label="Saldo" className={cn(isInactive && "text-muted-foreground")}>
+      <TableCell className={cn(isInactive && "text-muted-foreground")}>
           <TooltipProvider>
               <Tooltip>
                   <TooltipTrigger asChild>
@@ -233,90 +322,95 @@ function BookingRow({ booking, properties, tenants, showProperty, origin, onEdit
               </Tooltip>
           </TooltipProvider>
       </TableCell>
-      <TableCell data-label="Acciones" className="text-right">
-          <div className="grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
-                <NotesViewer 
-                    notes={booking.notes} 
-                    title={`Notas sobre la reserva de ${booking.tenant?.name}`} 
-                    isOpen={isNotesOpen} 
-                    onOpenChange={setIsNotesOpen}
-                >
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsNotesOpen(true)} disabled={!booking.notes}>
-                                    <FileText className="h-4 w-4" />
-                                    <span className="sr-only">Ver Notas</span>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Ver Notas</p></TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </NotesViewer>
-              
-              <BookingPaymentsManager bookingId={booking.id} isOpen={isPaymentsOpen} onOpenChange={setIsPaymentsOpen}>
-                  <TooltipProvider>
-                      <Tooltip>
-                          <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsPaymentsOpen(true)} disabled={isInactive}>
-                                  <Landmark className="h-4 w-4" />
-                                  <span className="sr-only">Gestionar Pagos</span>
-                              </Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
-                      </Tooltip>
-                  </TooltipProvider>
-              </BookingPaymentsManager>
-              
-              <BookingExpensesManager bookingId={booking.id} isOpen={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
-                  <TooltipProvider>
-                      <Tooltip>
-                          <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsExpensesOpen(true)} disabled={isInactive}>
-                                  <Wallet className="h-4 w-4" />
-                                  <span className="sr-only">Gestionar Gastos</span>
-                              </Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
-                      </Tooltip>
-                  </TooltipProvider>
-              </BookingExpensesManager>
-
-              <TooltipProvider>
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(booking)}>
-                              <Pencil className="h-4 w-4" />
-                              <span className="sr-only">Editar Reserva</span>
-                          </Button>
-                      </TooltipTrigger>
-                      <TooltipContent><p>Editar Reserva</p></TooltipContent>
-                  </Tooltip>
-              </TooltipProvider>
-              
-              <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                  <TooltipProvider>
-                      <Tooltip>
-                          <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsDeleteOpen(true)}>
-                                  <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">Eliminar Reserva</span>
-                              </Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
-                      </Tooltip>
-                  </TooltipProvider>
-              </BookingDeleteForm>
-          </div>
+      <TableCell className="text-right">
+        <BookingActions booking={booking} onEdit={onEdit} />
       </TableCell>
     </TableRow>
   );
+}
+
+function BookingCard({ booking, showProperty, origin, onEdit }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void }) {
+    const isCancelled = booking.status === 'cancelled';
+    const isPending = booking.status === 'pending';
+    const isInactive = isCancelled || isPending;
+    
+    const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
+
+    const formatDate = (dateString: string) => {
+        return format(new Date(dateString), "dd/MM/yy", { locale: es });
+    };
+
+    const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency, maximumFractionDigits: 0 }).format(amount);
+    }
+    
+    const getBalanceColorClass = () => {
+        if (isInactive) return 'text-muted-foreground';
+        if (booking.balance <= 0) return 'text-green-600';
+        if (booking.balance >= booking.amount) return 'text-red-600';
+        return 'text-orange-600';
+    };
+
+    return (
+        <Card className={cn("w-full", isCancelled && "bg-red-500/10 border-red-500/20", isPending && "bg-yellow-500/10 border-yellow-500/20")}>
+            <CardHeader className="p-4">
+                 {isCancelled && <Badge variant="destructive" className="mr-2 w-fit">CANCELADA</Badge>}
+                {isPending && <Badge variant="secondary" className="mr-2 w-fit bg-yellow-400 text-black">EN ESPERA</Badge>}
+                <CardTitle className="text-lg">
+                    {showProperty ? (
+                        <span className={cn(
+                            isCancelled && "text-red-600 line-through",
+                            isPending && "text-amber-600"
+                        )}>
+                            {booking.property?.name || 'N/A'}
+                        </span>
+                    ) : (booking.tenant?.name || 'N/A')}
+                </CardTitle>
+                <CardDescription>
+                    {showProperty ? (booking.tenant?.name || 'N/A') : booking.property?.name}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div className="flex justify-between col-span-2">
+                    <span className="text-muted-foreground">Estadía</span>
+                    <span className="font-medium">{formatDate(booking.startDate)} → {formatDate(booking.endDate)} ({nights}n)</span>
+                </div>
+                {origin && (
+                    <div className="flex justify-between col-span-2">
+                        <span className="text-muted-foreground">Origen</span>
+                        <Badge style={{ backgroundColor: origin.color, color: 'white' }}>{origin.name}</Badge>
+                    </div>
+                )}
+                <div className="flex justify-between col-span-2">
+                    <span className="text-muted-foreground">Monto</span>
+                    <span className="font-medium">{formatCurrency(booking.amount, booking.currency)}</span>
+                </div>
+                <div className="flex justify-between col-span-2">
+                    <span className="text-muted-foreground">Saldo</span>
+                    <span className={cn("font-bold", getBalanceColorClass())}>{formatCurrency(booking.balance, booking.currency)}</span>
+                </div>
+                 <div className="flex justify-between col-span-2">
+                    <span className="text-muted-foreground">Contrato</span>
+                    <Link href={`/contract?id=${booking.id}`} target="_blank" className={cn("pointer-events-none")}>
+                        <Badge className={cn("cursor-pointer", isInactive ? "bg-gray-500" : contractStatusMap[booking.contractStatus || 'not_sent'].className)}>
+                            {contractStatusMap[booking.contractStatus || 'not_sent'].text}
+                        </Badge>
+                    </Link>
+                </div>
+            </CardContent>
+            <CardFooter className="p-2 justify-end">
+                <BookingActions booking={booking} onEdit={onEdit} />
+            </CardFooter>
+        </Card>
+    )
 }
 
 
 export default function BookingsList({ bookings, properties, tenants, origins, showProperty = false }: BookingsListProps) {
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
 
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
@@ -343,34 +437,49 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-600 mr-1"></div>&lt; 7 días</div>
             <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-600 mr-1"></div>En Curso</div>
         </div>
-        <Table className="block md:table">
-          <TableHeader className="hidden md:table-header-group">
-            <TableRow className="hidden md:table-row">
-              {showProperty && <TableHead>Propiedad</TableHead>}
-              <TableHead>Inquilino</TableHead>
-              <TableHead>Estadía</TableHead>
-              <TableHead>Origen</TableHead>
-              <TableHead>Contrato</TableHead>
-              <TableHead>Garantía</TableHead>
-              <TableHead>Monto</TableHead>
-              <TableHead>Saldo</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody className="block md:table-row-group">
-            {bookings.map((booking) => (
-                <BookingRow 
-                    key={booking.id}
-                    booking={booking} 
-                    properties={properties} 
-                    tenants={tenants} 
-                    showProperty={showProperty} 
-                    origin={booking.originId ? originsMap.get(booking.originId) : undefined}
-                    onEdit={handleEditClick}
-                />
-            ))}
-          </TableBody>
-        </Table>
+        
+        {isMobile ? (
+            <div className="space-y-4">
+                 {bookings.map((booking) => (
+                    <BookingCard
+                        key={booking.id}
+                        booking={booking}
+                        showProperty={showProperty}
+                        origin={booking.originId ? originsMap.get(booking.originId) : undefined}
+                        onEdit={handleEditClick}
+                    />
+                ))}
+            </div>
+        ) : (
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                    {showProperty && <TableHead>Propiedad</TableHead>}
+                    <TableHead>Inquilino</TableHead>
+                    <TableHead>Estadía</TableHead>
+                    <TableHead>Origen</TableHead>
+                    <TableHead>Contrato</TableHead>
+                    <TableHead>Garantía</TableHead>
+                    <TableHead>Monto</TableHead>
+                    <TableHead>Saldo</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {bookings.map((booking) => (
+                        <BookingRow 
+                            key={booking.id}
+                            booking={booking} 
+                            properties={properties} 
+                            tenants={tenants} 
+                            showProperty={showProperty} 
+                            origin={booking.originId ? originsMap.get(booking.originId) : undefined}
+                            onEdit={handleEditClick}
+                        />
+                    ))}
+                </TableBody>
+            </Table>
+        )}
 
         {editingBooking && (
             <BookingEditForm
@@ -383,37 +492,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                 onBookingUpdated={handleUpdate}
             />
         )}
-
-        <style jsx>{`
-            @media (max-width: 767px) {
-                .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row {
-                    display: block;
-                    padding: 1rem 0.5rem;
-                    position: relative;
-                }
-                .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label] {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 0.5rem 0.5rem;
-                    border-bottom: 1px solid hsl(var(--border));
-                }
-                .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label]::before {
-                    content: attr(data-label);
-                    font-weight: bold;
-                    margin-right: 1rem;
-                }
-                .block.md\\:table > .block.md\\:table-row-group > .block.md\\table-row > [data-label="Acciones"] {
-                    justify-content: flex-end;
-                }
-                 .block.md\\:table > .block.md\\:table-row-group > .block.md\\table-row > [data-label="Acciones"]::before {
-                    display: none;
-                }
-                 .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row:first-child {
-                    border-top: 1px solid hsl(var(--border));
-                }
-            }
-        `}</style>
     </div>
   );
 }
