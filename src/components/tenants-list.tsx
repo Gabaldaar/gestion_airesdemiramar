@@ -143,11 +143,14 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
                     }
                     .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label="Acciones"] {
                         justify-content: flex-end;
+                        border-bottom: none;
+                        padding-top: 1rem;
+                        padding-bottom: 0;
                     }
-                    .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label="Acciones"]::before {
+                     .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label="Acciones"]::before {
                         display: none;
                     }
-                    .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row:first-child {
+                     .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row:first-child {
                         border-top: 1px solid hsl(var(--border));
                     }
                 }
@@ -155,3 +158,4 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
         </div>
   );
 }
+
