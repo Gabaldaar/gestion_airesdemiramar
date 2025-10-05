@@ -84,7 +84,7 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
             Selecciona un rango de fechas para filtrar los reportes financieros.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <CardContent className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
             <DatePicker date={from ? new Date(from.replace(/-/g, '/')) : undefined} onDateSelect={handleFromDateSelect} placeholder="Desde"/>
             <DatePicker date={to ? new Date(to.replace(/-/g, '/')) : undefined} onDateSelect={handleToDateSelect} placeholder="Hasta"/>
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
