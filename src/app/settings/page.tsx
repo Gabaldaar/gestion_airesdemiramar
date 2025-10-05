@@ -61,7 +61,7 @@ export default function SettingsPage() {
                 <h2 className="text-3xl font-bold tracking-tight text-primary">Configuración</h2>
                 <p className="text-muted-foreground">Administra los datos de tu aplicación.</p>
             </div>
-            <TabsList className="grid w-full sm:w-auto sm:inline-flex grid-cols-2 sm:grid-cols-4">
+            <TabsList className="grid w-full sm:w-auto sm:inline-flex grid-cols-2 sm:grid-cols-4 mb-4 sm:mb-0">
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 <TabsTrigger value="origins">Orígenes</TabsTrigger>
                 <TabsTrigger value="expense-categories">Cat. Gastos</TabsTrigger>
