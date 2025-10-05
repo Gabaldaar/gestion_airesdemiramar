@@ -176,7 +176,7 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
 
   if (isMobile) {
     return (
-        <div className="w-full max-w-md mx-auto space-y-4">
+        <div className="w-full mx-auto space-y-4">
             {origins.map((origin) => (
                  editingOriginId === origin.id 
                  ? (

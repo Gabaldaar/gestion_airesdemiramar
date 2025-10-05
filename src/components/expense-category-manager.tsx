@@ -172,7 +172,7 @@ export default function ExpenseCategoryManager({ initialCategories }: { initialC
 
   if (isMobile) {
     return (
-      <div className="w-full max-w-md mx-auto space-y-4">
+      <div className="w-full mx-auto space-y-4">
         {categories.map((category) => (
              editingCategoryId === category.id 
              ? (

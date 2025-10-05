@@ -13,6 +13,8 @@ import { Label } from './ui/label';
 import { Card, CardContent } from './ui/card';
 import { PropertyDeleteForm } from './property-delete-form';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import useWindowSize from '@/hooks/use-window-size';
 
 const initialState = {
   message: '',
@@ -37,6 +39,8 @@ function SubmitButton() {
 
 export function PropertyEditForm({ property }: { property: Property }) {
   const [state, formAction] = useActionState(updateProperty, initialState);
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
 
   return (
     <div className="py-4">
