@@ -1,21 +1,23 @@
 
+'use client';
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails } from "@/lib/data";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { cn } from "@/lib/utils";
 
 export default function DashboardCurrentBookings({ bookings }: { bookings: BookingWithDetails[]}) {
   if (bookings.length === 0) {
-    return <p className="text-sm text-muted-foreground">No hay reservas en curso en este momento.</p>;
+    return <p className="text-sm text-muted-foreground text-center py-4">No hay reservas en curso en este momento.</p>;
   }
 
   const formatDate = (dateString: string) => {
@@ -39,31 +41,28 @@ export default function DashboardCurrentBookings({ bookings }: { bookings: Booki
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Propiedad</TableHead>
-          <TableHead>Inquilino</TableHead>
-          <TableHead>Check-out</TableHead>
-          <TableHead>Monto</TableHead>
-          <TableHead className="text-right">Saldo</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {bookings.map((booking) => (
-          <TableRow key={booking.id}>
-            <TableCell className="font-bold text-green-600">{booking.property?.name || 'N/A'}</TableCell>
-            <TableCell className="font-medium">{booking.tenant?.name || 'N/A'}</TableCell>
-            <TableCell>{formatDate(booking.endDate)}</TableCell>
-            <TableCell>
+    <div className="space-y-4">
+      {bookings.map((booking) => (
+        <Card key={booking.id} className="bg-green-500/10 border-green-500">
+            <CardHeader className="p-4 flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle className="text-lg text-green-700">{booking.property?.name || 'N/A'}</CardTitle>
+                    <CardDescription>{booking.tenant?.name || 'N/A'}</CardDescription>
+                </div>
+                <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Check-out</p>
+                    <p className="font-semibold">{formatDate(booking.endDate)}</p>
+                </div>
+            </CardHeader>
+            <CardFooter className="p-4 flex justify-between items-center bg-background rounded-b-lg">
                 <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
-            </TableCell>
-            <TableCell className={`text-right font-bold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                {formatCurrency(booking.balance, booking.currency)}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+                <div className={cn("text-right font-bold", booking.balance > 0 ? 'text-orange-600' : 'text-green-600')}>
+                    <span className="text-sm font-normal text-muted-foreground mr-2">Saldo:</span>
+                    {formatCurrency(booking.balance, booking.currency)}
+                </div>
+            </CardFooter>
+        </Card>
+      ))}
+    </div>
   );
 }

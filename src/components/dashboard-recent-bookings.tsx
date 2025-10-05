@@ -1,13 +1,14 @@
 
+'use client';
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingWithTenantAndProperty } from "@/lib/data";
 import { format, differenceInDays } from 'date-fns';
@@ -16,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export default function DashboardRecentBookings({ bookings }: { bookings: BookingWithTenantAndProperty[]}) {
   if (bookings.length === 0) {
-    return <p className="text-sm text-muted-foreground">No hay próximas reservas para mostrar.</p>;
+    return <p className="text-sm text-muted-foreground text-center py-4">No hay próximas reservas para mostrar.</p>;
   }
 
   const formatDate = (dateString: string) => {
@@ -45,64 +46,61 @@ export default function DashboardRecentBookings({ bookings }: { bookings: Bookin
 
     const startDate = new Date(booking.startDate);
     startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(booking.endDate);
-    endDate.setHours(0, 0, 0, 0);
-
-    if (today >= startDate && today <= endDate) {
-      return "text-green-600"; // En curso
-    }
-
-    if (startDate < today) {
-        return ""; // Cerrada, sin color
-    }
     
     const daysUntilStart = differenceInDays(startDate, today);
 
-    if (daysUntilStart < 7) {
-      return "text-red-600";
-    }
-    if (daysUntilStart < 15) {
-      return "text-orange-600";
-    }
-    if (daysUntilStart < 30) {
-      return "text-blue-600";
-    }
+    if (daysUntilStart < 7) return "border-red-500 bg-red-500/10";
+    if (daysUntilStart < 15) return "border-orange-500 bg-orange-500/10";
+    if (daysUntilStart < 30) return "border-blue-500 bg-blue-500/10";
     return "";
   };
+
+  const getBookingTextColorClass = (booking: BookingWithTenantAndProperty): string => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(booking.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    const daysUntilStart = differenceInDays(startDate, today);
+    if (daysUntilStart < 7) return "text-red-700";
+    if (daysUntilStart < 15) return "text-orange-700";
+    if (daysUntilStart < 30) return "text-blue-700";
+    return "text-primary";
+  }
 
 
   return (
     <div>
-        <div className="flex items-center space-x-4 mb-2 text-xs text-muted-foreground">
+        <div className="flex items-center space-x-4 mb-4 text-xs text-muted-foreground">
             <span className="font-semibold">Leyenda:</span>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-600 mr-1"></div>&lt; 30 días</div>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-orange-600 mr-1"></div>&lt; 15 días</div>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-600 mr-1"></div>&lt; 7 días</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>&lt; 30d</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-orange-500 mr-1"></div>&lt; 15d</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-500 mr-1"></div>&lt; 7d</div>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Propiedad</TableHead>
-              <TableHead>Inquilino</TableHead>
-              <TableHead>Check-in</TableHead>
-              <TableHead>Check-out</TableHead>
-              <TableHead className="text-right">Monto</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <div className="space-y-4">
             {bookings.map((booking) => (
-              <TableRow key={booking.id}>
-                <TableCell className={cn("font-bold", getBookingColorClass(booking))}>{booking.property?.name || 'N/A'}</TableCell>
-                <TableCell className="font-medium">{booking.tenant?.name || 'N/A'}</TableCell>
-                <TableCell>{formatDate(booking.startDate)}</TableCell>
-                <TableCell>{formatDate(booking.endDate)}</TableCell>
-                <TableCell className="text-right">
-                    <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
-                </TableCell>
-              </TableRow>
+              <Card key={booking.id} className={cn(getBookingColorClass(booking))}>
+                  <CardHeader className="p-4">
+                      <div className="flex items-start justify-between">
+                          <div>
+                              <CardTitle className={cn("text-lg", getBookingTextColorClass(booking))}>{booking.property?.name || 'N/A'}</CardTitle>
+                              <CardDescription>{booking.tenant?.name || 'N/A'}</CardDescription>
+                          </div>
+                          <Badge variant="secondary">{formatCurrency(booking.amount, booking.currency)}</Badge>
+                      </div>
+                  </CardHeader>
+                  <CardFooter className="p-4 flex justify-between text-sm bg-background rounded-b-lg">
+                      <div>
+                          <p className="text-muted-foreground">Check-in</p>
+                          <p className="font-semibold">{formatDate(booking.startDate)}</p>
+                      </div>
+                      <div className="text-right">
+                          <p className="text-muted-foreground">Check-out</p>
+                          <p className="font-semibold">{formatDate(booking.endDate)}</p>
+                      </div>
+                  </CardFooter>
+              </Card>
             ))}
-          </TableBody>
-        </Table>
+        </div>
     </div>
   );
 }
