@@ -3,6 +3,7 @@
 
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ExpensesByPropertySummary } from '@/lib/data';
+import useWindowSize from '@/hooks/use-window-size';
 
 interface ExpensesByPropertyChartProps {
   data: ExpensesByPropertySummary[];
@@ -25,6 +26,9 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function ExpensesByPropertyChart({ data }: ExpensesByPropertyChartProps) {
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
+
   if (!data || data.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No hay gastos para mostrar en el período seleccionado.</p>;
   }
@@ -38,7 +42,7 @@ export default function ExpensesByPropertyChart({ data }: ExpensesByPropertyChar
             cx="50%"
             cy="50%"
             labelLine={false}
-            outerRadius={100}
+            outerRadius={isMobile ? 80 : 100}
             fill="#8884d8"
             dataKey="totalAmountUSD"
             nameKey="name"
@@ -49,7 +53,7 @@ export default function ExpensesByPropertyChart({ data }: ExpensesByPropertyChar
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
+          <Legend layout={isMobile ? 'horizontal' : 'vertical'} verticalAlign={isMobile ? 'bottom' : 'middle'} align={isMobile ? 'center' : 'right'} />
         </PieChart>
       </ResponsiveContainer>
     </div>
