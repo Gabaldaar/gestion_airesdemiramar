@@ -25,6 +25,22 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+const renderLegend = (props: any) => {
+    const { payload } = props;
+    return (
+        <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 mt-4 text-sm text-muted-foreground">
+            {
+                payload.map((entry: any, index: number) => (
+                    <div key={`item-${index}`} className="flex items-center">
+                        <div className="w-3 h-3 rounded-full mr-2" style={{backgroundColor: entry.color}} />
+                        <span>{entry.value}</span>
+                    </div>
+                ))
+            }
+        </div>
+    );
+};
+
 export default function ExpensesByCategoryChart({ data }: ExpensesByCategoryChartProps) {
   const { width } = useWindowSize();
   const isMobile = width < 768;
@@ -42,18 +58,18 @@ export default function ExpensesByCategoryChart({ data }: ExpensesByCategoryChar
             cx="50%"
             cy="50%"
             labelLine={false}
-            outerRadius={isMobile ? 80 : 100}
+            outerRadius={isMobile ? 60 : 100}
             fill="#8884d8"
             dataKey="totalAmountUSD"
             nameKey="name"
-            label={({ name, percentage }) => `${name} (${percentage.toFixed(0)}%)`}
+            label={isMobile ? false : ({ name, percentage }) => `${name} (${percentage.toFixed(0)}%)`}
           >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.fill} />
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
-          <Legend layout={isMobile ? 'horizontal' : 'vertical'} verticalAlign={isMobile ? 'bottom' : 'middle'} align={isMobile ? 'center' : 'right'} />
+          <Legend content={renderLegend} verticalAlign="bottom" />
         </PieChart>
       </ResponsiveContainer>
     </div>

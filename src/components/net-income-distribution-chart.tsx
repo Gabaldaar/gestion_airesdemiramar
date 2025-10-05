@@ -1,8 +1,10 @@
+
 'use client';
 
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FinancialSummary } from '@/lib/data';
 import { useMemo } from 'react';
+import useWindowSize from '@/hooks/use-window-size';
 
 // Generates a color from a string. Simple hash function.
 const stringToColor = (str: string) => {
@@ -35,11 +37,29 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+const renderLegend = (props: any) => {
+    const { payload } = props;
+    return (
+        <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 mt-4 text-sm text-muted-foreground">
+            {
+                payload.map((entry: any, index: number) => (
+                    <div key={`item-${index}`} className="flex items-center">
+                        <div className="w-3 h-3 rounded-full mr-2" style={{backgroundColor: entry.color}} />
+                        <span>{entry.value}</span>
+                    </div>
+                ))
+            }
+        </div>
+    );
+};
+
 interface NetIncomeDistributionChartProps {
   summary: FinancialSummary[];
 }
 
 export default function NetIncomeDistributionChart({ summary }: NetIncomeDistributionChartProps) {
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
   
   const chartData = useMemo(() => {
     const positiveNetResults = summary.filter(item => item.netResult > 0);
@@ -71,18 +91,18 @@ export default function NetIncomeDistributionChart({ summary }: NetIncomeDistrib
             cx="50%"
             cy="50%"
             labelLine={false}
-            outerRadius={100}
+            outerRadius={isMobile ? 60 : 100}
             fill="#8884d8"
             dataKey="value"
             nameKey="name"
-            label={({ name, percentage }) => `${name} (${percentage.toFixed(0)}%)`}
+            label={isMobile ? false : ({ name, percentage }) => `${name} (${percentage.toFixed(0)}%)`}
           >
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.fill} />
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
+          <Legend content={renderLegend} verticalAlign="bottom" />
         </PieChart>
       </ResponsiveContainer>
     </div>
