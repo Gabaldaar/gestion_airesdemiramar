@@ -59,10 +59,10 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         />}
                 />
                 <Legend />
-                <Bar dataKey="Ingresos" fill="#16a34a" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Gastos" fill="#dc2626" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Resultado Neto" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Saldo" fill="#f97316" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Ingresos" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                <Bar dataKey="Gastos" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                <Bar dataKey="Resultado Neto" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                <Bar dataKey="Saldo" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={30} />
             </BarChart>
         </ChartContainer>
     </div>
