@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useState } from 'react';
@@ -148,14 +150,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="flex flex-col p-0">
-                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                    <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
-                        <Image src={Logo} alt="Logo de la aplicacion" width={180} height={40} />
-                    </Link>
-                </div>
-                <div className="flex-1">
-                    <SidebarNav onLinkClick={() => setIsSheetOpen(false)} />
-                </div>
+                    <SheetHeader className="h-14 flex flex-row items-center border-b px-4 lg:h-[60px] lg:px-6">
+                        <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
+                            <Image src={Logo} alt="Logo de la aplicacion" width={180} height={40} />
+                        </Link>
+                         <SheetTitle className="sr-only">Menú Principal</SheetTitle>
+                    </SheetHeader>
+                    <div className="flex-1">
+                        <SidebarNav onLinkClick={() => setIsSheetOpen(false)} />
+                    </div>
                 </SheetContent>
             </Sheet>
             <div className='ml-auto'>
