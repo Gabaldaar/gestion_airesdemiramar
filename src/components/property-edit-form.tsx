@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState } from 'react';
@@ -73,7 +72,7 @@ export function PropertyEditForm({ property }: { property: Property }) {
                 <div className="md:col-span-2 border-t pt-4 mt-2">
                   <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados</h4>
                   {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="grid grid-cols-2 gap-4 mb-4">
+                    <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div className='space-y-1'>
                             <Label htmlFor={`customField${i}Label-${property.id}`} className="text-sm">Etiqueta Campo {i}</Label>
                             <Input id={`customField${i}Label-${property.id}`} name={`customField${i}Label`} defaultValue={property[`customField${i}Label` as keyof Property] as string} placeholder={`Ej: WiFi Pass`} />

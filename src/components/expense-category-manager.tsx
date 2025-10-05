@@ -26,6 +26,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import useWindowSize from '@/hooks/use-window-size';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
+
 
 const initialState = {
   message: '',
@@ -154,6 +157,8 @@ function CategoryDeleteAction({ categoryId, onDeleted }: { categoryId: string, o
 export default function ExpenseCategoryManager({ initialCategories }: { initialCategories: ExpenseCategory[] }) {
   const [categories, setCategories] = useState(initialCategories);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
   
   const handleCategoryAction = () => {
     // This is a dummy function to force a re-render by updating state.
@@ -163,6 +168,40 @@ export default function ExpenseCategoryManager({ initialCategories }: { initialC
      // In a full client-side app, you'd re-fetch here.
      // For this app, we rely on the page reload triggered by the server action.
   };
+
+  if (isMobile) {
+    return (
+      <div className="w-full max-w-md mx-auto space-y-4">
+        {categories.map((category) => (
+          <Card key={category.id}>
+            <CardContent className="p-4 flex items-center justify-between">
+              <span className="font-medium">{category.name}</span>
+              <div className="flex items-center">
+                <Button variant="ghost" size="icon" onClick={() => setEditingCategoryId(category.id)}>
+                    <Pencil className="h-4 w-4" />
+                </Button>
+                <CategoryDeleteAction categoryId={category.id} onDeleted={handleCategoryAction} />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+         {editingCategoryId && (
+            <div className="p-4 border rounded-lg bg-muted/50">
+                 <form action={updateExpenseCategory} onSubmit={handleCategoryAction} className="flex items-center gap-2">
+                    <input type="hidden" name="id" value={editingCategoryId} />
+                    <Input name="name" defaultValue={categories.find(c => c.id === editingCategoryId)?.name} className="flex-grow" required />
+                    <EditCategoryButtons onCancel={() => setEditingCategoryId(null)} />
+                </form>
+            </div>
+        )}
+        <Card>
+            <CardContent className="p-2">
+                <CategoryAddRow onCategoryAdded={handleCategoryAction} />
+            </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full max-w-md mx-auto">

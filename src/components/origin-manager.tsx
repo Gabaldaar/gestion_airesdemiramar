@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useActionState, useEffect } from 'react';
@@ -27,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import useWindowSize from '@/hooks/use-window-size';
+import { Card, CardContent } from './ui/card';
 
 const initialState = {
   message: '',
@@ -159,6 +160,8 @@ function OriginDeleteAction({ originId, onDeleted }: { originId: string, onDelet
 export default function OriginManager({ initialOrigins, onOriginsChanged }: { initialOrigins: Origin[], onOriginsChanged: () => void }) {
   const [origins, setOrigins] = useState(initialOrigins);
   const [editingOriginId, setEditingOriginId] = useState<string | null>(null);
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
   
   const handleOriginAction = () => {
      setEditingOriginId(null);
@@ -168,6 +171,44 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
   useEffect(() => {
     setOrigins(initialOrigins);
   }, [initialOrigins]);
+
+  if (isMobile) {
+    return (
+         <div className="w-full max-w-md mx-auto space-y-4">
+            {origins.map((origin) => (
+                <Card key={origin.id}>
+                    <CardContent className="p-4 flex items-center justify-between">
+                         <div className="flex items-center gap-4">
+                            <div className="w-8 h-8 rounded-full border" style={{ backgroundColor: origin.color }} />
+                            <span className="font-medium">{origin.name}</span>
+                        </div>
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="icon" onClick={() => setEditingOriginId(origin.id)}>
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                            <OriginDeleteAction originId={origin.id} onDeleted={handleOriginAction} />
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+             {editingOriginId && (
+                <div className="p-4 border rounded-lg bg-muted/50">
+                    <form action={updateOrigin} onSubmit={handleOriginAction} className="flex items-center gap-2">
+                        <input type="hidden" name="id" value={editingOriginId} />
+                        <Input name="name" defaultValue={origins.find(o => o.id === editingOriginId)?.name} className="flex-grow" required />
+                        <Input name="color" type="color" defaultValue={origins.find(o => o.id === editingOriginId)?.color} className="w-12 h-10 p-1" required />
+                        <EditOriginButtons onCancel={() => setEditingOriginId(null)} />
+                    </form>
+                </div>
+            )}
+            <Card>
+                <CardContent className="p-2">
+                    <OriginAddRow onActionComplete={handleOriginAction} />
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
 
   return (
     <div className="w-full max-w-md mx-auto">
