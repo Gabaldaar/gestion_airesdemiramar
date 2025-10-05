@@ -56,15 +56,15 @@ export default function SettingsPage() {
 
   return (
     <Tabs defaultValue="properties" className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
                 <h2 className="text-3xl font-bold tracking-tight text-primary">Configuración</h2>
                 <p className="text-muted-foreground">Administra los datos de tu aplicación.</p>
             </div>
-            <TabsList>
+            <TabsList className="grid w-full sm:w-auto sm:inline-flex grid-cols-2 sm:grid-cols-4">
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 <TabsTrigger value="origins">Orígenes</TabsTrigger>
-                <TabsTrigger value="expense-categories">Cat. de Gastos</TabsTrigger>
+                <TabsTrigger value="expense-categories">Cat. Gastos</TabsTrigger>
                 <TabsTrigger value="email">Email</TabsTrigger>
             </TabsList>
         </div>
