@@ -268,13 +268,13 @@ export default function PropertyDetailPage() {
 
         <div className="lg:col-span-1">
         <Tabs defaultValue="bookings" className="space-y-4">
-             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <TabsList className="grid w-full sm:w-auto grid-cols-3">
                     <TabsTrigger value="bookings">Reservas</TabsTrigger>
                     <TabsTrigger value="expenses">Gastos</TabsTrigger>
                     <TabsTrigger value="calendar">Calendario</TabsTrigger>
                 </TabsList>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center w-full sm:w-auto gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center w-full md:w-auto gap-2">
                     {property.propertyUrl && (
                       <Button asChild variant="secondary" className="w-full">
                         <Link href={property.propertyUrl} target="_blank">

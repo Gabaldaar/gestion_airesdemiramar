@@ -79,7 +79,7 @@ function TenantRow({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
                     </Badge>
                 ) : null}
             </TableCell>
-            <TableCell>{tenant.dni}</TableCell>
+            <TableCell className="hidden md:table-cell">{tenant.dni}</TableCell>
             <TableCell>
                 {tenant.email ? (
                     <a href={`mailto:${tenant.email}`} className="text-primary hover:underline">
@@ -94,7 +94,7 @@ function TenantRow({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
                     </a>
                 ) : (tenant.phone || null)}
             </TableCell>
-            <TableCell>{`${tenant.address || ''}, ${tenant.city || ''}`.replace(/^, |, $/g, '')}</TableCell>
+            <TableCell className="hidden lg:table-cell">{`${tenant.address || ''}, ${tenant.city || ''}`.replace(/^, |, $/g, '')}</TableCell>
             <TableCell className="text-right">
                 <TenantActions tenant={tenant} />
             </TableCell>
@@ -184,10 +184,10 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
                 <TableRow>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Origen</TableHead>
-                    <TableHead>DNI</TableHead>
+                    <TableHead className="hidden md:table-cell">DNI</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Teléfono</TableHead>
-                    <TableHead>Dirección</TableHead>
+                    <TableHead className="hidden lg:table-cell">Dirección</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
             </TableHeader>

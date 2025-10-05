@@ -253,7 +253,7 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
               <span className="text-xs text-muted-foreground">{nights} noches</span>
           </div>
       </TableCell>
-      <TableCell className={cn(isInactive && "text-muted-foreground")}>
+      <TableCell className={cn("hidden lg:table-cell", isInactive && "text-muted-foreground")}>
         {origin ? (
             <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
                 {origin.name}
@@ -276,7 +276,7 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell className={cn(isInactive && "text-muted-foreground")}>
+      <TableCell className={cn("hidden md:table-cell", isInactive && "text-muted-foreground")}>
         <GuaranteeManager booking={booking} isOpen={false} onOpenChange={()=>{}}>
             <TooltipProvider>
               <Tooltip>
@@ -391,7 +391,7 @@ function BookingCard({ booking, showProperty, origin, onEdit }: { booking: Booki
                 </div>
                  <div className="flex justify-between col-span-2">
                     <span className="text-muted-foreground">Contrato</span>
-                    <Link href={`/contract?id=${booking.id}`} target="_blank" className={cn("pointer-events-none")}>
+                    <Link href={`/contract?id=${booking.id}`} target="_blank" className={cn(isInactive && "pointer-events-none")}>
                         <Badge className={cn("cursor-pointer", isInactive ? "bg-gray-500" : contractStatusMap[booking.contractStatus || 'not_sent'].className)}>
                             {contractStatusMap[booking.contractStatus || 'not_sent'].text}
                         </Badge>
@@ -457,9 +457,9 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     {showProperty && <TableHead>Propiedad</TableHead>}
                     <TableHead>Inquilino</TableHead>
                     <TableHead>Estadía</TableHead>
-                    <TableHead>Origen</TableHead>
+                    <TableHead className="hidden lg:table-cell">Origen</TableHead>
                     <TableHead>Contrato</TableHead>
-                    <TableHead>Garantía</TableHead>
+                    <TableHead className="hidden md:table-cell">Garantía</TableHead>
                     <TableHead>Monto</TableHead>
                     <TableHead>Saldo</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
@@ -470,8 +470,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                         <BookingRow 
                             key={booking.id}
                             booking={booking} 
-                            properties={properties} 
-                            tenants={tenants} 
                             showProperty={showProperty} 
                             origin={booking.originId ? originsMap.get(booking.originId) : undefined}
                             onEdit={handleEditClick}
@@ -495,5 +493,3 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
-
-    
