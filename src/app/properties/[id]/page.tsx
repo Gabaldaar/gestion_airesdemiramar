@@ -36,6 +36,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
 import { DayPicker, DayProps } from 'react-day-picker';
 import { isWithinInterval } from 'date-fns';
+import useWindowSize from '@/hooks/use-window-size';
 
 
 interface PropertyDetailData {
@@ -90,6 +91,9 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [baseUrl, setBaseUrl] = useState('');
   const { toast } = useToast();
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
+
 
   useEffect(() => {
     // This runs on the client, so `window` is available
@@ -193,7 +197,7 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="flex-1 space-y-4">
-        <div className="flex items-center justify-between space-y-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
             <div className="flex items-center gap-4">
                 <Image
                     src={property.imageUrl || 'https://picsum.photos/150/100'}
@@ -219,7 +223,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 <div className="flex w-full max-w-sm items-center space-x-2">
+                 <div className="flex flex-col sm:flex-row w-full max-w-md items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                     <div className="grid flex-1 gap-2">
                         <Label htmlFor="link" className="sr-only">
                         Enlace
@@ -230,56 +234,58 @@ export default function PropertyDetailPage() {
                         readOnly
                         />
                     </div>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button type="button" size="icon" onClick={handleCopyIcalUrl}>
-                                    <Copy className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Copiar enlace de suscripción</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button type="button" size="icon" asChild>
-                                    <a href={icalUrl} target="_blank" rel="noopener noreferrer">
-                                        <CalendarIcon className="h-4 w-4" />
-                                    </a>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Descargar archivo .ics</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex items-center space-x-2">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button type="button" size="icon" onClick={handleCopyIcalUrl} className='w-full sm:w-10'>
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Copiar enlace de suscripción</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button type="button" size="icon" asChild className='w-full sm:w-10'>
+                                        <a href={icalUrl} target="_blank" rel="noopener noreferrer">
+                                            <CalendarIcon className="h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Descargar archivo .ics</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                 </div>
             </CardContent>
         </Card>
 
         <div className="lg:col-span-1">
         <Tabs defaultValue="bookings" className="space-y-4">
-            <div className="flex justify-between items-center">
-            <TabsList>
-                <TabsTrigger value="bookings">Reservas</TabsTrigger>
-                <TabsTrigger value="expenses">Gastos</TabsTrigger>
-                <TabsTrigger value="calendar">Calendario</TabsTrigger>
-            </TabsList>
-            <div className="flex items-center space-x-2">
-                {property.propertyUrl && (
-                  <Button asChild variant="secondary">
-                    <Link href={property.propertyUrl} target="_blank">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Web de la Propiedad
-                    </Link>
-                  </Button>
-                )}
-                <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
-                <ExpenseAddForm propertyId={property.id} categories={categories} />
-            </div>
+             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <TabsList className="grid w-full sm:w-auto grid-cols-3">
+                    <TabsTrigger value="bookings">Reservas</TabsTrigger>
+                    <TabsTrigger value="expenses">Gastos</TabsTrigger>
+                    <TabsTrigger value="calendar">Calendario</TabsTrigger>
+                </TabsList>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center w-full sm:w-auto gap-2">
+                    {property.propertyUrl && (
+                      <Button asChild variant="secondary" className="w-full">
+                        <Link href={property.propertyUrl} target="_blank">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Web de la Propiedad
+                        </Link>
+                      </Button>
+                    )}
+                    <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
+                    <ExpenseAddForm propertyId={property.id} categories={categories} />
+                </div>
             </div>
             <TabsContent value="bookings" className="space-y-4">
             <Card>
@@ -320,7 +326,7 @@ export default function PropertyDetailPage() {
                         mode="multiple"
                         selected={[]}
                         onSelect={() => {}}
-                        numberOfMonths={2}
+                        numberOfMonths={isMobile ? 1 : 2}
                         locale={es}
                         modifiers={dayModifiers}
                         modifiersClassNames={dayModifiersClassNames}
