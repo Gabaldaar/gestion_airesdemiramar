@@ -18,6 +18,7 @@ import { History, FileText } from "lucide-react";
 import { NotesViewer } from "@/components/notes-viewer";
 import { useState } from "react";
 import { Badge } from "./ui/badge";
+import { cn } from "@/lib/utils";
 
 interface TenantsListProps {
     tenants: Tenant[];
@@ -38,32 +39,32 @@ function TenantRow({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
     };
 
     return (
-        <TableRow key={tenant.id}>
-            <TableCell className="font-medium">{tenant.name}</TableCell>
-            <TableCell>
+        <TableRow key={tenant.id} className="block md:table-row border-b md:border-b-0 last:border-b-0">
+            <TableCell data-label="Nombre" className="font-medium">{tenant.name}</TableCell>
+            <TableCell data-label="Origen">
                 {origin ? (
                     <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
                         {origin.name}
                     </Badge>
                 ) : null}
             </TableCell>
-            <TableCell>{tenant.dni}</TableCell>
-            <TableCell>
+            <TableCell data-label="DNI">{tenant.dni}</TableCell>
+            <TableCell data-label="Email">
                 {tenant.email ? (
                     <a href={`mailto:${tenant.email}`} className="text-primary hover:underline">
                         {tenant.email}
                     </a>
                 ) : null}
             </TableCell>
-            <TableCell>
+            <TableCell data-label="Teléfono">
                 {tenant.phone ? (
                     <a href={formatWhatsAppLink(tenant.phone)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                         {tenant.phone}
                     </a>
                 ) : null}
             </TableCell>
-            <TableCell>{`${tenant.address || ''}, ${tenant.city || ''}, ${tenant.country || ''}`.replace(/^, |, $/g, '')}</TableCell>
-            <TableCell className="text-right">
+            <TableCell data-label="Dirección">{`${tenant.address || ''}, ${tenant.city || ''}, ${tenant.country || ''}`.replace(/^, |, $/g, '')}</TableCell>
+            <TableCell data-label="Acciones" className="text-right">
               <div className="flex items-center justify-end gap-2">
                 <NotesViewer 
                     notes={tenant.notes} 
@@ -99,23 +100,58 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
     const originsMap = new Map(origins.map(o => [o.id, o]));
 
   return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Origen</TableHead>
-              <TableHead>DNI</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Teléfono</TableHead>
-              <TableHead>Dirección</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tenants.map((tenant: Tenant) => (
-              <TenantRow key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} />
-            ))}
-          </TableBody>
-        </Table>
+        <div>
+            <Table className="block md:table">
+            <TableHeader className="hidden md:table-header-group">
+                <TableRow className="hidden md:table-row">
+                <TableHead>Nombre</TableHead>
+                <TableHead>Origen</TableHead>
+                <TableHead>DNI</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Teléfono</TableHead>
+                <TableHead>Dirección</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody className="block md:table-row-group">
+                {tenants.map((tenant: Tenant) => (
+                <TenantRow key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} />
+                ))}
+            </TableBody>
+            </Table>
+             <style jsx>{`
+                @media (max-width: 767px) {
+                    .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row {
+                        display: block;
+                        padding: 1rem 0.5rem;
+                        position: relative;
+                    }
+                    .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label] {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 0.5rem 0.5rem;
+                        border-bottom: 1px solid hsl(var(--border));
+                        text-align: right;
+                        word-break: break-word;
+                    }
+                    .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label]::before {
+                        content: attr(data-label);
+                        font-weight: bold;
+                        margin-right: 1rem;
+                        text-align: left;
+                    }
+                    .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label="Acciones"] {
+                        justify-content: flex-end;
+                    }
+                    .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row > [data-label="Acciones"]::before {
+                        display: none;
+                    }
+                    .block.md\\:table > .block.md\\:table-row-group > .block.md\\:table-row:first-child {
+                        border-top: 1px solid hsl(var(--border));
+                    }
+                }
+            `}</style>
+        </div>
   );
 }
