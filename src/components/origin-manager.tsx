@@ -3,7 +3,7 @@
 
 import { useState, useRef, useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { Origin } from '@/lib/data';
+import { Origin, getOrigins } from '@/lib/data';
 import { addOrigin, updateOrigin, deleteOrigin } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +82,6 @@ function EditOriginButtons({ onCancel }: { onCancel: () => void }) {
 
 function OriginEditRow({ origin, onCancel, onUpdated }: { origin: Origin, onCancel: () => void, onUpdated: () => void }) {
     const [state, formAction] = useActionState(updateOrigin, initialState);
-    const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
         if (state.success) {
@@ -93,7 +92,7 @@ function OriginEditRow({ origin, onCancel, onUpdated }: { origin: Origin, onCanc
     return (
          <TableRow>
             <TableCell colSpan={3}>
-                <form action={formAction} ref={formRef} className="flex items-center gap-2">
+                <form action={formAction} onSubmit={onUpdated} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={origin.id} />
                     <Input name="name" defaultValue={origin.name} className="flex-grow" required />
                     <Input name="color" type="color" defaultValue={origin.color} className="w-12 h-10 p-1" required />
@@ -142,7 +141,7 @@ function OriginDeleteAction({ originId, onDeleted }: { originId: string, onDelet
                     <AlertDialogHeader>
                     <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Esta acción no se puede deshacer. El origen será eliminado permanentemente. Los inquilinos asociados quedarán sin origen asignado.
+                        Esta acción no se puede deshacer. El origen será eliminado permanentemente. Los inquilinos y reservas asociados quedarán sin origen asignado.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -164,9 +163,11 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
   const { width } = useWindowSize();
   const isMobile = width < 768;
   
-  const handleOriginAction = () => {
+  const refreshOrigins = async () => {
      setEditingOriginId(null);
-     onOriginsChanged();
+     const updatedOrigins = await getOrigins();
+     setOrigins(updatedOrigins);
+     onOriginsChanged(); // Notify parent
   };
 
   useEffect(() => {
@@ -175,36 +176,40 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
 
   if (isMobile) {
     return (
-         <div className="w-full max-w-md mx-auto space-y-4">
+        <div className="w-full max-w-md mx-auto space-y-4">
             {origins.map((origin) => (
-                <Card key={origin.id}>
-                    <CardContent className="p-4 flex items-center justify-between">
-                         <div className="flex items-center gap-4">
-                            <div className="w-8 h-8 rounded-full border" style={{ backgroundColor: origin.color }} />
-                            <span className="font-medium">{origin.name}</span>
-                        </div>
-                        <div className="flex items-center">
-                            <Button variant="ghost" size="icon" onClick={() => setEditingOriginId(origin.id)}>
-                                <Pencil className="h-4 w-4" />
-                            </Button>
-                            <OriginDeleteAction originId={origin.id} onDeleted={handleOriginAction} />
-                        </div>
-                    </CardContent>
-                </Card>
+                 editingOriginId === origin.id 
+                 ? (
+                    <Card key={origin.id}>
+                        <CardContent className="p-2">
+                             <form action={updateOrigin} onSubmit={refreshOrigins} className="flex items-center gap-2">
+                                <input type="hidden" name="id" value={editingOriginId} />
+                                <Input name="name" defaultValue={origins.find(o => o.id === editingOriginId)?.name} className="flex-grow" required />
+                                <Input name="color" type="color" defaultValue={origins.find(o => o.id === editingOriginId)?.color} className="w-12 h-10 p-1" required />
+                                <EditOriginButtons onCancel={() => setEditingOriginId(null)} />
+                            </form>
+                        </CardContent>
+                    </Card>
+                 ) : (
+                    <Card key={origin.id}>
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-full border" style={{ backgroundColor: origin.color }} />
+                                <span className="font-medium">{origin.name}</span>
+                            </div>
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="icon" onClick={() => setEditingOriginId(origin.id)}>
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                                <OriginDeleteAction originId={origin.id} onDeleted={refreshOrigins} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
             ))}
-             {editingOriginId && (
-                <div className="p-4 border rounded-lg bg-muted/50">
-                    <form action={updateOrigin} onSubmit={handleOriginAction} className="flex items-center gap-2">
-                        <input type="hidden" name="id" value={editingOriginId} />
-                        <Input name="name" defaultValue={origins.find(o => o.id === editingOriginId)?.name} className="flex-grow" required />
-                        <Input name="color" type="color" defaultValue={origins.find(o => o.id === editingOriginId)?.color} className="w-12 h-10 p-1" required />
-                        <EditOriginButtons onCancel={() => setEditingOriginId(null)} />
-                    </form>
-                </div>
-            )}
             <Card>
                 <CardContent className="p-2">
-                    <OriginAddRow onActionComplete={handleOriginAction} />
+                    <OriginAddRow onActionComplete={refreshOrigins} />
                 </CardContent>
             </Card>
         </div>
@@ -225,7 +230,7 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
                 <TableBody>
                     {origins.map((origin) => (
                         editingOriginId === origin.id 
-                        ? <OriginEditRow key={origin.id} origin={origin} onCancel={() => setEditingOriginId(null)} onUpdated={handleOriginAction}/>
+                        ? <OriginEditRow key={origin.id} origin={origin} onCancel={() => setEditingOriginId(null)} onUpdated={refreshOrigins}/>
                         : (
                             <TableRow key={origin.id}>
                                 <TableCell>{origin.name}</TableCell>
@@ -240,7 +245,7 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
                                         <Button variant="ghost" size="icon" onClick={() => setEditingOriginId(origin.id)}>
                                             <Pencil className="h-4 w-4" />
                                         </Button>
-                                        <OriginDeleteAction originId={origin.id} onDeleted={handleOriginAction} />
+                                        <OriginDeleteAction originId={origin.id} onDeleted={refreshOrigins} />
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -248,7 +253,7 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
                     ))}
                 </TableBody>
             </Table>
-            <OriginAddRow onActionComplete={handleOriginAction} />
+            <OriginAddRow onActionComplete={refreshOrigins} />
         </div>
     </div>
   );

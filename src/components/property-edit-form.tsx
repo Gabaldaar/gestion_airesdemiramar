@@ -44,33 +44,33 @@ export function PropertyEditForm({ property }: { property: Property }) {
             <input type="hidden" name="id" value={property.id} />
              <h4 className="text-lg font-semibold text-primary">{property.name}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div className="col-span-1">
                     <Label htmlFor={`name-${property.id}`}>Nombre</Label>
                     <Input id={`name-${property.id}`} type="text" name="name" defaultValue={property.name} />
                 </div>
-                <div>
+                <div className="col-span-1">
                     <Label htmlFor={`address-${property.id}`}>Dirección</Label>
                     <Input id={`address-${property.id}`} type="text" name="address" defaultValue={property.address} />
                 </div>
-                <div>
+                <div className="col-span-1">
                     <Label htmlFor={`imageUrl-${property.id}`}>URL de Foto</Label>
                     <Input id={`imageUrl-${property.id}`} type="text" name="imageUrl" defaultValue={property.imageUrl} />
                 </div>
-                <div>
+                <div className="col-span-1">
                     <Label htmlFor={`propertyUrl-${property.id}`}>Web de la Propiedad</Label>
                     <Input id={`propertyUrl-${property.id}`} type="text" name="propertyUrl" defaultValue={property.propertyUrl} placeholder="Ej: https://airbnb.com/h/mi-depto"/>
                 </div>
-                <div className="md:col-span-2">
+                <div className="col-span-1 md:col-span-2">
                     <Label htmlFor={`notes-${property.id}`}>Notas</Label>
                     <Textarea id={`notes-${property.id}`} name="notes" defaultValue={property.notes} />
                 </div>
-                <div className="md:col-span-2">
+                <div className="col-span-1 md:col-span-2">
                     <Label htmlFor={`contractTemplate-${property.id}`}>Plantilla de Contrato</Label>
                     <Textarea id={`contractTemplate-${property.id}`} name="contractTemplate" defaultValue={property.contractTemplate} className="h-40" />
                 </div>
                 
                 {/* Custom Fields */}
-                <div className="md:col-span-2 border-t pt-4 mt-2">
+                <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
                   <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados</h4>
                   {[1, 2, 3, 4, 5, 6].map(i => (
                     <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">

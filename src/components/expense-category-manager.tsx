@@ -3,7 +3,7 @@
 
 import { useState, useRef, useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { ExpenseCategory } from '@/lib/data';
+import { ExpenseCategory, getExpenseCategories } from '@/lib/data';
 import { addExpenseCategory, updateExpenseCategory, deleteExpenseCategory } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,16 +45,16 @@ function AddCategoryButton() {
     )
 }
 
-function CategoryAddRow({ onCategoryAdded }: { onCategoryAdded: () => void }) {
+function CategoryAddRow({ onActionComplete }: { onActionComplete: () => void }) {
   const [state, formAction] = useActionState(addExpenseCategory, initialState);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset();
-      onCategoryAdded();
+      onActionComplete();
     }
-  }, [state, onCategoryAdded]);
+  }, [state, onActionComplete]);
   
   return (
     <form action={formAction} ref={formRef} className="flex items-center gap-2 p-2 border-t">
@@ -80,8 +80,7 @@ function EditCategoryButtons({ onCancel }: { onCancel: () => void }) {
 
 function CategoryEditRow({ category, onCancel, onUpdated }: { category: ExpenseCategory, onCancel: () => void, onUpdated: () => void }) {
     const [state, formAction] = useActionState(updateExpenseCategory, initialState);
-    const formRef = useRef<HTMLFormElement>(null);
-
+    
     useEffect(() => {
         if (state.success) {
             onUpdated();
@@ -91,7 +90,7 @@ function CategoryEditRow({ category, onCancel, onUpdated }: { category: ExpenseC
     return (
          <TableRow>
             <TableCell colSpan={2}>
-                <form action={formAction} ref={formRef} className="flex items-center gap-2">
+                <form action={formAction} onSubmit={onUpdated} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={category.id} />
                     <Input name="name" defaultValue={category.name} className="flex-grow" required />
                     <EditCategoryButtons onCancel={onCancel} />
@@ -161,43 +160,49 @@ export default function ExpenseCategoryManager({ initialCategories }: { initialC
   const { width } = useWindowSize();
   const isMobile = width < 768;
   
-  const handleCategoryAction = () => {
-    // This is a dummy function to force a re-render by updating state.
-    // The actual data revalidation happens on the server via revalidatePath.
-    // In a real client-side state management scenario, you'd re-fetch here.
-     setEditingCategoryId(null); // Exit edit mode
-     // In a full client-side app, you'd re-fetch here.
-     // For this app, we rely on the page reload triggered by the server action.
+  const refreshCategories = async () => {
+      setEditingCategoryId(null);
+      const updatedCategories = await getExpenseCategories();
+      setCategories(updatedCategories);
   };
+  
+  useEffect(() => {
+      setCategories(initialCategories);
+  }, [initialCategories]);
 
   if (isMobile) {
     return (
       <div className="w-full max-w-md mx-auto space-y-4">
         {categories.map((category) => (
-          <Card key={category.id}>
-            <CardContent className="p-4 flex items-center justify-between">
-              <span className="font-medium">{category.name}</span>
-              <div className="flex items-center">
-                <Button variant="ghost" size="icon" onClick={() => setEditingCategoryId(category.id)}>
-                    <Pencil className="h-4 w-4" />
-                </Button>
-                <CategoryDeleteAction categoryId={category.id} onDeleted={handleCategoryAction} />
-              </div>
-            </CardContent>
-          </Card>
+             editingCategoryId === category.id 
+             ? (
+                <Card key={category.id}>
+                    <CardContent className="p-2">
+                        <form action={updateExpenseCategory} onSubmit={refreshCategories} className="flex items-center gap-2">
+                            <input type="hidden" name="id" value={editingCategoryId} />
+                            <Input name="name" defaultValue={categories.find(c => c.id === editingCategoryId)?.name} className="flex-grow" required />
+                            <EditCategoryButtons onCancel={() => setEditingCategoryId(null)} />
+                        </form>
+                    </CardContent>
+                </Card>
+             ) : (
+                <Card key={category.id}>
+                    <CardContent className="p-4 flex items-center justify-between">
+                    <span className="font-medium">{category.name}</span>
+                    <div className="flex items-center">
+                        <Button variant="ghost" size="icon" onClick={() => setEditingCategoryId(category.id)}>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                        <CategoryDeleteAction categoryId={category.id} onDeleted={refreshCategories} />
+                    </div>
+                    </CardContent>
+                </Card>
+             )
         ))}
-         {editingCategoryId && (
-            <div className="p-4 border rounded-lg bg-muted/50">
-                 <form action={updateExpenseCategory} onSubmit={handleCategoryAction} className="flex items-center gap-2">
-                    <input type="hidden" name="id" value={editingCategoryId} />
-                    <Input name="name" defaultValue={categories.find(c => c.id === editingCategoryId)?.name} className="flex-grow" required />
-                    <EditCategoryButtons onCancel={() => setEditingCategoryId(null)} />
-                </form>
-            </div>
-        )}
+       
         <Card>
             <CardContent className="p-2">
-                <CategoryAddRow onCategoryAdded={handleCategoryAction} />
+                <CategoryAddRow onActionComplete={refreshCategories} />
             </CardContent>
         </Card>
       </div>
@@ -217,7 +222,7 @@ export default function ExpenseCategoryManager({ initialCategories }: { initialC
                 <TableBody>
                     {categories.map((category) => (
                         editingCategoryId === category.id 
-                        ? <CategoryEditRow key={category.id} category={category} onCancel={() => setEditingCategoryId(null)} onUpdated={handleCategoryAction}/>
+                        ? <CategoryEditRow key={category.id} category={category} onCancel={() => setEditingCategoryId(null)} onUpdated={refreshCategories}/>
                         : (
                             <TableRow key={category.id}>
                                 <TableCell>{category.name}</TableCell>
@@ -226,7 +231,7 @@ export default function ExpenseCategoryManager({ initialCategories }: { initialC
                                         <Button variant="ghost" size="icon" onClick={() => setEditingCategoryId(category.id)}>
                                             <Pencil className="h-4 w-4" />
                                         </Button>
-                                        <CategoryDeleteAction categoryId={category.id} onDeleted={handleCategoryAction} />
+                                        <CategoryDeleteAction categoryId={category.id} onDeleted={refreshCategories} />
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -234,7 +239,7 @@ export default function ExpenseCategoryManager({ initialCategories }: { initialC
                     ))}
                 </TableBody>
             </Table>
-            <CategoryAddRow onCategoryAdded={handleCategoryAction} />
+            <CategoryAddRow onActionComplete={refreshCategories} />
         </div>
     </div>
   );

@@ -72,7 +72,7 @@ export type Tenant = {
   email: string;
   phone: string;
   notes?: string;
-  originId?: string;
+  originId?: string | null;
 };
 
 export type ContractStatus = 'not_sent' | 'sent' | 'signed' | 'not_required';
@@ -91,14 +91,14 @@ export type Booking = {
   exchangeRate?: number;
   notes?: string;
   contractStatus?: ContractStatus;
-  originId?: string;
+  originId?: string | null;
   status?: BookingStatus;
   // New Guarantee Fields
   guaranteeStatus?: GuaranteeStatus;
   guaranteeAmount?: number;
   guaranteeCurrency?: 'USD' | 'ARS';
-  guaranteeReceivedDate?: string;
-  guaranteeReturnedDate?: string;
+  guaranteeReceivedDate?: string | null;
+  guaranteeReturnedDate?: string | null;
 };
 
 export type BookingWithTenantAndProperty = Booking & {
@@ -144,7 +144,7 @@ export type PropertyExpense = {
     currency: 'ARS'; // Always ARS
     exchangeRate?: number; // Stores the USD to ARS rate if original expense was in USD
     originalUsdAmount?: number; // Stores the original amount if paid in USD
-    categoryId?: string;
+    categoryId?: string | null;
 }
 
 export type BookingExpense = {
@@ -156,7 +156,7 @@ export type BookingExpense = {
     currency: 'ARS'; // Always ARS
     exchangeRate?: number; 
     originalUsdAmount?: number;
-    categoryId?: string;
+    categoryId?: string | null;
 }
 
 // Extend unified expense to include all original fields for editing
@@ -935,6 +935,14 @@ export async function deleteOrigin(id: string): Promise<void> {
     batch.update(tenantRef, { originId: null });
   });
 
+  // Also unset it in bookings
+  const bookingsToUpdateQuery = query(bookingsCollection, where('originId', '==', id));
+  const bookingsSnapshot = await getDocs(bookingsToUpdateQuery);
+  bookingsSnapshot.forEach(bookingDoc => {
+      const bookingRef = doc(db, 'bookings', bookingDoc.id);
+      batch.update(bookingRef, { originId: null });
+  });
+
   // Delete the origin itself
   const originRef = doc(db, 'origins', id);
   batch.delete(originRef);
@@ -1203,5 +1211,3 @@ export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]>
 
   return summary.filter(item => item.count > 0);
 }
-
-    

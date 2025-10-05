@@ -180,6 +180,7 @@ export async function addTenant(previousState: any, formData: FormData) {
   try {
     await dbAddTenant(newTenant);
     revalidatePath("/tenants");
+    revalidatePath("/reports");
     return { success: true, message: "Inquilino añadido correctamente." };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -206,6 +207,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
     revalidatePath("/tenants");
     revalidatePath("/bookings");
     revalidatePath("/");
+    revalidatePath("/reports");
     return { success: true, message: "Inquilino actualizado correctamente." };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -223,6 +225,7 @@ export async function deleteTenant(previousState: any, formData: FormData) {
     try {
       await dbDeleteTenant(id);
       revalidatePath("/tenants");
+      revalidatePath("/reports");
       return { success: true, message: "Inquilino eliminado correctamente." };
     } catch (error: any) {
       return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -815,6 +818,8 @@ export async function addOrigin(previousState: any, formData: FormData) {
     await dbAddOrigin({ name, color });
     revalidatePath('/settings');
     revalidatePath('/tenants');
+    revalidatePath('/bookings');
+    revalidatePath('/reports');
     return { success: true, message: 'Origen añadido.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -832,6 +837,8 @@ export async function updateOrigin(previousState: any, formData: FormData) {
     await dbUpdateOrigin({ id, name, color });
     revalidatePath('/settings');
     revalidatePath('/tenants');
+    revalidatePath('/bookings');
+    revalidatePath('/reports');
     return { success: true, message: 'Origen actualizado.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -847,10 +854,10 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     await dbDeleteOrigin(id);
     revalidatePath('/settings');
     revalidatePath('/tenants');
+    revalidatePath('/bookings');
+    revalidatePath('/reports');
     return { success: true, message: 'Origen eliminado.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
-
-    
