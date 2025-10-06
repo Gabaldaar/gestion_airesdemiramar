@@ -160,7 +160,7 @@ function TenantCard({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
 
 export default function TenantsList({ tenants, origins }: TenantsListProps) {
     const { width } = useWindowSize();
-    const isMobile = width < 768;
+    const useCardView = width < 1024; // Use cards for screens smaller than lg (notebooks)
 
     if (tenants.length === 0) {
         return <p className="text-sm text-center text-muted-foreground py-8">No hay inquilinos para mostrar con los filtros seleccionados.</p>;
@@ -168,7 +168,7 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
 
     const originsMap = new Map(origins.map(o => [o.id, o]));
     
-    if (isMobile) {
+    if (useCardView) {
         return (
             <div className="space-y-4">
                 {tenants.map((tenant: Tenant) => (

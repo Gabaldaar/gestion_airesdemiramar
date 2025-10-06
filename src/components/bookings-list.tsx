@@ -410,7 +410,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { width } = useWindowSize();
-  const isMobile = width < 768;
+  const useCardView = width < 1024; // Use cards for screens smaller than lg (notebooks)
 
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
@@ -438,7 +438,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-600 mr-1"></div>En Curso</div>
         </div>
         
-        {isMobile ? (
+        {useCardView ? (
             <div className="space-y-4">
                  {bookings.map((booking) => (
                     <BookingCard
