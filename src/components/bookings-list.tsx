@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin } from "@/lib/data";
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
@@ -153,6 +153,13 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
   const isCancelled = booking.status === 'cancelled';
   const isPending = booking.status === 'pending';
   const isInactive = isCancelled || isPending;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = new Date(booking.startDate);
+  const endDate = new Date(booking.endDate);
+  const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
+
 
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
@@ -181,24 +188,15 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
   const getBookingColorClass = (booking: BookingWithDetails): string => {
     if (booking.status !== 'active') return "";
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const startDate = new Date(booking.startDate);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(booking.endDate);
-    endDate.setHours(0, 0, 0, 0);
-
-    if (today >= startDate && today <= endDate) {
-      return "text-green-600"; // En curso
-    }
-
-    if (startDate < today) {
-        return "text-muted-foreground"; // Cerrada
+    if (isCurrent) {
+        return "text-green-600"; // En curso
     }
     
     const daysUntilStart = differenceInDays(startDate, today);
 
+    if (daysUntilStart < 0) {
+        return "text-muted-foreground"; // Cerrada
+    }
     if (daysUntilStart < 7) {
       return "text-red-600";
     }
@@ -220,7 +218,7 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
   
   
   return (
-    <TableRow key={booking.id} className={cn(isCancelled && "bg-red-500/10", isPending && "bg-yellow-500/10")}>
+    <TableRow key={booking.id} className={cn(isCancelled && "bg-red-500/10", isPending && "bg-yellow-500/10", isCurrent && "bg-green-500/10")}>
         {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>
             {isCancelled && <Badge variant="destructive" className="mr-2">CANCELADA</Badge>}
             {isPending && <Badge variant="secondary" className="mr-2 bg-yellow-400 text-black">EN ESPERA</Badge>}
@@ -333,6 +331,12 @@ function BookingCard({ booking, showProperty, origin, onEdit }: { booking: Booki
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
     const isInactive = isCancelled || isPending;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(booking.startDate);
+    const endDate = new Date(booking.endDate);
+    const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
     
     const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
 
@@ -352,7 +356,7 @@ function BookingCard({ booking, showProperty, origin, onEdit }: { booking: Booki
     };
 
     return (
-        <Card className={cn("w-full", isCancelled && "bg-red-500/10 border-red-500/20", isPending && "bg-yellow-500/10 border-yellow-500/20")}>
+        <Card className={cn("w-full", isCancelled && "bg-red-500/10 border-red-500/20", isPending && "bg-yellow-500/10 border-yellow-500/20", isCurrent && "bg-green-500/10 border-green-500/20")}>
             <CardHeader className="p-4">
                  {isCancelled && <Badge variant="destructive" className="mr-2 w-fit">CANCELADA</Badge>}
                 {isPending && <Badge variant="secondary" className="mr-2 w-fit bg-yellow-400 text-black">EN ESPERA</Badge>}
@@ -457,9 +461,9 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     {showProperty && <TableHead>Propiedad</TableHead>}
                     <TableHead>Inquilino</TableHead>
                     <TableHead>Estadía</TableHead>
-                    <TableHead>Origen</TableHead>
+                    <TableHead className="hidden lg:table-cell">Origen</TableHead>
                     <TableHead>Contrato</TableHead>
-                    <TableHead>Garantía</TableHead>
+                    <TableHead className="hidden md:table-cell">Garantía</TableHead>
                     <TableHead>Monto</TableHead>
                     <TableHead>Saldo</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
@@ -493,5 +497,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
+
+    
 
     
