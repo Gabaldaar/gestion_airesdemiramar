@@ -79,7 +79,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
   const filteredBookings = useMemo(() => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     const activeStatusFilters = Object.entries(statusFilters)
         .filter(([, isActive]) => isActive)
@@ -88,11 +88,12 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     const hasActiveStatusFilter = activeStatusFilters.length > 0;
 
     return bookingsForTenant.filter(booking => {
-      const bookingStartDate = new Date(booking.startDate);
-      bookingStartDate.setUTCHours(0, 0, 0, 0);
-      
-      const bookingEndDate = new Date(booking.endDate);
-      bookingEndDate.setUTCHours(0, 0, 0, 0);
+        
+        const bookingStartDate = new Date(booking.startDate);
+        bookingStartDate.setUTCHours(0, 0, 0, 0);
+        
+        const bookingEndDate = new Date(booking.endDate);
+        bookingEndDate.setUTCHours(0, 0, 0, 0);
 
       // Property Filter
       if (propertyIdFilter !== 'all' && booking.propertyId !== propertyIdFilter) {
@@ -119,7 +120,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
       // Status Filter
       if (hasActiveStatusFilter) {
-        const isCurrent = booking.status === 'active' && bookingStartDate <= today && bookingEndDate >= today;
+        const isCurrent = booking.status === 'active' && today >= bookingStartDate && today <= bookingEndDate;
         const isUpcoming = booking.status === 'active' && bookingStartDate > today;
         const isClosed = booking.status === 'active' && bookingEndDate < today;
         const hasDebt = booking.status === 'active' && booking.balance > 0;

@@ -50,7 +50,7 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
     // Filter by Booking Status
     if (statusFilter !== 'all') {
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      today.setUTCHours(0, 0, 0, 0);
 
       const tenantIdsWithMatchingBookings = new Set<string>();
 
@@ -60,8 +60,8 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
 
         const bookingEndDate = new Date(booking.endDate);
         bookingEndDate.setUTCHours(0, 0, 0, 0);
-
-        const isCurrent = booking.status === 'active' && bookingStartDate <= today && bookingEndDate >= today;
+        
+        const isCurrent = booking.status === 'active' && today >= bookingStartDate && today <= bookingEndDate;
         const isUpcoming = booking.status === 'active' && bookingStartDate > today;
         const isClosed = booking.status === 'active' && bookingEndDate < today;
         const isCancelled = booking.status === 'cancelled';
