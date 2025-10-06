@@ -8,12 +8,38 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
-import { Download, Mail } from 'lucide-react';
+import { Download, Mail, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from './ui/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-type StatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'with-debt' | 'cancelled' | 'pending';
+
 type ContractStatusFilter = 'all' | ContractStatus;
+
+interface StatusFilters {
+  current: boolean;
+  upcoming: boolean;
+  closed: boolean;
+  'with-debt': boolean;
+  cancelled: boolean;
+  pending: boolean;
+}
+
+const initialStatusFilters: StatusFilters = {
+    current: false,
+    upcoming: false,
+    closed: false,
+    'with-debt': false,
+    cancelled: false,
+    pending: false,
+};
 
 
 interface BookingsClientProps {
@@ -27,7 +53,7 @@ interface BookingsClientProps {
 export default function BookingsClient({ initialBookings, properties, tenants, origins, initialTenantIdFilter }: BookingsClientProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFilters, setStatusFilters] = useState<StatusFilters>(initialStatusFilters);
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
   const [contractStatusFilter, setContractStatusFilter] = useState<ContractStatusFilter>('all');
   const [originIdFilter, setOriginIdFilter] = useState<string>('all');
@@ -54,6 +80,12 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
   const filteredBookings = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const activeStatusFilters = Object.entries(statusFilters)
+        .filter(([, isActive]) => isActive)
+        .map(([status]) => status);
+    
+    const hasActiveStatusFilter = activeStatusFilters.length > 0;
 
     return bookingsForTenant.filter(booking => {
       const bookingStartDate = new Date(booking.startDate);
@@ -83,31 +115,33 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
       }
 
       // Status Filter
-      if (statusFilter !== 'all') {
-         const isCurrent = booking.status === 'active' && bookingStartDate <= today && bookingEndDate >= today;
-         const isUpcoming = booking.status === 'active' && bookingStartDate > today;
-         const isClosed = booking.status === 'active' && bookingEndDate < today;
-         const hasDebt = booking.status === 'active' && booking.balance > 0;
-         const isCancelled = booking.status === 'cancelled';
-         const isPending = booking.status === 'pending';
-
-
-         if (statusFilter === 'current' && !isCurrent) return false;
-         if (statusFilter === 'upcoming' && !isUpcoming) return false;
-         if (statusFilter === 'closed' && !isClosed) return false;
-         if (statusFilter === 'with-debt' && !hasDebt) return false;
-         if (statusFilter === 'cancelled' && !isCancelled) return false;
-         if (statusFilter === 'pending' && !isPending) return false;
+      if (hasActiveStatusFilter) {
+        const isCurrent = booking.status === 'active' && bookingStartDate <= today && bookingEndDate >= today;
+        const isUpcoming = booking.status === 'active' && bookingStartDate > today;
+        const isClosed = booking.status === 'active' && bookingEndDate < today;
+        const hasDebt = booking.status === 'active' && booking.balance > 0;
+        const isCancelled = booking.status === 'cancelled';
+        const isPending = booking.status === 'pending';
+        
+        let matches = false;
+        if (statusFilters.current && isCurrent) matches = true;
+        if (statusFilters.upcoming && isUpcoming) matches = true;
+        if (statusFilters.closed && isClosed) matches = true;
+        if (statusFilters['with-debt'] && hasDebt) matches = true;
+        if (statusFilters.cancelled && isCancelled) matches = true;
+        if (statusFilters.pending && isPending) matches = true;
+        
+        if (!matches) return false;
       }
       
       return true;
     });
-  }, [bookingsForTenant, fromDate, toDate, statusFilter, propertyIdFilter, contractStatusFilter, originIdFilter]);
+  }, [bookingsForTenant, fromDate, toDate, statusFilters, propertyIdFilter, contractStatusFilter, originIdFilter]);
 
   const handleClearFilters = () => {
     setFromDate(undefined);
     setToDate(undefined);
-    setStatusFilter('all');
+    setStatusFilters(initialStatusFilters);
     setPropertyIdFilter('all');
     setContractStatusFilter('all');
     setOriginIdFilter('all');
@@ -178,6 +212,8 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     }
   };
 
+  const selectedStatusCount = Object.values(statusFilters).filter(Boolean).length;
+
 
   return (
     <div className="space-y-4">
@@ -207,20 +243,58 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
           </div>
           <div className="grid gap-2">
               <Label>Estado</Label>
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-                  <SelectTrigger>
-                      <SelectValue placeholder="Estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="current">En Curso</SelectItem>
-                      <SelectItem value="upcoming">Próximas</SelectItem>
-                      <SelectItem value="closed">Cumplidas</SelectItem>
-                      <SelectItem value="with-debt">Con Deuda</SelectItem>
-                      <SelectItem value="pending">En Espera</SelectItem>
-                      <SelectItem value="cancelled">Canceladas</SelectItem>
-                  </SelectContent>
-              </Select>
+              <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                        <span>
+                            {selectedStatusCount === 0
+                            ? "Seleccionar estado..."
+                            : `${selectedStatusCount} estado(s) seleccionado(s)`}
+                        </span>
+                        <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuLabel>Filtrar por estado</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                      checked={statusFilters.current}
+                      onCheckedChange={(checked) => setStatusFilters(prev => ({ ...prev, current: !!checked }))}
+                    >
+                      En Curso
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={statusFilters.upcoming}
+                      onCheckedChange={(checked) => setStatusFilters(prev => ({ ...prev, upcoming: !!checked }))}
+                    >
+                      Próximas
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={statusFilters.closed}
+                      onCheckedChange={(checked) => setStatusFilters(prev => ({ ...prev, closed: !!checked }))}
+                    >
+                      Cumplidas
+                    </DropdownMenuCheckboxItem>
+                     <DropdownMenuCheckboxItem
+                      checked={statusFilters['with-debt']}
+                      onCheckedChange={(checked) => setStatusFilters(prev => ({ ...prev, 'with-debt': !!checked }))}
+                    >
+                      Con Deuda
+                    </DropdownMenuCheckboxItem>
+                     <DropdownMenuCheckboxItem
+                      checked={statusFilters.pending}
+                      onCheckedChange={(checked) => setStatusFilters(prev => ({ ...prev, pending: !!checked }))}
+                    >
+                      En Espera
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={statusFilters.cancelled}
+                      onCheckedChange={(checked) => setStatusFilters(prev => ({ ...prev, cancelled: !!checked }))}
+                    >
+                      Canceladas
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
           </div>
           <div className="grid gap-2">
               <Label>Contrato</Label>
@@ -269,5 +343,3 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     </div>
   );
 }
-
-    
