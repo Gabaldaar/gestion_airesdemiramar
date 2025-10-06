@@ -52,7 +52,7 @@ function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, is
     
     if (isCollapsed) {
         return (
-            <TooltipProvider>
+            <TooltipProvider key={item.href}>
                 <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                         <Link
@@ -210,4 +210,3 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
-
