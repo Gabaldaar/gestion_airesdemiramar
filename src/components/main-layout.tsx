@@ -157,19 +157,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             "transition-all duration-300 ease-in-out"
         )}>
         <div className={cn("hidden border-r bg-muted/40 md:flex md:flex-col")}>
-            <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
-                    <Image src={Logo} alt="Logo de la aplicacion" width={isCollapsed ? 40 : 180} height={40} className={cn('transition-all', isCollapsed && 'height-auto w-auto')}/>
-                    <span className='sr-only'>Aires de Miramar</span>
+            <div className="flex h-14 items-center justify-between border-b px-4 lg:h-[60px] lg:px-6">
+                <Link href="/" className={cn("flex items-center gap-2 font-semibold text-primary", isCollapsed && "justify-center")}>
+                    <Image src={Logo} alt="Logo de la aplicacion" width={isCollapsed ? 40 : 180} height={40} className={cn('transition-all', isCollapsed && 'w-auto h-auto')}/>
+                    <span className={cn('sr-only', isCollapsed && 'hidden')}>Aires de Miramar</span>
                 </Link>
+                <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className={cn(isCollapsed && 'mr-auto')}>
+                    <ChevronLeft className={cn("h-5 w-5 transition-transform", isCollapsed && "rotate-180")} />
+                </Button>
             </div>
             <div className="flex-1 overflow-auto py-2">
                 <SidebarNav isCollapsed={isCollapsed} />
-            </div>
-            <div className="mt-auto border-t p-2">
-                <Button variant="outline" size="icon" className="w-full" onClick={() => setIsCollapsed(!isCollapsed)}>
-                    <ChevronLeft className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")} />
-                </Button>
             </div>
         </div>
         <div className="flex flex-col">
