@@ -225,7 +225,8 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
             <span className={cn(
                 getBookingColorClass(booking),
                 isCancelled && "text-red-600 line-through",
-                isPending && "text-amber-600"
+                isPending && "text-amber-600",
+                isCurrent && "text-green-600"
             )}>
                 {booking.property?.name || 'N/A'}
             </span>
@@ -252,7 +253,7 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
               <span className="text-xs text-muted-foreground">{nights} noches</span>
           </div>
       </TableCell>
-      <TableCell className={cn("hidden lg:table-cell", isInactive && "text-muted-foreground")}>
+      <TableCell className={cn("hidden md:table-cell", isInactive && "text-muted-foreground")}>
         {origin ? (
             <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
                 {origin.name}
@@ -275,7 +276,7 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell className={cn("hidden md:table-cell", isInactive && "text-muted-foreground")}>
+      <TableCell className={cn("hidden lg:table-cell", isInactive && "text-muted-foreground")}>
         <GuaranteeManager booking={booking} isOpen={false} onOpenChange={()=>{}}>
             <TooltipProvider>
               <Tooltip>
@@ -455,9 +456,9 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             {showProperty && <TableHead>Propiedad</TableHead>}
             <TableHead>Inquilino</TableHead>
             <TableHead>Estadía</TableHead>
-            <TableHead className="hidden lg:table-cell">Origen</TableHead>
+            <TableHead className="hidden md:table-cell">Origen</TableHead>
             <TableHead>Contrato</TableHead>
-            <TableHead className="hidden md:table-cell">Garantía</TableHead>
+            <TableHead className="hidden lg:table-cell">Garantía</TableHead>
             <TableHead>Monto</TableHead>
             <TableHead>Saldo</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
