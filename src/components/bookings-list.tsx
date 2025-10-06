@@ -57,7 +57,7 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     solicited: { text: 'Solicitada', className: 'bg-blue-400 hover:bg-blue-500' },
     received: { text: 'Recibida', className: 'bg-green-500 hover:bg-green-600' },
     returned: { text: 'Devuelta', className: 'bg-purple-500 hover:bg-purple-600' },
-    not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
+    not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-700' }
 };
 
 function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void }) {
@@ -70,7 +70,7 @@ function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEd
     const isInactive = booking.status === 'cancelled' || booking.status === 'pending';
 
     return (
-        <div className="flex flex-wrap items-center justify-end gap-1">
+        <div className="flex flex-nowrap items-center justify-end gap-1">
              <NotesViewer 
                 notes={booking.notes} 
                 title={`Notas sobre la reserva de ${booking.tenant?.name}`} 

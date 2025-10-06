@@ -42,7 +42,7 @@ function TenantActions({ tenant }: { tenant: Tenant }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
 
     return (
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-1 flex-nowrap">
             <NotesViewer 
                 notes={tenant.notes} 
                 title={`Notas sobre ${tenant.name}`}
