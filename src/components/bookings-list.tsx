@@ -504,5 +504,3 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
-
-    
