@@ -219,10 +219,11 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
   
   return (
     <TableRow key={booking.id} className={cn(isCancelled && "bg-red-500/10", isPending && "bg-yellow-500/10", isCurrent && "bg-green-500/10")}>
-        {showProperty && <TableCell className={cn("font-bold", getBookingColorClass(booking))}>
+        {showProperty && <TableCell className={cn("font-bold")}>
             {isCancelled && <Badge variant="destructive" className="mr-2">CANCELADA</Badge>}
             {isPending && <Badge variant="secondary" className="mr-2 bg-yellow-400 text-black">EN ESPERA</Badge>}
             <span className={cn(
+                getBookingColorClass(booking),
                 isCancelled && "text-red-600 line-through",
                 isPending && "text-amber-600"
             )}>
@@ -363,6 +364,7 @@ function BookingCard({ booking, showProperty, origin, onEdit }: { booking: Booki
                 <CardTitle className="text-lg">
                     {showProperty ? (
                         <span className={cn(
+                            isCurrent && "text-green-600",
                             isCancelled && "text-red-600 line-through",
                             isPending && "text-amber-600"
                         )}>
@@ -497,7 +499,3 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
-
-    
-
-    
