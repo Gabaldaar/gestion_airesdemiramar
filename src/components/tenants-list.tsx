@@ -79,7 +79,7 @@ function TenantRow({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
                     </Badge>
                 ) : null}
             </TableCell>
-            <TableCell className="hidden md:table-cell">{tenant.dni}</TableCell>
+            <TableCell>{tenant.dni}</TableCell>
             <TableCell>
                 {tenant.email ? (
                     <a href={`mailto:${tenant.email}`} className="text-primary hover:underline">
@@ -94,7 +94,7 @@ function TenantRow({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
                     </a>
                 ) : (tenant.phone || null)}
             </TableCell>
-            <TableCell className="hidden lg:table-cell">{`${tenant.address || ''}, ${tenant.city || ''}`.replace(/^, |, $/g, '')}</TableCell>
+            <TableCell>{`${tenant.address || ''}, ${tenant.city || ''}`.replace(/^, |, $/g, '')}</TableCell>
             <TableCell className="text-right">
                 <TenantActions tenant={tenant} />
             </TableCell>
@@ -160,7 +160,7 @@ function TenantCard({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
 
 export default function TenantsList({ tenants, origins }: TenantsListProps) {
     const { width } = useWindowSize();
-    const useCardView = width < 1024; // Use cards for screens smaller than lg (notebooks)
+    const useCardView = width < 1280;
 
     if (tenants.length === 0) {
         return <p className="text-sm text-center text-muted-foreground py-8">No hay inquilinos para mostrar con los filtros seleccionados.</p>;
@@ -184,10 +184,10 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
                 <TableRow>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Origen</TableHead>
-                    <TableHead className="hidden md:table-cell">DNI</TableHead>
+                    <TableHead>DNI</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Teléfono</TableHead>
-                    <TableHead className="hidden lg:table-cell">Dirección</TableHead>
+                    <TableHead>Dirección</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
             </TableHeader>
@@ -199,3 +199,5 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
         </Table>
   );
 }
+
+    

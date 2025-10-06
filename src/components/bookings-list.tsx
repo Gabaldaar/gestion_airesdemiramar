@@ -410,7 +410,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { width } = useWindowSize();
-  const useCardView = width < 1024; // Use cards for screens smaller than lg (notebooks)
+  const useCardView = width < 1280; 
 
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
@@ -457,9 +457,9 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     {showProperty && <TableHead>Propiedad</TableHead>}
                     <TableHead>Inquilino</TableHead>
                     <TableHead>Estadía</TableHead>
-                    <TableHead className="hidden lg:table-cell">Origen</TableHead>
+                    <TableHead>Origen</TableHead>
                     <TableHead>Contrato</TableHead>
-                    <TableHead className="hidden md:table-cell">Garantía</TableHead>
+                    <TableHead>Garantía</TableHead>
                     <TableHead>Monto</TableHead>
                     <TableHead>Saldo</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
@@ -493,3 +493,5 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
+
+    
