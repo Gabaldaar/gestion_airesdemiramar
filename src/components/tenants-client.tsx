@@ -10,7 +10,7 @@ import TenantsList from './tenants-list';
 import { Mail } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 
-type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed';
+type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'cancelled' | 'pending';
 
 interface TenantsClientProps {
   initialTenants: Tenant[];
@@ -58,9 +58,11 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
         const bookingStartDate = new Date(booking.startDate);
         const bookingEndDate = new Date(booking.endDate);
 
-        const isCurrent = bookingStartDate <= today && bookingEndDate >= today;
-        const isUpcoming = bookingStartDate > today;
-        const isClosed = bookingEndDate < today;
+        const isCurrent = booking.status === 'active' && bookingStartDate <= today && bookingEndDate >= today;
+        const isUpcoming = booking.status === 'active' && bookingStartDate > today;
+        const isClosed = booking.status === 'active' && bookingEndDate < today;
+        const isCancelled = booking.status === 'cancelled';
+        const isPending = booking.status === 'pending';
 
         if (statusFilter === 'current' && isCurrent) {
           tenantIdsWithMatchingBookings.add(booking.tenantId);
@@ -68,6 +70,10 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
           tenantIdsWithMatchingBookings.add(booking.tenantId);
         } else if (statusFilter === 'closed' && isClosed) {
           tenantIdsWithMatchingBookings.add(booking.tenantId);
+        } else if (statusFilter === 'cancelled' && isCancelled) {
+            tenantIdsWithMatchingBookings.add(booking.tenantId);
+        } else if (statusFilter === 'pending' && isPending) {
+            tenantIdsWithMatchingBookings.add(booking.tenantId);
         }
       });
       currentTenants = currentTenants.filter(tenant => tenantIdsWithMatchingBookings.has(tenant.id));
@@ -122,6 +128,8 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
                     <SelectItem value="current">Con Reserva en Curso</SelectItem>
                     <SelectItem value="upcoming">Con Reserva Próxima</SelectItem>
                     <SelectItem value="closed">Con Reserva Cerrada</SelectItem>
+                    <SelectItem value="cancelled">Con Reserva Cancelada</SelectItem>
+                    <SelectItem value="pending">Con Reserva en Espera</SelectItem>
                 </SelectContent>
             </Select>
         </div>
