@@ -117,23 +117,28 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
       // Status Filter
       if (hasActiveStatusFilter) {
-        const isCurrent = booking.status === 'active' && isWithinInterval(today, { start: bookingStartDate, end: bookingEndDate });
-        const isUpcoming = booking.status === 'active' && bookingStartDate > today;
-        const isClosed = booking.status === 'active' && bookingEndDate < today;
-        const hasDebt = booking.status === 'active' && booking.balance > 0;
-        const isCancelled = booking.status === 'cancelled';
-        const isPending = booking.status === 'pending';
+        const bookingVisualStatuses = new Set<string>();
+
+        if (booking.status === 'cancelled') {
+            bookingVisualStatuses.add('cancelled');
+        } else if (booking.status === 'pending') {
+            bookingVisualStatuses.add('pending');
+        } else { // status is 'active' or undefined
+            if (isWithinInterval(today, { start: bookingStartDate, end: bookingEndDate })) {
+                bookingVisualStatuses.add('current');
+            } else if (bookingStartDate > today) {
+                bookingVisualStatuses.add('upcoming');
+            } else {
+                bookingVisualStatuses.add('closed');
+            }
+
+            if (booking.balance > 0) {
+                 bookingVisualStatuses.add('with-debt');
+            }
+        }
         
-        // This is the OR logic. If any selected filter matches, we return true.
-        let matches = false;
-        if (statusFilters.current && isCurrent) matches = true;
-        if (statusFilters.upcoming && isUpcoming) matches = true;
-        if (statusFilters.closed && isClosed) matches = true;
-        if (statusFilters['with-debt'] && hasDebt) matches = true;
-        if (statusFilters.cancelled && isCancelled) matches = true;
-        if (statusFilters.pending && isPending) matches = true;
-        
-        return matches;
+        // Return true if ANY of the booking's statuses match ANY of the active filters
+        return activeStatusFilters.some(filter => bookingVisualStatuses.has(filter));
       }
       
       return true;
@@ -345,5 +350,3 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     </div>
   );
 }
-
-    
