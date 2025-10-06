@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, ExternalLink } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
 const mainNavItems = [
@@ -43,11 +44,37 @@ const mainNavItems = [
 
 const helpNavItem = { href: '/help', label: 'Ayuda', icon: CircleHelp };
 
-function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
+function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, isCollapsed: boolean }) {
   const pathname = usePathname();
   
   const renderLink = (item: { href: string, label: string, icon: React.ElementType }) => {
     const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+    
+    if (isCollapsed) {
+        return (
+            <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                        <Link
+                            href={item.href}
+                            className={cn(
+                                'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
+                                isActive && 'bg-accent text-accent-foreground'
+                            )}
+                            onClick={onLinkClick}
+                            >
+                            <item.icon className="h-5 w-5" />
+                            <span className="sr-only">{item.label}</span>
+                        </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="flex items-center gap-4">
+                       {item.label}
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        )
+    }
+
     return (
       <Link
         key={item.href}
@@ -66,10 +93,10 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
 
   return (
     <div className="flex flex-col justify-between h-full">
-        <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+        <nav className={cn("grid items-start text-sm font-medium", isCollapsed ? "grid-flow-row justify-center gap-2 px-2" : "px-2 lg:px-4")}>
             {mainNavItems.map(renderLink)}
         </nav>
-        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 mb-4">
+        <nav className={cn("grid items-start text-sm font-medium mt-auto", isCollapsed ? "grid-flow-row justify-center gap-2 px-2" : "px-2 lg:px-4")}>
             {renderLink(helpNavItem)}
         </nav>
     </div>
@@ -120,20 +147,29 @@ function UserMenu() {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
-        <div className="grid min-h-screen w-full md:grid-cols-[200px_1fr] lg:grid-cols-[240px_1fr]">
-        <div className="hidden border-r bg-muted/40 md:block">
-            <div className="flex h-full max-h-screen flex-col gap-2">
+        <div className={cn(
+            "grid min-h-screen w-full",
+            isCollapsed ? "md:grid-cols-[5rem_1fr]" : "md:grid-cols-[200px_1fr] lg:grid-cols-[240px_1fr]",
+            "transition-all duration-300 ease-in-out"
+        )}>
+        <div className={cn("hidden border-r bg-muted/40 md:flex md:flex-col")}>
             <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                 <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
-                    <Image src={Logo} alt="Logo de la aplicacion" width={180} height={40} />
+                    <Image src={Logo} alt="Logo de la aplicacion" width={isCollapsed ? 40 : 180} height={40} className={cn('transition-all', isCollapsed && 'height-auto w-auto')}/>
+                    <span className='sr-only'>Aires de Miramar</span>
                 </Link>
             </div>
-            <div className="flex-1">
-                <SidebarNav />
+            <div className="flex-1 overflow-auto py-2">
+                <SidebarNav isCollapsed={isCollapsed} />
             </div>
+            <div className="mt-auto border-t p-2">
+                <Button variant="outline" size="icon" className="w-full" onClick={() => setIsCollapsed(!isCollapsed)}>
+                    <ChevronLeft className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")} />
+                </Button>
             </div>
         </div>
         <div className="flex flex-col">
@@ -157,7 +193,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                          <SheetTitle className="sr-only">Menú Principal</SheetTitle>
                     </SheetHeader>
                     <div className="flex-1">
-                        <SidebarNav onLinkClick={() => setIsSheetOpen(false)} />
+                        <SidebarNav onLinkClick={() => setIsSheetOpen(false)} isCollapsed={false} />
                     </div>
                 </SheetContent>
             </Sheet>
@@ -165,7 +201,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <UserMenu />
             </div>
             </header>
-            <main className="flex flex-1 flex-col gap-4 p-2 md:p-4 lg:gap-6 lg:p-6">
+            <main className="flex flex-1 flex-col gap-4 p-2 md:p-4 lg:gap-6 lg:p-6 overflow-x-auto">
             {children}
             </main>
             <Toaster />
@@ -174,3 +210,4 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
+
