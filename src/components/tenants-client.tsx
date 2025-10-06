@@ -58,10 +58,11 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
       allBookings.forEach(booking => {
         const bookingStartDate = new Date(booking.startDate);
         const bookingEndDate = new Date(booking.endDate);
+        const isActive = !booking.status || booking.status === 'active';
         
-        const isCurrent = booking.status === 'active' && isWithinInterval(today, { start: bookingStartDate, end: bookingEndDate });
-        const isUpcoming = booking.status === 'active' && bookingStartDate > today;
-        const isClosed = booking.status === 'active' && bookingEndDate < today;
+        const isCurrent = isActive && isWithinInterval(today, { start: bookingStartDate, end: bookingEndDate });
+        const isUpcoming = isActive && bookingStartDate > today;
+        const isClosed = isActive && bookingEndDate < today;
         const isCancelled = booking.status === 'cancelled';
         const isPending = booking.status === 'pending';
 
