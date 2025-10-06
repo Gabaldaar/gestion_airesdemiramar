@@ -89,7 +89,10 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
     return bookingsForTenant.filter(booking => {
       const bookingStartDate = new Date(booking.startDate);
+      bookingStartDate.setUTCHours(0, 0, 0, 0);
+      
       const bookingEndDate = new Date(booking.endDate);
+      bookingEndDate.setUTCHours(0, 0, 0, 0);
 
       // Property Filter
       if (propertyIdFilter !== 'all' && booking.propertyId !== propertyIdFilter) {

@@ -56,7 +56,10 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
 
       allBookings.forEach(booking => {
         const bookingStartDate = new Date(booking.startDate);
+        bookingStartDate.setUTCHours(0, 0, 0, 0);
+
         const bookingEndDate = new Date(booking.endDate);
+        bookingEndDate.setUTCHours(0, 0, 0, 0);
 
         const isCurrent = booking.status === 'active' && bookingStartDate <= today && bookingEndDate >= today;
         const isUpcoming = booking.status === 'active' && bookingStartDate > today;
