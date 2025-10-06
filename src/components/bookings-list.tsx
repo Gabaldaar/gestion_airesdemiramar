@@ -361,7 +361,7 @@ function BookingCard({ booking, showProperty, origin, onEdit }: { booking: Booki
             <CardHeader className="p-4">
                  {isCancelled && <Badge variant="destructive" className="mr-2 w-fit">CANCELADA</Badge>}
                 {isPending && <Badge variant="secondary" className="mr-2 w-fit bg-yellow-400 text-black">EN ESPERA</Badge>}
-                <CardTitle className="text-lg">
+                <CardTitle className={cn("text-lg", isCurrent && "text-green-600")}>
                     {showProperty ? (
                         <span className={cn(
                             isCurrent && "text-green-600",
@@ -433,6 +433,49 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     // A simple page refresh is enough when server actions handle revalidation
     window.location.reload();
   };
+  
+  const CardView = () => (
+    <div className="space-y-4">
+        {bookings.map((booking) => (
+        <BookingCard
+            key={booking.id}
+            booking={booking}
+            showProperty={showProperty}
+            origin={booking.originId ? originsMap.get(booking.originId) : undefined}
+            onEdit={handleEditClick}
+        />
+        ))}
+    </div>
+  );
+
+  const TableView = () => (
+    <Table>
+        <TableHeader>
+            <TableRow>
+            {showProperty && <TableHead>Propiedad</TableHead>}
+            <TableHead>Inquilino</TableHead>
+            <TableHead>Estadía</TableHead>
+            <TableHead className="hidden lg:table-cell">Origen</TableHead>
+            <TableHead>Contrato</TableHead>
+            <TableHead className="hidden md:table-cell">Garantía</TableHead>
+            <TableHead>Monto</TableHead>
+            <TableHead>Saldo</TableHead>
+            <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            {bookings.map((booking) => (
+                <BookingRow 
+                    key={booking.id}
+                    booking={booking} 
+                    showProperty={showProperty} 
+                    origin={booking.originId ? originsMap.get(booking.originId) : undefined}
+                    onEdit={handleEditClick}
+                />
+            ))}
+        </TableBody>
+    </Table>
+  );
 
   return (
     <div>
@@ -444,46 +487,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-600 mr-1"></div>En Curso</div>
         </div>
         
-        {useCardView ? (
-            <div className="space-y-4">
-                 {bookings.map((booking) => (
-                    <BookingCard
-                        key={booking.id}
-                        booking={booking}
-                        showProperty={showProperty}
-                        origin={booking.originId ? originsMap.get(booking.originId) : undefined}
-                        onEdit={handleEditClick}
-                    />
-                ))}
-            </div>
-        ) : (
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                    {showProperty && <TableHead>Propiedad</TableHead>}
-                    <TableHead>Inquilino</TableHead>
-                    <TableHead>Estadía</TableHead>
-                    <TableHead className="hidden lg:table-cell">Origen</TableHead>
-                    <TableHead>Contrato</TableHead>
-                    <TableHead className="hidden md:table-cell">Garantía</TableHead>
-                    <TableHead>Monto</TableHead>
-                    <TableHead>Saldo</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {bookings.map((booking) => (
-                        <BookingRow 
-                            key={booking.id}
-                            booking={booking} 
-                            showProperty={showProperty} 
-                            origin={booking.originId ? originsMap.get(booking.originId) : undefined}
-                            onEdit={handleEditClick}
-                        />
-                    ))}
-                </TableBody>
-            </Table>
-        )}
+        {useCardView ? <CardView /> : <TableView />}
 
         {editingBooking && (
             <BookingEditForm
@@ -499,3 +503,5 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
+
+    

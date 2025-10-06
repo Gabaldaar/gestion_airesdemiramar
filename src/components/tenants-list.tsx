@@ -168,18 +168,16 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
 
     const originsMap = new Map(origins.map(o => [o.id, o]));
     
-    if (useCardView) {
-        return (
-            <div className="space-y-4">
-                {tenants.map((tenant: Tenant) => (
-                    <TenantCard key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} />
-                ))}
-            </div>
-        );
-    }
+    const CardView = () => (
+         <div className="space-y-4">
+            {tenants.map((tenant: Tenant) => (
+                <TenantCard key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} />
+            ))}
+        </div>
+    );
 
-  return (
-        <Table>
+    const TableView = () => (
+         <Table>
             <TableHeader>
                 <TableRow>
                     <TableHead>Nombre</TableHead>
@@ -197,5 +195,9 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
                 ))}
             </TableBody>
         </Table>
-  );
+    );
+    
+    return useCardView ? <CardView /> : <TableView />;
 }
+
+    
