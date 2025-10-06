@@ -124,6 +124,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
         const isCancelled = booking.status === 'cancelled';
         const isPending = booking.status === 'pending';
         
+        // This is the OR logic. If any selected filter matches, we return true.
         let matches = false;
         if (statusFilters.current && isCurrent) matches = true;
         if (statusFilters.upcoming && isUpcoming) matches = true;
@@ -132,7 +133,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
         if (statusFilters.cancelled && isCancelled) matches = true;
         if (statusFilters.pending && isPending) matches = true;
         
-        if (!matches) return false;
+        return matches;
       }
       
       return true;
