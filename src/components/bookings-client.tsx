@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 import { Download, Mail, ChevronDown } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isWithinInterval } from 'date-fns';
 import { useToast } from './ui/use-toast';
 import {
   DropdownMenu,
@@ -79,7 +79,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
   const filteredBookings = useMemo(() => {
     const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
 
     const activeStatusFilters = Object.entries(statusFilters)
         .filter(([, isActive]) => isActive)
@@ -90,11 +90,8 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     return bookingsForTenant.filter(booking => {
         
         const bookingStartDate = new Date(booking.startDate);
-        bookingStartDate.setUTCHours(0, 0, 0, 0);
-        
         const bookingEndDate = new Date(booking.endDate);
-        bookingEndDate.setUTCHours(0, 0, 0, 0);
-
+        
       // Property Filter
       if (propertyIdFilter !== 'all' && booking.propertyId !== propertyIdFilter) {
         return false;
@@ -120,7 +117,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
       // Status Filter
       if (hasActiveStatusFilter) {
-        const isCurrent = booking.status === 'active' && today >= bookingStartDate && today <= bookingEndDate;
+        const isCurrent = booking.status === 'active' && isWithinInterval(today, { start: bookingStartDate, end: bookingEndDate });
         const isUpcoming = booking.status === 'active' && bookingStartDate > today;
         const isClosed = booking.status === 'active' && bookingEndDate < today;
         const hasDebt = booking.status === 'active' && booking.balance > 0;
@@ -347,3 +344,5 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     </div>
   );
 }
+
+    
