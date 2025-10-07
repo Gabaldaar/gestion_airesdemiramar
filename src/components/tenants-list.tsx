@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 interface TenantsListProps {
     tenants: Tenant[];
     origins: Origin[];
+    onDataChanged: () => void;
 }
 
 const formatWhatsAppLink = (phone: string | null | undefined) => {
@@ -33,12 +34,7 @@ const formatWhatsAppLink = (phone: string | null | undefined) => {
     return `https://wa.me/${cleanedPhone}`;
 };
 
-// A simple page refresh is enough when server actions handle revalidation
-const handleAction = () => {
-    window.location.reload();
-};
-
-function TenantActions({ tenant }: { tenant: Tenant }) {
+function TenantActions({ tenant, onDataChanged }: { tenant: Tenant, onDataChanged: () => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
 
     return (
@@ -54,8 +50,8 @@ function TenantActions({ tenant }: { tenant: Tenant }) {
                     <span className="sr-only">Ver Notas</span>
                 </Button>
             </NotesViewer>
-            <TenantEditForm tenant={tenant} onTenantUpdated={handleAction} />
-            <TenantDeleteForm tenantId={tenant.id} onTenantDeleted={handleAction} />
+            <TenantEditForm tenant={tenant} onTenantUpdated={onDataChanged} />
+            <TenantDeleteForm tenantId={tenant.id} onTenantDeleted={onDataChanged} />
             <Button asChild variant="ghost" size="icon">
               <Link href={`/bookings?tenantId=${tenant.id}`}>
                 <History className="h-4 w-4" />
@@ -67,7 +63,7 @@ function TenantActions({ tenant }: { tenant: Tenant }) {
 }
 
 
-function TenantRow({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
+function TenantRow({ tenant, origin, onDataChanged }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void }) {
     const waLink = formatWhatsAppLink(tenant.phone);
     return (
         <TableRow key={tenant.id}>
@@ -96,13 +92,13 @@ function TenantRow({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
             </TableCell>
             <TableCell className="hidden md:table-cell">{`${tenant.address || ''}, ${tenant.city || ''}`.replace(/^, |, $/g, '')}</TableCell>
             <TableCell className="text-right">
-                <TenantActions tenant={tenant} />
+                <TenantActions tenant={tenant} onDataChanged={onDataChanged} />
             </TableCell>
         </TableRow>
     );
 }
 
-function TenantCard({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
+function TenantCard({ tenant, origin, onDataChanged }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void }) {
     const waLink = formatWhatsAppLink(tenant.phone);
     return (
         <Card>
@@ -151,14 +147,14 @@ function TenantCard({ tenant, origin }: { tenant: Tenant, origin?: Origin }) {
                 )}
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <TenantActions tenant={tenant} />
+                <TenantActions tenant={tenant} onDataChanged={onDataChanged} />
             </CardFooter>
         </Card>
     );
 }
 
 
-export default function TenantsList({ tenants, origins }: TenantsListProps) {
+export default function TenantsList({ tenants, origins, onDataChanged }: TenantsListProps) {
     const { width } = useWindowSize();
     const useCardView = width < 1280;
 
@@ -171,7 +167,7 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
     const CardView = () => (
          <div className="space-y-4">
             {tenants.map((tenant: Tenant) => (
-                <TenantCard key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} />
+                <TenantCard key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} />
             ))}
         </div>
     );
@@ -191,7 +187,7 @@ export default function TenantsList({ tenants, origins }: TenantsListProps) {
             </TableHeader>
             <TableBody>
                 {tenants.map((tenant: Tenant) => (
-                    <TenantRow key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} />
+                    <TenantRow key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} />
                 ))}
             </TableBody>
         </Table>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Tenant, BookingWithDetails, getEmailSettings, Origin, getTenants } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
@@ -39,6 +39,11 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
     setTenants(initialTenants);
   }, [initialTenants]);
 
+  const refreshTenants = useCallback(async () => {
+    const updatedTenants = await getTenants();
+    setTenants(updatedTenants);
+  }, []);
+
 
   const filteredTenants = useMemo(() => {
     let currentTenants = tenants;
@@ -51,7 +56,6 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
     // Filter by Booking Status
     if (statusFilter !== 'all') {
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
 
       const tenantIdsWithMatchingBookings = new Set<string>();
 
@@ -157,9 +161,7 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
             </Button>
         </div>
       </div>
-      <TenantsList tenants={filteredTenants} origins={origins} />
+      <TenantsList tenants={filteredTenants} origins={origins} onDataChanged={refreshTenants} />
     </div>
   );
 }
-
-    
