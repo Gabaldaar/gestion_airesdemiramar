@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import TenantsList from './tenants-list';
+import { TenantEditForm } from './tenant-edit-form';
 import { Mail } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 import { isWithinInterval } from 'date-fns';
@@ -25,6 +26,8 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
   const [originFilter, setOriginFilter] = useState<string>('all');
   const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
   const { toast } = useToast();
+  const [editingTenant, setEditingTenant] = useState<Tenant | undefined>(undefined);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   useEffect(() => {
     getEmailSettings().then(settings => {
@@ -44,6 +47,11 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
     setTenants(updatedTenants);
   }, []);
 
+  const handleEditTenant = (tenant: Tenant) => {
+    setEditingTenant(tenant);
+    setIsEditDialogOpen(true);
+  };
+
 
   const filteredTenants = useMemo(() => {
     let currentTenants = tenants;
@@ -56,6 +64,7 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
     // Filter by Booking Status
     if (statusFilter !== 'all') {
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       const tenantIdsWithMatchingBookings = new Set<string>();
 
@@ -161,7 +170,20 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
             </Button>
         </div>
       </div>
-      <TenantsList tenants={filteredTenants} origins={origins} onDataChanged={refreshTenants} />
+      <TenantsList 
+        tenants={filteredTenants} 
+        origins={origins} 
+        onDataChanged={refreshTenants} 
+        onEditTenant={handleEditTenant}
+      />
+      {editingTenant && (
+        <TenantEditForm
+            tenant={editingTenant}
+            onTenantUpdated={refreshTenants}
+            isOpen={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+        />
+      )}
     </div>
   );
 }

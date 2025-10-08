@@ -16,7 +16,7 @@ import { TenantEditForm } from "@/components/tenant-edit-form";
 import { TenantDeleteForm } from "@/components/tenant-delete-form";
 import { History, FileText, Mail, Phone } from "lucide-react";
 import { NotesViewer } from "@/components/notes-viewer";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Badge } from "./ui/badge";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
 import useWindowSize from "@/hooks/use-window-size";
@@ -26,6 +26,7 @@ interface TenantsListProps {
     tenants: Tenant[];
     origins: Origin[];
     onDataChanged: () => void;
+    onEditTenant: (tenant: Tenant) => void;
 }
 
 const formatWhatsAppLink = (phone: string | null | undefined) => {
@@ -34,7 +35,7 @@ const formatWhatsAppLink = (phone: string | null | undefined) => {
     return `https://wa.me/${cleanedPhone}`;
 };
 
-function TenantActions({ tenant, onDataChanged }: { tenant: Tenant, onDataChanged: () => void }) {
+function TenantActions({ tenant, onDataChanged, onEditTenant }: { tenant: Tenant, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
 
     return (
@@ -50,7 +51,9 @@ function TenantActions({ tenant, onDataChanged }: { tenant: Tenant, onDataChange
                     <span className="sr-only">Ver Notas</span>
                 </Button>
             </NotesViewer>
-            <TenantEditForm tenant={tenant} onTenantUpdated={onDataChanged} />
+             <Button variant="ghost" size="icon" onClick={() => onEditTenant(tenant)}>
+                <TenantEditForm tenant={tenant} onTenantUpdated={onDataChanged} />
+            </Button>
             <TenantDeleteForm tenantId={tenant.id} onTenantDeleted={onDataChanged} />
             <Button asChild variant="ghost" size="icon">
               <Link href={`/bookings?tenantId=${tenant.id}`}>
@@ -63,7 +66,7 @@ function TenantActions({ tenant, onDataChanged }: { tenant: Tenant, onDataChange
 }
 
 
-function TenantRow({ tenant, origin, onDataChanged }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void }) {
+function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
     const waLink = formatWhatsAppLink(tenant.phone);
     return (
         <TableRow key={tenant.id}>
@@ -92,13 +95,13 @@ function TenantRow({ tenant, origin, onDataChanged }: { tenant: Tenant, origin?:
             </TableCell>
             <TableCell className="hidden md:table-cell">{`${tenant.address || ''}, ${tenant.city || ''}`.replace(/^, |, $/g, '')}</TableCell>
             <TableCell className="text-right">
-                <TenantActions tenant={tenant} onDataChanged={onDataChanged} />
+                <TenantActions tenant={tenant} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
             </TableCell>
         </TableRow>
     );
 }
 
-function TenantCard({ tenant, origin, onDataChanged }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void }) {
+function TenantCard({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
     const waLink = formatWhatsAppLink(tenant.phone);
     return (
         <Card>
@@ -147,14 +150,14 @@ function TenantCard({ tenant, origin, onDataChanged }: { tenant: Tenant, origin?
                 )}
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <TenantActions tenant={tenant} onDataChanged={onDataChanged} />
+                <TenantActions tenant={tenant} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
             </CardFooter>
         </Card>
     );
 }
 
 
-export default function TenantsList({ tenants, origins, onDataChanged }: TenantsListProps) {
+export default function TenantsList({ tenants, origins, onDataChanged, onEditTenant }: TenantsListProps) {
     const { width } = useWindowSize();
     const useCardView = width < 1280;
 
@@ -167,7 +170,7 @@ export default function TenantsList({ tenants, origins, onDataChanged }: Tenants
     const CardView = () => (
          <div className="space-y-4">
             {tenants.map((tenant: Tenant) => (
-                <TenantCard key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} />
+                <TenantCard key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
             ))}
         </div>
     );
@@ -187,7 +190,7 @@ export default function TenantsList({ tenants, origins, onDataChanged }: Tenants
             </TableHeader>
             <TableBody>
                 {tenants.map((tenant: Tenant) => (
-                    <TenantRow key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} />
+                    <TenantRow key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
                 ))}
             </TableBody>
         </Table>

@@ -10,14 +10,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateTenant } from '@/lib/actions';
 import { Tenant, Origin, getOrigins } from '@/lib/data';
-import { Pencil, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
@@ -42,17 +41,23 @@ function SubmitButton() {
     )
 }
 
-export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, onTenantUpdated: () => void }) {
+interface TenantEditFormProps {
+    tenant: Tenant;
+    onTenantUpdated: () => void;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+}
+
+export function TenantEditForm({ tenant, onTenantUpdated, isOpen, onOpenChange }: TenantEditFormProps) {
   const [state, formAction] = useActionState(updateTenant, initialState);
-  const [isOpen, setIsOpen] = useState(false);
   const [origins, setOrigins] = useState<Origin[]>([]);
 
   useEffect(() => {
     if (state.success) {
-      setIsOpen(false);
+      onOpenChange(false);
       onTenantUpdated();
     }
-  }, [state, onTenantUpdated]);
+  }, [state, onTenantUpdated, onOpenChange]);
 
   useEffect(() => {
     if (isOpen) {
@@ -61,14 +66,7 @@ export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, on
   }, [isOpen]);
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-          <Button variant="ghost" size="icon">
-          <Pencil className="h-4 w-4" />
-          <span className="sr-only">Editar Inquilino</span>
-          </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
           <DialogTitle>Editar Inquilino</DialogTitle>
@@ -154,10 +152,6 @@ export function TenantEditForm({ tenant, onTenantUpdated }: { tenant: Tenant, on
               <p className="text-red-500 text-sm mt-2">{state.message}</p>
           )}
       </DialogContent>
-      </Dialog>
-    </>
+    </Dialog>
   );
 }
-
-
-    
