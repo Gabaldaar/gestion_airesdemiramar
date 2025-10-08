@@ -12,9 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Tenant, Origin } from "@/lib/data";
 import { Button } from "@/components/ui/button";
-import { TenantEditForm } from "@/components/tenant-edit-form";
 import { TenantDeleteForm } from "@/components/tenant-delete-form";
-import { History, FileText, Mail, Phone } from "lucide-react";
+import { History, FileText, Mail, Phone, Pencil } from "lucide-react";
 import { NotesViewer } from "@/components/notes-viewer";
 import { useState } from "react";
 import { Badge } from "./ui/badge";
@@ -52,7 +51,8 @@ function TenantActions({ tenant, onDataChanged, onEditTenant }: { tenant: Tenant
                 </Button>
             </NotesViewer>
              <Button variant="ghost" size="icon" onClick={() => onEditTenant(tenant)}>
-                <TenantEditForm tenant={tenant} onTenantUpdated={onDataChanged} />
+                <Pencil className="h-4 w-4" />
+                <span className="sr-only">Editar Inquilino</span>
             </Button>
             <TenantDeleteForm tenantId={tenant.id} onTenantDeleted={onDataChanged} />
             <Button asChild variant="ghost" size="icon">
