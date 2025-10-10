@@ -91,7 +91,7 @@ export default function NetIncomeDistributionChart({ summary }: NetIncomeDistrib
             cx="50%"
             cy="50%"
             labelLine={false}
-            outerRadius={isMobile ? 60 : 100}
+            outerRadius={isMobile ? 100 : 100}
             fill="#8884d8"
             dataKey="value"
             nameKey="name"
