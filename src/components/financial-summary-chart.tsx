@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -8,6 +7,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import useWindowSize from '@/hooks/use-window-size';
+
 
 interface FinancialSummaryChartProps {
   summary: FinancialSummary[];
@@ -15,6 +16,9 @@ interface FinancialSummaryChartProps {
 }
 
 export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
+
   const chartData = summary.map(item => ({
     name: item.propertyName,
     'Resultado Neto': item.netResult,
@@ -38,14 +42,34 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
       maximumFractionDigits: 0,
     }).format(value);
   }
+  
+  const formatCurrencyShort = (value: number) => {
+    const prefix = currency === 'USD' ? 'USD ' : '$';
+    if (Math.abs(value) >= 1_000_000) {
+        return `${prefix}${(value / 1_000_000).toFixed(1)}M`;
+    }
+    if (Math.abs(value) >= 1_000) {
+        return `${prefix}${(value / 1_000).toFixed(0)}k`;
+    }
+    return `${prefix}${value}`;
+  }
+
 
   return (
     <div className="h-[350px] w-full">
         <ChartContainer config={{}} className="w-full h-full">
-            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <BarChart 
+                data={chartData} 
+                margin={{ 
+                    top: 20, 
+                    right: isMobile ? 0 : 30, 
+                    left: isMobile ? 0 : 20, 
+                    bottom: 5 
+                }}
+            >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
-                <YAxis tickFormatter={formatCurrency} />
+                <YAxis tickFormatter={isMobile ? formatCurrencyShort : formatCurrency} />
                 <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent
