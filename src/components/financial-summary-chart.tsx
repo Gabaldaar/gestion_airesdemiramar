@@ -24,7 +24,8 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
   const chartData = summary.map(item => ({
     name: item.propertyName,
     'Ingresos': item.totalIncome,
-    'Gastos': (item.totalPropertyExpenses + item.totalBookingExpenses) * -1, // Make expenses negative for stacking
+    'Gastos': (item.totalPropertyExpenses + item.totalBookingExpenses),
+    'Neto': item.netResult,
   }));
 
   const formatCurrency = (value: number) => {
@@ -56,7 +57,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
 
 
   return (
-    <div className="h-[350px] w-full">
+    <div className="h-[450px] w-full">
         <ChartContainer config={{}} className="w-full h-full">
             <BarChart 
                 data={chartData} 
@@ -70,22 +71,23 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
             >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" tickFormatter={isMobile ? formatCurrencyShort : formatCurrency} />
-                <YAxis type="category" dataKey="name" width={isMobile ? 60 : 120} tick={{ fontSize: 12 }} />
+                <YAxis dataKey="name" type="category" width={isMobile ? 80 : 120} tick={{ fontSize: 12 }} interval={0} />
                 <ChartTooltip
-                    cursor={false}
+                    cursor={{fill: 'hsl(var(--muted))'}}
                     content={<ChartTooltipContent
                         labelFormatter={(label) => `${label}`}
                         formatter={(value, name) => (
                             <div className='flex items-center gap-2'>
                                 <span className='capitalize'>{name}:</span>
-                                <span>{formatCurrency(name === 'Gastos' ? (value as number) * -1 : value as number)}</span>
+                                <span>{formatCurrency(value as number)}</span>
                             </div>
                         )}
                         />}
                 />
                 <Legend />
-                <Bar dataKey="Ingresos" stackId="a" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                <Bar dataKey="Gastos" stackId="a" fill="#dc2626" radius={[0, 0, 4, 4]} maxBarSize={30} />
+                <Bar dataKey="Ingresos" fill="#16a34a" radius={4} />
+                <Bar dataKey="Gastos" fill="#dc2626" radius={4} />
+                <Bar dataKey="Neto" fill="#3b82f6" radius={4} />
             </BarChart>
         </ChartContainer>
     </div>
