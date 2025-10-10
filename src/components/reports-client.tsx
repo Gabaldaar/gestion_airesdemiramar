@@ -152,43 +152,15 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
          <>
             <Card>
                 <CardHeader>
-                    <CardTitle>Comparativa de Resultados Netos (USD)</CardTitle>
+                    <CardTitle>Resultados por Propiedad (USD)</CardTitle>
                     <CardDescription>
-                        Compara el resultado neto final entre todas las propiedades en USD.
+                        Compara los ingresos y gastos entre todas las propiedades en USD.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <FinancialSummaryChart summary={financialSummary.usd} currency="USD" showOnlyNetResult={true} />
+                    <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
                 </CardContent>
             </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Resultado por Propiedad (USD)</CardTitle>
-                  <CardDescription>
-                    Comparación del resultado neto entre las propiedades en USD.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {financialSummary.usd.filter(s => s.netResult !== 0 || s.totalIncome !== 0 || s.totalBookingExpenses !== 0 || s.totalPropertyExpenses !==0).map(summaryItem => (
-                      <FinancialSummaryChart key={summaryItem.propertyId} summary={[summaryItem]} currency="USD" />
-                  ))}
-                </CardContent>
-              </Card>
-            
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Distribución de Ganancias (USD)</CardTitle>
-                <CardDescription>
-                    Porcentaje del resultado neto positivo total por propiedad.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <NetIncomeDistributionChart summary={financialSummary.usd} />
-              </CardContent>
-            </Card>
-          </div>
           <Card>
             <CardHeader>
               <CardTitle>Reporte Financiero por Propiedad (USD)</CardTitle>
@@ -205,28 +177,15 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
 
       {hasArsData && (
         <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Comparativa de Resultados Netos (ARS)</CardTitle>
-                    <CardDescription>
-                        Compara el resultado neto final entre todas las propiedades en ARS.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" showOnlyNetResult={true} />
-                </CardContent>
-            </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Resultado por Propiedad (ARS)</CardTitle>
+              <CardTitle>Resultados por Propiedad (ARS)</CardTitle>
               <CardDescription>
-                Comparación del resultado neto entre las propiedades en ARS.
+                Compara los ingresos y gastos entre todas las propiedades en ARS.
               </CardDescription>
             </CardHeader>
-             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {financialSummary.ars.filter(s => s.netResult !== 0 || s.totalIncome !== 0 || s.totalBookingExpenses !== 0 || s.totalPropertyExpenses !==0).map(summaryItem => (
-                  <FinancialSummaryChart key={summaryItem.propertyId} summary={[summaryItem]} currency="ARS" />
-                ))}
+             <CardContent>
+                <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
             </CardContent>
           </Card>
           <Card>

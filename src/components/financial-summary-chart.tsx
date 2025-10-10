@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -14,16 +15,14 @@ import useWindowSize from '@/hooks/use-window-size';
 interface FinancialSummaryChartProps {
   summary: FinancialSummary[];
   currency: 'ARS' | 'USD';
-  showOnlyNetResult?: boolean;
 }
 
-export default function FinancialSummaryChart({ summary, currency, showOnlyNetResult = false }: FinancialSummaryChartProps) {
+export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
   const { width } = useWindowSize();
   const isMobile = width < 768;
 
   const chartData = summary.map(item => ({
     name: item.propertyName,
-    'Resultado Neto': item.netResult,
     'Ingresos': item.totalIncome,
     'Gastos': (item.totalPropertyExpenses + item.totalBookingExpenses) * -1, // Make expenses negative for stacking
   }));
@@ -65,7 +64,7 @@ export default function FinancialSummaryChart({ summary, currency, showOnlyNetRe
                 margin={{ 
                     top: 20, 
                     right: isMobile ? 10 : 30, 
-                    left: isMobile ? 10 : 20, 
+                    left: isMobile ? 0 : 20, 
                     bottom: 5 
                 }}
             >
@@ -85,14 +84,8 @@ export default function FinancialSummaryChart({ summary, currency, showOnlyNetRe
                         />}
                 />
                 <Legend />
-                 {showOnlyNetResult ? (
-                    <Bar dataKey="Resultado Neto" fill="#8884d8" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                 ) : (
-                    <>
-                        <Bar dataKey="Ingresos" stackId="a" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                        <Bar dataKey="Gastos" stackId="a" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                    </>
-                 )}
+                <Bar dataKey="Ingresos" stackId="a" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                <Bar dataKey="Gastos" stackId="a" fill="#dc2626" radius={[0, 0, 4, 4]} maxBarSize={30} />
             </BarChart>
         </ChartContainer>
     </div>
