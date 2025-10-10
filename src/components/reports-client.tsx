@@ -179,7 +179,7 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
 
       {hasUsdData && (
          <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle>Resultado por Propiedad (USD)</CardTitle>
