@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -11,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FinancialSummary } from "@/lib/data";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import useWindowSize from "@/hooks/use-window-size";
 import { cn } from "@/lib/utils";
 
