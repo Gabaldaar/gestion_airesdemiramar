@@ -28,7 +28,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 const renderLegend = (props: any) => {
     const { payload } = props;
     return (
-        <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 mt-4 text-sm text-muted-foreground">
+        <div className="flex flex-col items-center gap-2 mt-4 text-sm text-muted-foreground">
             {
                 payload.map((entry: any, index: number) => (
                     <div key={`item-${index}`} className="flex items-center">
