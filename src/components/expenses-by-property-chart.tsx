@@ -58,7 +58,7 @@ export default function ExpensesByPropertyChart({ data }: ExpensesByPropertyChar
             cx="50%"
             cy="50%"
             labelLine={false}
-            outerRadius={isMobile ? 100 : 100}
+            outerRadius={100}
             fill="#8884d8"
             dataKey="totalAmountUSD"
             nameKey="name"

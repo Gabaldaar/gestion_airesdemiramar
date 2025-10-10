@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -44,7 +45,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
   }
   
   const formatCurrencyShort = (value: number) => {
-    const prefix = currency === 'USD' ? 'USD ' : '$';
+    const prefix = currency === 'USD' ? 'U$S' : '$';
     if (Math.abs(value) >= 1_000_000) {
         return `${prefix}${(value / 1_000_000).toFixed(1)}M`;
     }
@@ -60,16 +61,17 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
         <ChartContainer config={{}} className="w-full h-full">
             <BarChart 
                 data={chartData} 
+                layout="vertical"
                 margin={{ 
                     top: 20, 
-                    right: isMobile ? 0 : 30, 
-                    left: isMobile ? 0 : 20, 
+                    right: isMobile ? 10 : 30, 
+                    left: isMobile ? 10 : 20, 
                     bottom: 5 
                 }}
             >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis tickFormatter={isMobile ? formatCurrencyShort : formatCurrency} />
+                <XAxis type="number" tickFormatter={isMobile ? formatCurrencyShort : formatCurrency} />
+                <YAxis type="category" dataKey="name" width={isMobile ? 60 : 120} tick={{ fontSize: 12 }} />
                 <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent
@@ -83,10 +85,8 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         />}
                 />
                 <Legend />
-                <Bar dataKey="Ingresos" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                <Bar dataKey="Gastos" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                <Bar dataKey="Resultado Neto" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                <Bar dataKey="Saldo" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                <Bar dataKey="Ingresos" stackId="a" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                <Bar dataKey="Gastos" stackId="a" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={30} />
             </BarChart>
         </ChartContainer>
     </div>

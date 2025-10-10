@@ -39,8 +39,6 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
   const from = searchParams.get('from') || undefined;
   const to = searchParams.get('to') || undefined;
 
-  // Since we fetch data in the parent, this component is now just for presentation.
-  // The date change logic will trigger a re-render in the parent component.
   const handleDateChange = (newFrom?: string, newTo?: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (newFrom) {
@@ -149,49 +147,25 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                 <ExpensesByPropertyChart data={expensesByProperty} />
             </CardContent>
         </Card>
-
-      {hasArsData && (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Resultado por Propiedad (ARS)</CardTitle>
-              <CardDescription>
-                Comparación del resultado neto entre las propiedades en ARS.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Reporte Financiero por Propiedad (ARS)</CardTitle>
-              <CardDescription>
-                Resumen de ingresos, gastos y resultados por propiedad en ARS.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
-            </CardContent>
-          </Card>
-        </>
-      )}
-
+      
       {hasUsdData && (
          <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Resultado por Propiedad (USD)</CardTitle>
-                <CardDescription>
-                  Comparación del resultado neto entre las propiedades en USD.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
-              </CardContent>
-            </Card>
-            <Card>
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Resultado por Propiedad (USD)</CardTitle>
+                  <CardDescription>
+                    Comparación del resultado neto entre las propiedades en USD.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {financialSummary.usd.filter(s => s.netResult !== 0 || s.totalIncome !== 0 || s.totalBookingExpenses !== 0 || s.totalPropertyExpenses !==0).map(summaryItem => (
+                      <FinancialSummaryChart key={summaryItem.propertyId} summary={[summaryItem]} currency="USD" />
+                  ))}
+                </CardContent>
+              </Card>
+            
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Distribución de Ganancias (USD)</CardTitle>
                 <CardDescription>
@@ -212,6 +186,35 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
             </CardHeader>
             <CardContent>
               <FinancialSummaryTable summary={financialSummary.usd} currency="USD" />
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {hasArsData && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Resultado por Propiedad (ARS)</CardTitle>
+              <CardDescription>
+                Comparación del resultado neto entre las propiedades en ARS.
+              </CardDescription>
+            </CardHeader>
+             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               {financialSummary.ars.filter(s => s.netResult !== 0 || s.totalIncome !== 0 || s.totalBookingExpenses !== 0 || s.totalPropertyExpenses !==0).map(summaryItem => (
+                  <FinancialSummaryChart key={summaryItem.propertyId} summary={[summaryItem]} currency="ARS" />
+                ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Reporte Financiero por Propiedad (ARS)</CardTitle>
+              <CardDescription>
+                Resumen de ingresos, gastos y resultados por propiedad en ARS.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
             </CardContent>
           </Card>
         </>
