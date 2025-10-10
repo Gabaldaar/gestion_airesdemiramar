@@ -150,7 +150,19 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
       
       {hasUsdData && (
          <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Comparativa de Resultados Netos (USD)</CardTitle>
+                    <CardDescription>
+                        Compara el resultado neto final entre todas las propiedades en USD.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FinancialSummaryChart summary={financialSummary.usd} currency="USD" showOnlyNetResult={true} />
+                </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle>Resultado por Propiedad (USD)</CardTitle>
@@ -193,6 +205,17 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
 
       {hasArsData && (
         <>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Comparativa de Resultados Netos (ARS)</CardTitle>
+                    <CardDescription>
+                        Compara el resultado neto final entre todas las propiedades en ARS.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" showOnlyNetResult={true} />
+                </CardContent>
+            </Card>
           <Card>
             <CardHeader>
               <CardTitle>Resultado por Propiedad (ARS)</CardTitle>

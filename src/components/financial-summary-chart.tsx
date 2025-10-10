@@ -14,9 +14,10 @@ import useWindowSize from '@/hooks/use-window-size';
 interface FinancialSummaryChartProps {
   summary: FinancialSummary[];
   currency: 'ARS' | 'USD';
+  showOnlyNetResult?: boolean;
 }
 
-export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
+export default function FinancialSummaryChart({ summary, currency, showOnlyNetResult = false }: FinancialSummaryChartProps) {
   const { width } = useWindowSize();
   const isMobile = width < 768;
 
@@ -24,8 +25,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
     name: item.propertyName,
     'Resultado Neto': item.netResult,
     'Ingresos': item.totalIncome,
-    'Gastos': item.totalPropertyExpenses + item.totalBookingExpenses,
-    'Saldo': item.balance,
+    'Gastos': (item.totalPropertyExpenses + item.totalBookingExpenses) * -1, // Make expenses negative for stacking
   }));
 
   const formatCurrency = (value: number) => {
@@ -79,14 +79,20 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         formatter={(value, name) => (
                             <div className='flex items-center gap-2'>
                                 <span className='capitalize'>{name}:</span>
-                                <span>{formatCurrency(value as number)}</span>
+                                <span>{formatCurrency(name === 'Gastos' ? (value as number) * -1 : value as number)}</span>
                             </div>
                         )}
                         />}
                 />
                 <Legend />
-                <Bar dataKey="Ingresos" stackId="a" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                <Bar dataKey="Gastos" stackId="a" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                 {showOnlyNetResult ? (
+                    <Bar dataKey="Resultado Neto" fill="#8884d8" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                 ) : (
+                    <>
+                        <Bar dataKey="Ingresos" stackId="a" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                        <Bar dataKey="Gastos" stackId="a" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                    </>
+                 )}
             </BarChart>
         </ChartContainer>
     </div>
