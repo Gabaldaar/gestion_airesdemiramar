@@ -11,8 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FinancialSummary } from "@/lib/data";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import useWindowSize from "@/hooks/use-window-size";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { cn } from "@/lib/utils";
 
 interface FinancialSummaryTableProps {
@@ -37,24 +36,6 @@ const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
 };
 
 
-function SummaryRow({ item, currency }: { item: FinancialSummary, currency: 'ARS' | 'USD'}) {
-    return (
-        <TableRow>
-            <TableCell className="font-medium">{item.propertyName}</TableCell>
-            <TableCell className="text-right text-green-600">{formatCurrency(item.totalIncome, currency)}</TableCell>
-            <TableCell className="text-right text-blue-600">{formatCurrency(item.totalPayments, currency)}</TableCell>
-            <TableCell className={`text-right font-bold ${item.balance <= 0 ? 'text-green-700' : 'text-orange-600'}`}>
-                {formatCurrency(item.balance, currency)}
-            </TableCell>
-            <TableCell className="text-right text-red-600">{formatCurrency(item.totalPropertyExpenses, currency)}</TableCell>
-            <TableCell className="text-right text-red-600">{formatCurrency(item.totalBookingExpenses, currency)}</TableCell>
-            <TableCell className={`text-right font-bold ${item.netResult >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                {formatCurrency(item.netResult, currency)}
-            </TableCell>
-        </TableRow>
-    )
-}
-
 function SummaryCard({ item, currency }: { item: FinancialSummary, currency: 'ARS' | 'USD'}) {
     return (
         <Card>
@@ -74,9 +55,6 @@ function SummaryCard({ item, currency }: { item: FinancialSummary, currency: 'AR
 }
 
 export default function FinancialSummaryTable({ summary, currency }: FinancialSummaryTableProps) {
-  const { width } = useWindowSize();
-  const isMobile = width !== undefined && width < 768;
-
   if (summary.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay datos para mostrar en el reporte.</p>;
   }
@@ -102,8 +80,7 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
     return <p className="text-sm text-muted-foreground py-4 text-center">No hay datos en {currency} para el período seleccionado.</p>;
   }
 
-  if (isMobile) {
-    return (
+  return (
         <div className="space-y-4">
              <Card className="bg-muted">
                 <CardHeader className="p-4">
@@ -123,41 +100,4 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
             ))}
         </div>
     )
-  }
-
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Propiedad</TableHead>
-          <TableHead className="text-right">Ingresos</TableHead>
-          <TableHead className="text-right">Pagos Recibidos</TableHead>
-          <TableHead className="text-right">Saldo</TableHead>
-          <TableHead className="text-right">Gastos (Propiedad)</TableHead>
-          <TableHead className="text-right">Gastos (Reservas)</TableHead>
-          <TableHead className="text-right">Resultado Neto</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {filteredSummary.map((item) => (
-          <SummaryRow key={item.propertyId} item={item} currency={currency} />
-        ))}
-      </TableBody>
-      <TableFooter>
-        <TableRow className="font-bold bg-muted/50">
-          <TableCell>Total General</TableCell>
-          <TableCell className="text-right text-green-600">{formatCurrency(totalIncome, currency)}</TableCell>
-          <TableCell className="text-right text-blue-600">{formatCurrency(totalPayments, currency)}</TableCell>
-           <TableCell className={`text-right font-bold ${totalBalance <= 0 ? 'text-green-700' : 'text-orange-600'}`}>
-                {formatCurrency(totalBalance, currency)}
-            </TableCell>
-          <TableCell className="text-right text-red-600">{formatCurrency(totalPropertyExpenses, currency)}</TableCell>
-          <TableCell className="text-right text-red-600">{formatCurrency(totalBookingExpenses, currency)}</TableCell>
-          <TableCell className={`text-right font-bold ${totalNetResult >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-            {formatCurrency(totalNetResult, currency)}
-            </TableCell>
-        </TableRow>
-      </TableFooter>
-    </Table>
-  );
 }
