@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -74,7 +75,7 @@ function SummaryCard({ item, currency }: { item: FinancialSummary, currency: 'AR
 
 export default function FinancialSummaryTable({ summary, currency }: FinancialSummaryTableProps) {
   const { width } = useWindowSize();
-  const isMobile = width < 768;
+  const isMobile = width !== undefined && width < 768;
 
   if (summary.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay datos para mostrar en el reporte.</p>;

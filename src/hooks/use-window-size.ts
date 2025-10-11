@@ -5,9 +5,9 @@ import { useState, useEffect } from 'react';
 
 // Hook
 export default function useWindowSize() {
-  const [windowSize, setWindowSize] = useState<{width: number, height: number}>({
-    width: 0,
-    height: 0,
+  const [windowSize, setWindowSize] = useState<{width: number | undefined, height: number | undefined}>({
+    width: undefined,
+    height: undefined,
   });
 
   useEffect(() => {
