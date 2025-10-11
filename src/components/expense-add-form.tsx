@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -91,12 +90,13 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-right">
+                    <Label htmlFor="date-popover" className="text-right">
                         Fecha
                     </Label>
                     <Popover>
                         <PopoverTrigger asChild>
                         <Button
+                            id="date-popover"
                             variant={"outline"}
                             className={cn(
                             "col-span-3 justify-start text-left font-normal",
