@@ -80,13 +80,23 @@ function ExpenseCard({ expense, categories }: { expense: UnifiedExpense; categor
                 </div>
             </CardHeader>
             <CardContent className="p-4 grid gap-2 text-sm flex-grow">
-                <div className="flex justify-between col-span-2">
+                <div className="flex justify-between col-span-2 items-baseline">
                     <span className="font-bold text-lg text-primary">{formatCurrency(expense.amountUSD, 'USD')}</span>
                     <span className="text-muted-foreground">{formatCurrency(expense.amountARS, 'ARS')}</span>
                 </div>
 
-                {expense.categoryName && <div className="flex justify-between"><span className="text-muted-foreground">Categoría</span><span className="font-medium">{expense.categoryName}</span></div>}
-                {expense.tenantName && <div className="flex justify-between"><span className="text-muted-foreground">Inquilino</span><span className="font-medium">{expense.tenantName}</span></div>}
+                {expense.categoryName && 
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Categoría</span>
+                        <span className="font-medium">{expense.categoryName}</span>
+                    </div>
+                }
+                {expense.tenantName && 
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Inquilino</span>
+                        <span className="font-medium">{expense.tenantName}</span>
+                    </div>
+                }
                 
                 {expense.description && (
                     <div className="flex flex-col space-y-1 pt-2">
