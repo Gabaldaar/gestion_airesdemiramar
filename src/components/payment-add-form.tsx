@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -94,7 +93,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="bookingId" value={bookingId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
-            <div className="grid gap-4 py-4">
+            <div className="space-y-4 py-4">
                 <div className="space-y-2">
                     <Label htmlFor="date-popover">Fecha</Label>
                     <Popover>
