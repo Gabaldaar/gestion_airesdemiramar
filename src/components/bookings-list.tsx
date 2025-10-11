@@ -60,69 +60,54 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-700' }
 };
 
-function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void }) {
-    const [isNotesOpen, setIsNotesOpen] = useState(false);
-    const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
-    const [isExpensesOpen, setIsExpensesOpen] = useState(false);
-    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-    const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
-    
+function BookingActions({ booking, onEdit, onAddPayment, onManageExpenses, onManageGuarantee, onShowNotes, onDelete }: { 
+    booking: BookingWithDetails,
+    onEdit: (booking: BookingWithDetails) => void,
+    onAddPayment: (booking: BookingWithDetails) => void,
+    onManageExpenses: (booking: BookingWithDetails) => void,
+    onManageGuarantee: (booking: BookingWithDetails) => void,
+    onShowNotes: (booking: BookingWithDetails) => void,
+    onDelete: (booking: BookingWithDetails) => void,
+}) {
     const isInactive = booking.status === 'cancelled' || booking.status === 'pending';
-
-    const handleAction = () => {
-        // A simple page refresh is enough when server actions handle revalidation
-        window.location.reload();
-    };
-
 
     return (
         <div className="flex flex-nowrap items-center justify-end gap-1">
-             <NotesViewer 
-                notes={booking.notes} 
-                title={`Notas sobre la reserva de ${booking.tenant?.name}`} 
-                isOpen={isNotesOpen} 
-                onOpenChange={setIsNotesOpen}
-            >
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsNotesOpen(true)} disabled={!booking.notes}>
-                                <FileText className="h-4 w-4" />
-                                <span className="sr-only">Ver Notas</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Ver Notas</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </NotesViewer>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onShowNotes(booking)} disabled={!booking.notes}>
+                            <FileText className="h-4 w-4" />
+                            <span className="sr-only">Ver Notas</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Ver Notas</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
               
-            <PaymentAddForm bookingId={booking.id} onPaymentAdded={handleAction} isOpen={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsAddPaymentOpen(true)} disabled={isInactive}>
-                                <Landmark className="h-4 w-4" />
-                                <span className="sr-only">Gestionar Pagos</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </PaymentAddForm>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onAddPayment(booking)} disabled={isInactive}>
+                            <Landmark className="h-4 w-4" />
+                            <span className="sr-only">Gestionar Pagos</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
             
-            <BookingExpensesManager bookingId={booking.id} isOpen={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsExpensesOpen(true)} disabled={isInactive}>
-                                <Wallet className="h-4 w-4" />
-                                <span className="sr-only">Gestionar Gastos</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </BookingExpensesManager>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onManageExpenses(booking)} disabled={isInactive}>
+                            <Wallet className="h-4 w-4" />
+                            <span className="sr-only">Gestionar Gastos</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
 
             <TooltipProvider>
                 <Tooltip>
@@ -136,24 +121,32 @@ function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEd
                 </Tooltip>
             </TooltipProvider>
             
-            <BookingDeleteForm bookingId={booking.id} propertyId={booking.propertyId} isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsDeleteOpen(true)}>
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Eliminar Reserva</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </BookingDeleteForm>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDelete(booking)}>
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Eliminar Reserva</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Eliminar Reserva</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
         </div>
     )
 }
 
-function BookingRow({ booking, showProperty, origin, onEdit }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void }) {
+function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onManageExpenses, onManageGuarantee, onShowNotes, onDelete }: { 
+    booking: BookingWithDetails, 
+    showProperty: boolean, 
+    origin?: Origin,
+    onEdit: (booking: BookingWithDetails) => void,
+    onAddPayment: (booking: BookingWithDetails) => void,
+    onManageExpenses: (booking: BookingWithDetails) => void,
+    onManageGuarantee: (booking: BookingWithDetails) => void,
+    onShowNotes: (booking: BookingWithDetails) => void,
+    onDelete: (booking: BookingWithDetails) => void,
+}) {
   const [isEmailOpen, setIsEmailOpen] = useState(false);
 
   const isCancelled = booking.status === 'cancelled';
@@ -283,13 +276,12 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
         </TooltipProvider>
       </TableCell>
       <TableCell className={cn("hidden lg:table-cell", isInactive && "text-muted-foreground")}>
-        <GuaranteeManager booking={booking} isOpen={false} onOpenChange={()=>{}}>
-            <TooltipProvider>
-              <Tooltip>
+        <TooltipProvider>
+            <Tooltip>
                 <TooltipTrigger asChild>
                     <Badge 
                         className={cn("cursor-pointer", isInactive ? "bg-gray-500" : guaranteeInfo.className)}
-                        onClick={() => {}}
+                        onClick={() => onManageGuarantee(booking)}
                         role="button"
                     >
                       {guaranteeInfo.text}
@@ -298,9 +290,8 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
                 <TooltipContent>
                     <p>Gestionar Garantía</p>
                 </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-        </GuaranteeManager>
+            </Tooltip>
+        </TooltipProvider>
       </TableCell>
       <TableCell className={cn(isInactive && "text-muted-foreground")}>
           <TooltipProvider>
@@ -329,13 +320,31 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
           </TooltipProvider>
       </TableCell>
       <TableCell className="text-right">
-        <BookingActions booking={booking} onEdit={onEdit} />
+        <BookingActions 
+            booking={booking} 
+            onEdit={onEdit} 
+            onAddPayment={onAddPayment} 
+            onManageExpenses={onManageExpenses}
+            onManageGuarantee={onManageGuarantee}
+            onShowNotes={onShowNotes}
+            onDelete={onDelete}
+        />
       </TableCell>
     </TableRow>
   );
 }
 
-function BookingCard({ booking, showProperty, origin, onEdit }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void }) {
+function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onManageExpenses, onManageGuarantee, onShowNotes, onDelete }: { 
+    booking: BookingWithDetails, 
+    showProperty: boolean, 
+    origin?: Origin, 
+    onEdit: (booking: BookingWithDetails) => void,
+    onAddPayment: (booking: BookingWithDetails) => void,
+    onManageExpenses: (booking: BookingWithDetails) => void,
+    onManageGuarantee: (booking: BookingWithDetails) => void,
+    onShowNotes: (booking: BookingWithDetails) => void,
+    onDelete: (booking: BookingWithDetails) => void,
+}) {
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
     const isInactive = isCancelled || isPending;
@@ -412,7 +421,15 @@ function BookingCard({ booking, showProperty, origin, onEdit }: { booking: Booki
                 </div>
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <BookingActions booking={booking} onEdit={onEdit} />
+                <BookingActions 
+                    booking={booking} 
+                    onEdit={onEdit} 
+                    onAddPayment={onAddPayment} 
+                    onManageExpenses={onManageExpenses}
+                    onManageGuarantee={onManageGuarantee}
+                    onShowNotes={onShowNotes}
+                    onDelete={onDelete}
+                />
             </CardFooter>
         </Card>
     )
@@ -420,8 +437,14 @@ function BookingCard({ booking, showProperty, origin, onEdit }: { booking: Booki
 
 
 export default function BookingsList({ bookings, properties, tenants, origins, showProperty = false }: BookingsListProps) {
+  // State for managing modals
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [deletingBooking, setDeletingBooking] = useState<BookingWithDetails | undefined>(undefined);
+  const [addPaymentBooking, setAddPaymentBooking] = useState<BookingWithDetails | undefined>(undefined);
+  const [managingExpensesBooking, setManagingExpensesBooking] = useState<BookingWithDetails | undefined>(undefined);
+  const [managingGuaranteeBooking, setManagingGuaranteeBooking] = useState<BookingWithDetails | undefined>(undefined);
+  const [showingNotesBooking, setShowingNotesBooking] = useState<BookingWithDetails | undefined>(undefined);
+  
   const { width } = useWindowSize();
   const useCardView = width < 1280; 
 
@@ -430,11 +453,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   }
 
   const originsMap = origins ? new Map(origins.map(o => [o.id, o])) : new Map();
-
-  const handleEditClick = (booking: BookingWithDetails) => {
-    setEditingBooking(booking);
-    setIsEditOpen(true);
-  };
 
   const handleUpdate = () => {
     // A simple page refresh is enough when server actions handle revalidation
@@ -449,7 +467,12 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             booking={booking}
             showProperty={showProperty}
             origin={booking.originId ? originsMap.get(booking.originId) : undefined}
-            onEdit={handleEditClick}
+            onEdit={setEditingBooking}
+            onAddPayment={setAddPaymentBooking}
+            onManageExpenses={setManagingExpensesBooking}
+            onManageGuarantee={setManagingGuaranteeBooking}
+            onShowNotes={setShowingNotesBooking}
+            onDelete={setDeletingBooking}
         />
         ))}
     </div>
@@ -477,7 +500,12 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     booking={booking} 
                     showProperty={showProperty} 
                     origin={booking.originId ? originsMap.get(booking.originId) : undefined}
-                    onEdit={handleEditClick}
+                    onEdit={setEditingBooking}
+                    onAddPayment={setAddPaymentBooking}
+                    onManageExpenses={setManagingExpensesBooking}
+                    onManageGuarantee={setManagingGuaranteeBooking}
+                    onShowNotes={setShowingNotesBooking}
+                    onDelete={setDeletingBooking}
                 />
             ))}
         </TableBody>
@@ -496,17 +524,65 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
         
         {useCardView ? <CardView /> : <TableView />}
 
+        {/* --- Dialogs --- */}
+
         {editingBooking && (
             <BookingEditForm
                 booking={editingBooking}
                 tenants={tenants}
                 properties={properties}
                 allBookings={bookings}
-                isOpen={isEditOpen}
-                onOpenChange={setIsEditOpen}
+                isOpen={!!editingBooking}
+                onOpenChange={(isOpen) => !isOpen && setEditingBooking(undefined)}
                 onBookingUpdated={handleUpdate}
             />
         )}
+        
+        {addPaymentBooking && (
+            <PaymentAddForm
+                bookingId={addPaymentBooking.id}
+                onPaymentAdded={handleUpdate}
+                isOpen={!!addPaymentBooking}
+                onOpenChange={(isOpen) => !isOpen && setAddPaymentBooking(undefined)}
+            />
+        )}
+
+        {managingExpensesBooking && (
+            <BookingExpensesManager
+                bookingId={managingExpensesBooking.id}
+                isOpen={!!managingExpensesBooking}
+                onOpenChange={(isOpen) => !isOpen && setManagingExpensesBooking(undefined)}
+            />
+        )}
+
+        {deletingBooking && (
+            <BookingDeleteForm
+                bookingId={deletingBooking.id}
+                propertyId={deletingBooking.propertyId}
+                isOpen={!!deletingBooking}
+                onOpenChange={(isOpen) => !isOpen && setDeletingBooking(undefined)}
+            />
+        )}
+
+        {managingGuaranteeBooking && (
+             <GuaranteeManager
+                booking={managingGuaranteeBooking}
+                isOpen={!!managingGuaranteeBooking}
+                onOpenChange={(isOpen) => !isOpen && setManagingGuaranteeBooking(undefined)}
+            >
+                <div />
+            </GuaranteeManager>
+        )}
+
+        {showingNotesBooking && (
+            <NotesViewer
+                notes={showingNotesBooking.notes}
+                title={`Notas sobre la reserva de ${showingNotesBooking.tenant?.name}`}
+                isOpen={!!showingNotesBooking}
+                onOpenChange={(isOpen) => !isOpen && setShowingNotesBooking(undefined)}
+            />
+        )}
+
     </div>
   );
 }
