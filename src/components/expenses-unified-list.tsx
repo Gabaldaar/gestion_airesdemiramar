@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React from 'react';
@@ -53,12 +51,12 @@ function ExpenseActions({ expense, categories }: { expense: UnifiedExpense; cate
             {expense.type === 'Propiedad' ? (
                 <>
                     <ExpenseEditForm expense={expense as PropertyExpense} categories={categories} />
-                    <ExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleAction} />
+                    <ExpenseDeleteForm expenseId={expense.id} onDeleted={handleAction} />
                 </>
             ) : (
                 <>
                     <BookingExpenseEditForm expense={expense as BookingExpense} categories={categories} />
-                    <BookingExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleAction} />
+                    <BookingExpenseDeleteForm expenseId={expense.id} onDeleted={handleAction} />
                 </>
             )}
         </div>
@@ -67,41 +65,41 @@ function ExpenseActions({ expense, categories }: { expense: UnifiedExpense; cate
 
 function ExpenseCard({ expense, categories }: { expense: UnifiedExpense; categories: ExpenseCategory[] }) {
     return (
-        <Card className="flex flex-col">
+        <Card className="flex flex-col w-full">
             <CardHeader className="p-4">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="text-lg">{expense.propertyName || 'N/A'}</CardTitle>
+                <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                        <CardTitle className="text-lg truncate">{expense.propertyName || 'N/A'}</CardTitle>
                         <CardDescription>{formatDate(expense.date)}</CardDescription>
                     </div>
-                    <Badge variant={expense.type === 'Propiedad' ? 'secondary' : 'outline'}>
+                    <Badge variant={expense.type === 'Propiedad' ? 'secondary' : 'outline'} className="flex-shrink-0">
                         {expense.type}
                     </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="p-4 grid gap-2 text-sm flex-grow">
-                <div className="flex justify-between col-span-2 items-baseline">
+            <CardContent className="p-4 space-y-2 text-sm flex-grow">
+                 <div className="flex justify-between items-baseline border-b pb-2">
                     <span className="font-bold text-lg text-primary">{formatCurrency(expense.amountUSD, 'USD')}</span>
                     <span className="text-muted-foreground">{formatCurrency(expense.amountARS, 'ARS')}</span>
                 </div>
 
                 {expense.categoryName && 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Categoría</span>
-                        <span className="font-medium">{expense.categoryName}</span>
+                        <span className="font-medium text-right truncate">{expense.categoryName}</span>
                     </div>
                 }
                 {expense.tenantName && 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Inquilino</span>
-                        <span className="font-medium">{expense.tenantName}</span>
+                        <span className="font-medium text-right truncate">{expense.tenantName}</span>
                     </div>
                 }
                 
                 {expense.description && (
-                    <div className="flex flex-col space-y-1 pt-2">
+                    <div className="space-y-1 pt-2">
                         <span className="text-muted-foreground">Descripción</span>
-                        <p className="font-medium text-sm p-2 bg-muted/50 rounded-md whitespace-pre-wrap">{expense.description}</p>
+                        <p className="font-medium text-sm p-2 bg-muted/50 rounded-md whitespace-pre-wrap break-words">{expense.description}</p>
                     </div>
                 )}
             </CardContent>
@@ -131,7 +129,7 @@ export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUn
                 <p className="text-sm text-muted-foreground">{formatCurrency(totalAmountARS, 'ARS')}</p>
             </CardContent>
         </Card>
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {expenses.map(expense => (
                 <ExpenseCard key={expense.id} expense={expense} categories={categories} />
             ))}
