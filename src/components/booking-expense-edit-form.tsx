@@ -67,7 +67,7 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
   }, [state]);
 
   const formContent = (
-    <form action={formAction} className="space-y-4 px-4 sm:px-0">
+    <div className="grid gap-4 py-4">
         <input type="hidden" name="id" value={expense.id} />
         <input type="hidden" name="bookingId" value={expense.bookingId} />
         <input type="hidden" name="date" value={date?.toISOString() || ''} />
@@ -142,36 +142,8 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
         {state.message && !state.success && (
             <p className="text-red-500 text-sm mt-2">{state.message}</p>
         )}
-    </form>
-  )
-
-  if (isDesktop) {
-    return (
-        <Drawer open={isOpen} onOpenChange={setIsOpen}>
-          <DrawerTrigger asChild>
-            <Button variant="ghost" size="icon">
-                <Pencil className="h-4 w-4" />
-                <span className="sr-only">Editar Gasto</span>
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent>
-            <DrawerHeader className="text-left">
-              <DrawerTitle>Editar Gasto de Reserva</DrawerTitle>
-              <DrawerDescription>Modifica los datos del gasto.</DrawerDescription>
-            </DrawerHeader>
-            <div className="p-4">
-                {formContent}
-            </div>
-            <DrawerFooter className="pt-2 flex-row-reverse">
-                <SubmitButton />
-                 <DrawerClose asChild>
-                    <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                </DrawerClose>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-    )
-  }
+    </div>
+  );
 
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
@@ -182,19 +154,21 @@ export function BookingExpenseEditForm({ expense, categories }: { expense: Booki
         </Button>
       </DrawerTrigger>
       <DrawerContent>
-        <DrawerHeader className="text-left">
-          <DrawerTitle>Editar Gasto de Reserva</DrawerTitle>
-          <DrawerDescription>Modifica los datos del gasto.</DrawerDescription>
-        </DrawerHeader>
-        <div className="overflow-y-auto">
-            {formContent}
-        </div>
-        <DrawerFooter className="pt-2">
-            <SubmitButton />
-            <DrawerClose asChild>
-                <Button variant="outline">Cancelar</Button>
-            </DrawerClose>
-        </DrawerFooter>
+        <form action={formAction}>
+            <DrawerHeader className="text-left">
+                <DrawerTitle>Editar Gasto de Reserva</DrawerTitle>
+                <DrawerDescription>Modifica los datos del gasto.</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 overflow-y-auto">
+                {formContent}
+            </div>
+            <DrawerFooter className="pt-2">
+                <DrawerClose asChild>
+                    <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+                </DrawerClose>
+                <SubmitButton />
+            </DrawerFooter>
+        </form>
       </DrawerContent>
     </Drawer>
   );

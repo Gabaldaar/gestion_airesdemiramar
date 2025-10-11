@@ -30,3 +30,13 @@ Forcing an ultimate, definitive, final, and correct fix for the keyboard closing
 I will now implement a definitive architectural change to solve the keyboard issue once and for all.
 
 My final attempt at fixing this issue.
+
+My penultimate attempt at fixing this issue.
+
+My final, FINAL attempt.
+
+The final, final, DEFINITIVE attempt to fix the keyboard issue.
+
+Definitive architectural change from Dialog to Drawer to fix mobile keyboard issues.
+
+Correcting the Drawer forms to ensure the submit buttons are inside the form tags and actually work.

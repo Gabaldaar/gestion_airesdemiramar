@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { addPayment } from '@/lib/actions';
-import { PlusCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -92,7 +92,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, children, isOpen, on
   }
   
   const formContent = (
-    <form action={formAction} ref={formRef} className="space-y-4 px-4 sm:px-0">
+    <form action={formAction} ref={formRef} className="grid gap-4 py-4">
         <input type="hidden" name="bookingId" value={bookingId} />
         <input type="hidden" name="date" value={date?.toISOString() || ''} />
         <div className="space-y-2">
@@ -155,46 +155,25 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, children, isOpen, on
     </form>
   );
 
-  if (isDesktop) {
-    return (
-        <Drawer open={isOpen} onOpenChange={onOpenChange}>
-            {children && <DrawerTrigger asChild>{children}</DrawerTrigger>}
-            <DrawerContent>
-                 <DrawerHeader className="text-left">
-                    <DrawerTitle>Añadir Pago a la Reserva</DrawerTitle>
-                    <DrawerDescription>Completa los datos del pago recibido.</DrawerDescription>
-                </DrawerHeader>
-                <div className="p-4">
-                    {formContent}
-                </div>
-                <DrawerFooter className="pt-2 flex-row-reverse">
-                    <SubmitButton />
-                     <DrawerClose asChild>
-                        <Button type="button" variant="outline" onClick={resetFormAndClose}>Cancelar</Button>
-                    </DrawerClose>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
-    )
-  }
-
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
         {children && <DrawerTrigger asChild>{children}</DrawerTrigger>}
         <DrawerContent>
-            <DrawerHeader className="text-left">
-                <DrawerTitle>Añadir Pago</DrawerTitle>
-                <DrawerDescription>Completa los datos del pago recibido.</DrawerDescription>
-            </DrawerHeader>
-            <div className="overflow-y-auto">
-                {formContent}
-            </div>
-            <DrawerFooter className="pt-2">
-                 <SubmitButton />
-                <DrawerClose asChild>
-                    <Button variant="outline">Cancelar</Button>
-                </DrawerClose>
-            </DrawerFooter>
+            <form action={formAction} ref={formRef}>
+                <DrawerHeader className="text-left">
+                    <DrawerTitle>Añadir Pago</DrawerTitle>
+                    <DrawerDescription>Completa los datos del pago recibido.</DrawerDescription>
+                </DrawerHeader>
+                <div className="px-4 overflow-y-auto">
+                    {formContent}
+                </div>
+                <DrawerFooter className="pt-2">
+                    <DrawerClose asChild>
+                        <Button type="button" variant="outline" onClick={resetFormAndClose}>Cancelar</Button>
+                    </DrawerClose>
+                    <SubmitButton />
+                </DrawerFooter>
+            </form>
         </DrawerContent>
     </Drawer>
   );

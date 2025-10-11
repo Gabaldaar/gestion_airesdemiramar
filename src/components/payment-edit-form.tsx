@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select"
 import { updatePayment } from '@/lib/actions';
 import { Payment } from '@/lib/data';
-import { Pencil, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -80,7 +80,7 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children, isOpen, o
   }, [state, onPaymentUpdated, onOpenChange]);
 
   const formContent = (
-     <form action={formAction} className="space-y-4 px-4 sm:px-0">
+    <div className="grid gap-4 py-4">
         <input type="hidden" name="id" value={payment.id} />
         <input type="hidden" name="bookingId" value={payment.bookingId} />
         <input type="hidden" name="date" value={date?.toISOString() || ''} />
@@ -139,49 +139,28 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children, isOpen, o
         {state.message && !state.success && (
             <p className="text-red-500 text-sm mt-2">{state.message}</p>
         )}
-    </form>
-  )
-
-  if (isDesktop) {
-    return (
-        <Drawer open={isOpen} onOpenChange={onOpenChange}>
-            {children && <DrawerTrigger asChild>{children}</DrawerTrigger>}
-            <DrawerContent>
-                 <DrawerHeader className="text-left">
-                    <DrawerTitle>Editar Pago de Reserva</DrawerTitle>
-                    <DrawerDescription>Modifica los datos del pago.</DrawerDescription>
-                </DrawerHeader>
-                 <div className="p-4">
-                    {formContent}
-                </div>
-                 <DrawerFooter className="pt-2 flex-row-reverse">
-                    <SubmitButton />
-                    <DrawerClose asChild>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    </DrawerClose>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
-    )
-  }
+    </div>
+  );
 
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
         {children && <DrawerTrigger asChild>{children}</DrawerTrigger>}
         <DrawerContent>
-             <DrawerHeader className="text-left">
-                <DrawerTitle>Editar Pago</DrawerTitle>
-                <DrawerDescription>Modifica los datos del pago.</DrawerDescription>
-            </DrawerHeader>
-            <div className="overflow-y-auto">
-                {formContent}
-            </div>
-            <DrawerFooter className="pt-2">
-                <SubmitButton />
-                <DrawerClose asChild>
-                    <Button variant="outline">Cancelar</Button>
-                </DrawerClose>
-            </DrawerFooter>
+            <form action={formAction}>
+                <DrawerHeader className="text-left">
+                    <DrawerTitle>Editar Pago</DrawerTitle>
+                    <DrawerDescription>Modifica los datos del pago.</DrawerDescription>
+                </DrawerHeader>
+                <div className="px-4 overflow-y-auto">
+                    {formContent}
+                </div>
+                <DrawerFooter className="pt-2">
+                    <DrawerClose asChild>
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    </DrawerClose>
+                    <SubmitButton />
+                </DrawerFooter>
+            </form>
         </DrawerContent>
     </Drawer>
   );
