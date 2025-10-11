@@ -20,3 +20,5 @@ Forcing update to fix the keyboard closing issue on payment and expense add form
 Forcing another update to fix keyboard issue on Add/Edit payment and expense forms.
 
 Forcing a final, definitive fix for the keyboard closing issue on Add Payment and Add Expense forms.
+
+Forcing a final, FINAL fix after repeated failures.
