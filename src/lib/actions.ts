@@ -468,15 +468,22 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
 
 export async function deletePropertyExpense(previousState: any, formData: FormData) {
     const id = formData.get("id") as string;
-    const propertyId = formData.get("propertyId") as string;
-
-     if (!id || !propertyId) {
-        return { success: false, message: "ID de gasto o propiedad no válido." };
+    if (!id) {
+        return { success: false, message: "ID de gasto no válido." };
     }
 
     try {
+        const expenseDoc = await db.collection('propertyExpenses').doc(id).get();
+        if (!expenseDoc.exists) {
+            return { success: false, message: "No se encontró el gasto para eliminar." };
+        }
+        const propertyId = expenseDoc.data()?.propertyId;
+
         await dbDeletePropertyExpense(id);
-        revalidatePath(`/properties/${propertyId}`);
+
+        if (propertyId) {
+            revalidatePath(`/properties/${propertyId}`);
+        }
         revalidatePath('/reports');
         revalidatePath('/expenses');
         return { success: true, message: "Gasto eliminado correctamente." };
@@ -503,7 +510,10 @@ export async function addBookingExpense(previousState: any, formData: FormData) 
         };
 
         await dbAddBookingExpense(newExpense as Omit<BookingExpense, 'id'>);
-        revalidatePathsAfterBooking((await getBookingById(bookingId))?.propertyId || '');
+        const booking = await getBookingById(bookingId);
+        if (booking) {
+            revalidatePathsAfterBooking(booking.propertyId);
+        }
         return { success: true, message: "Gasto de reserva añadido correctamente." };
     } catch (error: any) {
         return { success: false, message: error.message || "Error al añadir el gasto de reserva." };
@@ -530,7 +540,10 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
         };
 
         await dbUpdateBookingExpense(updatedExpense);
-        revalidatePathsAfterBooking((await getBookingById(bookingId))?.propertyId || '');
+        const booking = await getBookingById(bookingId);
+        if (booking) {
+            revalidatePathsAfterBooking(booking.propertyId);
+        }
         return { success: true, message: "Gasto de reserva actualizado correctamente." };
     } catch (error: any) {
         return { success: false, message: error.message || "Error al actualizar el gasto de reserva." };
@@ -539,16 +552,25 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
 
 export async function deleteBookingExpense(previousState: any, formData: FormData) {
     const id = formData.get("id") as string;
-    const bookingExpense = await db.collection('bookingExpenses').doc(id).get();
-    const bookingId = bookingExpense.data()?.bookingId;
-
-     if (!id) {
+    if (!id) {
         return { success: false, message: "ID de gasto no válido." };
     }
 
     try {
+        const expenseDoc = await db.collection('bookingExpenses').doc(id).get();
+        if (!expenseDoc.exists) {
+            return { success: false, message: "No se encontró el gasto para eliminar." };
+        }
+        const bookingId = expenseDoc.data()?.bookingId;
+
         await dbDeleteBookingExpense(id);
-        revalidatePathsAfterBooking((await getBookingById(bookingId))?.propertyId || '');
+        
+        if (bookingId) {
+            const booking = await getBookingById(bookingId);
+            if (booking) {
+                revalidatePathsAfterBooking(booking.propertyId);
+            }
+        }
         return { success: true, message: "Gasto de reserva eliminado correctamente." };
     } catch (error: any) {
         return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -606,7 +628,10 @@ export async function addPayment(previousState: any, formData: FormData) {
 
     try {
         await dbAddPayment(paymentPayload as Omit<Payment, 'id'>);
-        revalidatePathsAfterBooking((await getBookingById(bookingId))?.propertyId || '');
+        const booking = await getBookingById(bookingId);
+        if (booking) {
+            revalidatePathsAfterBooking(booking.propertyId);
+        }
         return { success: true, message: "Pago añadido correctamente." };
     } catch (error: any) {
         console.error(error)
@@ -666,7 +691,10 @@ export async function updatePayment(previousState: any, formData: FormData) {
 
     try {
         await dbUpdatePayment(paymentPayload as Payment);
-        revalidatePathsAfterBooking((await getBookingById(bookingId))?.propertyId || '');
+        const booking = await getBookingById(bookingId);
+        if (booking) {
+            revalidatePathsAfterBooking(booking.propertyId);
+        }
         return { success: true, message: "Pago actualizado correctamente." };
     } catch (error: any) {
         return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -679,21 +707,22 @@ export async function deletePayment(previousState: any, formData: FormData) {
         return { success: false, message: "ID de pago no válido." };
     }
     
-    // Fetch the payment BEFORE deleting to get the bookingId
-    const paymentDoc = await db.collection('payments').doc(id).get();
-    if (!paymentDoc.exists) {
-        return { success: false, message: "No se encontró el pago para eliminar." };
-    }
-    const bookingId = paymentDoc.data()?.bookingId;
-
     try {
+        const paymentDoc = await db.collection('payments').doc(id).get();
+        if (!paymentDoc.exists) {
+            return { success: false, message: "No se encontró el pago para eliminar." };
+        }
+        const bookingId = paymentDoc.data()?.bookingId;
+
         await dbDeletePayment(id);
+
         if (bookingId) {
             const booking = await getBookingById(bookingId);
             if (booking) {
                 revalidatePathsAfterBooking(booking.propertyId);
             }
         }
+        
         // Fallback revalidation in case booking was already deleted
         revalidatePath('/payments');
         revalidatePath('/bookings');
