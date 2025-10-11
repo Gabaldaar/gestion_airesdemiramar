@@ -85,15 +85,8 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, children, isOpen, on
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        {children || (
-             <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Pago
-            </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+        {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+        <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Añadir Pago a la Reserva</DialogTitle>
           <DialogDescription>
