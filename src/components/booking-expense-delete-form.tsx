@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -21,11 +21,10 @@ const initialState = {
   success: false,
 };
 
-function DeleteButton() {
-    const { pending } = useFormStatus();
+function DeleteButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" variant="destructive" disabled={pending}>
-            {pending ? (
+        <Button type="submit" variant="destructive" disabled={isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Borrando...
@@ -38,8 +37,9 @@ function DeleteButton() {
 }
 
 export function BookingExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expenseId: string; onExpenseDeleted: () => void; }) {
-  const [state, formAction] = useActionState(deleteBookingExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
+  const [state, formAction] = useActionState(deleteBookingExpense, initialState);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (state.success) {
@@ -48,6 +48,13 @@ export function BookingExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expe
     }
   }, [state, onExpenseDeleted]);
 
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+      startTransition(() => {
+          formAction(formData);
+      });
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -58,7 +65,7 @@ export function BookingExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expe
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <form action={formAction}>
+        <form onSubmit={handleSubmit}>
             <input type="hidden" name="id" value={expenseId} />
             <DialogHeader>
                 <DialogTitle>¿Estás seguro?</DialogTitle>
@@ -70,7 +77,7 @@ export function BookingExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expe
                 <DialogClose asChild>
                     <Button type="button" variant="outline">Cancelar</Button>
                 </DialogClose>
-                <DeleteButton />
+                <DeleteButton isPending={isPending} />
             </DialogFooter>
             {state.message && !state.success && (
                 <p className="text-red-500 text-sm mt-2">{state.message}</p>
@@ -80,5 +87,3 @@ export function BookingExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expe
     </Dialog>
   );
 }
-
-    
