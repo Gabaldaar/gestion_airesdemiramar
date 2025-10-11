@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -94,16 +95,15 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
             <input type="hidden" name="bookingId" value={bookingId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-right">
-                        Fecha
-                    </Label>
+                <div className="space-y-2">
+                    <Label htmlFor="date-popover">Fecha</Label>
                     <Popover>
                         <PopoverTrigger asChild>
                         <Button
+                            id="date-popover"
                             variant={"outline"}
                             className={cn(
-                            "col-span-3 justify-start text-left font-normal",
+                            "w-full justify-start text-left font-normal",
                             !date && "text-muted-foreground"
                             )}
                         >
@@ -122,12 +122,10 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
                         </PopoverContent>
                     </Popover>
                 </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="currency" className="text-right">
-                    Moneda
-                    </Label>
+                 <div className="space-y-2">
+                    <Label htmlFor="currency">Moneda</Label>
                     <Select name="currency" value={currency} onValueChange={(value) => setCurrency(value as 'ARS' | 'USD')} required>
-                        <SelectTrigger className="col-span-3">
+                        <SelectTrigger>
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -136,25 +134,19 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="amount" className="text-right">
-                    Monto
-                    </Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
+                <div className="space-y-2">
+                    <Label htmlFor="amount">Monto</Label>
+                    <Input id="amount" name="amount" type="number" step="0.01" required />
                 </div>
                 {currency === 'ARS' && (
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="exchangeRate" className="text-right">
-                        Valor USD
-                        </Label>
-                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" className="col-span-3" placeholder="Valor del USD en ARS" required />
+                     <div className="space-y-2">
+                        <Label htmlFor="exchangeRate">Valor USD</Label>
+                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" placeholder="Valor del USD en ARS" required />
                     </div>
                 )}
-                 <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="description" className="text-right pt-2">
-                        Descripción
-                    </Label>
-                    <Textarea id="description" name="description" className="col-span-3" placeholder="Comentarios sobre el pago..."/>
+                 <div className="space-y-2">
+                    <Label htmlFor="description">Descripción</Label>
+                    <Textarea id="description" name="description" placeholder="Comentarios sobre el pago..."/>
                 </div>
             </div>
             <DialogFooter>
