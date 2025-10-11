@@ -3,9 +3,16 @@
 
 import { useState, useEffect } from 'react';
 
+// Define the state type
+interface Size {
+  width: number | undefined;
+  height: number | undefined;
+}
+
 // Hook
-export default function useWindowSize() {
-  const [windowSize, setWindowSize] = useState<{width: number | undefined, height: number | undefined}>({
+export default function useWindowSize(): Size {
+  // Initialize state with undefined width/height so server and client renders match
+  const [windowSize, setWindowSize] = useState<Size>({
     width: undefined,
     height: undefined,
   });
