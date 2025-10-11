@@ -54,12 +54,12 @@ function ExpenseActions({ expense, categories }: { expense: UnifiedExpense; cate
             {expense.type === 'Propiedad' ? (
                 <>
                     <ExpenseEditForm expense={expense as PropertyExpense} categories={categories} />
-                    <ExpenseDeleteForm expenseId={expense.id} propertyId={(expense as PropertyExpense).propertyId} />
+                    <ExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleAction} />
                 </>
             ) : (
                 <>
                     <BookingExpenseEditForm expense={expense as BookingExpense} categories={categories} />
-                    <BookingExpenseDeleteForm expenseId={expense.id} bookingId={(expense as BookingExpense).bookingId} />
+                    <BookingExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleAction} />
                 </>
             )}
         </div>

@@ -87,5 +87,3 @@ export function ExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expenseId: 
     </Dialog>
   );
 }
-
-    
