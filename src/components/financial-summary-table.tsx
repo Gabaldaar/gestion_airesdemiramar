@@ -95,9 +95,11 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
                     <div className="flex justify-between items-center pt-2 border-t mt-2"><span className="text-muted-foreground font-bold">Resultado Neto</span><span className={cn("font-bold", totalNetResult >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(totalNetResult, currency)}</span></div>
                 </CardContent>
             </Card>
-            {filteredSummary.map((item) => (
-                <SummaryCard key={item.propertyId} item={item} currency={currency} />
-            ))}
+            <div className="space-y-4">
+              {filteredSummary.map((item) => (
+                  <SummaryCard key={item.propertyId} item={item} currency={currency} />
+              ))}
+            </div>
         </div>
     )
 }
