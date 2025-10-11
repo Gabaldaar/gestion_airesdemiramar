@@ -675,17 +675,29 @@ export async function updatePayment(previousState: any, formData: FormData) {
 
 export async function deletePayment(previousState: any, formData: FormData) {
     const id = formData.get("id") as string;
-    const payment = await db.collection('payments').doc(id).get();
-    const bookingId = payment.data()?.bookingId;
-
-
-     if (!id) {
+    if (!id) {
         return { success: false, message: "ID de pago no válido." };
     }
+    
+    // Fetch the payment BEFORE deleting to get the bookingId
+    const paymentDoc = await db.collection('payments').doc(id).get();
+    if (!paymentDoc.exists) {
+        return { success: false, message: "No se encontró el pago para eliminar." };
+    }
+    const bookingId = paymentDoc.data()?.bookingId;
 
     try {
         await dbDeletePayment(id);
-        revalidatePathsAfterBooking((await getBookingById(bookingId))?.propertyId || '');
+        if (bookingId) {
+            const booking = await getBookingById(bookingId);
+            if (booking) {
+                revalidatePathsAfterBooking(booking.propertyId);
+            }
+        }
+        // Fallback revalidation in case booking was already deleted
+        revalidatePath('/payments');
+        revalidatePath('/bookings');
+        revalidatePath('/reports');
         return { success: true, message: "Pago eliminado correctamente." };
     } catch (error: any) {
         return { success: false, message: `Error de base de datos: ${error.message}` };
