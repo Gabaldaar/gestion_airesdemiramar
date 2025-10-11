@@ -83,18 +83,15 @@ function ExpenseCard({ expense, categories }: { expense: UnifiedExpense; categor
                     <span className="text-muted-foreground">{formatCurrency(expense.amountARS, 'ARS')}</span>
                 </div>
 
-                {expense.categoryName && 
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Categoría</span>
-                        <span className="font-medium text-right truncate">{expense.categoryName}</span>
-                    </div>
-                }
-                {expense.tenantName && 
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Inquilino</span>
-                        <span className="font-medium text-right truncate">{expense.tenantName}</span>
-                    </div>
-                }
+                <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Categoría</span>
+                    <span className="font-medium text-right truncate min-w-0">{expense.categoryName || '-'}</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Inquilino</span>
+                    <span className="font-medium text-right truncate min-w-0">{expense.tenantName || '-'}</span>
+                </div>
                 
                 {expense.description && (
                     <div className="space-y-1 pt-2">
@@ -129,7 +126,7 @@ export default function ExpensesUnifiedList({ expenses, categories }: ExpensesUn
                 <p className="text-sm text-muted-foreground">{formatCurrency(totalAmountARS, 'ARS')}</p>
             </CardContent>
         </Card>
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+         <div className="space-y-4">
             {expenses.map(expense => (
                 <ExpenseCard key={expense.id} expense={expense} categories={categories} />
             ))}
