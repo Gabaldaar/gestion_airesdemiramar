@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -41,19 +40,14 @@ function DeleteButton() {
 export function BookingExpenseDeleteForm({ expenseId, bookingId }: { expenseId: string; bookingId: string }) {
   const [state, formAction] = useActionState(deleteBookingExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
+      window.location.reload(); // Simple reload to reflect changes
     }
-  }, [state]);
+  }, [state.success]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      formRef.current?.reset();
-    }
-  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -64,7 +58,7 @@ export function BookingExpenseDeleteForm({ expenseId, bookingId }: { expenseId: 
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <form action={formAction} ref={formRef}>
+        <form action={formAction}>
             <input type="hidden" name="id" value={expenseId} />
             <input type="hidden" name="bookingId" value={bookingId} />
             <DialogHeader>

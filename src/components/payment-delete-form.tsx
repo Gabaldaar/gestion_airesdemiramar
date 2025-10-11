@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState, useEffect, useState, useRef } from 'react';
@@ -41,20 +40,13 @@ function DeleteButton() {
 export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: string; onPaymentDeleted: () => void }) {
   const [state, formAction] = useActionState(deletePayment, initialState);
   const [isOpen, setIsOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
       onPaymentDeleted();
     }
-  }, [state, onPaymentDeleted]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      formRef.current?.reset();
-    }
-  }, [isOpen]);
+  }, [state.success, onPaymentDeleted]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -65,7 +57,7 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <form action={formAction} ref={formRef}>
+        <form action={formAction}>
           <input type="hidden" name="id" value={paymentId} />
           <DialogHeader>
             <DialogTitle>¿Estás seguro?</DialogTitle>
