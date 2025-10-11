@@ -46,7 +46,7 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
       setIsOpen(false);
       onPaymentDeleted();
     }
-  }, [state.success, onPaymentDeleted]);
+  }, [state, onPaymentDeleted]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -76,3 +76,5 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
     </Dialog>
   );
 }
+
+    

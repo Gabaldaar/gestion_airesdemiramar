@@ -80,3 +80,5 @@ export function BookingExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expe
     </Dialog>
   );
 }
+
+    

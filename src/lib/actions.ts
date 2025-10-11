@@ -45,8 +45,8 @@ import {
     GuaranteeStatus,
     EmailTemplate,
     BookingStatus,
-    db
 } from "./data";
+import { db } from './firebase';
 
 
 export async function addProperty(previousState: any, formData: FormData) {
@@ -902,3 +902,5 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
+
+    
