@@ -675,31 +675,17 @@ export async function updatePayment(previousState: any, formData: FormData) {
 
 export async function deletePayment(previousState: any, formData: FormData) {
     const id = formData.get("id") as string;
-    if (!id) {
+    const payment = await db.collection('payments').doc(id).get();
+    const bookingId = payment.data()?.bookingId;
+
+
+     if (!id) {
         return { success: false, message: "ID de pago no válido." };
     }
 
     try {
-        const paymentDoc = await db.collection('payments').doc(id).get();
-        if (!paymentDoc.exists) {
-            return { success: false, message: "El pago no existe." };
-        }
-        const payment = paymentDoc.data() as Payment;
-        const bookingId = payment.bookingId;
-
         await dbDeletePayment(id);
-        
-        if (bookingId) {
-            const booking = await getBookingById(bookingId);
-            if (booking) {
-                revalidatePathsAfterBooking(booking.propertyId);
-            }
-        } else {
-             // Fallback if no bookingId, revalidate generic paths
-            revalidatePath('/payments');
-            revalidatePath('/reports');
-        }
-
+        revalidatePathsAfterBooking((await getBookingById(bookingId))?.propertyId || '');
         return { success: true, message: "Pago eliminado correctamente." };
     } catch (error: any) {
         return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -875,5 +861,3 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
-
-    

@@ -128,7 +128,6 @@ export type PaymentWithDetails = Payment & {
     propertyName?: string;
     tenantId?: string;
     tenantName?: string;
-    tenantEmail?: string;
 }
 
 export type ExpenseCategory = {
@@ -629,7 +628,7 @@ export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]>
     ]);
 
     const bookingsMap = new Map(bookings.map(b => [b.id, b]));
-    const tenantsMap = new Map(tenants.map(t => [t.id, t]));
+    const tenantsMap = new Map(tenants.map(t => [t.id, t.name]));
     const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
 
     const detailedPayments = payments.map(payment => {
@@ -640,7 +639,7 @@ export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]>
                 propertyName: 'Reserva eliminada',
             };
         }
-        const tenant = tenantsMap.get(booking.tenantId);
+        const tenantName = tenantsMap.get(booking.tenantId);
         const propertyName = propertiesMap.get(booking.propertyId);
 
         return {
@@ -648,8 +647,7 @@ export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]>
             propertyId: booking.propertyId,
             propertyName: propertyName || 'N/A',
             tenantId: booking.tenantId,
-            tenantName: tenant?.name || 'N/A',
-            tenantEmail: tenant?.email || undefined,
+            tenantName: tenantName || 'N/A',
         };
     });
 

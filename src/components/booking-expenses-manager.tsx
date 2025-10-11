@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, ReactNode } from 'react';
@@ -39,7 +38,6 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
 
 
   const fetchExpensesAndCategories = useCallback(async () => {
@@ -91,18 +89,7 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end">
-              <BookingExpenseAddForm 
-                bookingId={bookingId} 
-                onExpenseAdded={handleExpenseAction} 
-                categories={categories}
-                isOpen={isAddFormOpen}
-                onOpenChange={setIsAddFormOpen}
-              >
-                  <Button onClick={() => setIsAddFormOpen(true)}>
-                    <Wallet className="mr-2 h-4 w-4" />
-                    Añadir Gasto
-                  </Button>
-              </BookingExpenseAddForm>
+              <BookingExpenseAddForm bookingId={bookingId} onExpenseAdded={handleExpenseAction} categories={categories}/>
           </div>
           {isLoading ? (
             <p>Cargando gastos...</p>
