@@ -1,3 +1,4 @@
+
 G# Firebase Studio
 
 This is a NextJS starter in Firebase Studio.
@@ -15,3 +16,5 @@ Forcing final update to fix payment form structure.
 Forcing one more time.
 
 Forcing update to fix payment and expense add forms.
+
+Forcing update to fix the keyboard closing issue on payment and expense add forms.
