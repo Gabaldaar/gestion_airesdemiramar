@@ -19,8 +19,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PaymentEditForm } from "./payment-edit-form";
 import { PaymentDeleteForm } from "./payment-delete-form";
-import useWindowSize from '@/hooks/use-window-size';
-import { cn } from '@/lib/utils';
 
 interface PaymentsListProps {
   payments: PaymentWithDetails[];
@@ -56,35 +54,9 @@ function PaymentActions({ payment }: { payment: PaymentWithDetails }) {
     );
 }
 
-function PaymentRow({ payment }: { payment: PaymentWithDetails }) {
-     return (
-        <TableRow key={payment.id}>
-            <TableCell>{formatDate(payment.date)}</TableCell>
-            <TableCell>{payment.propertyName || 'N/A'}</TableCell>
-            <TableCell>{payment.tenantName || 'N/A'}</TableCell>
-            <TableCell className="max-w-[300px] truncate">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger>
-                        <span className='block truncate'>{payment.description || '-'}</span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                        <p className="whitespace-pre-wrap max-w-xs">{payment.description}</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </TableCell>
-            <TableCell className="text-right font-medium">{formatCurrency(payment.amount, 'USD')}</TableCell>
-            <TableCell className="text-right">
-                <PaymentActions payment={payment} />
-            </TableCell>
-        </TableRow>
-     )
-}
-
 function PaymentCard({ payment }: { payment: PaymentWithDetails }) {
     return (
-        <Card>
+        <Card className="flex flex-col w-full">
             <CardHeader className="p-4">
                  <div className="flex justify-between items-start">
                     <div>
@@ -94,13 +66,13 @@ function PaymentCard({ payment }: { payment: PaymentWithDetails }) {
                     <span className="font-bold text-lg text-primary">{formatCurrency(payment.amount, 'USD')}</span>
                 </div>
             </CardHeader>
-            <CardContent className="p-4 grid gap-2 text-sm">
+            <CardContent className="p-4 space-y-2 text-sm flex-grow">
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Fecha</span>
                     <span className="font-medium">{formatDate(payment.date)}</span>
                 </div>
                  {payment.description && (
-                    <div className="flex flex-col space-y-1">
+                    <div className="flex flex-col space-y-1 pt-2">
                         <span className="text-muted-foreground">Descripción</span>
                         <p className="font-medium text-sm p-2 bg-muted/50 rounded-md whitespace-pre-wrap">{payment.description}</p>
                     </div>
@@ -115,56 +87,25 @@ function PaymentCard({ payment }: { payment: PaymentWithDetails }) {
 
 
 export default function PaymentsList({ payments }: PaymentsListProps) {
-  const { width } = useWindowSize();
-  const isMobile = width < 768;
-
   if (payments.length === 0) {
     return <p className="text-sm text-center text-muted-foreground py-8">No hay pagos para mostrar con los filtros seleccionados.</p>;
   }
 
   const totalAmountUSD = payments.reduce((acc, payment) => acc + payment.amount, 0);
 
-    if (isMobile) {
-        return (
+    return (
+        <div className="space-y-4">
+            <Card className="bg-muted">
+                <CardContent className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Total Recaudado</p>
+                    <p className="text-2xl font-bold text-primary">{formatCurrency(totalAmountUSD, 'USD')}</p>
+                </CardContent>
+            </Card>
             <div className="space-y-4">
-                <Card className="bg-muted">
-                    <CardContent className="p-4 text-center">
-                        <p className="text-sm text-muted-foreground">Total Recaudado</p>
-                        <p className="text-2xl font-bold text-primary">{formatCurrency(totalAmountUSD, 'USD')}</p>
-                    </CardContent>
-                </Card>
                 {payments.map(payment => (
                     <PaymentCard key={payment.id} payment={payment} />
                 ))}
             </div>
-        )
-    }
-
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Fecha</TableHead>
-          <TableHead>Propiedad</TableHead>
-          <TableHead>Inquilino</TableHead>
-          <TableHead>Descripción</TableHead>
-          <TableHead className="text-right">Monto (USD)</TableHead>
-          <TableHead className="text-right">Acciones</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {payments.map((payment) => (
-            <PaymentRow key={payment.id} payment={payment} />
-        ))}
-      </TableBody>
-      <TableFooter>
-        <TableRow className="font-bold bg-muted">
-          <TableCell colSpan={4} className="text-right">Total</TableCell>
-          <TableCell className="text-right">{formatCurrency(totalAmountUSD, 'USD')}</TableCell>
-          <TableCell></TableCell>
-        </TableRow>
-      </TableFooter>
-    </Table>
-  );
+        </div>
+    )
 }
-
