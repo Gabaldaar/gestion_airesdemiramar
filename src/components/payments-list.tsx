@@ -115,7 +115,7 @@ function PaymentCard({ payment }: { payment: PaymentWithDetails }) {
 
 export default function PaymentsList({ payments }: PaymentsListProps) {
   const { width } = useWindowSize();
-  const isMobile = width < 768;
+  const isMobile = width ? width < 768 : false;
 
   if (payments.length === 0) {
     return <p className="text-sm text-center text-muted-foreground py-8">No hay ingresos para mostrar con los filtros seleccionados.</p>;
@@ -166,4 +166,3 @@ export default function PaymentsList({ payments }: PaymentsListProps) {
     </Table>
   );
 }
-
