@@ -148,59 +148,61 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
             </CardContent>
         </Card>
       
-      {hasUsdData && (
-         <>
-            <Card>
+        <div className="grid grid-cols-1 gap-4">
+          {hasUsdData && (
+            <>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Resultados por Propiedad (USD)</CardTitle>
+                        <CardDescription>
+                            Compara los ingresos y gastos entre todas las propiedades en USD.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
+                    </CardContent>
+                </Card>
+              <Card>
                 <CardHeader>
-                    <CardTitle>Resultados por Propiedad (USD)</CardTitle>
-                    <CardDescription>
-                        Compara los ingresos y gastos entre todas las propiedades en USD.
-                    </CardDescription>
+                  <CardTitle>Reporte Financiero por Propiedad (USD)</CardTitle>
+                  <CardDescription>
+                    Resumen de ingresos, gastos y resultados por propiedad en USD.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
+                  <FinancialSummaryTable summary={financialSummary.usd} currency="USD" />
                 </CardContent>
-            </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Reporte Financiero por Propiedad (USD)</CardTitle>
-              <CardDescription>
-                 Resumen de ingresos, gastos y resultados por propiedad en USD.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FinancialSummaryTable summary={financialSummary.usd} currency="USD" />
-            </CardContent>
-          </Card>
-        </>
-      )}
+              </Card>
+            </>
+          )}
 
-      {hasArsData && (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Resultados por Propiedad (ARS)</CardTitle>
-              <CardDescription>
-                Compara los ingresos y gastos entre todas las propiedades en ARS.
-              </CardDescription>
-            </CardHeader>
-             <CardContent>
-                <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Reporte Financiero por Propiedad (ARS)</CardTitle>
-              <CardDescription>
-                Resumen de ingresos, gastos y resultados por propiedad en ARS.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
-            </CardContent>
-          </Card>
-        </>
-      )}
+          {hasArsData && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resultados por Propiedad (ARS)</CardTitle>
+                  <CardDescription>
+                    Compara los ingresos y gastos entre todas las propiedades en ARS.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reporte Financiero por Propiedad (ARS)</CardTitle>
+                  <CardDescription>
+                    Resumen de ingresos, gastos y resultados por propiedad en ARS.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
       
       {!hasArsData && !hasUsdData && (
         <Card>
