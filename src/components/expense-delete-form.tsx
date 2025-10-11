@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -37,16 +37,16 @@ function DeleteButton() {
     )
 }
 
-export function ExpenseDeleteForm({ expenseId, propertyId }: { expenseId: string; propertyId: string }) {
+export function ExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expenseId: string; onExpenseDeleted: () => void; }) {
   const [state, formAction] = useActionState(deletePropertyExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
-      window.location.reload(); // Simple reload to reflect changes
+      onExpenseDeleted();
     }
-  }, [state.success]);
+  }, [state, onExpenseDeleted]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -59,7 +59,6 @@ export function ExpenseDeleteForm({ expenseId, propertyId }: { expenseId: string
       <DialogContent>
         <form action={formAction}>
             <input type="hidden" name="id" value={expenseId} />
-            <input type="hidden" name="propertyId" value={propertyId} />
             <DialogHeader>
                 <DialogTitle>¿Estás seguro?</DialogTitle>
                 <DialogDescription>
@@ -72,6 +71,9 @@ export function ExpenseDeleteForm({ expenseId, propertyId }: { expenseId: string
                 </DialogClose>
                 <DeleteButton />
             </DialogFooter>
+             {state.message && !state.success && (
+                <p className="text-red-500 text-sm mt-2">{state.message}</p>
+            )}
         </form>
       </DialogContent>
     </Dialog>

@@ -116,7 +116,7 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <BookingExpenseEditForm expense={expense} categories={categories} />
-                        <BookingExpenseDeleteForm expenseId={expense.id} bookingId={bookingId} />
+                        <BookingExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleExpenseAction} />
                       </div>
                     </TableCell>
                   </TableRow>

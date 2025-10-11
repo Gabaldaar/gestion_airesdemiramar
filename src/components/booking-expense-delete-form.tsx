@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -37,16 +37,16 @@ function DeleteButton() {
     )
 }
 
-export function BookingExpenseDeleteForm({ expenseId, bookingId }: { expenseId: string; bookingId: string }) {
+export function BookingExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expenseId: string; onExpenseDeleted: () => void; }) {
   const [state, formAction] = useActionState(deleteBookingExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
-      window.location.reload(); // Simple reload to reflect changes
+      onExpenseDeleted();
     }
-  }, [state.success]);
+  }, [state, onExpenseDeleted]);
 
 
   return (
@@ -60,7 +60,6 @@ export function BookingExpenseDeleteForm({ expenseId, bookingId }: { expenseId: 
       <DialogContent>
         <form action={formAction}>
             <input type="hidden" name="id" value={expenseId} />
-            <input type="hidden" name="bookingId" value={bookingId} />
             <DialogHeader>
                 <DialogTitle>¿Estás seguro?</DialogTitle>
                 <DialogDescription>
@@ -73,6 +72,9 @@ export function BookingExpenseDeleteForm({ expenseId, bookingId }: { expenseId: 
                 </DialogClose>
                 <DeleteButton />
             </DialogFooter>
+            {state.message && !state.success && (
+                <p className="text-red-500 text-sm mt-2">{state.message}</p>
+            )}
         </form>
       </DialogContent>
     </Dialog>

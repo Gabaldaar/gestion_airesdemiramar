@@ -42,6 +42,10 @@ export default function ExpensesList({ expenses, categories }: ExpensesListProps
 
   const totalAmount = expenses.reduce((acc, expense) => acc + expense.amount, 0);
 
+  const handleAction = () => {
+    window.location.reload();
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -63,7 +67,7 @@ export default function ExpensesList({ expenses, categories }: ExpensesListProps
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
                     <ExpenseEditForm expense={expense} categories={categories} />
-                    <ExpenseDeleteForm expenseId={expense.id} propertyId={expense.propertyId} />
+                    <ExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleAction} />
                 </div>
             </TableCell>
           </TableRow>
