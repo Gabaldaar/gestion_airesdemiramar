@@ -11,10 +11,10 @@ interface Size {
 
 // Hook
 export default function useWindowSize(): Size {
-  // Initialize state with undefined width/height so server and client renders match
+  // Initialize state with the client's window size to avoid hydration issues on navigation.
   const [windowSize, setWindowSize] = useState<Size>({
-    width: undefined,
-    height: undefined,
+    width: typeof window !== 'undefined' ? window.innerWidth : undefined,
+    height: typeof window !== 'undefined' ? window.innerHeight : undefined,
   });
 
   useEffect(() => {
