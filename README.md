@@ -40,3 +40,5 @@ The final, final, DEFINITIVE attempt to fix the keyboard issue.
 Definitive architectural change from Dialog to Drawer to fix mobile keyboard issues.
 
 Correcting the Drawer forms to ensure the submit buttons are inside the form tags and actually work.
+
+Reverting all changes from today to restore the application to its initial state and fix all introduced issues.

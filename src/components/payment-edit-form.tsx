@@ -4,15 +4,15 @@
 import { useActionState, useEffect, useState, ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-  DrawerClose
-} from '@/components/ui/drawer';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,7 +32,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Textarea } from './ui/textarea';
-import useWindowSize from '@/hooks/use-window-size';
 
 
 const initialState = {
@@ -43,7 +42,7 @@ const initialState = {
 function SubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+        <Button type="submit" disabled={pending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -68,9 +67,6 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children, isOpen, o
   const [state, formAction] = useActionState(updatePayment, initialState);
   const [date, setDate] = useState<Date | undefined>(new Date(payment.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(payment.originalArsAmount ? 'ARS' : 'USD');
-  
-  const { width } = useWindowSize();
-  const isDesktop = (width || 0) >= 768;
 
   useEffect(() => {
     if (state.success) {
@@ -80,88 +76,86 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children, isOpen, o
   }, [state, onPaymentUpdated, onOpenChange]);
 
   const formContent = (
-    <div className="grid gap-4 py-4">
-        <input type="hidden" name="id" value={payment.id} />
-        <input type="hidden" name="bookingId" value={payment.bookingId} />
-        <input type="hidden" name="date" value={date?.toISOString() || ''} />
-        <div className="space-y-2">
-            <Label htmlFor="date">Fecha</Label>
-            <Popover>
-                <PopoverTrigger asChild>
-                <Button
-                    variant={"outline"}
-                    className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                    )}
-                >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                    locale={es}
-                />
-                </PopoverContent>
-            </Popover>
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="currency">Moneda</Label>
-            <Select name="currency" value={currency} onValueChange={(value) => setCurrency(value as 'ARS' | 'USD')} required>
-                <SelectTrigger>
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="ARS">ARS</SelectItem>
-                </SelectContent>
-            </Select>
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="amount">Monto</Label>
-            <Input id="amount" name="amount" type="number" step="0.01" defaultValue={payment.originalArsAmount || payment.amount} required />
-        </div>
-        {currency === 'ARS' && (
-            <div className="space-y-2">
-                <Label htmlFor="exchangeRate">Valor USD</Label>
-                <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" defaultValue={payment.exchangeRate} placeholder="Valor del USD en ARS" required />
+    <form action={formAction}>
+        <div className="grid gap-4 py-4">
+            <input type="hidden" name="id" value={payment.id} />
+            <input type="hidden" name="bookingId" value={payment.bookingId} />
+            <input type="hidden" name="date" value={date?.toISOString() || ''} />
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="date" className="text-right">Fecha</Label>
+                <Popover>
+                    <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className={cn(
+                        "col-span-3 justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                    </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                        locale={es}
+                    />
+                    </PopoverContent>
+                </Popover>
             </div>
-        )}
-        <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea id="description" name="description" defaultValue={payment.description?.split('|')[0].trim()} placeholder="Comentarios sobre el pago..." />
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="currency" className="text-right">Moneda</Label>
+                <Select name="currency" value={currency} onValueChange={(value) => setCurrency(value as 'ARS' | 'USD')} required>
+                    <SelectTrigger className="col-span-3">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="ARS">ARS</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">Monto</Label>
+                <Input id="amount" name="amount" type="number" step="0.01" defaultValue={payment.originalArsAmount || payment.amount} className="col-span-3" required />
+            </div>
+            {currency === 'ARS' && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="exchangeRate" className="text-right">Valor USD</Label>
+                    <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" defaultValue={payment.exchangeRate} placeholder="Valor del USD en ARS" className="col-span-3" required />
+                </div>
+            )}
+            <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="description" className="text-right pt-2">Descripción</Label>
+                <Textarea id="description" name="description" defaultValue={payment.description?.split('|')[0].trim()} className="col-span-3" placeholder="Comentarios sobre el pago..."/>
+            </div>
+            {state.message && !state.success && (
+                <p className="text-red-500 text-sm mt-2">{state.message}</p>
+            )}
         </div>
-        {state.message && !state.success && (
-            <p className="text-red-500 text-sm mt-2">{state.message}</p>
-        )}
-    </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            </DialogClose>
+            <SubmitButton />
+        </DialogFooter>
+    </form>
   );
 
   return (
-    <Drawer open={isOpen} onOpenChange={onOpenChange}>
-        {children && <DrawerTrigger asChild>{children}</DrawerTrigger>}
-        <DrawerContent>
-            <form action={formAction}>
-                <DrawerHeader className="text-left">
-                    <DrawerTitle>Editar Pago</DrawerTitle>
-                    <DrawerDescription>Modifica los datos del pago.</DrawerDescription>
-                </DrawerHeader>
-                <div className="px-4 overflow-y-auto">
-                    {formContent}
-                </div>
-                <DrawerFooter className="pt-2">
-                    <DrawerClose asChild>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    </DrawerClose>
-                    <SubmitButton />
-                </DrawerFooter>
-            </form>
-        </DrawerContent>
-    </Drawer>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Editar Pago</DialogTitle>
+                <DialogDescription>Modifica los datos del pago.</DialogDescription>
+            </DialogHeader>
+            {formContent}
+        </DialogContent>
+    </Dialog>
   );
 }
