@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState } from 'react';
@@ -25,16 +26,18 @@ const initialState = {
 function DeleteButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" variant="destructive" disabled={pending}>
-            {pending ? (
-                <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Borrando...
-                </>
-            ) : (
-                'Continuar'
-            )}
-        </Button>
+         <AlertDialogAction asChild>
+            <Button type="submit" variant="destructive" disabled={pending}>
+                {pending ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Borrando...
+                    </>
+                ) : (
+                    'Continuar'
+                )}
+            </Button>
+        </AlertDialogAction>
     )
 }
 
@@ -50,22 +53,20 @@ export function ExpenseDeleteForm({ expenseId, propertyId }: { expenseId: string
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta acción no se puede deshacer. El gasto será eliminado permanentemente.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <form action={formAction}>
+        <form action={formAction}>
+            <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Esta acción no se puede deshacer. El gasto será eliminado permanentemente.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
             <input type="hidden" name="id" value={expenseId} />
             <input type="hidden" name="propertyId" value={propertyId} />
-            <AlertDialogAction asChild>
-               <DeleteButton />
-            </AlertDialogAction>
-          </form>
-        </AlertDialogFooter>
+            <AlertDialogFooter className='mt-4'>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <DeleteButton />
+            </AlertDialogFooter>
+        </form>
       </AlertDialogContent>
     </AlertDialog>
   );
