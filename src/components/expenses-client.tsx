@@ -1,9 +1,8 @@
 
-
 'use client';
 
-import { useState, useMemo } from 'react';
-import { UnifiedExpense, Property, ExpenseCategory } from '@/lib/data';
+import { useState, useMemo, useCallback } from 'react';
+import { UnifiedExpense, Property, ExpenseCategory, getAllExpensesUnified } from '@/lib/data';
 import ExpensesUnifiedList from '@/components/expenses-unified-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -19,15 +18,21 @@ interface ExpensesClientProps {
 }
 
 export default function ExpensesClient({ initialExpenses, properties, categories }: ExpensesClientProps) {
+  const [expenses, setExpenses] = useState<UnifiedExpense[]>(initialExpenses);
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<ExpenseTypeFilter>('all');
   const [categoryIdFilter, setCategoryIdFilter] = useState<string>('all');
 
+  const refreshExpenses = useCallback(async () => {
+    const updatedExpenses = await getAllExpensesUnified();
+    setExpenses(updatedExpenses);
+  }, []);
+
 
   const filteredExpenses = useMemo(() => {
-    return initialExpenses.filter(expense => {
+    return expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
 
       // Property Filter
@@ -65,7 +70,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
       
       return true;
     });
-  }, [initialExpenses, fromDate, toDate, propertyIdFilter, typeFilter, categoryIdFilter]);
+  }, [expenses, fromDate, toDate, propertyIdFilter, typeFilter, categoryIdFilter]);
 
   const handleClearFilters = () => {
     setFromDate(undefined);
@@ -137,7 +142,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
           </div>
         </div>
       </div>
-      <ExpensesUnifiedList expenses={filteredExpenses} categories={categories} />
+      <ExpensesUnifiedList expenses={filteredExpenses} categories={categories} onDataChanged={refreshExpenses} />
     </div>
   );
 }
