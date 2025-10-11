@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useState, ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -53,28 +54,30 @@ function SubmitButton() {
     )
 }
 
-export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Payment, onPaymentUpdated: () => void }) {
+interface PaymentEditFormProps {
+    payment: Payment;
+    onPaymentUpdated: () => void;
+    children?: ReactNode;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+}
+
+export function PaymentEditForm({ payment, onPaymentUpdated, children, isOpen, onOpenChange }: PaymentEditFormProps) {
   const [state, formAction] = useActionState(updatePayment, initialState);
-  const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(payment.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(payment.originalArsAmount ? 'ARS' : 'USD');
   
   useEffect(() => {
     if (state.success) {
-      setIsOpen(false);
+      onOpenChange(false);
       onPaymentUpdated();
     }
-  }, [state, onPaymentUpdated]);
+  }, [state, onPaymentUpdated, onOpenChange]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-            <Pencil className="h-4 w-4" />
-            <span className="sr-only">Editar Pago</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+        <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Editar Pago de Reserva</DialogTitle>
           <DialogDescription>
@@ -150,7 +153,7 @@ export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Paymen
                 </div>
             </div>
             <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <SubmitButton />
             </DialogFooter>
         </form>

@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState, ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -51,37 +52,46 @@ function SubmitButton() {
     )
 }
 
-export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: string, onPaymentAdded: () => void }) {
+interface PaymentAddFormProps {
+    bookingId: string;
+    onPaymentAdded: () => void;
+    children?: ReactNode;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+}
+
+export function PaymentAddForm({ bookingId, onPaymentAdded, children, isOpen, onOpenChange }: PaymentAddFormProps) {
   const [state, formAction] = useActionState(addPayment, initialState);
-  const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
 
   useEffect(() => {
     if (state.success) {
-      setIsOpen(false);
+      onOpenChange(false);
       formRef.current?.reset();
       setDate(new Date());
       setCurrency('USD');
       onPaymentAdded();
     }
-  }, [state, onPaymentAdded]);
+  }, [state, onPaymentAdded, onOpenChange]);
 
   const resetForm = () => {
       formRef.current?.reset();
       setDate(new Date());
       setCurrency('USD');
-      setIsOpen(false);
+      onOpenChange(false);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Pago
-        </Button>
+        {children || (
+             <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Pago
+            </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

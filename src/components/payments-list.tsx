@@ -20,6 +20,9 @@ import { PaymentEditForm } from "./payment-edit-form";
 import { PaymentDeleteForm } from "./payment-delete-form";
 import useWindowSize from '@/hooks/use-window-size';
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
+import { Mail, Pencil } from 'lucide-react';
+import { EmailSender } from './email-sender';
 
 interface PaymentsListProps {
   payments: PaymentWithDetails[];
@@ -47,9 +50,36 @@ const formatDate = (dateString: string) => {
 };
 
 function PaymentActions({ payment }: { payment: PaymentWithDetails }) {
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isEmailOpen, setIsEmailOpen] = useState(false);
+
+    // Cannot send email if there is no booking or tenant email
+    const canSendEmail = !!payment.bookingId && !!payment.tenantEmail;
+
     return (
         <div className="flex items-center justify-end gap-2">
-            <PaymentEditForm payment={payment} onPaymentUpdated={handleAction} />
+            {canSendEmail && (
+                 <EmailSender 
+                    booking={{
+                        id: payment.bookingId!,
+                        tenant: { name: payment.tenantName!, email: payment.tenantEmail!},
+                        property: { name: payment.propertyName!}
+                    } as any} 
+                    payment={payment}
+                    isOpen={isEmailOpen} 
+                    onOpenChange={setIsEmailOpen}>
+                    <Button variant="ghost" size="icon" onClick={() => setIsEmailOpen(true)}>
+                        <Mail className="h-4 w-4" />
+                        <span className="sr-only">Enviar confirmación de pago</span>
+                    </Button>
+                </EmailSender>
+            )}
+            <PaymentEditForm payment={payment} onPaymentUpdated={handleAction} isOpen={isEditOpen} onOpenChange={setIsEditOpen}>
+                 <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(true)}>
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">Editar Pago</span>
+                </Button>
+            </PaymentEditForm>
             <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handleAction} />
         </div>
     );

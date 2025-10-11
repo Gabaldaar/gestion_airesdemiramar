@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import Link from "next/link";
 import { Button } from "./ui/button";
-import { BookingPaymentsManager } from './booking-payments-manager';
+import { PaymentAddForm } from './payment-add-form';
 import { BookingExpensesManager } from './booking-expenses-manager';
 import { BookingEditForm } from './booking-edit-form';
 import { BookingDeleteForm } from './booking-delete-form';
@@ -63,11 +63,17 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
 function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
-    const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
     const [isExpensesOpen, setIsExpensesOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
     
     const isInactive = booking.status === 'cancelled' || booking.status === 'pending';
+
+    const handleAction = () => {
+        // A simple page refresh is enough when server actions handle revalidation
+        window.location.reload();
+    };
+
 
     return (
         <div className="flex flex-nowrap items-center justify-end gap-1">
@@ -90,11 +96,11 @@ function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEd
                 </TooltipProvider>
             </NotesViewer>
               
-            <BookingPaymentsManager bookingId={booking.id} isOpen={isPaymentsOpen} onOpenChange={setIsPaymentsOpen}>
+            <PaymentAddForm bookingId={booking.id} onPaymentAdded={handleAction} isOpen={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsPaymentsOpen(true)} disabled={isInactive}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsAddPaymentOpen(true)} disabled={isInactive}>
                                 <Landmark className="h-4 w-4" />
                                 <span className="sr-only">Gestionar Pagos</span>
                             </Button>
@@ -102,7 +108,7 @@ function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEd
                         <TooltipContent><p>Gestionar Pagos</p></TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
-            </BookingPaymentsManager>
+            </PaymentAddForm>
             
             <BookingExpensesManager bookingId={booking.id} isOpen={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
                 <TooltipProvider>
