@@ -37,14 +37,14 @@ export default function PaymentsPage() {
     }, [user]);
 
     if (loading || !data) {
-        return <p>Cargando ingresos...</p>;
+        return <p>Cargando pagos...</p>;
     }
 
 
   return (
     <Card>
     <CardHeader>
-        <CardTitle>Ingresos</CardTitle>
+        <CardTitle>Pagos</CardTitle>
         <CardDescription>Consulta y filtra todos los pagos recibidos.</CardDescription>
     </CardHeader>
     <CardContent>

@@ -62,7 +62,7 @@ function SummaryCard({ item, currency }: { item: FinancialSummary, currency: 'AR
                  <CardTitle className="text-lg">{item.propertyName}</CardTitle>
             </CardHeader>
             <CardContent className="p-4 grid gap-2 text-sm">
-                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(item.totalIncome, currency)}</span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground">Pagos</span><span className="font-medium text-green-600">{formatCurrency(item.totalIncome, currency)}</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Pagos Recibidos</span><span className="font-medium text-blue-600">{formatCurrency(item.totalPayments, currency)}</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Saldo</span><span className={cn("font-bold", item.balance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(item.balance, currency)}</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Gastos (Prop.)</span><span className="font-medium text-red-600">{formatCurrency(item.totalPropertyExpenses, currency)}</span></div>
@@ -110,7 +110,7 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
                     <CardTitle className="text-lg text-center">Total General ({currency})</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 grid gap-2 text-sm">
-                    <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(totalIncome, currency)}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-muted-foreground">Pagos</span><span className="font-medium text-green-600">{formatCurrency(totalIncome, currency)}</span></div>
                     <div className="flex justify-between items-center"><span className="text-muted-foreground">Pagos Recibidos</span><span className="font-medium text-blue-600">{formatCurrency(totalPayments, currency)}</span></div>
                     <div className="flex justify-between items-center"><span className="text-muted-foreground">Saldo</span><span className={cn("font-bold", totalBalance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(totalBalance, currency)}</span></div>
                     <div className="flex justify-between items-center"><span className="text-muted-foreground">Gastos (Prop.)</span><span className="font-medium text-red-600">{formatCurrency(totalPropertyExpenses, currency)}</span></div>
@@ -130,7 +130,7 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
       <TableHeader>
         <TableRow>
           <TableHead>Propiedad</TableHead>
-          <TableHead className="text-right">Ingresos</TableHead>
+          <TableHead className="text-right">Pagos</TableHead>
           <TableHead className="text-right">Pagos Recibidos</TableHead>
           <TableHead className="text-right">Saldo</TableHead>
           <TableHead className="text-right">Gastos (Propiedad)</TableHead>

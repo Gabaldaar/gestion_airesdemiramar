@@ -35,7 +35,7 @@ const mainNavItems = [
   { href: '/properties', label: 'Propiedades', icon: Building2 },
   { href: '/tenants', label: 'Inquilinos', icon: Users },
   { href: '/bookings', label: 'Reservas', icon: Calendar },
-  { href: '/payments', label: 'Ingresos', icon: CreditCard },
+  { href: '/payments', label: 'Pagos', icon: CreditCard },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
   { href: '/reports', label: 'Reportes', icon: BarChart3 },
   { href: '/templates', label: 'Plantillas', icon: Mail },

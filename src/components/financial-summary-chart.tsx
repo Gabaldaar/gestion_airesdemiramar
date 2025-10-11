@@ -23,7 +23,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
 
   const chartData = summary.map(item => ({
     name: item.propertyName,
-    'Ingresos': item.totalIncome,
+    'Pagos': item.totalIncome,
     'Gastos': (item.totalPropertyExpenses + item.totalBookingExpenses),
     'Neto': item.netResult,
   }));
@@ -85,7 +85,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         />}
                 />
                 <Legend />
-                <Bar dataKey="Ingresos" fill="#16a34a" radius={4} />
+                <Bar dataKey="Pagos" fill="#16a34a" radius={4} />
                 <Bar dataKey="Gastos" fill="#dc2626" radius={4} />
                 <Bar dataKey="Neto" fill="#3b82f6" radius={4} />
             </BarChart>
