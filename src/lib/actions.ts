@@ -47,6 +47,7 @@ import {
     BookingStatus,
 } from "./data";
 import { db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 
 export async function addProperty(previousState: any, formData: FormData) {
@@ -473,8 +474,9 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
     }
 
     try {
-        const expenseDoc = await db.collection('propertyExpenses').doc(id).get();
-        if (!expenseDoc.exists) {
+        const expenseDocRef = doc(db, 'propertyExpenses', id);
+        const expenseDoc = await getDoc(expenseDocRef);
+        if (!expenseDoc.exists()) {
             return { success: false, message: "No se encontró el gasto para eliminar." };
         }
         const propertyId = expenseDoc.data()?.propertyId;
@@ -557,8 +559,10 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
     }
 
     try {
-        const expenseDoc = await db.collection('bookingExpenses').doc(id).get();
-        if (!expenseDoc.exists) {
+        const expenseDocRef = doc(db, 'bookingExpenses', id);
+        const expenseDoc = await getDoc(expenseDocRef);
+
+        if (!expenseDoc.exists()) {
             return { success: false, message: "No se encontró el gasto para eliminar." };
         }
         const bookingId = expenseDoc.data()?.bookingId;
@@ -708,8 +712,10 @@ export async function deletePayment(previousState: any, formData: FormData) {
     }
     
     try {
-        const paymentDoc = await db.collection('payments').doc(id).get();
-        if (!paymentDoc.exists) {
+        const paymentDocRef = doc(db, 'payments', id);
+        const paymentDoc = await getDoc(paymentDocRef);
+
+        if (!paymentDoc.exists()) {
             return { success: false, message: "No se encontró el pago para eliminar." };
         }
         const bookingId = paymentDoc.data()?.bookingId;
@@ -902,5 +908,7 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
+
+    
 
     
