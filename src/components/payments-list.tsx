@@ -119,7 +119,7 @@ export default function PaymentsList({ payments }: PaymentsListProps) {
   const isMobile = width < 768;
 
   if (payments.length === 0) {
-    return <p className="text-sm text-center text-muted-foreground py-8">No hay ingresos para mostrar con los filtros seleccionados.</p>;
+    return <p className="text-sm text-center text-muted-foreground py-8">No hay pagos para mostrar con los filtros seleccionados.</p>;
   }
 
   const totalAmountUSD = payments.reduce((acc, payment) => acc + payment.amount, 0);
