@@ -60,10 +60,10 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                     top: 20, 
                     right: 20, 
                     left: 0, 
-                    bottom: 70
+                    bottom: 80 // Increased bottom margin for rotated labels
                 }}
-                barCategoryGap="20%"
-                barGap={1}
+                barCategoryGap={10} // Control space between property groups
+                barGap={0} // No space between bars of the same group
             >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
@@ -72,7 +72,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                     angle={-45}
                     textAnchor="end"
                     interval={0}
-                    height={80}
+                    height={90} // Increased height for rotated labels
                 />
                 <YAxis 
                     tickFormatter={formatCurrencyShort} 
@@ -91,9 +91,9 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         />}
                 />
                 <Legend verticalAlign="top" />
-                <Bar dataKey="Ingresos" fill="#16a34a" radius={4} maxBarSize={30} />
-                <Bar dataKey="Gastos" fill="#dc2626" radius={4} maxBarSize={30} />
-                <Bar dataKey="Neto" fill="#3b82f6" radius={4} maxBarSize={30} />
+                <Bar dataKey="Ingresos" fill="#16a34a" radius={2} maxBarSize={15} />
+                <Bar dataKey="Gastos" fill="#dc2626" radius={2} maxBarSize={15} />
+                <Bar dataKey="Neto" fill="#3b82f6" radius={2} maxBarSize={15} />
             </BarChart>
         </ChartContainer>
     </div>
