@@ -67,7 +67,7 @@ function SummaryTotals({ totalNetResult, totalIncome, totalPayments, totalBalanc
             <CardHeader className="p-4">
                 <CardTitle className="text-lg text-center">Total General ({currency})</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+            <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-sm">
                 <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(totalIncome, currency)}</span></div>
                 <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Pagos Recibidos</span><span className="font-medium text-blue-600">{formatCurrency(totalPayments, currency)}</span></div>
                 <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Saldo</span><span className={cn("font-bold", totalBalance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(totalBalance, currency)}</span></div>
