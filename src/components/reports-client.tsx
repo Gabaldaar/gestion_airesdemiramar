@@ -98,7 +98,9 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <TenantsByOriginChart data={tenantsByOrigin} />
+                    <div className="min-w-0">
+                        <TenantsByOriginChart data={tenantsByOrigin} />
+                    </div>
                 </CardContent>
             </Card>
              <Card>
@@ -109,7 +111,9 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ExpensesByCategoryChart data={expensesByCategory} />
+                    <div className="min-w-0">
+                        <ExpensesByCategoryChart data={expensesByCategory} />
+                    </div>
                 </CardContent>
             </Card>
              <Card>
@@ -120,7 +124,9 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <BookingsByOriginChart data={bookingsByOrigin} />
+                    <div className="min-w-0">
+                        <BookingsByOriginChart data={bookingsByOrigin} />
+                    </div>
                 </CardContent>
             </Card>
             <Card>
@@ -131,7 +137,9 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <BookingStatusChart data={bookingStatus} />
+                    <div className="min-w-0">
+                        <BookingStatusChart data={bookingStatus} />
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -144,7 +152,9 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <ExpensesByPropertyChart data={expensesByProperty} />
+                <div className="min-w-0">
+                    <ExpensesByPropertyChart data={expensesByProperty} />
+                </div>
             </CardContent>
         </Card>
       
@@ -158,7 +168,9 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
+                    <div className="min-w-0">
+                        <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
+                    </div>
                 </CardContent>
             </Card>
             <div className="space-y-4">
@@ -181,7 +193,9 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
               </CardDescription>
             </CardHeader>
              <CardContent>
-                <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
+                <div className="min-w-0">
+                    <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
+                </div>
             </CardContent>
           </Card>
           <div className="space-y-4">
