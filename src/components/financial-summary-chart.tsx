@@ -19,7 +19,7 @@ interface FinancialSummaryChartProps {
 
 export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
   const { width } = useWindowSize();
-  const isMobile = width < 768;
+  const isMobile = width !== undefined && width < 768;
 
   const chartData = summary.map(item => ({
     name: item.propertyName,
@@ -71,7 +71,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
             >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" tickFormatter={isMobile ? formatCurrencyShort : formatCurrency} />
-                <YAxis dataKey="name" type="category" width={isMobile ? 80 : 120} tick={{ fontSize: 12 }} interval={0} />
+                <YAxis dataKey="name" type="category" width={isMobile ? 80 : 120} tick={{ fontSize: 12, width: isMobile ? 80 : 120, textOverflow: 'ellipsis' }} interval={0} />
                 <ChartTooltip
                     cursor={{fill: 'hsl(var(--muted))'}}
                     content={<ChartTooltipContent
