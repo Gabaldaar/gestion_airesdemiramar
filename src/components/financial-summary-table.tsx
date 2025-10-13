@@ -35,12 +35,11 @@ const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
     }).format(amount);
 };
 
-
 function SummaryCard({ item, currency }: { item: FinancialSummary, currency: 'ARS' | 'USD'}) {
     return (
         <Card>
             <CardHeader className="p-4">
-                 <CardTitle className="text-lg">{item.propertyName}</CardTitle>
+                 <CardTitle className="text-lg truncate">{item.propertyName}</CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-2 text-sm">
                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(item.totalIncome, currency)}</span></div>
@@ -52,6 +51,32 @@ function SummaryCard({ item, currency }: { item: FinancialSummary, currency: 'AR
             </CardContent>
         </Card>
     );
+}
+
+function SummaryTotals({ totalNetResult, totalIncome, totalPayments, totalBalance, totalPropertyExpenses, totalBookingExpenses, currency }: {
+    totalNetResult: number;
+    totalIncome: number;
+    totalPayments: number;
+    totalBalance: number;
+    totalPropertyExpenses: number;
+    totalBookingExpenses: number;
+    currency: 'ARS' | 'USD';
+}) {
+    return (
+        <Card className="bg-muted">
+            <CardHeader className="p-4">
+                <CardTitle className="text-lg text-center">Total General ({currency})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(totalIncome, currency)}</span></div>
+                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Pagos Recibidos</span><span className="font-medium text-blue-600">{formatCurrency(totalPayments, currency)}</span></div>
+                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Saldo</span><span className={cn("font-bold", totalBalance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(totalBalance, currency)}</span></div>
+                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Gastos (Prop.)</span><span className="font-medium text-red-600">{formatCurrency(totalPropertyExpenses, currency)}</span></div>
+                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Gastos (Reservas)</span><span className="font-medium text-red-600">{formatCurrency(totalBookingExpenses, currency)}</span></div>
+                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs font-bold">Resultado Neto</span><span className={cn("font-bold", totalNetResult >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(totalNetResult, currency)}</span></div>
+            </CardContent>
+        </Card>
+    )
 }
 
 export default function FinancialSummaryTable({ summary, currency }: FinancialSummaryTableProps) {
@@ -80,24 +105,22 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
   }
 
   return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-             <Card className="bg-muted md:col-span-2 lg:col-span-3">
-                <CardHeader className="p-4">
-                    <CardTitle className="text-lg text-center">Total General ({currency})</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 space-y-2 text-sm">
-                    <div className="flex justify-between items-center p-2 rounded-md bg-background/50"><span className="text-muted-foreground">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(totalIncome, currency)}</span></div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-background/50"><span className="text-muted-foreground">Pagos Recibidos</span><span className="font-medium text-blue-600">{formatCurrency(totalPayments, currency)}</span></div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-background/50"><span className="text-muted-foreground">Saldo</span><span className={cn("font-bold", totalBalance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(totalBalance, currency)}</span></div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-background/50"><span className="text-muted-foreground">Gastos (Prop.)</span><span className="font-medium text-red-600">{formatCurrency(totalPropertyExpenses, currency)}</span></div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-background/50"><span className="text-muted-foreground">Gastos (Reservas)</span><span className="font-medium text-red-600">{formatCurrency(totalBookingExpenses, currency)}</span></div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-background/50"><span className="text-muted-foreground font-bold">Resultado Neto</span><span className={cn("font-bold", totalNetResult >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(totalNetResult, currency)}</span></div>
-                </CardContent>
-            </Card>
+        <div className="space-y-4">
+            <SummaryTotals 
+                totalIncome={totalIncome}
+                totalPayments={totalPayments}
+                totalBalance={totalBalance}
+                totalPropertyExpenses={totalPropertyExpenses}
+                totalBookingExpenses={totalBookingExpenses}
+                totalNetResult={totalNetResult}
+                currency={currency}
+            />
             
-            {filteredSummary.map((item) => (
-                <SummaryCard key={item.propertyId} item={item} currency={currency} />
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredSummary.map((item) => (
+                    <SummaryCard key={item.propertyId} item={item} currency={currency} />
+                ))}
+            </div>
         </div>
     )
 }
