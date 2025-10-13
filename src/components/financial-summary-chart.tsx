@@ -59,11 +59,9 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                 margin={{ 
                     top: 20, 
                     right: 20, 
-                    left: 0, 
+                    left: 20, 
                     bottom: 80 
                 }}
-                barCategoryGap="20%"
-                barGap={4}
             >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
@@ -73,6 +71,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                     textAnchor="end"
                     interval={0}
                     height={90}
+                    padding={{ left: 20, right: 20 }}
                 />
                 <YAxis 
                     tickFormatter={formatCurrencyShort} 
@@ -91,9 +90,9 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         />}
                 />
                 <Legend verticalAlign="top" />
-                <Bar dataKey="Ingresos" fill="#16a34a" radius={2} />
-                <Bar dataKey="Gastos" fill="#dc2626" radius={2} />
-                <Bar dataKey="Neto" fill="#3b82f6" radius={2} />
+                <Bar dataKey="Ingresos" fill="#16a34a" radius={2} maxBarSize={30} />
+                <Bar dataKey="Gastos" fill="#dc2626" radius={2} maxBarSize={30} />
+                <Bar dataKey="Neto" fill="#3b82f6" radius={2} maxBarSize={30} />
             </BarChart>
         </ChartContainer>
     </div>

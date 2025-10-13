@@ -66,6 +66,11 @@ const SummaryCard = ({ item, currency }: { item: FinancialSummary, currency: 'AR
     </Card>
 );
 
+interface FinancialSummaryTableProps {
+  summary: FinancialSummary[];
+  currency: 'ARS' | 'USD';
+}
+
 export default function FinancialSummaryTable({ summary, currency }: FinancialSummaryTableProps) {
   const { width } = useWindowSize();
   const isMobile = width !== undefined && width < 768;
