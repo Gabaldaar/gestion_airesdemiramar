@@ -1,13 +1,14 @@
 
 'use client';
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { FinancialSummary } from '@/lib/data';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import useWindowSize from '@/hooks/use-window-size';
 
 interface FinancialSummaryChartProps {
   summaryItem: FinancialSummary;
@@ -15,6 +16,9 @@ interface FinancialSummaryChartProps {
 }
 
 export default function FinancialSummaryChart({ summaryItem, currency }: FinancialSummaryChartProps) {
+  const { width } = useWindowSize();
+  const isMobile = width !== undefined && width < 768;
+
   const chartData = [
     { name: 'Ingresos', value: summaryItem.totalIncome, fill: '#16a34a' },
     { name: 'Gastos', value: summaryItem.totalPropertyExpenses + summaryItem.totalBookingExpenses, fill: '#dc2626' },
