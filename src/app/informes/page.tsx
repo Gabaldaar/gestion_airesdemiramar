@@ -58,6 +58,19 @@ interface ReportVisibility {
     financialTableARS: boolean;
 }
 
+const reportLabels: Record<keyof ReportVisibility, string> = {
+    tenantsByOrigin: 'Inquilinos por Origen',
+    bookingsByOrigin: 'Reservas por Origen',
+    bookingStatus: 'Estado de Reservas',
+    expensesByCategory: 'Gastos por Categoría',
+    expensesByProperty: 'Gastos por Propiedad',
+    financialChartUSD: 'Gráfico Financiero (USD)',
+    financialTableUSD: 'Tabla Financiera (USD)',
+    financialChartARS: 'Gráfico Financiero (ARS)',
+    financialTableARS: 'Tabla Financiera (ARS)',
+};
+
+
 function InformesPageContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -164,14 +177,14 @@ function InformesPageContent() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {Object.keys(reportVisibility).map(key => (
+                {(Object.keys(reportVisibility) as Array<keyof ReportVisibility>).map(key => (
                     <div key={key} className="flex items-center space-x-2">
                         <Switch 
                             id={key}
-                            checked={reportVisibility[key as keyof ReportVisibility]}
-                            onCheckedChange={(checked) => handleVisibilityChange(key as keyof ReportVisibility, checked)}
+                            checked={reportVisibility[key]}
+                            onCheckedChange={(checked) => handleVisibilityChange(key, checked)}
                         />
-                        <Label htmlFor={key} className="capitalize">{key.replace(/([A-Z])/g, ' $1')}</Label>
+                        <Label htmlFor={key}>{reportLabels[key]}</Label>
                     </div>
                 ))}
             </CardContent>
@@ -234,7 +247,7 @@ function InformesPageContent() {
         </div>
 
         {/* --- Financial Reports Sections --- */}
-        {!hasArsData && !hasUsdData && (
+        {!hasArsData && !hasUsdData && !loading &&(
             <Card>
                 <CardContent>
                     <p className="text-center text-muted-foreground py-8">No hay datos financieros para mostrar en el período seleccionado.</p>
@@ -299,3 +312,5 @@ export default function InformesPage() {
         </Suspense>
     )
 }
+
+    

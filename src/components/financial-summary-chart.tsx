@@ -61,17 +61,28 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
         <ChartContainer config={{}} className="w-full h-full">
             <BarChart 
                 data={chartData} 
-                layout="vertical"
+                layout={isMobile ? "horizontal" : "vertical"}
                 margin={{ 
                     top: 20, 
                     right: isMobile ? 10 : 30, 
                     left: isMobile ? 0 : 20, 
-                    bottom: 5 
+                    bottom: isMobile ? 20 : 5
                 }}
             >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" tickFormatter={isMobile ? formatCurrencyShort : formatCurrency} />
-                <YAxis dataKey="name" type="category" width={isMobile ? 80 : 120} tick={{ fontSize: 12, width: isMobile ? 80 : 120, textOverflow: 'ellipsis' }} interval={0} />
+                
+                {isMobile ? (
+                    <>
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} interval={0} tick={{ fontSize: 12 }} />
+                        <YAxis type="number" tickFormatter={formatCurrencyShort} />
+                    </>
+                ) : (
+                    <>
+                        <XAxis type="number" tickFormatter={formatCurrency} />
+                        <YAxis dataKey="name" type="category" width={120} interval={0} tick={{ fontSize: 12 }}/>
+                    </>
+                )}
+                
                 <ChartTooltip
                     cursor={{fill: 'hsl(var(--muted))'}}
                     content={<ChartTooltipContent
@@ -93,3 +104,5 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
     </div>
   );
 }
+
+    
