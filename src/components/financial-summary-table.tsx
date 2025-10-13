@@ -11,8 +11,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FinancialSummary } from "@/lib/data";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { cn } from "@/lib/utils";
+import { Card, CardContent } from "./ui/card";
 
 interface FinancialSummaryTableProps {
   summary: FinancialSummary[];
@@ -35,49 +35,6 @@ const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
     }).format(amount);
 };
 
-function SummaryCard({ item, currency }: { item: FinancialSummary, currency: 'ARS' | 'USD'}) {
-    return (
-        <Card>
-            <CardHeader className="p-4">
-                 <CardTitle className="text-lg truncate">{item.propertyName}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-2 text-sm">
-                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(item.totalIncome, currency)}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground">Pagos Recibidos</span><span className="font-medium text-blue-600">{formatCurrency(item.totalPayments, currency)}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground">Saldo</span><span className={cn("font-bold", item.balance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(item.balance, currency)}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground">Gastos (Prop.)</span><span className="font-medium text-red-600">{formatCurrency(item.totalPropertyExpenses, currency)}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground">Gastos (Reservas)</span><span className="font-medium text-red-600">{formatCurrency(item.totalBookingExpenses, currency)}</span></div>
-                <div className="flex justify-between items-center pt-2 border-t mt-2"><span className="text-muted-foreground font-bold">Resultado Neto</span><span className={cn("font-bold", item.netResult >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(item.netResult, currency)}</span></div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function SummaryTotals({ totalNetResult, totalIncome, totalPayments, totalBalance, totalPropertyExpenses, totalBookingExpenses, currency }: {
-    totalNetResult: number;
-    totalIncome: number;
-    totalPayments: number;
-    totalBalance: number;
-    totalPropertyExpenses: number;
-    totalBookingExpenses: number;
-    currency: 'ARS' | 'USD';
-}) {
-    return (
-        <Card className="bg-muted">
-            <CardHeader className="p-4">
-                <CardTitle className="text-lg text-center">Total General ({currency})</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-sm">
-                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(totalIncome, currency)}</span></div>
-                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Pagos Recibidos</span><span className="font-medium text-blue-600">{formatCurrency(totalPayments, currency)}</span></div>
-                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Saldo</span><span className={cn("font-bold", totalBalance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(totalBalance, currency)}</span></div>
-                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Gastos (Prop.)</span><span className="font-medium text-red-600">{formatCurrency(totalPropertyExpenses, currency)}</span></div>
-                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs">Gastos (Reservas)</span><span className="font-medium text-red-600">{formatCurrency(totalBookingExpenses, currency)}</span></div>
-                <div className="flex flex-col p-2 rounded-md bg-background/50"><span className="text-muted-foreground text-xs font-bold">Resultado Neto</span><span className={cn("font-bold", totalNetResult >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(totalNetResult, currency)}</span></div>
-            </CardContent>
-        </Card>
-    )
-}
 
 export default function FinancialSummaryTable({ summary, currency }: FinancialSummaryTableProps) {
   if (summary.length === 0) {
@@ -105,22 +62,73 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
   }
 
   return (
-        <div className="space-y-4">
-            <SummaryTotals 
-                totalIncome={totalIncome}
-                totalPayments={totalPayments}
-                totalBalance={totalBalance}
-                totalPropertyExpenses={totalPropertyExpenses}
-                totalBookingExpenses={totalBookingExpenses}
-                totalNetResult={totalNetResult}
-                currency={currency}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredSummary.map((item) => (
-                    <SummaryCard key={item.propertyId} item={item} currency={currency} />
-                ))}
-            </div>
-        </div>
-    )
+    <>
+      {/* Mobile View: Cards */}
+      <div className="md:hidden space-y-4">
+        <Card className="bg-muted">
+            <CardContent className="p-4 space-y-2">
+                <h3 className="font-bold text-center mb-2">Total General ({currency})</h3>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(totalIncome, currency)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Pagos Recibidos</span><span className="font-medium text-blue-600">{formatCurrency(totalPayments, currency)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Saldo</span><span className={cn("font-bold", totalBalance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(totalBalance, currency)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Gastos (Prop.)</span><span className="font-medium text-red-600">{formatCurrency(totalPropertyExpenses, currency)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Gastos (Reservas)</span><span className="font-medium text-red-600">{formatCurrency(totalBookingExpenses, currency)}</span></div>
+                <div className="flex justify-between items-center pt-2 border-t mt-2 text-sm"><span className="text-muted-foreground font-bold">Resultado Neto</span><span className={cn("font-bold", totalNetResult >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(totalNetResult, currency)}</span></div>
+            </CardContent>
+        </Card>
+        {filteredSummary.map((item) => (
+           <Card key={item.propertyId}>
+            <CardContent className="p-4 space-y-2">
+                <h3 className="font-bold text-center mb-2">{item.propertyName}</h3>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Ingresos</span><span className="font-medium text-green-600">{formatCurrency(item.totalIncome, currency)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Pagos Recibidos</span><span className="font-medium text-blue-600">{formatCurrency(item.totalPayments, currency)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Saldo</span><span className={cn("font-bold", item.balance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(item.balance, currency)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Gastos (Prop.)</span><span className="font-medium text-red-600">{formatCurrency(item.totalPropertyExpenses, currency)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Gastos (Reservas)</span><span className="font-medium text-red-600">{formatCurrency(item.totalBookingExpenses, currency)}</span></div>
+                <div className="flex justify-between items-center pt-2 border-t mt-2 text-sm"><span className="text-muted-foreground font-bold">Resultado Neto</span><span className={cn("font-bold", item.netResult >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(item.netResult, currency)}</span></div>
+            </CardContent>
+        </Card>
+        ))}
+      </div>
+
+      {/* Desktop View: Table */}
+      <Table className="hidden md:table">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Propiedad</TableHead>
+            <TableHead className="text-right">Ingresos</TableHead>
+            <TableHead className="text-right">Pagos</TableHead>
+            <TableHead className="text-right">Saldo</TableHead>
+            <TableHead className="text-right">G. Prop.</TableHead>
+            <TableHead className="text-right">G. Reservas</TableHead>
+            <TableHead className="text-right font-bold">Neto</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredSummary.map((item) => (
+            <TableRow key={item.propertyId}>
+              <TableCell className="font-medium">{item.propertyName}</TableCell>
+              <TableCell className="text-right text-green-600">{formatCurrency(item.totalIncome, currency)}</TableCell>
+              <TableCell className="text-right text-blue-600">{formatCurrency(item.totalPayments, currency)}</TableCell>
+              <TableCell className={cn("text-right font-bold", item.balance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(item.balance, currency)}</TableCell>
+              <TableCell className="text-right text-red-600">{formatCurrency(item.totalPropertyExpenses, currency)}</TableCell>
+              <TableCell className="text-right text-red-600">{formatCurrency(item.totalBookingExpenses, currency)}</TableCell>
+              <TableCell className={cn("text-right font-bold", item.netResult >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(item.netResult, currency)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell className="font-bold">Total General</TableCell>
+            <TableCell className="text-right font-bold text-green-600">{formatCurrency(totalIncome, currency)}</TableCell>
+            <TableCell className="text-right font-bold text-blue-600">{formatCurrency(totalPayments, currency)}</TableCell>
+            <TableCell className={cn("text-right font-extrabold", totalBalance <= 0 ? 'text-green-700' : 'text-orange-600')}>{formatCurrency(totalBalance, currency)}</TableCell>
+            <TableCell className="text-right font-bold text-red-600">{formatCurrency(totalPropertyExpenses, currency)}</TableCell>
+            <TableCell className="text-right font-bold text-red-600">{formatCurrency(totalBookingExpenses, currency)}</TableCell>
+            <TableCell className={cn("text-right font-extrabold", totalNetResult >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(totalNetResult, currency)}</TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    </>
+  );
 }

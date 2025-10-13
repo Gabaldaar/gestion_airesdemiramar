@@ -15,7 +15,6 @@ import { DatePicker } from "./ui/date-picker";
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from "./ui/button";
 import TenantsByOriginChart from "./tenants-by-origin-chart";
-import NetIncomeDistributionChart from "./net-income-distribution-chart";
 import ExpensesByCategoryChart from "./expenses-by-category-chart";
 import ExpensesByPropertyChart from "./expenses-by-property-chart";
 import BookingsByOriginChart from "./bookings-by-origin-chart";
@@ -73,12 +72,12 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
        <Card>
         <CardHeader>
-          <CardTitle>Filtros de Reportes Financieros</CardTitle>
+          <CardTitle>Filtros de Reportes</CardTitle>
           <CardDescription>
-            Selecciona un rango de fechas para filtrar los reportes financieros.
+            Selecciona un rango de fechas para filtrar los reportes financieros. El resto de los reportes no se ven afectados por este filtro.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
@@ -88,67 +87,54 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
         </CardContent>
       </Card>
       
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+              <CardHeader>
+                  <CardTitle>Distribución de Inquilinos por Origen</CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <div className="min-w-0">
+                      <TenantsByOriginChart data={tenantsByOrigin} />
+                  </div>
+              </CardContent>
+          </Card>
             <Card>
-                <CardHeader>
-                    <CardTitle>Distribución de Inquilinos por Origen</CardTitle>
-                    <CardDescription>
-                        Visualiza de dónde provienen tus inquilinos.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="min-w-0">
-                        <TenantsByOriginChart data={tenantsByOrigin} />
-                    </div>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Distribución de Gastos por Categoría</CardTitle>
-                    <CardDescription>
-                        Visualiza cómo se distribuyen tus gastos totales (en USD).
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="min-w-0">
-                        <ExpensesByCategoryChart data={expensesByCategory} />
-                    </div>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Distribución de Reservas por Origen</CardTitle>
-                    <CardDescription>
-                        Visualiza qué canales generan más reservas.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="min-w-0">
-                        <BookingsByOriginChart data={bookingsByOrigin} />
-                    </div>
-                </CardContent>
-            </Card>
+              <CardHeader>
+                  <CardTitle>Distribución de Gastos por Categoría</CardTitle>
+                  <CardDescription>Visualiza cómo se distribuyen tus gastos totales (en USD).</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="min-w-0">
+                      <ExpensesByCategoryChart data={expensesByCategory} />
+                  </div>
+              </CardContent>
+          </Card>
             <Card>
-                <CardHeader>
-                    <CardTitle>Estado de Reservas</CardTitle>
-                    <CardDescription>
-                        Proporción de reservas activas vs. canceladas.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="min-w-0">
-                        <BookingStatusChart data={bookingStatus} />
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+              <CardHeader>
+                  <CardTitle>Distribución de Reservas por Origen</CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <div className="min-w-0">
+                      <BookingsByOriginChart data={bookingsByOrigin} />
+                  </div>
+              </CardContent>
+          </Card>
+          <Card>
+              <CardHeader>
+                  <CardTitle>Estado de Reservas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <div className="min-w-0">
+                      <BookingStatusChart data={bookingStatus} />
+                  </div>
+              </CardContent>
+          </Card>
+      </div>
 
         <Card>
             <CardHeader>
                 <CardTitle>Distribución de Gastos por Propiedad</CardTitle>
-                <CardDescription>
-                    Comparativa de gastos totales por propiedad (en USD).
-                </CardDescription>
+                <CardDescription>Comparativa de gastos totales por propiedad (en USD).</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="min-w-0">
@@ -170,42 +156,40 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                     </div>
                 </CardContent>
             </Card>
-            
             <Card>
-              <CardHeader>
-                <CardTitle>Reporte Financiero por Propiedad (USD)</CardTitle>
-                <CardDescription>Resumen de ingresos, gastos y resultados por propiedad en USD.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FinancialSummaryTable summary={financialSummary.usd} currency="USD" />
-              </CardContent>
+                <CardHeader>
+                    <CardTitle>Reporte Financiero por Propiedad (USD)</CardTitle>
+                    <CardDescription>Resumen de ingresos, gastos y resultados por propiedad en USD.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FinancialSummaryTable summary={financialSummary.usd} currency="USD" />
+                </CardContent>
             </Card>
         </>
       )}
 
       {hasArsData && (
         <>
-          <Card>
-            <CardHeader>
-                <CardTitle>Resultados por Propiedad (ARS)</CardTitle>
-                <CardDescription>Compara los ingresos y gastos entre todas las propiedades en ARS.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="min-w-0">
-                    <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
-                </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Reporte Financiero por Propiedad (ARS)</CardTitle>
-              <CardDescription>Resumen de ingresos, gastos y resultados por propiedad en ARS.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
-            </CardContent>
-          </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Resultados por Propiedad (ARS)</CardTitle>
+                    <CardDescription>Compara los ingresos y gastos entre todas las propiedades en ARS.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="min-w-0">
+                        <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Reporte Financiero por Propiedad (ARS)</CardTitle>
+                    <CardDescription>Resumen de ingresos, gastos y resultados por propiedad en ARS.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
+                </CardContent>
+            </Card>
         </>
       )}
       
