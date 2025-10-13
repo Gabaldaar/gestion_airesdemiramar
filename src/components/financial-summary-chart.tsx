@@ -8,6 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import useWindowSize from '@/hooks/use-window-size';
 
 interface FinancialSummaryChartProps {
   summary: FinancialSummary[];
@@ -15,11 +16,13 @@ interface FinancialSummaryChartProps {
 }
 
 export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
+  const { width } = useWindowSize();
+  const isMobile = width !== undefined && width < 768;
 
   const chartData = summary.map(item => ({
     name: item.propertyName,
-    'Ingresos': item.totalIncome,
-    'Gastos': (item.totalPropertyExpenses + item.totalBookingExpenses),
+    'Ingresos': item.totalIncome > 0 ? item.totalIncome : 0,
+    'Gastos': (item.totalPropertyExpenses + item.totalBookingExpenses) > 0 ? (item.totalPropertyExpenses + item.totalBookingExpenses) : 0,
     'Neto': item.netResult,
   }));
 
@@ -60,10 +63,10 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                     top: 20, 
                     right: 20, 
                     left: 0, 
-                    bottom: 80 // Increased bottom margin for rotated labels
+                    bottom: 80 
                 }}
-                barCategoryGap={10} // Control space between property groups
-                barGap={0} // No space between bars of the same group
+                barCategoryGap={10}
+                barGap={0}
             >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
@@ -72,7 +75,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                     angle={-45}
                     textAnchor="end"
                     interval={0}
-                    height={90} // Increased height for rotated labels
+                    height={90}
                 />
                 <YAxis 
                     tickFormatter={formatCurrencyShort} 
