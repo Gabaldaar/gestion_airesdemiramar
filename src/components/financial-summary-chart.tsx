@@ -8,6 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import useWindowSize from '@/hooks/use-window-size';
 
 interface FinancialSummaryChartProps {
   summary: FinancialSummary[];
@@ -15,6 +16,8 @@ interface FinancialSummaryChartProps {
 }
 
 export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
+  const { width } = useWindowSize();
+  const isMobile = width !== undefined && width < 768;
 
   const chartData = summary.map(item => ({
     name: item.propertyName,
@@ -55,27 +58,25 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
         <ChartContainer config={{}} className="w-full h-full">
             <BarChart 
                 data={chartData} 
-                layout="horizontal"
+                layout="vertical"
                 margin={{ 
                     top: 20, 
                     right: 20, 
-                    left: 0, 
-                    bottom: 80 
+                    left: isMobile ? 10 : 20, 
+                    bottom: 20 
                 }}
             >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
-                    dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    interval={0} 
-                    tick={{ fontSize: 12 }} 
-                    height={100} 
-                />
-                <YAxis 
                     type="number" 
                     tickFormatter={formatCurrencyShort} 
-                    width={80} 
+                    domain={['dataMin', 'dataMax']}
+                />
+                <YAxis 
+                    dataKey="name" 
+                    type="category"
+                    tick={{ fontSize: 12 }} 
+                    width={isMobile ? 80 : 120}
                 />
                 <ChartTooltip
                     cursor={{fill: 'hsl(var(--muted))'}}
@@ -90,9 +91,9 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         />}
                 />
                 <Legend verticalAlign="top" />
-                <Bar dataKey="Ingresos" fill="#16a34a" radius={4} />
-                <Bar dataKey="Gastos" fill="#dc2626" radius={4} />
-                <Bar dataKey="Neto" fill="#3b82f6" radius={4} />
+                <Bar dataKey="Ingresos" fill="#16a34a" radius={4} maxBarSize={30} />
+                <Bar dataKey="Gastos" fill="#dc2626" radius={4} maxBarSize={30} />
+                <Bar dataKey="Neto" fill="#3b82f6" radius={4} maxBarSize={30} />
             </BarChart>
         </ChartContainer>
     </div>
