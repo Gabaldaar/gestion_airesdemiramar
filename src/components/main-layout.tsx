@@ -37,7 +37,7 @@ const mainNavItems = [
   { href: '/bookings', label: 'Reservas', icon: Calendar },
   { href: '/payments', label: 'Pagos', icon: CreditCard },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
-  { href: '/reports', label: 'Reportes', icon: BarChart3 },
+  { href: '/informes', label: 'Informes', icon: BarChart3 },
   { href: '/templates', label: 'Plantillas', icon: Mail },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
