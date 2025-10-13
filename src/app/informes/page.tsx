@@ -34,6 +34,8 @@ import ExpensesByCategoryChart from "@/components/expenses-by-category-chart";
 import ExpensesByPropertyChart from "@/components/expenses-by-property-chart";
 import BookingsByOriginChart from "@/components/bookings-by-origin-chart";
 import BookingStatusChart from "@/components/booking-status-chart";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 interface InformesData {
     financialSummary: FinancialSummaryByCurrency;
@@ -42,6 +44,18 @@ interface InformesData {
     expensesByProperty: ExpensesByPropertySummary[];
     bookingsByOrigin: BookingsByOriginSummary[];
     bookingStatus: BookingStatusSummary[];
+}
+
+interface ReportVisibility {
+    tenantsByOrigin: boolean;
+    bookingsByOrigin: boolean;
+    bookingStatus: boolean;
+    expensesByCategory: boolean;
+    expensesByProperty: boolean;
+    financialChartUSD: boolean;
+    financialTableUSD: boolean;
+    financialChartARS: boolean;
+    financialTableARS: boolean;
 }
 
 function InformesPageContent() {
@@ -55,6 +69,17 @@ function InformesPageContent() {
 
   const [data, setData] = useState<InformesData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reportVisibility, setReportVisibility] = useState<ReportVisibility>({
+      tenantsByOrigin: true,
+      bookingsByOrigin: true,
+      bookingStatus: true,
+      expensesByCategory: true,
+      expensesByProperty: true,
+      financialChartUSD: true,
+      financialTableUSD: true,
+      financialChartARS: true,
+      financialTableARS: true,
+  });
 
   useEffect(() => {
     if (user) {
@@ -97,6 +122,10 @@ function InformesPageContent() {
     router.push(pathname);
   };
 
+  const handleVisibilityChange = (report: keyof ReportVisibility, checked: boolean) => {
+      setReportVisibility(prev => ({ ...prev, [report]: checked }));
+  };
+
   if (loading || !data) {
     return <p>Cargando informes...</p>;
   }
@@ -127,50 +156,81 @@ function InformesPageContent() {
             </CardContent>
         </Card>
 
+        <Card>
+             <CardHeader>
+                <CardTitle>Visualización de Informes</CardTitle>
+                <CardDescription>
+                Activa o desactiva los informes para encontrar problemas de visualización.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {Object.keys(reportVisibility).map(key => (
+                    <div key={key} className="flex items-center space-x-2">
+                        <Switch 
+                            id={key}
+                            checked={reportVisibility[key as keyof ReportVisibility]}
+                            onCheckedChange={(checked) => handleVisibilityChange(key as keyof ReportVisibility, checked)}
+                        />
+                        <Label htmlFor={key} className="capitalize">{key.replace(/([A-Z])/g, ' $1')}</Label>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+
         {/* --- Responsive Grid for Charts --- */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card>
+            {reportVisibility.tenantsByOrigin && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Inquilinos por Origen</CardTitle>
+                    </CardHeader>
+                    <CardContent className="min-w-0">
+                        <TenantsByOriginChart data={tenantsByOrigin} />
+                    </CardContent>
+                </Card>
+            )}
+            {reportVisibility.bookingsByOrigin && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Reservas por Origen</CardTitle>
+                    </CardHeader>
+                    <CardContent className="min-w-0">
+                        <BookingsByOriginChart data={bookingsByOrigin} />
+                    </CardContent>
+                </Card>
+            )}
+            {reportVisibility.expensesByCategory && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Gastos por Categoría</CardTitle>
+                        <CardDescription>Distribución de gastos totales en USD.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="min-w-0">
+                        <ExpensesByCategoryChart data={expensesByCategory} />
+                    </CardContent>
+                </Card>
+            )}
+            {reportVisibility.expensesByProperty && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Gastos por Propiedad</CardTitle>
+                        <CardDescription>Comparativa de gastos totales por propiedad en USD.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="min-w-0">
+                        <ExpensesByPropertyChart data={expensesByProperty} />
+                    </CardContent>
+                </Card>
+            )}
+             {reportVisibility.bookingStatus && (
+                <Card>
                 <CardHeader>
-                    <CardTitle>Inquilinos por Origen</CardTitle>
+                    <CardTitle>Estado de Reservas</CardTitle>
                 </CardHeader>
                 <CardContent className="min-w-0">
-                    <TenantsByOriginChart data={tenantsByOrigin} />
+                    <BookingStatusChart data={bookingStatus} />
                 </CardContent>
             </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Reservas por Origen</CardTitle>
-                </CardHeader>
-                <CardContent className="min-w-0">
-                    <BookingsByOriginChart data={bookingsByOrigin} />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Gastos por Categoría</CardTitle>
-                    <CardDescription>Distribución de gastos totales en USD.</CardDescription>
-                </CardHeader>
-                <CardContent className="min-w-0">
-                    <ExpensesByCategoryChart data={expensesByCategory} />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Gastos por Propiedad</CardTitle>
-                    <CardDescription>Comparativa de gastos totales por propiedad en USD.</CardDescription>
-                </CardHeader>
-                <CardContent className="min-w-0">
-                    <ExpensesByPropertyChart data={expensesByProperty} />
-                </CardContent>
-            </Card>
-             <Card>
-              <CardHeader>
-                  <CardTitle>Estado de Reservas</CardTitle>
-              </CardHeader>
-              <CardContent className="min-w-0">
-                  <BookingStatusChart data={bookingStatus} />
-              </CardContent>
-          </Card>
+             )}
         </div>
 
         {/* --- Financial Reports Sections --- */}
@@ -182,50 +242,51 @@ function InformesPageContent() {
             </Card>
         )}
 
-        {hasUsdData && (
-            <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Resultados por Propiedad (USD)</CardTitle>
-                        <CardDescription>Compara los ingresos y gastos entre todas las propiedades en USD.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="min-w-0">
-                        <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Tabla Financiera (USD)</CardTitle>
-                        <CardDescription>Resumen detallado de ingresos, gastos y resultados por propiedad en USD.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="min-w-0">
-                        <FinancialSummaryTable summary={financialSummary.usd} currency="USD" />
-                    </CardContent>
-                </Card>
-            </div>
+        {hasUsdData && reportVisibility.financialChartUSD && (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Resultados por Propiedad (USD)</CardTitle>
+                    <CardDescription>Compara los ingresos y gastos entre todas las propiedades en USD.</CardDescription>
+                </CardHeader>
+                <CardContent className="min-w-0">
+                    <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
+                </CardContent>
+            </Card>
+        )}
+        {hasUsdData && reportVisibility.financialTableUSD && (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tabla Financiera (USD)</CardTitle>
+                    <CardDescription>Resumen detallado de ingresos, gastos y resultados por propiedad en USD.</CardDescription>
+                </CardHeader>
+                <CardContent className="min-w-0">
+                    <FinancialSummaryTable summary={financialSummary.usd} currency="USD" />
+                </CardContent>
+            </Card>
+        )}
+        
+        {hasArsData && reportVisibility.financialChartARS && (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Resultados por Propiedad (ARS)</CardTitle>
+                    <CardDescription>Compara los ingresos y gastos entre todas las propiedades en ARS.</CardDescription>
+                </CardHeader>
+                <CardContent className="min-w-0">
+                    <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
+                </CardContent>
+            </Card>
         )}
 
-        {hasArsData && (
-             <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Resultados por Propiedad (ARS)</CardTitle>
-                        <CardDescription>Compara los ingresos y gastos entre todas las propiedades en ARS.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="min-w-0">
-                        <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Tabla Financiera (ARS)</CardTitle>
-                        <CardDescription>Resumen detallado de ingresos, gastos y resultados por propiedad en ARS.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="min-w-0">
-                        <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
-                    </CardContent>
-                </Card>
-            </div>
+        {hasArsData && reportVisibility.financialTableARS && (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tabla Financiera (ARS)</CardTitle>
+                    <CardDescription>Resumen detallado de ingresos, gastos y resultados por propiedad en ARS.</CardDescription>
+                </CardHeader>
+                <CardContent className="min-w-0">
+                    <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
+                </CardContent>
+            </Card>
         )}
     </div>
   );
