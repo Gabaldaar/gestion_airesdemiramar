@@ -56,6 +56,8 @@ interface ReportVisibility {
     netIncomeDistribution: boolean;
     financialCharts: boolean;
     financialTables: boolean;
+    showARS: boolean;
+    showUSD: boolean;
 }
 
 const reportLabels: Record<keyof ReportVisibility, string> = {
@@ -64,9 +66,11 @@ const reportLabels: Record<keyof ReportVisibility, string> = {
     bookingStatus: 'Estado de Reservas',
     expensesByCategory: 'Gastos por Categoría',
     expensesByProperty: 'Gastos por Propiedad',
-    netIncomeDistribution: 'Distribución de Ingresos Netos',
-    financialCharts: 'Gráficos Financieros Individuales',
+    netIncomeDistribution: 'Distribución Ingresos Netos',
+    financialCharts: 'Gráficos Financieros',
     financialTables: 'Tablas Financieras',
+    showARS: 'Mostrar ARS',
+    showUSD: 'Mostrar USD',
 };
 
 
@@ -90,6 +94,8 @@ function InformesPageContent() {
       netIncomeDistribution: true,
       financialCharts: true,
       financialTables: true,
+      showARS: true,
+      showUSD: true,
   });
 
   useEffect(() => {
@@ -171,7 +177,7 @@ function InformesPageContent() {
              <CardHeader>
                 <CardTitle>Visualización de Informes</CardTitle>
                 <CardDescription>
-                Activa o desactiva los informes para encontrar problemas de visualización.
+                Activa o desactiva los informes para encontrar problemas de visualización o filtrar por moneda.
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -242,7 +248,7 @@ function InformesPageContent() {
                 </CardContent>
             </Card>
              )}
-             {reportVisibility.netIncomeDistribution && hasUsdData && (
+             {reportVisibility.netIncomeDistribution && hasUsdData && reportVisibility.showUSD && (
                 <Card>
                     <CardHeader>
                         <CardTitle>Distribución de Ingresos Netos (USD)</CardTitle>
@@ -266,7 +272,7 @@ function InformesPageContent() {
         {/* Individual Property Charts */}
         {reportVisibility.financialCharts && (
             <>
-                {hasUsdData && (
+                {hasUsdData && reportVisibility.showUSD && (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {financialSummary.usd.filter(s => s.totalIncome !== 0 || s.totalBookingExpenses !== 0 || s.totalPropertyExpenses !== 0).map(item => (
                             <Card key={`${item.propertyId}-usd-chart`}>
@@ -281,7 +287,7 @@ function InformesPageContent() {
                         ))}
                     </div>
                 )}
-                {hasArsData && (
+                {hasArsData && reportVisibility.showARS && (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
                         {financialSummary.ars.filter(s => s.totalIncome !== 0 || s.totalBookingExpenses !== 0 || s.totalPropertyExpenses !== 0).map(item => (
                             <Card key={`${item.propertyId}-ars-chart`}>
@@ -302,7 +308,7 @@ function InformesPageContent() {
         {/* --- Financial Tables --- */}
         {reportVisibility.financialTables && (
             <>
-                {hasUsdData && (
+                {hasUsdData && reportVisibility.showUSD && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Tabla Financiera (USD)</CardTitle>
@@ -314,7 +320,7 @@ function InformesPageContent() {
                     </Card>
                 )}
                 
-                {hasArsData && (
+                {hasArsData && reportVisibility.showARS && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Tabla Financiera (ARS)</CardTitle>
