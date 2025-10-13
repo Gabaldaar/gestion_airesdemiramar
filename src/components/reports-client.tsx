@@ -160,19 +160,15 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
       
       {hasUsdData && (
          <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Resultados por Propiedad (USD)</CardTitle>
-                    <CardDescription>
-                        Compara los ingresos y gastos entre todas las propiedades en USD.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="min-w-0">
-                        <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="space-y-4">
+                <div className="space-y-1">
+                    <h3 className="text-2xl font-semibold tracking-tight">Resultados por Propiedad (USD)</h3>
+                    <p className="text-sm text-muted-foreground">Compara los ingresos y gastos entre todas las propiedades en USD.</p>
+                </div>
+                <div className="min-w-0">
+                    <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
+                </div>
+            </div>
             <div className="space-y-4">
                 <div className="space-y-1">
                     <h3 className="text-2xl font-semibold tracking-tight">Reporte Financiero por Propiedad (USD)</h3>
@@ -185,19 +181,15 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
 
       {hasArsData && (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Resultados por Propiedad (ARS)</CardTitle>
-              <CardDescription>
-                Compara los ingresos y gastos entre todas las propiedades en ARS.
-              </CardDescription>
-            </CardHeader>
-             <CardContent>
-                <div className="min-w-0">
-                    <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
-                </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <div className="space-y-1">
+                <h3 className="text-2xl font-semibold tracking-tight">Resultados por Propiedad (ARS)</h3>
+                <p className="text-sm text-muted-foreground">Compara los ingresos y gastos entre todas las propiedades en ARS.</p>
+            </div>
+            <div className="min-w-0">
+                <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
+            </div>
+          </div>
           <div className="space-y-4">
             <div className="space-y-1">
                 <h3 className="text-2xl font-semibold tracking-tight">Reporte Financiero por Propiedad (ARS)</h3>
