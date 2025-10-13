@@ -11,6 +11,7 @@ import {
 import { FinancialSummaryByCurrency, TenantsByOriginSummary, ExpensesByCategorySummary, ExpensesByPropertySummary, BookingsByOriginSummary, BookingStatusSummary } from "@/lib/data";
 import FinancialSummaryTable from "@/components/financial-summary-table";
 import FinancialSummaryChart from "@/components/financial-summary-chart";
+import NetIncomeDistributionChart from "@/components/net-income-distribution-chart";
 import { DatePicker } from "./ui/date-picker";
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from "./ui/button";
@@ -147,15 +148,29 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
          <>
             <Card>
                 <CardHeader>
-                    <CardTitle>Resultados por Propiedad (USD)</CardTitle>
-                    <CardDescription>Compara los ingresos y gastos entre todas las propiedades en USD.</CardDescription>
+                    <CardTitle>Distribución de Ingresos Netos (USD)</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="min-w-0">
-                        <FinancialSummaryChart summary={financialSummary.usd} currency="USD" />
+                        <NetIncomeDistributionChart summary={financialSummary.usd} />
                     </div>
                 </CardContent>
             </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {financialSummary.usd.filter(s => s.totalIncome !== 0 || s.totalBookingExpenses !== 0 || s.totalPropertyExpenses !== 0).map(item => (
+                    <Card key={`${item.propertyId}-usd`}>
+                        <CardHeader>
+                            <CardTitle>{item.propertyName}</CardTitle>
+                            <CardDescription>Resumen Financiero (USD)</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <FinancialSummaryChart summaryItem={item} currency="USD" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
             <Card>
                 <CardHeader>
                     <CardTitle>Reporte Financiero por Propiedad (USD)</CardTitle>
@@ -170,17 +185,20 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
 
       {hasArsData && (
         <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Resultados por Propiedad (ARS)</CardTitle>
-                    <CardDescription>Compara los ingresos y gastos entre todas las propiedades en ARS.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="min-w-0">
-                        <FinancialSummaryChart summary={financialSummary.ars} currency="ARS" />
-                    </div>
-                </CardContent>
-            </Card>
+             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {financialSummary.ars.filter(s => s.totalIncome !== 0 || s.totalBookingExpenses !== 0 || s.totalPropertyExpenses !== 0).map(item => (
+                    <Card key={`${item.propertyId}-ars`}>
+                        <CardHeader>
+                            <CardTitle>{item.propertyName}</CardTitle>
+                            <CardDescription>Resumen Financiero (ARS)</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <FinancialSummaryChart summaryItem={item} currency="ARS" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
             <Card>
                 <CardHeader>
                     <CardTitle>Reporte Financiero por Propiedad (ARS)</CardTitle>

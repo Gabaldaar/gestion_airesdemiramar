@@ -8,21 +8,19 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import useWindowSize from '@/hooks/use-window-size';
 
 interface FinancialSummaryChartProps {
-  summary: FinancialSummary[];
+  summaryItem: FinancialSummary;
   currency: 'ARS' | 'USD';
 }
 
-export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
-  const chartData = summary.map(item => ({
-    name: item.propertyName,
-    'Ingresos': item.totalIncome > 0 ? item.totalIncome : 0,
-    'Gastos': (item.totalPropertyExpenses + item.totalBookingExpenses) > 0 ? (item.totalPropertyExpenses + item.totalBookingExpenses) : 0,
-    'Neto': item.netResult,
-  }));
-
+export default function FinancialSummaryChart({ summaryItem, currency }: FinancialSummaryChartProps) {
+  const chartData = [
+    { name: 'Ingresos', value: summaryItem.totalIncome, fill: '#16a34a' },
+    { name: 'Gastos', value: summaryItem.totalPropertyExpenses + summaryItem.totalBookingExpenses, fill: '#dc2626' },
+    { name: 'Neto', value: summaryItem.netResult, fill: '#3b82f6' },
+  ];
+  
   const formatCurrency = (value: number) => {
     if (currency === 'USD') {
         return `USD ${new Intl.NumberFormat('es-AR', {
@@ -51,48 +49,44 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
   }
 
   return (
-    <div className="h-[450px] w-full">
+    <div className="h-[250px] w-full">
         <ChartContainer config={{}} className="w-full h-full">
             <BarChart 
                 data={chartData}
-                layout="horizontal"
+                layout="vertical"
                 margin={{ 
-                    top: 20, 
+                    top: 5, 
                     right: 20, 
                     left: 20, 
-                    bottom: 80 
+                    bottom: 5 
                 }}
             >
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis 
-                    dataKey="name"
-                    tick={{ fontSize: 12 }}
-                    angle={-45}
-                    textAnchor="end"
-                    interval={0}
-                    height={90}
-                    padding={{ left: 20, right: 20 }}
+                    type="number"
+                    tickFormatter={formatCurrencyShort}
+                    axisLine={false}
+                    tickLine={false}
                 />
                 <YAxis 
-                    tickFormatter={formatCurrencyShort} 
-                    width={80}
+                    type="category"
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: 12 }}
                 />
                 <ChartTooltip
                     cursor={{fill: 'hsl(var(--muted))'}}
                     content={<ChartTooltipContent
                         labelFormatter={(label) => `${label}`}
-                        formatter={(value, name) => (
-                            <div className='flex items-center gap-2'>
-                                <span className='capitalize'>{name}:</span>
-                                <span>{formatCurrency(value as number)}</span>
-                            </div>
-                        )}
+                        formatter={(value) => formatCurrency(value as number)}
                         />}
                 />
-                <Legend verticalAlign="top" />
-                <Bar dataKey="Ingresos" fill="#16a34a" radius={2} barSize={20} />
-                <Bar dataKey="Gastos" fill="#dc2626" radius={2} barSize={20} />
-                <Bar dataKey="Neto" fill="#3b82f6" radius={2} barSize={20} />
+                <Bar dataKey="value" barSize={30} radius={4}>
+                    {chartData.map((entry) => (
+                         <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                    ))}
+                </Bar>
             </BarChart>
         </ChartContainer>
     </div>
