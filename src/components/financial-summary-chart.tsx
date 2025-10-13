@@ -54,7 +54,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
     <div className="h-[450px] w-full">
         <ChartContainer config={{}} className="w-full h-full">
             <BarChart 
-                data={chartData} 
+                data={chartData}
                 layout="horizontal"
                 margin={{ 
                     top: 20, 
@@ -90,9 +90,9 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         />}
                 />
                 <Legend verticalAlign="top" />
-                <Bar dataKey="Ingresos" fill="#16a34a" radius={2} maxBarSize={30} />
-                <Bar dataKey="Gastos" fill="#dc2626" radius={2} maxBarSize={30} />
-                <Bar dataKey="Neto" fill="#3b82f6" radius={2} maxBarSize={30} />
+                <Bar dataKey="Ingresos" fill="#16a34a" radius={2} barSize={20} />
+                <Bar dataKey="Gastos" fill="#dc2626" radius={2} barSize={20} />
+                <Bar dataKey="Neto" fill="#3b82f6" radius={2} barSize={20} />
             </BarChart>
         </ChartContainer>
     </div>
