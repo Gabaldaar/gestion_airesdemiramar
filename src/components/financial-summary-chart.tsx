@@ -8,7 +8,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import useWindowSize from '@/hooks/use-window-size';
 
 interface FinancialSummaryChartProps {
   summary: FinancialSummary[];
@@ -16,8 +15,6 @@ interface FinancialSummaryChartProps {
 }
 
 export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
-  const { width } = useWindowSize();
-  const isMobile = width !== undefined && width < 768;
 
   const chartData = summary.map(item => ({
     name: item.propertyName,
@@ -58,25 +55,26 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
         <ChartContainer config={{}} className="w-full h-full">
             <BarChart 
                 data={chartData} 
-                layout="vertical"
+                layout="horizontal" // Always vertical bars
                 margin={{ 
                     top: 20, 
                     right: 20, 
-                    left: isMobile ? 10 : 20, 
-                    bottom: 20 
+                    left: 0, 
+                    bottom: 70  // Increased bottom margin for rotated labels
                 }}
             >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
-                    type="number" 
-                    tickFormatter={formatCurrencyShort} 
-                    domain={['dataMin', 'dataMax']}
+                    dataKey="name"
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    interval={0}
+                    height={80} // Allocate height for rotated labels
                 />
                 <YAxis 
-                    dataKey="name" 
-                    type="category"
-                    tick={{ fontSize: 12 }} 
-                    width={isMobile ? 80 : 120}
+                    tickFormatter={formatCurrencyShort} 
+                    width={80}
                 />
                 <ChartTooltip
                     cursor={{fill: 'hsl(var(--muted))'}}
