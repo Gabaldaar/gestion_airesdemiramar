@@ -55,13 +55,15 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
         <ChartContainer config={{}} className="w-full h-full">
             <BarChart 
                 data={chartData} 
-                layout="horizontal" // Always vertical bars
+                layout="horizontal"
                 margin={{ 
                     top: 20, 
                     right: 20, 
                     left: 0, 
-                    bottom: 70  // Increased bottom margin for rotated labels
+                    bottom: 70
                 }}
+                barCategoryGap="20%"
+                barGap={1}
             >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
@@ -70,7 +72,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                     angle={-45}
                     textAnchor="end"
                     interval={0}
-                    height={80} // Allocate height for rotated labels
+                    height={80}
                 />
                 <YAxis 
                     tickFormatter={formatCurrencyShort} 
