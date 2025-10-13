@@ -107,7 +107,7 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
            <SummaryCard key={item.propertyId} item={item} currency={currency} />
         ))}
       </div>
-    )
+    );
   }
 
   // Desktop View: Renders a standard table
