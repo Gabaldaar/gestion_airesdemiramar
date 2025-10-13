@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -9,8 +8,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import useWindowSize from '@/hooks/use-window-size';
-
 
 interface FinancialSummaryChartProps {
   summary: FinancialSummary[];
@@ -18,8 +15,6 @@ interface FinancialSummaryChartProps {
 }
 
 export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
-  const { width } = useWindowSize();
-  const isMobile = width !== undefined && width < 768;
 
   const chartData = summary.map(item => ({
     name: item.propertyName,
@@ -45,7 +40,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
   }
   
   const formatCurrencyShort = (value: number) => {
-    const prefix = currency === 'USD' ? 'U$S' : '$';
+    const prefix = currency === 'USD' ? 'U$S ' : '$';
     if (Math.abs(value) >= 1_000_000) {
         return `${prefix}${(value / 1_000_000).toFixed(1)}M`;
     }
@@ -55,34 +50,33 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
     return `${prefix}${value}`;
   }
 
-
   return (
     <div className="h-[450px] w-full">
         <ChartContainer config={{}} className="w-full h-full">
             <BarChart 
                 data={chartData} 
-                layout={isMobile ? "horizontal" : "vertical"}
+                layout="horizontal"
                 margin={{ 
                     top: 20, 
-                    right: isMobile ? 10 : 30, 
-                    left: isMobile ? 0 : 20, 
-                    bottom: isMobile ? 20 : 5
+                    right: 20, 
+                    left: 0, 
+                    bottom: 80 
                 }}
             >
                 <CartesianGrid strokeDasharray="3 3" />
-                
-                {isMobile ? (
-                    <>
-                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} interval={0} tick={{ fontSize: 12 }} />
-                        <YAxis type="number" tickFormatter={formatCurrencyShort} />
-                    </>
-                ) : (
-                    <>
-                        <XAxis type="number" tickFormatter={formatCurrency} />
-                        <YAxis dataKey="name" type="category" width={120} interval={0} tick={{ fontSize: 12 }}/>
-                    </>
-                )}
-                
+                <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    interval={0} 
+                    tick={{ fontSize: 12 }} 
+                    height={100} 
+                />
+                <YAxis 
+                    type="number" 
+                    tickFormatter={formatCurrencyShort} 
+                    width={80} 
+                />
                 <ChartTooltip
                     cursor={{fill: 'hsl(var(--muted))'}}
                     content={<ChartTooltipContent
@@ -95,7 +89,7 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         )}
                         />}
                 />
-                <Legend />
+                <Legend verticalAlign="top" />
                 <Bar dataKey="Ingresos" fill="#16a34a" radius={4} />
                 <Bar dataKey="Gastos" fill="#dc2626" radius={4} />
                 <Bar dataKey="Neto" fill="#3b82f6" radius={4} />
@@ -104,5 +98,3 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
     </div>
   );
 }
-
-    
