@@ -171,13 +171,15 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
                 </CardContent>
             </Card>
             
-            <div className="space-y-4">
-                <div className="space-y-1">
-                    <h3 className="text-2xl font-semibold tracking-tight">Reporte Financiero por Propiedad (USD)</h3>
-                    <p className="text-sm text-muted-foreground">Resumen de ingresos, gastos y resultados por propiedad en USD.</p>
-                </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Reporte Financiero por Propiedad (USD)</CardTitle>
+                <CardDescription>Resumen de ingresos, gastos y resultados por propiedad en USD.</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <FinancialSummaryTable summary={financialSummary.usd} currency="USD" />
-            </div>
+              </CardContent>
+            </Card>
         </>
       )}
 
@@ -195,13 +197,15 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
-            <div className="space-y-1">
-                <h3 className="text-2xl font-semibold tracking-tight">Reporte Financiero por Propiedad (ARS)</h3>
-                <p className="text-sm text-muted-foreground">Resumen de ingresos, gastos y resultados por propiedad en ARS.</p>
-            </div>
-            <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Reporte Financiero por Propiedad (ARS)</CardTitle>
+              <CardDescription>Resumen de ingresos, gastos y resultados por propiedad en ARS.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FinancialSummaryTable summary={financialSummary.ars} currency="ARS" />
+            </CardContent>
+          </Card>
         </>
       )}
       
