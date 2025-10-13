@@ -16,9 +16,6 @@ interface FinancialSummaryChartProps {
 }
 
 export default function FinancialSummaryChart({ summary, currency }: FinancialSummaryChartProps) {
-  const { width } = useWindowSize();
-  const isMobile = width !== undefined && width < 768;
-
   const chartData = summary.map(item => ({
     name: item.propertyName,
     'Ingresos': item.totalIncome > 0 ? item.totalIncome : 0,
@@ -65,8 +62,8 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                     left: 0, 
                     bottom: 80 
                 }}
-                barCategoryGap={10}
-                barGap={0}
+                barCategoryGap="20%"
+                barGap={4}
             >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
@@ -94,9 +91,9 @@ export default function FinancialSummaryChart({ summary, currency }: FinancialSu
                         />}
                 />
                 <Legend verticalAlign="top" />
-                <Bar dataKey="Ingresos" fill="#16a34a" radius={2} maxBarSize={15} />
-                <Bar dataKey="Gastos" fill="#dc2626" radius={2} maxBarSize={15} />
-                <Bar dataKey="Neto" fill="#3b82f6" radius={2} maxBarSize={15} />
+                <Bar dataKey="Ingresos" fill="#16a34a" radius={2} />
+                <Bar dataKey="Gastos" fill="#dc2626" radius={2} />
+                <Bar dataKey="Neto" fill="#3b82f6" radius={2} />
             </BarChart>
         </ChartContainer>
     </div>
