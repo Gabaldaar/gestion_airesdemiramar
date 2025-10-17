@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogCancel,
+  AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { deleteBooking } from '@/lib/actions';
@@ -22,17 +23,17 @@ const initialState = {
   success: false,
 };
 
-function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
+function DeleteButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" variant="destructive" disabled={isDisabled || pending}>
+        <Button type="submit" variant="destructive" disabled={pending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Borrando...
+                    Eliminando...
                 </>
             ) : (
-                'Entiendo, eliminar esta reserva'
+                'Sí, eliminar esta reserva'
             )}
         </Button>
     )
@@ -48,10 +49,7 @@ interface BookingDeleteFormProps {
 
 export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onOpenChange }: BookingDeleteFormProps) {
   const [state, formAction] = useActionState(deleteBooking, initialState);
-  const [confirmationInput, setConfirmationInput] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
-  
-  const isButtonDisabled = confirmationInput !== 'Eliminar';
 
   useEffect(() => {
     if (state.success) {
@@ -59,11 +57,6 @@ export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onO
     }
   }, [state.success, onOpenChange]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setConfirmationInput('');
-    }
-  }, [isOpen]);
 
   return (
     <>
@@ -77,27 +70,18 @@ export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onO
               <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
               <AlertDialogDescription>
                   Esta acción es irreversible. Se eliminará permanentemente la reserva, junto con sus pagos y gastos asociados.
-                  <br/><br/>
-                  Para confirmar, por favor escribe <strong className='text-foreground'>Eliminar</strong> en el campo de abajo.
               </AlertDialogDescription>
               </AlertDialogHeader>
               <div className="my-4">
-                  <Label htmlFor="confirmation" className="sr-only">Confirmación</Label>
-                  <Input 
-                      id="confirmation"
-                      name="confirmation"
-                      value={confirmationInput}
-                      onChange={(e) => setConfirmationInput(e.target.value)}
-                      placeholder='Escribe "Eliminar"'
-                      autoComplete='off'
-                  />
                   {state.message && !state.success && (
                       <p className="text-red-500 text-sm mt-2">{state.message}</p>
                   )}
               </div>
               <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <DeleteButton isDisabled={isButtonDisabled} />
+                  <AlertDialogAction asChild>
+                    <DeleteButton />
+                  </AlertDialogAction>
               </AlertDialogFooter>
           </form>
         </AlertDialogContent>

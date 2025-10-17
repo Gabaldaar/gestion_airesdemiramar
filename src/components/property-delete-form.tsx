@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
   AlertDialogCancel,
+  AlertDialogAction
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { deleteProperty } from '@/lib/actions';
@@ -23,17 +24,17 @@ const initialState = {
   success: false,
 };
 
-function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
+function DeleteButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" variant="destructive" disabled={isDisabled || pending}>
+        <Button type="submit" variant="destructive" disabled={pending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Eliminando...
                 </>
             ) : (
-                'Entiendo las consecuencias, eliminar esta propiedad'
+                'Entiendo, eliminar esta propiedad'
             )}
         </Button>
     )
@@ -42,10 +43,7 @@ function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
 export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: string; propertyName: string }) {
   const [state, formAction] = useActionState(deleteProperty, initialState);
   const [isOpen, setIsOpen] = useState(false);
-  const [confirmationInput, setConfirmationInput] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
-  
-  const isButtonDisabled = confirmationInput !== 'Eliminar';
 
   useEffect(() => {
     // If the deletion was successful, close the dialog
@@ -53,13 +51,6 @@ export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: s
       setIsOpen(false);
     }
   }, [state.success]);
-
-  useEffect(() => {
-    // Reset confirmation when dialog is closed
-    if (!isOpen) {
-      setConfirmationInput('');
-    }
-  }, [isOpen]);
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
@@ -76,27 +67,18 @@ export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: s
             <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
                 Esta acción es irreversible. Se eliminará permanentemente la propiedad <span className="font-bold">{propertyName}</span> y todos sus datos asociados, incluyendo <span className="font-bold">reservas, pagos y gastos</span>.
-                <br/><br/>
-                Para confirmar, por favor escribe <strong className='text-foreground'>Eliminar</strong> en el campo de abajo.
             </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="my-4">
-                <Label htmlFor="confirmation" className="sr-only">Confirmación</Label>
-                <Input 
-                    id="confirmation"
-                    name="confirmation"
-                    value={confirmationInput}
-                    onChange={(e) => setConfirmationInput(e.target.value)}
-                    placeholder='Escribe "Eliminar"'
-                    autoComplete='off'
-                />
                  {state.message && !state.success && (
                     <p className="text-red-500 text-sm mt-2">{state.message}</p>
                 )}
             </div>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <DeleteButton isDisabled={isButtonDisabled} />
+                <AlertDialogAction asChild>
+                    <DeleteButton />
+                </AlertDialogAction>
             </AlertDialogFooter>
         </form>
       </AlertDialogContent>

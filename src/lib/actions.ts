@@ -137,14 +137,9 @@ export async function updateProperty(previousState: any, formData: FormData) {
 
 export async function deleteProperty(previousState: any, formData: FormData) {
     const id = formData.get("id") as string;
-    const confirmation = formData.get("confirmation") as string;
 
     if (!id) {
         return { success: false, message: "ID de propiedad no válido." };
-    }
-
-    if (confirmation !== "Eliminar") {
-        return { success: false, message: "La confirmación no es correcta." };
     }
 
     try {
@@ -340,14 +335,9 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
 export async function deleteBooking(previousState: any, formData: FormData) {
     const id = formData.get("id") as string;
     const propertyId = formData.get("propertyId") as string;
-    const confirmation = formData.get("confirmation") as string;
 
     if (!id || !propertyId) {
         return { success: false, message: "ID de reserva o propiedad no válido." };
-    }
-    
-    if (confirmation !== "Eliminar") {
-        return { success: false, message: "La confirmación no es correcta." };
     }
 
     try {
