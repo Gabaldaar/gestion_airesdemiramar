@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useState, ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -21,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { updatePayment } from '@/lib/actions';
+import { addPayment, updatePayment } from '@/lib/actions';
 import { Payment } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -37,27 +38,38 @@ const initialState = {
   success: false,
 };
 
-function SubmitButton() {
+function SubmitButton({ isEdit }: { isEdit: boolean }) {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" disabled={pending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Guardando...
+                    {isEdit ? 'Guardando...' : 'Añadiendo...'}
                 </>
             ) : (
-                'Guardar Cambios'
+                isEdit ? 'Guardar Cambios' : 'Añadir Pago'
             )}
         </Button>
     )
 }
 
-export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Payment, onPaymentUpdated: () => void }) {
-  const [state, formAction] = useActionState(updatePayment, initialState);
+interface PaymentEditFormProps {
+    payment?: Payment;
+    bookingId?: string;
+    onPaymentUpdated: () => void;
+    children?: ReactNode;
+}
+
+
+export function PaymentEditForm({ payment, bookingId, onPaymentUpdated, children }: PaymentEditFormProps) {
+  const isEdit = !!payment;
+  const action = isEdit ? updatePayment : addPayment;
+  const [state, formAction] = useActionState(action, initialState);
+  
   const [isOpen, setIsOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(new Date(payment.date));
-  const [currency, setCurrency] = useState<'ARS' | 'USD'>(payment.originalArsAmount ? 'ARS' : 'USD');
+  const [date, setDate] = useState<Date | undefined>(isEdit ? new Date(payment.date) : new Date());
+  const [currency, setCurrency] = useState<'ARS' | 'USD'>(isEdit ? (payment.originalArsAmount ? 'ARS' : 'USD') : 'USD');
   
   useEffect(() => {
     if (state.success) {
@@ -66,24 +78,36 @@ export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Paymen
     }
   }, [state, onPaymentUpdated]);
 
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+        setDate(isEdit ? new Date(payment.date) : new Date());
+        setCurrency(isEdit ? (payment.originalArsAmount ? 'ARS' : 'USD') : 'USD');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isEdit]);
+
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
+        {children || (
+          <Button variant="ghost" size="icon">
             <Pencil className="h-4 w-4" />
             <span className="sr-only">Editar Pago</span>
-        </Button>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Editar Pago de Reserva</DialogTitle>
+          <DialogTitle>{isEdit ? 'Editar' : 'Añadir'} Pago</DialogTitle>
           <DialogDescription>
             Modifica los datos del pago.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction}>
-            <input type="hidden" name="id" value={payment.id} />
-            <input type="hidden" name="bookingId" value={payment.bookingId} />
+            {isEdit && <input type="hidden" name="id" value={payment.id} />}
+            <input type="hidden" name="bookingId" value={payment?.bookingId || bookingId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -132,26 +156,26 @@ export function PaymentEditForm({ payment, onPaymentUpdated }: { payment: Paymen
                     <Label htmlFor="amount" className="text-right">
                     Monto
                     </Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={payment.originalArsAmount || payment.amount} className="col-span-3" required />
+                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={payment?.originalArsAmount || payment?.amount} className="col-span-3" required />
                 </div>
                  {currency === 'ARS' && (
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="exchangeRate" className="text-right">
                         Valor USD
                         </Label>
-                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" defaultValue={payment.exchangeRate} className="col-span-3" placeholder="Valor del USD en ARS" required />
+                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" defaultValue={payment?.exchangeRate} className="col-span-3" placeholder="Valor del USD en ARS" required />
                     </div>
                 )}
                  <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="description" className="text-right pt-2">
                         Descripción
                     </Label>
-                    <Textarea id="description" name="description" defaultValue={payment.description?.split('|')[0].trim()} className="col-span-3" placeholder="Comentarios sobre el pago..." />
+                    <Textarea id="description" name="description" defaultValue={payment?.description?.split('|')[0].trim()} className="col-span-3" placeholder="Comentarios sobre el pago..." />
                 </div>
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                <SubmitButton />
+                <SubmitButton isEdit={isEdit} />
             </DialogFooter>
         </form>
          {state.message && !state.success && (
