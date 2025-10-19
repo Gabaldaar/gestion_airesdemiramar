@@ -159,9 +159,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
                 </div>
             </div>
             <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="outline">Cancelar</Button>
-                </DialogClose>
+                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
                 <SubmitButton />
             </DialogFooter>
         </form>
