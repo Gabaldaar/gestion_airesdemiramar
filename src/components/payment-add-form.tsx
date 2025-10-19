@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -64,13 +64,13 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
       onPaymentAdded();
     }
   }, [state, onPaymentAdded]);
-  
+
+  // Reset state when dialog opens
   useEffect(() => {
-    if (isOpen) {
-      // Reset state when dialog opens
-      setDate(new Date());
-      setCurrency('USD');
-    }
+      if (isOpen) {
+          setDate(new Date());
+          setCurrency('USD');
+      }
   }, [isOpen]);
 
   return (
