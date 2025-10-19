@@ -11,3 +11,5 @@ Forcing an update to apply pending changes.
 Forcing another update to ensure the mobile dialog fix is applied.
 
 Forcing update for alert-dialog fix.
+
+Forcing update for payment-add-form fix.
