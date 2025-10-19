@@ -46,6 +46,7 @@ const helpNavItem = { href: '/help', label: 'Ayuda', icon: CircleHelp };
 
 function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, isCollapsed: boolean }) {
   const pathname = usePathname();
+  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION;
   
   const renderLink = (item: { href: string, label: string, icon: React.ElementType }) => {
     const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -93,12 +94,21 @@ function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, is
 
   return (
     <div className="flex flex-col justify-between h-full">
-        <nav className={cn("grid items-start text-sm font-medium", isCollapsed ? "grid-flow-row justify-center gap-2 px-2" : "px-2 lg:px-4")}>
-            {mainNavItems.map(renderLink)}
-        </nav>
-        <nav className={cn("grid items-start text-sm font-medium mt-auto", isCollapsed ? "grid-flow-row justify-center gap-2 px-2" : "px-2 lg:px-4")}>
-            {renderLink(helpNavItem)}
-        </nav>
+        <div>
+            <nav className={cn("grid items-start text-sm font-medium", isCollapsed ? "grid-flow-row justify-center gap-2 px-2" : "px-2 lg:px-4")}>
+                {mainNavItems.map(renderLink)}
+            </nav>
+        </div>
+        <div>
+            <nav className={cn("grid items-start text-sm font-medium mt-auto", isCollapsed ? "grid-flow-row justify-center gap-2 px-2" : "px-2 lg:px-4")}>
+                {renderLink(helpNavItem)}
+            </nav>
+             {appVersion && (
+                <div className={cn("mt-4 text-xs text-muted-foreground", isCollapsed ? "text-center" : "px-4")}>
+                   v{appVersion}
+                </div>
+            )}
+        </div>
     </div>
   );
 }

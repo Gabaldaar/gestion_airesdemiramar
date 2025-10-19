@@ -1,6 +1,8 @@
 
 import type {NextConfig} from 'next';
 
+const { version } = require('./package.json');
+
 // Forcing a server restart to recognize files in /public
 const nextConfig: NextConfig = {
   /* config options here */
@@ -30,6 +32,7 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_GOOGLE_SERVICE_ACCOUNT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    NEXT_PUBLIC_APP_VERSION: version,
   },
 };
 

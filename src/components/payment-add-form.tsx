@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -56,15 +57,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
-  const formRef = useRef<HTMLFormElement>(null);
-
-
-  const resetForm = () => {
-      formRef.current?.reset();
-      setDate(new Date());
-      setCurrency('USD');
-  }
-
+  
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
@@ -72,15 +65,16 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
     }
   }, [state, onPaymentAdded]);
   
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-        resetForm();
+  useEffect(() => {
+    if (isOpen) {
+      // Reset state when dialog opens
+      setDate(new Date());
+      setCurrency('USD');
     }
-    setIsOpen(open);
-  }
+  }, [isOpen]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -94,7 +88,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
             Completa los datos del pago recibido.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction} ref={formRef}>
+        <form action={formAction}>
             <input type="hidden" name="bookingId" value={bookingId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <div className="grid gap-4 py-4">
@@ -162,7 +156,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
                 </div>
             </div>
             <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Cancelar</Button>
+                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
                 <SubmitButton />
             </DialogFooter>
         </form>
