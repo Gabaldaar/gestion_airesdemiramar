@@ -54,29 +54,37 @@ function SubmitButton() {
 export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: string, onPaymentAdded: () => void }) {
   const [state, formAction] = useActionState(addPayment, initialState);
   const [isOpen, setIsOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
+  const [amount, setAmount] = useState('');
+  const [exchangeRate, setExchangeRate] = useState('');
+  const [description, setDescription] = useState('');
+
+  const resetForm = () => {
+      setDate(new Date());
+      setCurrency('USD');
+      setAmount('');
+      setExchangeRate('');
+      setDescription('');
+  }
 
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
-      formRef.current?.reset();
-      setDate(new Date());
-      setCurrency('USD');
+      resetForm();
       onPaymentAdded();
     }
   }, [state, onPaymentAdded]);
-
-  const resetForm = () => {
-      formRef.current?.reset();
-      setDate(new Date());
-      setCurrency('USD');
-      setIsOpen(false);
+  
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+        resetForm();
+    }
+    setIsOpen(open);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -90,7 +98,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
             Completa los datos del pago recibido.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction} ref={formRef}>
+        <form action={formAction}>
             <input type="hidden" name="bookingId" value={bookingId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <div className="grid gap-4 py-4">
@@ -140,25 +148,25 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: { bookingId: strin
                     <Label htmlFor="amount" className="text-right">
                     Monto
                     </Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
+                    <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" value={amount} onChange={(e) => setAmount(e.target.value)} required />
                 </div>
                 {currency === 'ARS' && (
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="exchangeRate" className="text-right">
                         Valor USD
                         </Label>
-                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" className="col-span-3" placeholder="Valor del USD en ARS" required />
+                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" className="col-span-3" placeholder="Valor del USD en ARS" value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} required />
                     </div>
                 )}
                  <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="description" className="text-right pt-2">
                         Descripción
                     </Label>
-                    <Textarea id="description" name="description" className="col-span-3" placeholder="Comentarios sobre el pago..."/>
+                    <Textarea id="description" name="description" className="col-span-3" placeholder="Comentarios sobre el pago..." value={description} onChange={(e) => setDescription(e.target.value)} />
                 </div>
             </div>
             <DialogFooter>
-                <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
+                <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Cancelar</Button>
                 <SubmitButton />
             </DialogFooter>
         </form>
