@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { PaymentAddForm } from './payment-add-form';
 import { PaymentEditForm } from './payment-edit-form';
 import { PaymentDeleteForm } from './payment-delete-form';
 import { useToast } from '@/components/ui/use-toast';
@@ -115,15 +116,7 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end">
-              <PaymentEditForm 
-                bookingId={bookingId} 
-                onPaymentUpdated={handlePaymentAction}
-                >
-                 <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Pago
-                </Button>
-              </PaymentEditForm>
+             <PaymentAddForm bookingId={bookingId} onPaymentAdded={handlePaymentAction} />
           </div>
           {isLoading ? (
             <p>Cargando pagos...</p>
