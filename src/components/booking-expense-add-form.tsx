@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -9,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,9 +46,16 @@ function SubmitButton() {
     )
 }
 
-export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories }: { bookingId: string, onExpenseAdded: () => void, categories: ExpenseCategory[] }) {
+interface BookingExpenseAddFormProps {
+    bookingId: string;
+    onExpenseAdded: () => void;
+    categories: ExpenseCategory[];
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+}
+
+export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories, isOpen, onOpenChange }: BookingExpenseAddFormProps) {
   const [state, formAction] = useActionState(addBookingExpense, initialState);
-  const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS');
@@ -56,29 +63,21 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories }:
 
   useEffect(() => {
     if (state.success) {
-      setIsOpen(false);
-      formRef.current?.reset();
-      setDate(new Date());
-      setCurrency('ARS');
+      onOpenChange(false);
       onExpenseAdded();
     }
-  }, [state, onExpenseAdded]);
+  }, [state, onExpenseAdded, onOpenChange]);
 
-  const resetForm = () => {
-    formRef.current?.reset();
-    setDate(new Date());
-    setCurrency('ARS');
-    setIsOpen(false);
-  }
+  useEffect(() => {
+    if (!isOpen) {
+        formRef.current?.reset();
+        setDate(new Date());
+        setCurrency('ARS');
+    }
+  }, [isOpen]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Gasto
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Añadir Gasto a la Reserva</DialogTitle>
@@ -172,7 +171,7 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories }:
                 </div>
             </div>
             <DialogFooter>
-                <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <SubmitButton />
             </DialogFooter>
         </form>

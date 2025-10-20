@@ -18,7 +18,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin } from "@/lib/data";
+import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin, ExpenseCategory, getExpenseCategories } from "@/lib/data";
 import { format, differenceInDays, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
@@ -36,6 +36,7 @@ import { useState, useEffect } from 'react';
 import { EmailSender } from "./email-sender";
 import useWindowSize from '@/hooks/use-window-size';
 import { PaymentAddForm } from "./payment-add-form";
+import { BookingExpenseAddForm } from "./booking-expense-add-form";
 
 
 interface BookingsListProps {
@@ -61,7 +62,7 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-700' }
 };
 
-function BookingActions({ booking, onEdit, onAddPayment }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void }) {
+function BookingActions({ booking, onEdit, onAddPayment, onAddExpense }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
     const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
@@ -110,7 +111,12 @@ function BookingActions({ booking, onEdit, onAddPayment }: { booking: BookingWit
                 </TooltipProvider>
             </BookingPaymentsManager>
             
-            <BookingExpensesManager bookingId={booking.id} isOpen={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
+            <BookingExpensesManager 
+                bookingId={booking.id} 
+                isOpen={isExpensesOpen} 
+                onOpenChange={setIsExpensesOpen}
+                onAddExpenseClick={() => onAddExpense(booking.id)}
+            >
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -153,7 +159,7 @@ function BookingActions({ booking, onEdit, onAddPayment }: { booking: BookingWit
     )
 }
 
-function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void }) {
+function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void }) {
   const [isEmailOpen, setIsEmailOpen] = useState(false);
 
   const isCancelled = booking.status === 'cancelled';
@@ -329,13 +335,13 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment }: { b
           </TooltipProvider>
       </TableCell>
       <TableCell className="text-right">
-        <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment}/>
+        <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onAddExpense={onAddExpense} />
       </TableCell>
     </TableRow>
   );
 }
 
-function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void }) {
+function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void }) {
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
     const isInactive = isCancelled || isPending;
@@ -412,7 +418,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment }: { 
                 </div>
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment}/>
+                <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onAddExpense={onAddExpense}/>
             </CardFooter>
         </Card>
     )
@@ -424,9 +430,17 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [addingPaymentForBookingId, setAddingPaymentForBookingId] = useState<string | undefined>(undefined);
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
+  const [addingExpenseForBookingId, setAddingExpenseForBookingId] = useState<string | undefined>(undefined);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+
 
   const { width } = useWindowSize();
   const useCardView = width < 1280; 
+
+  useEffect(() => {
+    getExpenseCategories().then(setExpenseCategories);
+  }, []);
 
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
@@ -444,6 +458,11 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     setIsAddPaymentOpen(true);
   }
 
+  const handleAddExpenseClick = (bookingId: string) => {
+    setAddingExpenseForBookingId(bookingId);
+    setIsAddExpenseOpen(true);
+  }
+
   const handleUpdate = () => {
     // A simple page refresh is enough when server actions handle revalidation
     window.location.reload();
@@ -459,6 +478,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             origin={booking.originId ? originsMap.get(booking.originId) : undefined}
             onEdit={handleEditClick}
             onAddPayment={handleAddPaymentClick}
+            onAddExpense={handleAddExpenseClick}
         />
         ))}
     </div>
@@ -488,6 +508,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     origin={booking.originId ? originsMap.get(booking.originId) : undefined}
                     onEdit={handleEditClick}
                     onAddPayment={handleAddPaymentClick}
+                    onAddExpense={handleAddExpenseClick}
                 />
             ))}
         </TableBody>
@@ -523,6 +544,15 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                 onPaymentAdded={handleUpdate}
                 isOpen={isAddPaymentOpen}
                 onOpenChange={setIsAddPaymentOpen}
+            />
+        )}
+        {addingExpenseForBookingId && (
+             <BookingExpenseAddForm
+                bookingId={addingExpenseForBookingId}
+                onExpenseAdded={handleUpdate}
+                categories={expenseCategories}
+                isOpen={isAddExpenseOpen}
+                onOpenChange={setIsAddExpenseOpen}
             />
         )}
     </div>

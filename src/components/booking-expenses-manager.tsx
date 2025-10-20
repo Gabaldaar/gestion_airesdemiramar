@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, ReactNode } from 'react';
@@ -7,6 +8,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
@@ -31,10 +33,11 @@ interface BookingExpensesManagerProps {
     children?: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    onAddExpenseClick: () => void;
 }
 
 
-export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChange }: BookingExpensesManagerProps) {
+export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChange, onAddExpenseClick }: BookingExpensesManagerProps) {
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,6 +65,11 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
     fetchExpensesAndCategories();
   }, [fetchExpensesAndCategories]);
 
+  const handleAddNewExpense = () => {
+      onOpenChange(false); // Close this manager dialog
+      onAddExpenseClick(); // Trigger the add expense dialog from parent
+  }
+
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
   };
@@ -79,8 +87,8 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
 
   return (
     <>
-      {children}
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Gastos de la Reserva</DialogTitle>
@@ -89,7 +97,7 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end">
-              <BookingExpenseAddForm bookingId={bookingId} onExpenseAdded={handleExpenseAction} categories={categories}/>
+              <Button onClick={handleAddNewExpense}>+ Añadir Gasto</Button>
           </div>
           {isLoading ? (
             <p>Cargando gastos...</p>
@@ -115,7 +123,7 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
                     <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <BookingExpenseEditForm expense={expense} categories={categories} />
+                        <BookingExpenseEditForm expense={expense} categories={categories} onExpenseUpdated={handleExpenseAction} />
                         <BookingExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleExpenseAction} />
                       </div>
                     </TableCell>
