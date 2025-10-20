@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, ReactNode } from 'react';
@@ -10,14 +9,8 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 import { Button } from '@/components/ui/button';
-import { Mail, PlusCircle } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { getPaymentsByBookingId, Payment, getBookingWithDetails } from '@/lib/data';
 import {
   Table,
@@ -123,21 +116,9 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
             </DialogDescription>
           </DialogHeader>
           
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1">
-              <AccordionTrigger>
-                <div className='flex items-center'>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Añadir Nuevo Pago
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className='p-4 border rounded-md'>
-                  <PaymentAddForm bookingId={bookingId} onPaymentAdded={handlePaymentAction} />
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+           <div className="flex justify-end">
+              <PaymentAddForm bookingId={bookingId} onPaymentAdded={handlePaymentAction} />
+          </div>
 
           {isLoading ? (
             <p>Cargando pagos...</p>
