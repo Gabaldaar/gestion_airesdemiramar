@@ -35,10 +35,11 @@ interface BookingPaymentsManagerProps {
     children: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    onAddPaymentClick: () => void;
 }
 
 
-export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChange }: BookingPaymentsManagerProps) {
+export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChange, onAddPaymentClick }: BookingPaymentsManagerProps) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,6 +82,11 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
     setSelectedPaymentForEmail(payment);
     setIsEmailSenderOpen(true);
   };
+  
+  const handleAddNewPayment = () => {
+      onOpenChange(false); // Close this manager dialog
+      onAddPaymentClick(); // Trigger the add payment dialog from parent
+  }
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
@@ -117,7 +123,7 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
           </DialogHeader>
           
            <div className="flex justify-end">
-              <PaymentAddForm bookingId={bookingId} onPaymentAdded={handlePaymentAction} />
+                <Button onClick={handleAddNewPayment}>+ Añadir Pago</Button>
           </div>
 
           {isLoading ? (

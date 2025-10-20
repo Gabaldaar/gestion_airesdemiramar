@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,43 +48,39 @@ function SubmitButton() {
 interface PaymentAddFormProps {
     bookingId: string;
     onPaymentAdded: () => void;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
-export function PaymentAddForm({ bookingId, onPaymentAdded }: PaymentAddFormProps) {
+export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange }: PaymentAddFormProps) {
   const [state, formAction] = useActionState(addPayment, initialState);
-  const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const [showExchangeRate, setShowExchangeRate] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
+
 
   useEffect(() => {
     if (state.success) {
-      setIsOpen(false);
+      onOpenChange(false);
       onPaymentAdded();
     }
-  }, [state, onPaymentAdded]);
+  }, [state, onPaymentAdded, onOpenChange]);
 
   // Reset form state when dialog is closed
   useEffect(() => {
     if (!isOpen) {
         formRef.current?.reset();
-        setShowExchangeRate(false);
         setDate(new Date());
+        setCurrency('USD');
     }
   }, [isOpen]);
   
   const handleCurrencyChange = (value: string) => {
-    setShowExchangeRate(value === 'ARS');
+    setCurrency(value as 'ARS' | 'USD');
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Pago
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Añadir Pago</DialogTitle>
@@ -130,7 +125,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: PaymentAddFormProp
                     <Label htmlFor="currency" className="text-right">
                     Moneda
                     </Label>
-                    <Select name="currency" defaultValue='USD' onValueChange={handleCurrencyChange} required>
+                    <Select name="currency" value={currency} onValueChange={handleCurrencyChange} required>
                         <SelectTrigger className="col-span-3">
                             <SelectValue />
                         </SelectTrigger>
@@ -146,7 +141,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: PaymentAddFormProp
                     </Label>
                     <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
                 </div>
-                {showExchangeRate && (
+                {currency === 'ARS' && (
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="exchangeRate" className="text-right">
                         Valor USD
@@ -162,7 +157,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: PaymentAddFormProp
                 </div>
             </div>
             <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <SubmitButton />
             </DialogFooter>
         </form>

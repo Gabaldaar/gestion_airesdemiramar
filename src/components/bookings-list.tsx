@@ -35,6 +35,7 @@ import { Landmark, Wallet, Pencil, Trash2, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { EmailSender } from "./email-sender";
 import useWindowSize from '@/hooks/use-window-size';
+import { PaymentAddForm } from "./payment-add-form";
 
 
 interface BookingsListProps {
@@ -60,7 +61,7 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-700' }
 };
 
-function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void }) {
+function BookingActions({ booking, onEdit, onAddPayment }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
     const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
@@ -90,7 +91,12 @@ function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEd
                 </TooltipProvider>
             </NotesViewer>
               
-            <BookingPaymentsManager bookingId={booking.id} isOpen={isPaymentsOpen} onOpenChange={setIsPaymentsOpen}>
+            <BookingPaymentsManager 
+                bookingId={booking.id} 
+                isOpen={isPaymentsOpen} 
+                onOpenChange={setIsPaymentsOpen}
+                onAddPaymentClick={() => onAddPayment(booking.id)}
+            >
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -147,7 +153,7 @@ function BookingActions({ booking, onEdit }: { booking: BookingWithDetails, onEd
     )
 }
 
-function BookingRow({ booking, showProperty, origin, onEdit }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void }) {
+function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void }) {
   const [isEmailOpen, setIsEmailOpen] = useState(false);
 
   const isCancelled = booking.status === 'cancelled';
@@ -323,13 +329,13 @@ function BookingRow({ booking, showProperty, origin, onEdit }: { booking: Bookin
           </TooltipProvider>
       </TableCell>
       <TableCell className="text-right">
-        <BookingActions booking={booking} onEdit={onEdit} />
+        <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment}/>
       </TableCell>
     </TableRow>
   );
 }
 
-function BookingCard({ booking, showProperty, origin, onEdit }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void }) {
+function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void }) {
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
     const isInactive = isCancelled || isPending;
@@ -406,7 +412,7 @@ function BookingCard({ booking, showProperty, origin, onEdit }: { booking: Booki
                 </div>
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <BookingActions booking={booking} onEdit={onEdit} />
+                <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment}/>
             </CardFooter>
         </Card>
     )
@@ -416,6 +422,9 @@ function BookingCard({ booking, showProperty, origin, onEdit }: { booking: Booki
 export default function BookingsList({ bookings, properties, tenants, origins, showProperty = false }: BookingsListProps) {
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [addingPaymentForBookingId, setAddingPaymentForBookingId] = useState<string | undefined>(undefined);
+  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
+
   const { width } = useWindowSize();
   const useCardView = width < 1280; 
 
@@ -429,6 +438,11 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     setEditingBooking(booking);
     setIsEditOpen(true);
   };
+
+  const handleAddPaymentClick = (bookingId: string) => {
+    setAddingPaymentForBookingId(bookingId);
+    setIsAddPaymentOpen(true);
+  }
 
   const handleUpdate = () => {
     // A simple page refresh is enough when server actions handle revalidation
@@ -444,6 +458,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             showProperty={showProperty}
             origin={booking.originId ? originsMap.get(booking.originId) : undefined}
             onEdit={handleEditClick}
+            onAddPayment={handleAddPaymentClick}
         />
         ))}
     </div>
@@ -472,6 +487,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     showProperty={showProperty} 
                     origin={booking.originId ? originsMap.get(booking.originId) : undefined}
                     onEdit={handleEditClick}
+                    onAddPayment={handleAddPaymentClick}
                 />
             ))}
         </TableBody>
@@ -499,6 +515,14 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                 isOpen={isEditOpen}
                 onOpenChange={setIsEditOpen}
                 onBookingUpdated={handleUpdate}
+            />
+        )}
+        {addingPaymentForBookingId && (
+             <PaymentAddForm
+                bookingId={addingPaymentForBookingId}
+                onPaymentAdded={handleUpdate}
+                isOpen={isAddPaymentOpen}
+                onOpenChange={setIsAddPaymentOpen}
             />
         )}
     </div>
