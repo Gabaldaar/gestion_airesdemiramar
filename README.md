@@ -13,3 +13,5 @@ Forcing another update to ensure the mobile dialog fix is applied.
 Forcing update for alert-dialog fix.
 
 Forcing update for payment-add-form fix.
+
+Forcing update to restore booking-payments-manager.
