@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -54,9 +55,8 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: PaymentAddFormProp
   const [state, formAction] = useActionState(addPayment, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const [showExchangeRate, setShowExchangeRate] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
-
 
   useEffect(() => {
     if (state.success) {
@@ -69,17 +69,17 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: PaymentAddFormProp
   useEffect(() => {
     if (!isOpen) {
         formRef.current?.reset();
+        setShowExchangeRate(false);
         setDate(new Date());
-        setCurrency('USD');
     }
   }, [isOpen]);
-
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-  };
+  
+  const handleCurrencyChange = (value: string) => {
+    setShowExchangeRate(value === 'ARS');
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -119,7 +119,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: PaymentAddFormProp
                         <Calendar
                             mode="single"
                             selected={date}
-                            onSelect={setDate}
+                            onSelect={(d) => { setDate(d); }}
                             initialFocus
                             locale={es}
                         />
@@ -130,7 +130,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: PaymentAddFormProp
                     <Label htmlFor="currency" className="text-right">
                     Moneda
                     </Label>
-                    <Select name="currency" value={currency} onValueChange={(value) => setCurrency(value as 'ARS' | 'USD')} required>
+                    <Select name="currency" defaultValue='USD' onValueChange={handleCurrencyChange} required>
                         <SelectTrigger className="col-span-3">
                             <SelectValue />
                         </SelectTrigger>
@@ -146,7 +146,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded }: PaymentAddFormProp
                     </Label>
                     <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
                 </div>
-                {currency === 'ARS' && (
+                {showExchangeRate && (
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="exchangeRate" className="text-right">
                         Valor USD
