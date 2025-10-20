@@ -17,3 +17,5 @@ Forcing update for payment-add-form fix.
 Forcing update to restore booking-payments-manager.
 
 Forcing update to restore booking-payments-manager AGAIN to fix crash.
+
+Forcing update to restore booking-payments-manager to fix the crash for real this time.
