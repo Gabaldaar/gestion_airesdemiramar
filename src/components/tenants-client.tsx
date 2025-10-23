@@ -18,9 +18,10 @@ interface TenantsClientProps {
   initialTenants: Tenant[];
   allBookings: BookingWithDetails[];
   origins: Origin[];
+  onFilteredTenantsChange: (count: number) => void;
 }
 
-export default function TenantsClient({ initialTenants, allBookings, origins }: TenantsClientProps) {
+export default function TenantsClient({ initialTenants, allBookings, origins, onFilteredTenantsChange }: TenantsClientProps) {
   const [tenants, setTenants] = useState(initialTenants);
   const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
   const [originFilter, setOriginFilter] = useState<string>('all');
@@ -96,6 +97,12 @@ export default function TenantsClient({ initialTenants, allBookings, origins }: 
     
     return currentTenants;
   }, [tenants, allBookings, statusFilter, originFilter]);
+
+  // Effect to update the count in the parent component
+  useEffect(() => {
+    onFilteredTenantsChange(filteredTenants.length);
+  }, [filteredTenants, onFilteredTenantsChange]);
+
 
   const handleClearFilters = () => {
     setStatusFilter('all');

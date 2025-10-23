@@ -24,6 +24,7 @@ export default function TenantsPage() {
     const { user } = useAuth();
     const [data, setData] = useState<TenantsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [filteredTenantCount, setFilteredTenantCount] = useState<number | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -34,6 +35,7 @@ export default function TenantsPage() {
                 getOrigins()
             ]).then(([tenants, bookings, origins]) => {
                 setData({ tenants, bookings, origins });
+                setFilteredTenantCount(tenants.length); // Initialize with total count
                 setLoading(false);
             });
         }
@@ -43,11 +45,20 @@ export default function TenantsPage() {
         return <p>Cargando inquilinos...</p>;
     }
 
+    const countDisplay = filteredTenantCount !== null 
+        ? `${filteredTenantCount} / ${data.tenants.length}`
+        : data.tenants.length;
+
     return (
         <Card>
         <CardHeader className="flex flex-row items-center justify-between">
             <div>
-            <CardTitle>Inquilinos</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+                Inquilinos
+                <span className="text-sm font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                    {countDisplay}
+                </span>
+            </CardTitle>
             <CardDescription>
                 Administra y filtra la información de tus inquilinos.
             </CardDescription>
@@ -59,6 +70,7 @@ export default function TenantsPage() {
                 initialTenants={data.tenants} 
                 allBookings={data.bookings}
                 origins={data.origins}
+                onFilteredTenantsChange={setFilteredTenantCount}
             />
         </CardContent>
         </Card>
