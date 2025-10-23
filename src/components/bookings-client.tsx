@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -48,9 +47,10 @@ interface BookingsClientProps {
   tenants: Tenant[];
   origins: Origin[];
   initialTenantIdFilter?: string;
+  onFilteredBookingsChange: (count: number) => void;
 }
 
-export default function BookingsClient({ initialBookings, properties, tenants, origins, initialTenantIdFilter }: BookingsClientProps) {
+export default function BookingsClient({ initialBookings, properties, tenants, origins, initialTenantIdFilter, onFilteredBookingsChange }: BookingsClientProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [statusFilters, setStatusFilters] = useState<StatusFilters>(initialStatusFilters);
@@ -144,6 +144,12 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
       return true;
     });
   }, [bookingsForTenant, fromDate, toDate, statusFilters, propertyIdFilter, contractStatusFilter, originIdFilter]);
+  
+  // Effect to update the count in the parent component
+  useEffect(() => {
+    onFilteredBookingsChange(filteredBookings.length);
+  }, [filteredBookings, onFilteredBookingsChange]);
+
 
   const handleClearFilters = () => {
     setFromDate(undefined);

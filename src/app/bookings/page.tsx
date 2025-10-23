@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -25,6 +24,7 @@ export default function BookingsPage() {
   const { user } = useAuth();
   const [data, setData] = useState<BookingsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filteredBookingCount, setFilteredBookingCount] = useState<number | null>(null);
   const searchParams = useSearchParams();
   const tenantId = searchParams.get('tenantId') || undefined;
 
@@ -38,6 +38,7 @@ export default function BookingsPage() {
             getOrigins(),
         ]).then(([allBookings, properties, tenants, origins]) => {
             setData({ allBookings, properties, tenants, origins });
+            setFilteredBookingCount(allBookings.length);
             setLoading(false);
         });
     }
@@ -55,12 +56,23 @@ export default function BookingsPage() {
   const pageDescription = tenant
     ? `Un historial de todas las reservas de ${tenant.name}.`
     : 'Administra y filtra todas las reservas de tus propiedades.';
+    
+  const countDisplay = filteredBookingCount !== null && !tenantId
+    ? `${filteredBookingCount} / ${allBookings.length}`
+    : (filteredBookingCount !== null ? filteredBookingCount : allBookings.length);
 
 
   return (
     <Card>
     <CardHeader>
-        <CardTitle>{pageTitle}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+            {pageTitle}
+            {!tenantId && (
+                <span className="text-sm font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                    {countDisplay}
+                </span>
+            )}
+        </CardTitle>
         <CardDescription>{pageDescription}</CardDescription>
     </CardHeader>
     <CardContent>
@@ -70,6 +82,7 @@ export default function BookingsPage() {
         tenants={tenants} 
         origins={origins}
         initialTenantIdFilter={tenantId}
+        onFilteredBookingsChange={setFilteredBookingCount}
         />
     </CardContent>
     </Card>
