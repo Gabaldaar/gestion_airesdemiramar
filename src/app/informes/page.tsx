@@ -13,9 +13,10 @@ import {
   getBookingsByOriginSummary, 
   BookingsByOriginSummary, 
   getBookingStatusSummary, 
-  BookingStatusSummary 
+  BookingStatusSummary,
+  FinancialSummary
 } from "@/lib/data";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { 
@@ -143,6 +144,37 @@ function InformesPageContent() {
       setReportVisibility(prev => ({ ...prev, [report]: checked }));
   };
 
+  const totalsSummary = useMemo(() => {
+    if (!data) return { ars: null, usd: null };
+    
+    const calculateTotals = (summary: FinancialSummary[]): FinancialSummary => {
+        return summary.reduce((acc, item) => ({
+            propertyId: 'totals',
+            propertyName: 'Totales',
+            totalIncome: acc.totalIncome + item.totalIncome,
+            totalPayments: acc.totalPayments + item.totalPayments,
+            balance: acc.balance + item.balance,
+            totalPropertyExpenses: acc.totalPropertyExpenses + item.totalPropertyExpenses,
+            totalBookingExpenses: acc.totalBookingExpenses + item.totalBookingExpenses,
+            netResult: acc.netResult + item.netResult,
+        }), {
+            propertyId: 'totals',
+            propertyName: 'Totales',
+            totalIncome: 0,
+            totalPayments: 0,
+            balance: 0,
+            totalPropertyExpenses: 0,
+            totalBookingExpenses: 0,
+            netResult: 0,
+        });
+    };
+
+    return {
+      ars: calculateTotals(data.financialSummary.ars),
+      usd: calculateTotals(data.financialSummary.usd),
+    };
+  }, [data]);
+
   if (loading || !data) {
     return <p>Cargando informes...</p>;
   }
@@ -268,6 +300,32 @@ function InformesPageContent() {
                 </CardContent>
             </Card>
         )}
+
+        {/* Total Summary Charts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {totalsSummary.usd && hasUsdData && reportVisibility.showUSD && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Resumen Total (USD)</CardTitle>
+                        <CardDescription>Resultado financiero general en USD.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="min-w-0">
+                        <FinancialSummaryChart summaryItem={totalsSummary.usd} currency="USD" />
+                    </CardContent>
+                </Card>
+            )}
+            {totalsSummary.ars && hasArsData && reportVisibility.showARS && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Resumen Total (ARS)</CardTitle>
+                        <CardDescription>Resultado financiero general en ARS.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="min-w-0">
+                        <FinancialSummaryChart summaryItem={totalsSummary.ars} currency="ARS" />
+                    </CardContent>
+                </Card>
+            )}
+        </div>
 
         {/* Individual Property Charts */}
         {reportVisibility.financialCharts && (
