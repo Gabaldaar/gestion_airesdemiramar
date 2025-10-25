@@ -1,12 +1,13 @@
 
 import { getBookingsByPropertyId, getPropertyById, getTenantById } from '@/lib/data';
 import { NextRequest } from 'next/server';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 
-function formatICalDateTime(date: Date): string {
-    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+function formatICalDate(date: Date): string {
+    // Format for an all-day event: YYYYMMDD
+    return date.toISOString().split('T')[0].replace(/-/g, '');
 }
 
 function escapeICalText(text: string): string {
@@ -33,10 +34,8 @@ export async function GET(
       return new Response('Property not found', { status: 404 });
     }
     
-    // Filter out cancelled and pending bookings
     const activeBookings = bookings.filter(b => !b.status || b.status === 'active');
 
-    // Fetch all tenants in parallel to optimize
     const tenantIds = [...new Set(activeBookings.map(b => b.tenantId))];
     const tenants = await Promise.all(tenantIds.map(id => getTenantById(id)));
     const tenantsMap = new Map(tenants.map(t => [t?.id, t]));
@@ -52,35 +51,33 @@ export async function GET(
     activeBookings.forEach(booking => {
       const tenant = tenantsMap.get(booking.tenantId);
       const tenantName = tenant ? tenant.name : 'Inquilino Desconocido';
-      
-      // The event should start one day after check-in to keep the check-in day free.
-      const startDate = addDays(new Date(booking.startDate), 1);
-      // Set check-in time, e.g., 10 PM UTC
-      startDate.setUTCHours(22, 0, 0, 0);
-
-      const endDate = new Date(booking.endDate);
-      // Set check-out time, e.g., 11 AM UTC
-      endDate.setUTCHours(11, 0, 0, 0);
-
       const now = new Date();
+      const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-      const summaryText = `Reserva - ${tenantName} - ${property.name}`;
+      // --- Create Check-in Event ---
+      const checkinDate = new Date(booking.startDate);
+      const checkinSummary = `Check-in: ${tenantName} - ${property.name}`;
+      const checkinDescription = `Llegada de ${escapeICalText(tenantName)} a ${escapeICalText(property.name)}.\n\nFecha: ${format(checkinDate, "dd/MM/yyyy", { locale: es })}`;
+      
+      icalContent.push('BEGIN:VEVENT');
+      icalContent.push(`UID:${booking.id}-checkin@airesdemiramar.app`);
+      icalContent.push(`DTSTAMP:${timestamp}`);
+      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(checkinDate)}`); // All-day event
+      icalContent.push(`SUMMARY:${escapeICalText(checkinSummary)}`);
+      icalContent.push(`DESCRIPTION:${checkinDescription}`);
+      icalContent.push('END:VEVENT');
 
-      const formattedStartDate = format(new Date(booking.startDate), "dd/MM/yyyy", { locale: es });
-      const formattedEndDate = format(new Date(booking.endDate), "dd/MM/yyyy", { locale: es });
+      // --- Create Check-out Event ---
+      const checkoutDate = new Date(booking.endDate);
+      const checkoutSummary = `Check-out: ${tenantName} - ${property.name}`;
+      const checkoutDescription = `Salida de ${escapeICalText(tenantName)} de ${escapeICalText(property.name)}.\n\nFecha: ${format(checkoutDate, "dd/MM/yyyy", { locale: es })}`;
 
       icalContent.push('BEGIN:VEVENT');
-      icalContent.push(`UID:${booking.id}@airesdemiramar.app`);
-      icalContent.push(`DTSTAMP:${formatICalDateTime(now)}`);
-      icalContent.push(`DTSTART:${formatICalDateTime(startDate)}`);
-      icalContent.push(`DTEND:${formatICalDateTime(endDate)}`);
-      icalContent.push(`SUMMARY:${escapeICalText(summaryText)}`);
-      
-      let description = `Reserva para ${escapeICalText(tenantName)} en ${escapeICalText(property.name)} desde el ${formattedStartDate} hasta el ${formattedEndDate}.`;
-      if (booking.notes) {
-          description += `\\n\\nNotas: ${escapeICalText(booking.notes)}`;
-      }
-      icalContent.push(`DESCRIPTION:${description}`);
+      icalContent.push(`UID:${booking.id}-checkout@airesdemiramar.app`);
+      icalContent.push(`DTSTAMP:${timestamp}`);
+      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(checkoutDate)}`); // All-day event
+      icalContent.push(`SUMMARY:${escapeICalText(checkoutSummary)}`);
+      icalContent.push(`DESCRIPTION:${checkoutDescription}`);
       icalContent.push('END:VEVENT');
     });
 
@@ -90,7 +87,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${property.name}.ics"`,
+        'Content-Disposition': `attachment; filename="eventos_${property.name}.ics"`,
       },
     });
 
