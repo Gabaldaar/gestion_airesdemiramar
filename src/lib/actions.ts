@@ -28,6 +28,7 @@ import {
     updateEmailTemplate as dbUpdateEmailTemplate,
     deleteEmailTemplate as dbDeleteEmailTemplate,
     updateEmailSettings as dbUpdateEmailSettings,
+    updateAlertSettings as dbUpdateAlertSettings,
     addOrigin as dbAddOrigin,
     updateOrigin as dbUpdateOrigin,
     deleteOrigin as dbDeleteOrigin,
@@ -838,6 +839,27 @@ export async function updateEmailSettings(previousState: any, formData: FormData
         await dbUpdateEmailSettings({ replyToEmail });
         revalidatePath('/settings');
         return { success: true, message: 'Configuración de email guardada.' };
+    } catch (error: any) {
+        return { success: false, message: `Error de base de datos: ${error.message}` };
+    }
+}
+
+export async function updateAlertSettings(previousState: any, formData: FormData) {
+    const checkInDaysStr = formData.get('checkInDays') as string;
+    const checkOutDaysStr = formData.get('checkOutDays') as string;
+
+    const checkInDays = parseInt(checkInDaysStr, 10);
+    const checkOutDays = parseInt(checkOutDaysStr, 10);
+    
+    if (isNaN(checkInDays) || isNaN(checkOutDays) || checkInDays < 0 || checkOutDays < 0) {
+        return { success: false, message: 'Por favor, introduce números válidos y positivos.' };
+    }
+
+    try {
+        await dbUpdateAlertSettings({ checkInDays, checkOutDays });
+        revalidatePath('/settings');
+        revalidatePath('/');
+        return { success: true, message: 'Configuración de alertas guardada.' };
     } catch (error: any) {
         return { success: false, message: `Error de base de datos: ${error.message}` };
     }

@@ -196,7 +196,13 @@ export type EmailTemplate = {
 export type EmailSettings = {
     id: 'email';
     replyToEmail?: string;
-}
+};
+
+export type AlertSettings = {
+    id: 'alerts';
+    checkInDays: number;
+    checkOutDays: number;
+};
 
 export type TenantsByOriginSummary = {
   name: string;
@@ -904,6 +910,25 @@ export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): 
     await setDoc(docRef, settings, { merge: true });
     return { id: 'email', ...settings };
 }
+
+export async function getAlertSettings(): Promise<AlertSettings | null> {
+    const docRef = doc(db, 'settings', 'alerts');
+    let docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
+        await setDoc(docRef, { checkInDays: 7, checkOutDays: 3 });
+        docSnap = await getDoc(docRef);
+    }
+
+    return processDoc(docSnap) as AlertSettings;
+}
+
+export async function updateAlertSettings(settings: Omit<AlertSettings, 'id'>): Promise<AlertSettings> {
+    const docRef = doc(db, 'settings', 'alerts');
+    await setDoc(docRef, settings, { merge: true });
+    return { id: 'alerts', ...settings };
+}
+
 
 // --- Origin Functions ---
 

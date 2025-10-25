@@ -9,11 +9,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings, Origin, getOrigins } from "@/lib/data";
+import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings, Origin, getOrigins, getAlertSettings, AlertSettings } from "@/lib/data";
 import { PropertyEditForm } from "@/components/property-edit-form";
 import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
 import { EmailSettingsManager } from "@/components/email-settings-manager";
+import { AlertSettingsManager } from "@/components/alert-settings-manager";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import OriginManager from "@/components/origin-manager";
@@ -22,6 +23,7 @@ interface SettingsData {
     properties: Property[];
     expenseCategories: ExpenseCategory[];
     emailSettings: EmailSettings | null;
+    alertSettings: AlertSettings | null;
     origins: Origin[];
 }
 
@@ -33,13 +35,14 @@ export default function SettingsPage() {
     const fetchData = useCallback(async () => {
         if (user) {
             setLoading(true);
-            const [properties, expenseCategories, emailSettings, origins] = await Promise.all([
+            const [properties, expenseCategories, emailSettings, alertSettings, origins] = await Promise.all([
                 getProperties(),
                 getExpenseCategories(),
                 getEmailSettings(),
+                getAlertSettings(),
                 getOrigins(),
             ]);
-            setData({ properties, expenseCategories, emailSettings, origins });
+            setData({ properties, expenseCategories, emailSettings, alertSettings, origins });
             setLoading(false);
         }
     }, [user]);
@@ -52,7 +55,7 @@ export default function SettingsPage() {
         return <p>Cargando configuración...</p>
     }
     
-    const { properties, expenseCategories, emailSettings, origins } = data;
+    const { properties, expenseCategories, emailSettings, alertSettings, origins } = data;
 
   return (
     <Tabs defaultValue="properties" className="space-y-4">
@@ -61,11 +64,12 @@ export default function SettingsPage() {
                 <h2 className="text-3xl font-bold tracking-tight text-primary">Configuración</h2>
                 <p className="text-muted-foreground">Administra los datos de tu aplicación.</p>
             </div>
-            <TabsList className="grid w-full sm:w-auto sm:inline-flex grid-cols-2 sm:grid-cols-4 mb-4 sm:mb-0">
+            <TabsList className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-5 mb-4 sm:mb-0">
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 <TabsTrigger value="origins">Orígenes</TabsTrigger>
                 <TabsTrigger value="expense-categories">Cat. Gastos</TabsTrigger>
                 <TabsTrigger value="email">Email</TabsTrigger>
+                <TabsTrigger value="alerts">Alertas</TabsTrigger>
             </TabsList>
         </div>
 
@@ -132,6 +136,19 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                     <EmailSettingsManager initialSettings={emailSettings} />
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="alerts">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Configuración de Alertas</CardTitle>
+                    <CardDescription>
+                        Define con cuántos días de anticipación quieres ver las alertas en el Dashboard.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AlertSettingsManager initialSettings={alertSettings} />
                 </CardContent>
             </Card>
         </TabsContent>
