@@ -6,8 +6,11 @@ import DashboardStats from "@/components/dashboard-stats";
 import DashboardRecentBookings from "@/components/dashboard-recent-bookings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DashboardCurrentBookings from "@/components/dashboard-current-bookings";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { differenceInDays, startOfTomorrow, startOfToday } from 'date-fns';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle, Info } from "lucide-react";
 
 interface DashboardData {
     summaryByCurrency: FinancialSummaryByCurrency;
@@ -37,6 +40,31 @@ export default function DashboardPage() {
             fetchData();
         }
     }, [user]);
+
+    const upcomingCheckIns = useMemo(() => {
+        if (!data) return [];
+        const today = startOfToday();
+        return data.bookings.filter(b => {
+            const isActive = !b.status || b.status === 'active';
+            if (!isActive) return false;
+            const checkInDate = new Date(b.startDate);
+            const daysUntil = differenceInDays(checkInDate, today);
+            return daysUntil >= 0 && daysUntil <= 7;
+        }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    }, [data]);
+
+    const upcomingCheckOuts = useMemo(() => {
+        if (!data) return [];
+        const today = startOfToday();
+        return data.bookings.filter(b => {
+            const isActive = !b.status || b.status === 'active';
+            if (!isActive) return false;
+            const checkOutDate = new Date(b.endDate);
+            const daysUntil = differenceInDays(checkOutDate, today);
+            return daysUntil >= 0 && daysUntil <= 3;
+        }).sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
+    }, [data]);
+
 
     if (loading || !data) {
         return <p>Cargando dashboard...</p>;
@@ -81,6 +109,38 @@ export default function DashboardPage() {
                 <p className="text-muted-foreground">Un resumen de tu negocio de alquileres.</p>
             </div>
         </div>
+
+        {upcomingCheckIns.length > 0 && (
+             <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>¡Atención! Próximos Check-ins</AlertTitle>
+                <AlertDescription>
+                    Tienes {upcomingCheckIns.length} check-in(s) en los próximos 7 días.
+                    <ul className="list-disc pl-5 mt-2">
+                    {upcomingCheckIns.map(b => (
+                        <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> llega el <strong>{new Date(b.startDate).toLocaleDateString('es-AR')}</strong>.</li>
+                    ))}
+                    </ul>
+                </AlertDescription>
+            </Alert>
+        )}
+        
+        {upcomingCheckOuts.length > 0 && (
+            <Alert variant="default" className="border-blue-500 text-blue-800 dark:border-blue-400 dark:text-blue-300 [&>svg]:text-blue-500">
+                <Info className="h-4 w-4" />
+                <AlertTitle className="text-blue-800 dark:text-blue-300">Aviso: Próximos Check-outs</AlertTitle>
+                <AlertDescription>
+                    Tienes {upcomingCheckOuts.length} check-out(s) en los próximos 3 días.
+                     <ul className="list-disc pl-5 mt-2">
+                    {upcomingCheckOuts.map(b => (
+                        <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> se retira el <strong>{new Date(b.endDate).toLocaleDateString('es-AR')}</strong>.</li>
+                    ))}
+                    </ul>
+                </AlertDescription>
+            </Alert>
+        )}
+
+
         <DashboardStats
             totalIncomeArs={totalIncomeArs}
             totalNetResultArs={totalNetResultArs}
