@@ -1,7 +1,7 @@
 
 import { getBookingsByPropertyId, getPropertyById, getTenantById } from '@/lib/data';
 import { NextRequest } from 'next/server';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 
@@ -10,7 +10,13 @@ function formatICalDate(date: Date): string {
     return date.toISOString().split('T')[0].replace(/-/g, '');
 }
 
+function formatICalDateTime(date: Date): string {
+    // Format for a specific time event: YYYYMMDDTHHMMSSZ
+    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+}
+
 function escapeICalText(text: string): string {
+    if (!text) return '';
     return text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
 }
 
@@ -52,33 +58,51 @@ export async function GET(
       const tenant = tenantsMap.get(booking.tenantId);
       const tenantName = tenant ? tenant.name : 'Inquilino Desconocido';
       const now = new Date();
-      const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const timestamp = formatICalDateTime(now);
 
-      // --- Create Check-in Event ---
       const checkinDate = new Date(booking.startDate);
-      const checkinSummary = `Check-in: ${tenantName} - ${property.name}`;
+      const checkoutDate = new Date(booking.endDate);
+      
+      // --- Create Check-in Event (All-day) ---
+      const checkinSummary = `Check-in: ${tenantName}`;
       const checkinDescription = `Llegada de ${escapeICalText(tenantName)} a ${escapeICalText(property.name)}.\n\nFecha: ${format(checkinDate, "dd/MM/yyyy", { locale: es })}`;
       
       icalContent.push('BEGIN:VEVENT');
       icalContent.push(`UID:${booking.id}-checkin@airesdemiramar.app`);
       icalContent.push(`DTSTAMP:${timestamp}`);
-      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(checkinDate)}`); // All-day event
+      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(checkinDate)}`);
       icalContent.push(`SUMMARY:${escapeICalText(checkinSummary)}`);
       icalContent.push(`DESCRIPTION:${checkinDescription}`);
       icalContent.push('END:VEVENT');
 
-      // --- Create Check-out Event ---
-      const checkoutDate = new Date(booking.endDate);
-      const checkoutSummary = `Check-out: ${tenantName} - ${property.name}`;
+      // --- Create Check-out Event (All-day) ---
+      const checkoutSummary = `Check-out: ${tenantName}`;
       const checkoutDescription = `Salida de ${escapeICalText(tenantName)} de ${escapeICalText(property.name)}.\n\nFecha: ${format(checkoutDate, "dd/MM/yyyy", { locale: es })}`;
 
       icalContent.push('BEGIN:VEVENT');
       icalContent.push(`UID:${booking.id}-checkout@airesdemiramar.app`);
       icalContent.push(`DTSTAMP:${timestamp}`);
-      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(checkoutDate)}`); // All-day event
+      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(checkoutDate)}`);
       icalContent.push(`SUMMARY:${escapeICalText(checkoutSummary)}`);
       icalContent.push(`DESCRIPTION:${checkoutDescription}`);
       icalContent.push('END:VEVENT');
+
+      // --- Create Full Booking Event (for blocking dates) ---
+      // This event starts on check-in day and ends the day AFTER check-out
+      // This is the standard way to represent multi-day events in iCal
+      const bookingSummary = `Ocupado - ${tenantName}`;
+      const bookingDescription = `Reserva a nombre de ${escapeICalText(tenantName)}.\nCheck-in: ${format(checkinDate, "dd/MM/yyyy")}\nCheck-out: ${format(checkoutDate, "dd/MM/yyyy")}`;
+
+      icalContent.push('BEGIN:VEVENT');
+      icalContent.push(`UID:${booking.id}-booking@airesdemiramar.app`);
+      icalContent.push(`DTSTAMP:${timestamp}`);
+      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(checkinDate)}`);
+      // DTEND is exclusive, so it should be the day after the last day of the event.
+      icalContent.push(`DTEND;VALUE=DATE:${formatICalDate(checkoutDate)}`);
+      icalContent.push(`SUMMARY:${escapeICalText(bookingSummary)}`);
+      icalContent.push(`DESCRIPTION:${bookingDescription}`);
+      icalContent.push('END:VEVENT');
+
     });
 
     icalContent.push('END:VCALENDAR');
