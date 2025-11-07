@@ -206,20 +206,20 @@ function ContractPage({ bookingId }: { bookingId: string }) {
     }
 
     const formatCurrency = (amount: number | null | undefined, currency: 'USD' | 'ARS' = 'USD') => {
-        if (amount === null || typeof amount === 'undefined') return '';
+        const value = amount ?? 0;
         if (currency === 'USD') {
              return `USD ${new Intl.NumberFormat('es-AR', {
                 style: 'decimal',
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
-            }).format(amount)}`;
+            }).format(value)}`;
         }
         return new Intl.NumberFormat('es-AR', {
             style: 'currency',
             currency: currency,
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-        }).format(amount);
+        }).format(value);
     }
     
     const rentalCurrencyConfig = {
@@ -236,7 +236,7 @@ function ContractPage({ bookingId }: { bookingId: string }) {
       centPlural: 'CENTAVOS',
       centSingular: 'CENTAVO',
     };
-    const guaranteeAmountInWords = booking.guaranteeAmount ? numeroALetras(booking.guaranteeAmount, guaranteeCurrencyConfig) : '';
+    const guaranteeAmountInWords = numeroALetras(booking.guaranteeAmount ?? 0, guaranteeCurrencyConfig);
 
 
     const replacements: { [key: string]: string } = {

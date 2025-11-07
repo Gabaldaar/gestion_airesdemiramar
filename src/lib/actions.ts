@@ -294,7 +294,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
         };
 
         const guaranteeAmountStr = formData.get("guaranteeAmount") as string;
-        updatedBookingData.guaranteeAmount = (guaranteeAmountStr && guaranteeAmountStr !== '') ? parseFloat(guaranteeAmountStr) : null;
+        updatedBookingData.guaranteeAmount = (guaranteeAmountStr && guaranteeAmountStr !== '') ? parseFloat(guaranteeAmountStr) : 0;
         
         const guaranteeReceivedDateStr = formData.get("guaranteeReceivedDate") as string;
         updatedBookingData.guaranteeReceivedDate = (guaranteeReceivedDateStr && guaranteeReceivedDateStr !== '') ? guaranteeReceivedDateStr : null;
@@ -302,8 +302,8 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
         const guaranteeReturnedDateStr = formData.get("guaranteeReturnedDate") as string;
         updatedBookingData.guaranteeReturnedDate = (guaranteeReturnedDateStr && guaranteeReturnedDateStr !== '') ? guaranteeReturnedDateStr : null;
 
-        if ((updatedBookingData.guaranteeStatus === 'solicited' || updatedBookingData.guaranteeStatus === 'received' || updatedBookingData.guaranteeStatus === 'returned') && !updatedBookingData.guaranteeAmount) {
-            return { success: false, message: "El 'Monto' de la garantía es obligatorio para este estado." };
+        if ((updatedBookingData.guaranteeStatus === 'solicited' || updatedBookingData.guaranteeStatus === 'received' || updatedBookingData.guaranteeStatus === 'returned') && (!updatedBookingData.guaranteeAmount || updatedBookingData.guaranteeAmount <= 0)) {
+            return { success: false, message: "El 'Monto' de la garantía es obligatorio para este estado y debe ser mayor que cero." };
         }
         if (updatedBookingData.guaranteeStatus === 'received' && !updatedBookingData.guaranteeReceivedDate) {
             return { success: false, message: "La 'Fecha Recibida' es obligatoria para el estado 'Recibida'." };

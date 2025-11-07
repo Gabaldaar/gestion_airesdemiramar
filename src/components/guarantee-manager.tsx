@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useTransition, ReactNode } from 'react';
@@ -69,7 +70,7 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
 
   const validateForm = () => {
     if ((status === 'solicited' || status === 'received' || status === 'returned') && (!amount || amount <= 0)) {
-        setClientError("El 'Monto' es obligatorio para este estado.");
+        setClientError("El 'Monto' es obligatorio para este estado y debe ser mayor que cero.");
         return false;
     }
     if (status === 'received' && !receivedDate) {
@@ -137,7 +138,6 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
               <input type="hidden" name="currency" value={booking.currency} />
               <input type="hidden" name="notes" value={booking.notes} />
               <input type="hidden" name="contractStatus" value={booking.contractStatus} />
-              <input type="hidden" name="googleCalendarEventId" value={booking.googleCalendarEventId || ''} />
 
               <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
