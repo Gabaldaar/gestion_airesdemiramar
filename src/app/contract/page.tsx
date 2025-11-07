@@ -205,7 +205,8 @@ function ContractPage({ bookingId }: { bookingId: string }) {
         return <div className="p-8 text-red-500 bg-white">Faltan datos del inquilino o la propiedad para generar el contrato.</div>
     }
 
-    const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
+    const formatCurrency = (amount: number | null | undefined, currency: 'USD' | 'ARS' = 'USD') => {
+        if (amount === null || typeof amount === 'undefined') return '';
         if (currency === 'USD') {
              return `USD ${new Intl.NumberFormat('es-AR', {
                 style: 'decimal',
@@ -221,13 +222,21 @@ function ContractPage({ bookingId }: { bookingId: string }) {
         }).format(amount);
     }
     
-    const currencyConfig = {
+    const rentalCurrencyConfig = {
       plural: booking.currency === 'ARS' ? 'PESOS' : 'DÓLARES ESTADOUNIDENSES',
       singular: booking.currency === 'ARS' ? 'PESO' : 'DÓLAR ESTADOUNIDENSE',
       centPlural: 'CENTAVOS',
       centSingular: 'CENTAVO',
     };
-    const amountInWords = booking.amount ? numeroALetras(booking.amount, currencyConfig) : '';
+    const amountInWords = booking.amount ? numeroALetras(booking.amount, rentalCurrencyConfig) : '';
+
+    const guaranteeCurrencyConfig = {
+      plural: booking.guaranteeCurrency === 'ARS' ? 'PESOS' : 'DÓLARES ESTADOUNIDENSES',
+      singular: booking.guaranteeCurrency === 'ARS' ? 'PESO' : 'DÓLAR ESTADOUNIDENSE',
+      centPlural: 'CENTAVOS',
+      centSingular: 'CENTAVO',
+    };
+    const guaranteeAmountInWords = booking.guaranteeAmount ? numeroALetras(booking.guaranteeAmount, guaranteeCurrencyConfig) : '';
 
 
     const replacements: { [key: string]: string } = {
@@ -240,6 +249,9 @@ function ContractPage({ bookingId }: { bookingId: string }) {
         '{{fechaCheckOut}}': format(new Date(booking.endDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
         '{{monto}}': formatCurrency(booking.amount, booking.currency),
         '{{montoEnLetras}}': amountInWords,
+        '{{montoGarantia}}': formatCurrency(booking.guaranteeAmount, booking.guaranteeCurrency),
+        '{{montoGarantiaEnLetras}}': guaranteeAmountInWords,
+        '{{monedaGarantia}}': booking.guaranteeCurrency || 'USD',
         '{{fechaActual}}': format(new Date(), "dd 'de' LLLL 'de' yyyy", { locale: es }),
     };
 
@@ -288,3 +300,4 @@ function ContractPage({ bookingId }: { bookingId: string }) {
         </div>
     );
 }
+
