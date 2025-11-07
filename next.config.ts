@@ -3,7 +3,7 @@ import type {NextConfig} from 'next';
 
 const { version } = require('./package.json');
 
-// Forcing a server restart to recognize files in /public
+// Forcing a server restart to solve ChunkLoadError
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
