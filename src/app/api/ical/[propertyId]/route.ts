@@ -63,18 +63,6 @@ export async function GET(
       const checkinDate = new Date(booking.startDate);
       const checkoutDate = new Date(booking.endDate);
       
-      // --- Create Check-in Event (All-day) ---
-      const checkinSummary = `Check-in: ${tenantName}`;
-      const checkinDescription = `Llegada de ${escapeICalText(tenantName)} a ${escapeICalText(property.name)}.\n\nFecha: ${format(checkinDate, "dd/MM/yyyy", { locale: es })}`;
-      
-      icalContent.push('BEGIN:VEVENT');
-      icalContent.push(`UID:${booking.id}-checkin@airesdemiramar.app`);
-      icalContent.push(`DTSTAMP:${timestamp}`);
-      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(checkinDate)}`);
-      icalContent.push(`SUMMARY:${escapeICalText(checkinSummary)}`);
-      icalContent.push(`DESCRIPTION:${checkinDescription}`);
-      icalContent.push('END:VEVENT');
-
       // --- Create Check-out Event (All-day) ---
       const checkoutSummary = `Check-out: ${tenantName}`;
       const checkoutDescription = `Salida de ${escapeICalText(tenantName)} de ${escapeICalText(property.name)}.\n\nFecha: ${format(checkoutDate, "dd/MM/yyyy", { locale: es })}`;
@@ -88,17 +76,17 @@ export async function GET(
       icalContent.push('END:VEVENT');
 
       // --- Create Full Booking Event (for blocking dates) ---
-      // This event starts on check-in day and ends the day AFTER check-out
-      // This is the standard way to represent multi-day events in iCal
-      const bookingSummary = `Ocupado - ${tenantName}`;
+      // This event starts on the day AFTER check-in and ends the day of check-out
+      const bookingStartDay = addDays(checkinDate, 1);
+      const bookingSummary = `Ocupado - ${tenantName} - ${property.name}`;
       const bookingDescription = `Reserva a nombre de ${escapeICalText(tenantName)}.\nCheck-in: ${format(checkinDate, "dd/MM/yyyy")}\nCheck-out: ${format(checkoutDate, "dd/MM/yyyy")}`;
 
       icalContent.push('BEGIN:VEVENT');
       icalContent.push(`UID:${booking.id}-booking@airesdemiramar.app`);
       icalContent.push(`DTSTAMP:${timestamp}`);
-      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(checkinDate)}`);
+      icalContent.push(`DTSTART;VALUE=DATE:${formatICalDate(bookingStartDay)}`);
       // DTEND is exclusive, so it should be the day after the last day of the event.
-      icalContent.push(`DTEND;VALUE=DATE:${formatICalDate(checkoutDate)}`);
+      icalContent.push(`DTEND;VALUE=DATE:${formatICalDate(addDays(checkoutDate, 1))}`);
       icalContent.push(`SUMMARY:${escapeICalText(bookingSummary)}`);
       icalContent.push(`DESCRIPTION:${bookingDescription}`);
       icalContent.push('END:VEVENT');
