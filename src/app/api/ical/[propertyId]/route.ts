@@ -44,21 +44,25 @@ export async function GET(
         const propertyName = property.name;
 
         // --- Main Blocking Event ---
-        const startBookingDate = addDays(new Date(booking.startDate), 1);
-        const endBookingDate = addDays(new Date(booking.endDate), 1);
+        // Start date is the day AFTER check-in to leave the check-in day free
+        const startBlockingDate = addDays(new Date(booking.startDate), 1);
+        // End date is the check-out date. For all-day events, the end date is exclusive.
+        const endBlockingDate = new Date(booking.endDate);
         const eventUID = `${booking.id}@adm.com`;
 
         events.push(
         `BEGIN:VEVENT`,
         `UID:${eventUID}`,
         `DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`,
-        `DTSTART;VALUE=DATE:${formatICalDate(startBookingDate)}`,
-        `DTEND;VALUE=DATE:${formatICalDate(endBookingDate)}`,
-        `SUMMARY:Ocupado - ${tenantName} - ${propertyName}`,
+        `DTSTART;VALUE=DATE:${formatICalDate(startBlockingDate)}`,
+        `DTEND;VALUE=DATE:${formatICalDate(endBlockingDate)}`,
+        `SUMMARY:Reserva - ${tenantName} - ${propertyName}`,
         `DESCRIPTION:Reserva para ${tenantName}. Check-in el ${format(new Date(booking.startDate), 'yyyy-MM-dd')}, Check-out el ${format(new Date(booking.endDate), 'yyyy-MM-dd')}.`,
         `END:VEVENT`
         );
     });
+
+    const safeFilename = property.name.replace(/[^a-zA-Z0-9]/g, '_');
 
     const iCalContent = [
       'BEGIN:VCALENDAR',
@@ -74,7 +78,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Content-Disposition': `attachment; filename="calendar_${propertyId}.ics"`,
+        'Content-Disposition': `attachment; filename="calendar_${safeFilename}.ics"`,
       },
     });
   } catch (error) {
