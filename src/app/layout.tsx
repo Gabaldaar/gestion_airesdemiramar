@@ -35,6 +35,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png"></link>
+      </head>
       <body className={inter.className}>
         <AuthProvider>
           <LayoutManager>{children}</LayoutManager>
