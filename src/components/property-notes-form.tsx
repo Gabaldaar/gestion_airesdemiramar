@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useActionState as useActionStateReact } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import { updateProperty } from '@/lib/actions';
 import { Property } from '@/lib/data';
@@ -32,9 +32,17 @@ function SubmitButton() {
 }
 
 export function PropertyNotesForm({ property }: { property: Property }) {
-  const [state, formAction] = useActionStateReact(updateProperty, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const formId = `property-notes-form-${property.id}`;
   const [isOpen, setIsOpen] = useState(false);
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await updateProperty(initialState, formData);
+        setState(result);
+    });
+  };
 
   useEffect(() => {
     if (state.success) {

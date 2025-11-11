@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, ReactNode, useActionState as useActionStateReact } from 'react';
+import { useEffect, useState, ReactNode, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -65,12 +65,20 @@ interface PaymentEditFormProps {
 export function PaymentEditForm({ payment, bookingId, onPaymentUpdated, children }: PaymentEditFormProps) {
   const isEdit = !!payment;
   const action = isEdit ? updatePayment : addPayment;
-  const [state, formAction] = useActionStateReact(action, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(isEdit ? new Date(payment.date) : new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(isEdit ? (payment.originalArsAmount ? 'ARS' : 'USD') : 'USD');
   
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await action(initialState, formData);
+        setState(result);
+    });
+  };
+
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useActionState as useActionStateReact } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -53,11 +53,18 @@ interface PaymentAddFormProps {
 }
 
 export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange }: PaymentAddFormProps) {
-  const [state, formAction] = useActionStateReact(addPayment, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
 
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await addPayment(initialState, formData);
+        setState(result);
+    });
+  };
 
   useEffect(() => {
     if (state.success) {

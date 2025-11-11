@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useActionState as useActionStateReact } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -49,8 +49,16 @@ interface TenantEditFormProps {
 }
 
 export function TenantEditForm({ tenant, onTenantUpdated, isOpen, onOpenChange }: TenantEditFormProps) {
-  const [state, formAction] = useActionStateReact(updateTenant, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const [origins, setOrigins] = useState<Origin[]>([]);
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await updateTenant(initialState, formData);
+        setState(result);
+    });
+  };
 
   useEffect(() => {
     if (state.success) {

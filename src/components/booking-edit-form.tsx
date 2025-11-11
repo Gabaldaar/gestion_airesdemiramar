@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useMemo, ReactNode, useActionState as useActionStateReact } from 'react';
+import { useEffect, useRef, useState, useMemo, ReactNode, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -74,13 +74,21 @@ interface BookingEditFormProps {
 
 
 export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange, onBookingUpdated }: BookingEditFormProps) {
-  const [state, formAction] = useActionStateReact(updateBooking, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const [origins, setOrigins] = useState<Origin[]>([]);
   const [date, setDate] = useState<DateRange | undefined>({
       from: new Date(booking.startDate),
       to: new Date(booking.endDate)
   });
   const [conflict, setConflict] = useState<Booking | null>(null);
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await updateBooking(initialState, formData);
+        setState(result);
+    });
+  };
 
   // Guarantee state
   const [guaranteeStatus, setGuaranteeStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');

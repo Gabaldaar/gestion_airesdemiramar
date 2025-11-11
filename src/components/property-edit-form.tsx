@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState as useActionStateReact } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,8 @@ import { PropertyDeleteForm } from './property-delete-form';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/use-window-size';
+import { useToast } from './ui/use-toast';
+
 
 const initialState = {
   message: '',
@@ -38,9 +40,28 @@ function SubmitButton() {
 }
 
 export function PropertyEditForm({ property }: { property: Property }) {
-  const [state, formAction] = useActionStateReact(updateProperty, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
   const { width } = useWindowSize();
   const isMobile = width < 768;
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await updateProperty(initialState, formData);
+        setState(result);
+    });
+  }
+
+  useEffect(() => {
+    if (state.message) {
+        toast({
+            title: state.success ? 'Éxito' : 'Error',
+            description: state.message,
+            variant: state.success ? 'default' : 'destructive',
+        });
+    }
+  }, [state, toast]);
 
   return (
     <div className="py-4">
@@ -96,9 +117,6 @@ export function PropertyEditForm({ property }: { property: Property }) {
             </div>
              {state.message && !state.success && (
                 <p className="text-red-500 text-sm">{state.message}</p>
-            )}
-             {state.message && state.success && (
-                <p className="text-green-500 text-sm">{state.message}</p>
             )}
         </form>
     </div>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useActionState as useActionStateReact } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -43,10 +43,18 @@ function SubmitButton() {
 }
 
 export function TenantAddForm() {
-  const [state, formAction] = useActionStateReact(addTenant, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [origins, setOrigins] = useState<Origin[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await addTenant(initialState, formData);
+        setState(result);
+    });
+  };
 
   useEffect(() => {
     if (state.success) {

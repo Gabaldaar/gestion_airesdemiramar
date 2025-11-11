@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useActionState as useActionStateReact } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -48,12 +48,19 @@ function SubmitButton() {
 }
 
 export function ExpenseAddForm({ propertyId, categories }: { propertyId: string, categories: ExpenseCategory[] }) {
-  const [state, formAction] = useActionStateReact(addPropertyExpense, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS');
 
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await addPropertyExpense(initialState, formData);
+        setState(result);
+    });
+  };
 
   useEffect(() => {
     if (state.success) {

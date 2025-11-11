@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useMemo, useTransition, useActionState as useActionStateReact } from 'react';
+import { useEffect, useRef, useState, useMemo, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -62,12 +62,20 @@ function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
 }
 
 export function BookingAddForm({ propertyId, tenants, existingBookings }: { propertyId: string, tenants: Tenant[], existingBookings: Booking[] }) {
-  const [state, formAction] = useActionStateReact(addBooking, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [origins, setOrigins] = useState<Origin[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<DateRange | undefined>(undefined);
   const [conflict, setConflict] = useState<Booking | null>(null);
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await addBooking(initialState, formData);
+        setState(result);
+    });
+  };
 
   const resetForm = () => {
     formRef.current?.reset();

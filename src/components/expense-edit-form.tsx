@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useActionState as useActionStateReact } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -48,10 +48,18 @@ function SubmitButton() {
 }
 
 export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { expense: PropertyExpense, categories: ExpenseCategory[], onExpenseUpdated: () => void; }) {
-  const [state, formAction] = useActionStateReact(updatePropertyExpense, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(expense.originalUsdAmount ? 'USD' : 'ARS');
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await updatePropertyExpense(initialState, formData);
+        setState(result);
+    });
+  };
 
   useEffect(() => {
     if (state.success) {
