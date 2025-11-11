@@ -1,10 +1,12 @@
 
-import type {NextConfig} from 'next';
+/** @type {import('next').NextConfig} */
 
+// Leer la versión desde package.json
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 const { version } = require('./package.json');
 
-// Forcing a server restart to solve ChunkLoadError
-const nextConfig: NextConfig = {
+const nextConfig = {
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
