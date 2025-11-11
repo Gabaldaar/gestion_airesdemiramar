@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -38,7 +38,7 @@ function SubmitButton() {
 }
 
 export function PropertyEditForm({ property }: { property: Property }) {
-  const [state, formAction] = useActionState(updateProperty, initialState);
+  const [state, formAction] = useActionStateReact(updateProperty, initialState);
   const { width } = useWindowSize();
   const isMobile = width < 768;
 

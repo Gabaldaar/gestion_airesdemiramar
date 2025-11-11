@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState, useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   AlertDialog,
@@ -41,7 +42,7 @@ function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
 }
 
 export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: string; propertyName: string }) {
-  const [state, formAction] = useActionState(deleteProperty, initialState);
+  const [state, formAction] = useActionStateReact(deleteProperty, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -41,7 +41,7 @@ function SubmitButton() {
 }
 
 export function PropertyAddForm() {
-  const [state, formAction] = useActionState(addProperty, initialState);
+  const [state, formAction] = useActionStateReact(addProperty, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 

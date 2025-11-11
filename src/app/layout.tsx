@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     telephone: false,
   },
   themeColor: "#17628d",
+  other: {
+    "mobile-web-app-capable": "yes",
+  }
 };
 
 export default function RootLayout({

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, ReactNode, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -65,7 +65,7 @@ interface PaymentEditFormProps {
 export function PaymentEditForm({ payment, bookingId, onPaymentUpdated, children }: PaymentEditFormProps) {
   const isEdit = !!payment;
   const action = isEdit ? updatePayment : addPayment;
-  const [state, formAction] = useActionState(action, initialState);
+  const [state, formAction] = useActionStateReact(action, initialState);
   
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(isEdit ? new Date(payment.date) : new Date());

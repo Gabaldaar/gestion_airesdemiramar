@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState, useTransition, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import { AlertSettings } from '@/lib/data';
 import { updateAlertSettings } from '@/lib/actions';
@@ -33,7 +33,7 @@ function SubmitButton() {
 }
 
 export function AlertSettingsManager({ initialSettings }: { initialSettings: AlertSettings | null }) {
-    const [state, formAction] = useActionState(updateAlertSettings, initialState);
+    const [state, formAction] = useActionStateReact(updateAlertSettings, initialState);
     const [checkInDays, setCheckInDays] = useState(initialSettings?.checkInDays ?? 7);
     const [checkOutDays, setCheckOutDays] = useState(initialSettings?.checkOutDays ?? 3);
     const { toast } = useToast();

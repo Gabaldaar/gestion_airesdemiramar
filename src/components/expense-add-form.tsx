@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -47,7 +48,7 @@ function SubmitButton() {
 }
 
 export function ExpenseAddForm({ propertyId, categories }: { propertyId: string, categories: ExpenseCategory[] }) {
-  const [state, formAction] = useActionState(addPropertyExpense, initialState);
+  const [state, formAction] = useActionStateReact(addPropertyExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());

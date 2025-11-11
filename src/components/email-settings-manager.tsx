@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import { EmailSettings } from '@/lib/data';
 import { updateEmailSettings } from '@/lib/actions';
@@ -33,7 +33,7 @@ function SubmitButton() {
 }
 
 export function EmailSettingsManager({ initialSettings }: { initialSettings: EmailSettings | null }) {
-    const [state, formAction] = useActionState(updateEmailSettings, initialState);
+    const [state, formAction] = useActionStateReact(updateEmailSettings, initialState);
     const [replyToEmail, setReplyToEmail] = useState(initialSettings?.replyToEmail || '');
     const { toast } = useToast();
 

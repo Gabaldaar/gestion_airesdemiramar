@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState, useState, useEffect, useRef, ReactNode } from 'react';
+import { useEffect, useRef, useState, ReactNode, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   AlertDialog,
@@ -49,7 +50,7 @@ interface BookingDeleteFormProps {
 }
 
 export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onOpenChange }: BookingDeleteFormProps) {
-  const [state, formAction] = useActionState(deleteBooking, initialState);
+  const [state, formAction] = useActionStateReact(deleteBooking, initialState);
   const [isChecked, setIsChecked] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 

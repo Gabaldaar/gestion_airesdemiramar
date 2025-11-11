@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -49,7 +49,7 @@ interface TenantEditFormProps {
 }
 
 export function TenantEditForm({ tenant, onTenantUpdated, isOpen, onOpenChange }: TenantEditFormProps) {
-  const [state, formAction] = useActionState(updateTenant, initialState);
+  const [state, formAction] = useActionStateReact(updateTenant, initialState);
   const [origins, setOrigins] = useState<Origin[]>([]);
 
   useEffect(() => {

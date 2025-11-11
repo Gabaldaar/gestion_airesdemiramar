@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -49,7 +49,7 @@ function SubmitButton() {
 }
 
 export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated }: { expense: BookingExpense, categories: ExpenseCategory[], onExpenseUpdated: () => void; }) {
-  const [state, formAction] = useActionState(updateBookingExpense, initialState);
+  const [state, formAction] = useActionStateReact(updateBookingExpense, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(expense.originalUsdAmount ? 'USD' : 'ARS');

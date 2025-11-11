@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useRef, useState, useMemo, ReactNode } from 'react';
+import { useEffect, useRef, useState, useMemo, ReactNode, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -74,7 +74,7 @@ interface BookingEditFormProps {
 
 
 export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange, onBookingUpdated }: BookingEditFormProps) {
-  const [state, formAction] = useActionState(updateBooking, initialState);
+  const [state, formAction] = useActionStateReact(updateBooking, initialState);
   const [origins, setOrigins] = useState<Origin[]>([]);
   const [date, setDate] = useState<DateRange | undefined>({
       from: new Date(booking.startDate),

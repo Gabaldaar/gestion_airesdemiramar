@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState, useActionState as useActionStateReact } from 'react';
 import { useFormStatus } from 'react-dom';
 import { updateProperty } from '@/lib/actions';
 import { Property } from '@/lib/data';
@@ -32,7 +32,7 @@ function SubmitButton() {
 }
 
 export function PropertyNotesForm({ property }: { property: Property }) {
-  const [state, formAction] = useActionState(updateProperty, initialState);
+  const [state, formAction] = useActionStateReact(updateProperty, initialState);
   const formId = `property-notes-form-${property.id}`;
   const [isOpen, setIsOpen] = useState(false);
 
