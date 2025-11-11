@@ -104,7 +104,9 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
         const result = await updateBooking(initialState, formData);
         if (result.success) {
             onOpenChange(false);
+            // We should reload or re-fetch data here if needed, e.g. window.location.reload()
         }
+        // Handle server-side errors if necessary, though client-side validation covers most cases
     });
   };
 

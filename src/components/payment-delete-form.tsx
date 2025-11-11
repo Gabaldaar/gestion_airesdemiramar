@@ -38,8 +38,15 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
 
 export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: string; onPaymentDeleted: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [state, formAction] = useActionState(deletePayment, initialState);
+  const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await deletePayment(state, formData);
+        setState(result);
+    });
+  }
 
   useEffect(() => {
     if (state.success) {
@@ -51,9 +58,7 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       const formData = new FormData(event.currentTarget);
-      startTransition(() => {
-          formAction(formData);
-      });
+      formAction(formData);
   }
 
   return (
