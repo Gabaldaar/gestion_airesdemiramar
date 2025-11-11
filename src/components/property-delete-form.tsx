@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useActionState as useActionStateReact } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useEffect, useRef, useTransition } from 'react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -25,11 +24,10 @@ const initialState = {
   success: false,
 };
 
-function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
-    const { pending } = useFormStatus();
+function DeleteButton({ isDisabled, isPending }: { isDisabled: boolean, isPending: boolean }) {
     return (
-        <Button type="submit" variant="destructive" disabled={isDisabled || pending}>
-            {pending ? (
+        <Button type="submit" variant="destructive" disabled={isDisabled || isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Eliminando...
@@ -42,10 +40,20 @@ function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
 }
 
 export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: string; propertyName: string }) {
-  const [state, formAction] = useActionStateReact(deleteProperty, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(async () => {
+        const result = await deleteProperty(initialState, formData);
+        setState(result);
+    });
+  }
 
   useEffect(() => {
     // If the deletion was successful, close the dialog
@@ -57,6 +65,7 @@ export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: s
    useEffect(() => {
     if (!isOpen) {
         setIsChecked(false);
+        setState(initialState);
     }
   }, [isOpen])
 
@@ -69,7 +78,7 @@ export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: s
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
-        <form action={formAction} ref={formRef}>
+        <form onSubmit={handleSubmit} ref={formRef}>
             <input type="hidden" name="id" value={propertyId} />
             <AlertDialogHeader>
             <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
@@ -91,7 +100,7 @@ export function PropertyDeleteForm({ propertyId, propertyName }: { propertyId: s
             <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setIsChecked(false)}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction asChild>
-                    <DeleteButton isDisabled={!isChecked}/>
+                    <DeleteButton isDisabled={!isChecked} isPending={isPending} />
                 </AlertDialogAction>
             </AlertDialogFooter>
         </form>

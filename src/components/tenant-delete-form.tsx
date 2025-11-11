@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useState, useTransition } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,11 +22,10 @@ const initialState = {
   success: false,
 };
 
-function DeleteButton() {
-    const { pending } = useFormStatus();
+function DeleteButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" variant="destructive" disabled={pending}>
-            {pending ? (
+        <Button type="submit" variant="destructive" disabled={isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Borrando...
@@ -40,7 +38,17 @@ function DeleteButton() {
 }
 
 export function TenantDeleteForm({ tenantId, onTenantDeleted }: { tenantId: string; onTenantDeleted: () => void; }) {
-  const [state, formAction] = useActionState(deleteTenant, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(async () => {
+        const result = await deleteTenant(initialState, formData);
+        setState(result);
+    });
+  }
   
   useEffect(() => {
     if (state.success) {
@@ -65,10 +73,10 @@ export function TenantDeleteForm({ tenantId, onTenantDeleted }: { tenantId: stri
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <form action={formAction}>
+          <form onSubmit={handleSubmit}>
             <input type="hidden" name="id" value={tenantId} />
             <AlertDialogAction asChild>
-               <DeleteButton />
+               <DeleteButton isPending={isPending} />
             </AlertDialogAction>
           </form>
         </AlertDialogFooter>

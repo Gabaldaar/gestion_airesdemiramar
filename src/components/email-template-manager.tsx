@@ -1,8 +1,7 @@
 
 'use client';
 
-import React, { useState, useRef, useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
+import React, { useState, useRef, useEffect, useTransition } from 'react';
 import { EmailTemplate, getEmailTemplates } from '@/lib/data';
 import { addEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -42,6 +41,7 @@ import { PlusCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 import useWindowSize from '@/hooks/use-window-size';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from './ui/card';
 
+const initialState = { success: false, message: '' };
 const placeholderHelpText = "Marcadores disponibles: {{inquilino.nombre}}, {{propiedad.nombre}}, {{propiedad.direccion}}, {{fechaCheckIn}}, {{fechaCheckOut}}, {{montoReserva}}, {{saldoReserva}}, {{montoGarantia}}, {{montoPago}}, {{fechaPago}}, {{fechaGarantiaRecibida}}, {{fechaGarantiaDevuelta}}, {{propiedad.customField1Label}}, {{propiedad.customField1Value}} ...hasta el 6";
 
 function SubmitButton({ isPending, text, pendingText }: { isPending: boolean, text: string, pendingText: string }) {
@@ -73,7 +73,8 @@ function TemplateDialog({
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const action = template ? updateEmailTemplate : addEmailTemplate;
-  const [state, formAction, isPending] = useActionState(action, { success: false, message: '' });
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
 
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
@@ -90,6 +91,7 @@ function TemplateDialog({
             setSubject('');
             setBody('');
         }
+        setState(initialState);
     }
   }, [template, isOpen]);
 
@@ -100,6 +102,15 @@ function TemplateDialog({
       onActionComplete();
     }
   }, [state, setIsOpen, onActionComplete]);
+  
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(async () => {
+        const result = await action(initialState, formData);
+        setState(result);
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -117,7 +128,7 @@ function TemplateDialog({
       <DialogContent className="sm:max-w-2xl">
         <form
           ref={formRef}
-          action={formAction}
+          onSubmit={handleSubmit}
         >
           {template && <input type="hidden" name="id" value={template.id} />}
           <DialogHeader>
@@ -154,7 +165,17 @@ function TemplateDialog({
 
 
 function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: string, onActionComplete: () => void }) {
-    const [state, formAction, isPending] = useActionState(deleteEmailTemplate, { success: false, message: '' });
+    const [state, setState] = useState(initialState);
+    const [isPending, startTransition] = useTransition();
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        startTransition(async () => {
+            const result = await deleteEmailTemplate(initialState, formData);
+            setState(result);
+        });
+    }
 
     useEffect(() => {
         if (state.success) {
@@ -168,7 +189,7 @@ function DeleteTemplateDialog({ templateId, onActionComplete }: { templateId: st
                 <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <form action={formAction}>
+                <form onSubmit={handleSubmit}>
                     <input type="hidden" name="id" value={templateId} />
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>

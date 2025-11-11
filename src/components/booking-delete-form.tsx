@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, ReactNode, useActionState as useActionStateReact } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useRef, useState, ReactNode, useTransition } from 'react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -25,11 +24,10 @@ const initialState = {
   success: false,
 };
 
-function DeleteButton({ isDisabled }: { isDisabled: boolean }) {
-    const { pending } = useFormStatus();
+function DeleteButton({ isDisabled, isPending }: { isDisabled: boolean, isPending: boolean }) {
     return (
-        <Button type="submit" variant="destructive" disabled={isDisabled || pending}>
-            {pending ? (
+        <Button type="submit" variant="destructive" disabled={isDisabled || isPending}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Eliminando...
@@ -50,9 +48,19 @@ interface BookingDeleteFormProps {
 }
 
 export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onOpenChange }: BookingDeleteFormProps) {
-  const [state, formAction] = useActionStateReact(deleteBooking, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const [isChecked, setIsChecked] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(async () => {
+        const result = await deleteBooking(initialState, formData);
+        setState(result);
+    });
+  }
 
   useEffect(() => {
     if (state.success) {
@@ -63,6 +71,7 @@ export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onO
   useEffect(() => {
     if (!isOpen) {
         setIsChecked(false);
+        setState(initialState);
     }
   }, [isOpen])
 
@@ -72,7 +81,7 @@ export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onO
       {children}
       <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
         <AlertDialogContent>
-          <form action={formAction} ref={formRef}>
+          <form onSubmit={handleSubmit} ref={formRef}>
               <input type="hidden" name="id" value={bookingId} />
               <input type="hidden" name="propertyId" value={propertyId} />
               <AlertDialogHeader>
@@ -93,9 +102,9 @@ export function BookingDeleteForm({ bookingId, propertyId, children, isOpen, onO
                   )}
               </div>
               <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setIsChecked(false)}>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel onClick={() => { setIsChecked(false); setState(initialState); }}>Cancelar</AlertDialogCancel>
                   <AlertDialogAction asChild>
-                    <DeleteButton isDisabled={!isChecked} />
+                    <DeleteButton isDisabled={!isChecked} isPending={isPending} />
                   </AlertDialogAction>
               </AlertDialogFooter>
           </form>

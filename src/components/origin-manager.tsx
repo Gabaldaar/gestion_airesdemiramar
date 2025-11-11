@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useRef, useEffect, useTransition } from 'react';
 import { Origin, getOrigins } from '@/lib/data';
 import { addOrigin, updateOrigin, deleteOrigin } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -35,19 +34,28 @@ const initialState = {
   success: false,
 };
 
-function AddOriginButton() {
-    const { pending } = useFormStatus();
+function AddOriginButton({ isPending }: { isPending: boolean }) {
     return (
-        <Button type="submit" size="icon" disabled={pending}>
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+        <Button type="submit" size="icon" disabled={isPending}>
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
         </Button>
     )
 }
 
 function OriginAddRow({ onActionComplete }: { onActionComplete: () => void }) {
-  const [state, formAction] = useActionState(addOrigin, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const [color, setColor] = useState('#17628d');
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(async () => {
+        const result = await addOrigin(initialState, formData);
+        setState(result);
+    });
+  }
 
   useEffect(() => {
     if (state.success) {
@@ -58,22 +66,21 @@ function OriginAddRow({ onActionComplete }: { onActionComplete: () => void }) {
   }, [state, onActionComplete]);
   
   return (
-    <form action={formAction} ref={formRef} className="flex items-center gap-2 p-2 border-t">
+    <form onSubmit={handleSubmit} ref={formRef} className="flex items-center gap-2 p-2 border-t">
         <Input name="name" placeholder="Nombre del nuevo origen" className="flex-grow" required />
         <Input name="color" type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 h-10 p-1" required />
-        <AddOriginButton />
+        <AddOriginButton isPending={isPending} />
     </form>
   );
 }
 
-function EditOriginButtons({ onCancel }: { onCancel: () => void }) {
-    const { pending } = useFormStatus();
+function EditOriginButtons({ onCancel, isPending }: { onCancel: () => void, isPending: boolean }) {
     return (
         <>
-            <Button type="submit" variant="ghost" size="icon" disabled={pending}>
-                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 text-green-600" />}
+            <Button type="submit" variant="ghost" size="icon" disabled={isPending}>
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 text-green-600" />}
             </Button>
-            <Button type="button" variant="ghost" size="icon" onClick={onCancel} disabled={pending}>
+            <Button type="button" variant="ghost" size="icon" onClick={onCancel} disabled={isPending}>
                 <X className="h-4 w-4 text-red-600" />
             </Button>
         </>
@@ -81,7 +88,17 @@ function EditOriginButtons({ onCancel }: { onCancel: () => void }) {
 }
 
 function OriginEditRow({ origin, onCancel, onUpdated }: { origin: Origin, onCancel: () => void, onUpdated: () => void }) {
-    const [state, formAction] = useActionState(updateOrigin, initialState);
+    const [state, setState] = useState(initialState);
+    const [isPending, startTransition] = useTransition();
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        startTransition(async () => {
+            const result = await updateOrigin(initialState, formData);
+            setState(result);
+        });
+    }
 
     useEffect(() => {
         if (state.success) {
@@ -92,22 +109,21 @@ function OriginEditRow({ origin, onCancel, onUpdated }: { origin: Origin, onCanc
     return (
          <TableRow>
             <TableCell colSpan={3}>
-                <form action={formAction} onSubmit={onUpdated} className="flex items-center gap-2">
+                <form onSubmit={handleSubmit} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={origin.id} />
                     <Input name="name" defaultValue={origin.name} className="flex-grow" required />
                     <Input name="color" type="color" defaultValue={origin.color} className="w-12 h-10 p-1" required />
-                    <EditOriginButtons onCancel={onCancel} />
+                    <EditOriginButtons onCancel={onCancel} isPending={isPending} />
                 </form>
             </TableCell>
         </TableRow>
     )
 }
 
-function DeleteOriginButton() {
-    const { pending } = useFormStatus();
+function DeleteOriginButton({ isPending }: { isPending: boolean }) {
     return (
-         <Button type="submit" variant="destructive" disabled={pending}>
-             {pending ? (
+         <Button type="submit" variant="destructive" disabled={isPending}>
+             {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Eliminando...
@@ -120,7 +136,17 @@ function DeleteOriginButton() {
 }
 
 function OriginDeleteAction({ originId, onDeleted }: { originId: string, onDeleted: () => void }) {
-    const [state, formAction] = useActionState(deleteOrigin, initialState);
+    const [state, setState] = useState(initialState);
+    const [isPending, startTransition] = useTransition();
+    
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        startTransition(async () => {
+            const result = await deleteOrigin(initialState, formData);
+            setState(result);
+        });
+    }
 
     useEffect(() => {
         if (state.success) {
@@ -136,7 +162,7 @@ function OriginDeleteAction({ originId, onDeleted }: { originId: string, onDelet
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                 <form action={formAction}>
+                 <form onSubmit={handleSubmit}>
                     <input type="hidden" name="id" value={originId} />
                     <AlertDialogHeader>
                     <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
@@ -147,7 +173,7 @@ function OriginDeleteAction({ originId, onDeleted }: { originId: string, onDelet
                     <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction asChild>
-                        <DeleteOriginButton />
+                        <DeleteOriginButton isPending={isPending} />
                     </AlertDialogAction>
                     </AlertDialogFooter>
                 </form>
@@ -182,11 +208,14 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
                  ? (
                     <Card key={origin.id}>
                         <CardContent className="p-2">
-                             <form action={updateOrigin} onSubmit={refreshOrigins} className="flex items-center gap-2">
+                             <form onSubmit={(e) => {
+                                 e.preventDefault();
+                                 updateOrigin(initialState, new FormData(e.currentTarget)).then(refreshOrigins);
+                             }} className="flex items-center gap-2">
                                 <input type="hidden" name="id" value={editingOriginId} />
                                 <Input name="name" defaultValue={origins.find(o => o.id === editingOriginId)?.name} className="flex-grow" required />
                                 <Input name="color" type="color" defaultValue={origins.find(o => o.id === editingOriginId)?.color} className="w-12 h-10 p-1" required />
-                                <EditOriginButtons onCancel={() => setEditingOriginId(null)} />
+                                <EditOriginButtons onCancel={() => setEditingOriginId(null)} isPending={false} />
                             </form>
                         </CardContent>
                     </Card>
