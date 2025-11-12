@@ -111,6 +111,24 @@ export default function FinancialSummaryTable({ summary, currency }: FinancialSu
     return <p className="text-sm text-muted-foreground py-4 text-center">No hay datos en {currency} para el período seleccionado.</p>;
   }
 
+  // While determining the screen size, we can show a placeholder or nothing
+  if (width === undefined) {
+    return <div className="space-y-4">
+        {filteredSummary.map((item) => (
+            <Card key={item.propertyId}>
+                <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-lg bg-muted h-6 w-3/4 rounded-md animate-pulse"></CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-3">
+                    <div className="h-4 bg-muted rounded-md animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded-md animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded-md animate-pulse"></div>
+                </CardContent>
+            </Card>
+        ))}
+    </div>;
+  }
+
   if (isMobile) {
       return (
         <div className="space-y-4">
