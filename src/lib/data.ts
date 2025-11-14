@@ -293,7 +293,7 @@ async function fetchData<T>(
         console.log(`Updated local DB for ${collectionName}.`);
         return data;
     } catch (error) {
-        console.warn('Firestore fetch failed, falling back to local DB.', error);
+        console.warn(`Firestore fetch failed for ${collectionName}, falling back to local DB.`, error);
         const localData = await localDB.table(collectionName).toArray();
         console.log(`Loaded ${localData.length} items from local DB for ${collectionName}.`);
         if (localData.length === 0) {
@@ -343,17 +343,21 @@ const originsCollection = collection(db, 'origins');
 
 // Helper function to add default data only if the collection is empty
 const addDefaultData = async (collRef: any, data: any[]) => {
-    const querySnapshot = await getDocs(collRef);
-    if (querySnapshot.empty) {
-        const batch = writeBatch(db);
-        data.forEach(item => {
-            const docRef = doc(collRef);
-            batch.set(docRef, item);
-        });
-        await batch.commit();
-        console.log(`Default data added to ${collRef.path}.`);
-    } else {
-        console.log(`Collection ${collRef.path} already has data. Skipping default data.`);
+    try {
+        const querySnapshot = await getDocs(collRef);
+        if (querySnapshot.empty) {
+            const batch = writeBatch(db);
+            data.forEach(item => {
+                const docRef = doc(collRef);
+                batch.set(docRef, item);
+            });
+            await batch.commit();
+            console.log(`Default data added to ${collRef.path}.`);
+        } else {
+            console.log(`Collection ${collRef.path} already has data. Skipping default data.`);
+        }
+    } catch(e) {
+        console.log(`Could not check for default data for ${collRef.path}. Probably offline.`)
     }
 };
 
@@ -1339,3 +1343,5 @@ export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]>
 
   return summary.filter(item => item.count > 0);
 }
+
+    
