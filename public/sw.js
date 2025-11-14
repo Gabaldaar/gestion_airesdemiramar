@@ -1,96 +1,92 @@
+// Define a name for our cache
+const CACHE_NAME = 'gestion-pwa-cache-v1.4';
 
-const CACHE_NAME = 'gestion-adm-v1.3';
-const URLS_TO_CACHE = [
+// List of files to cache
+const urlsToCache = [
   '/',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  // Add other static assets like CSS, JS, and images you want to precache.
+  // Next.js automatically chunks these, so you might need to adjust based on your build output.
 ];
 
-// 1. Instalación del Service Worker
-self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Instalando...');
+// Install a service worker
+self.addEventListener('install', event => {
+  // Perform install steps
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[Service Worker] Abriendo caché y guardando el app shell');
-        return cache.addAll(URLS_TO_CACHE);
-      })
-      .catch(error => {
-        console.error('[Service Worker] Falló el cacheo del app shell:', error);
+      .then(function(cache) {
+        console.log('Opened cache');
+        return cache.addAll(urlsToCache);
       })
   );
 });
 
-// 2. Activación del Service Worker y limpieza de cachés antiguas
-self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activando...');
+// Activate the service worker and clean up old caches
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[Service Worker] Borrando caché antigua:', cacheName);
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
-  return self.clients.claim();
 });
 
-// 3. Interceptación de peticiones (estrategia Network First para navegación)
-self.addEventListener('fetch', (event) => {
-  // Para peticiones de navegación (páginas HTML)
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // Si la petición a la red es exitosa, la usamos y la guardamos en caché
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-          return response;
-        })
-        .catch(() => {
-          // Si la red falla, intentamos servir desde la caché
-          return caches.match(event.request)
-            .then(response => {
-              // Si encontramos una respuesta en caché, la devolvemos
-              if (response) {
-                return response;
-              }
-              // Si no hay nada en caché, podemos mostrar una página offline genérica (opcional)
-              // Por ahora, dejamos que el navegador muestre su error de "sin conexión"
-            });
-        })
-    );
-    return;
-  }
 
-  // Para otros tipos de peticiones (CSS, JS, imágenes), usamos una estrategia "Cache First"
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Si la respuesta está en la caché, la devolvemos. Si no, la buscamos en la red.
-        return response || fetch(event.request).then(networkResponse => {
-            // Opcional: podemos cachear estos recursos también para futuras visitas offline
-            const responseToCache = networkResponse.clone();
-             caches.open(CACHE_NAME).then(cache => {
-                cache.put(event.request, responseToCache);
-             });
-            return networkResponse;
+// --- Fetch Event Strategies ---
+
+// 1. Network Only for Firestore API calls
+// Allows the app's logic in data.ts to handle the try/catch for Dexie fallback.
+const firestoreApiStrategy = (event) => {
+  return fetch(event.request);
+};
+
+// 2. Network First, then Cache for navigation and main resources
+const networkFirstStrategy = (event) => {
+  return fetch(event.request)
+    .then(response => {
+      // Check if we received a valid response
+      if (!response || response.status !== 200 || response.type !== 'basic') {
+        // If not, we don't cache it, but we return it.
+        return response;
+      }
+
+      // IMPORTANT: Clone the response. A response is a stream
+      // and because we want the browser to consume the response
+      // as well as the cache consuming the response, we need
+      // to clone it so we have two streams.
+      const responseToCache = response.clone();
+
+      caches.open(CACHE_NAME)
+        .then(cache => {
+          cache.put(event.request, responseToCache);
         });
-      })
-  );
-});
 
-// Forzar al nuevo service worker a tomar el control inmediatamente
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
+      return response;
+    })
+    .catch(() => {
+      // If the network request fails, try to get it from the cache.
+      return caches.match(event.request);
+    });
+};
+
+// Listen for fetch events
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // If the request is for the Firestore API, use a network-only strategy.
+  // The app logic will handle offline fallback to Dexie.
+  if (url.hostname.includes('firestore.googleapis.com')) {
+    event.respondWith(firestoreApiStrategy(event));
+  }
+  // For all other requests (navigation, static assets, etc.), use network-first.
+  else {
+    event.respondWith(networkFirstStrategy(event));
+  }
 });
