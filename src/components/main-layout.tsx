@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, ChevronLeft } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, ChevronLeft, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -14,7 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Logo from '@/assets/logo.png';
 import { Toaster } from './ui/toaster';
@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 
 const mainNavItems = [
@@ -154,10 +155,44 @@ function UserMenu() {
     );
 }
 
+function OfflineWarning({ isOnline }: { isOnline: boolean }) {
+    if (isOnline) {
+        return null;
+    }
+
+    return (
+        <div className="bg-yellow-500 text-black py-2 px-4">
+            <div className="container mx-auto flex items-center justify-center gap-2 text-sm font-semibold">
+                <WifiOff className="h-4 w-4" />
+                <span>Estás trabajando sin conexión. Algunos datos pueden no estar actualizados.</span>
+            </div>
+        </div>
+    )
+}
+
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    // Set initial status
+    if (typeof navigator !== 'undefined') {
+        setIsOnline(navigator.onLine);
+    }
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
@@ -209,6 +244,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <UserMenu />
             </div>
             </header>
+            <OfflineWarning isOnline={isOnline} />
             <main className="flex flex-1 flex-col gap-4 p-2 md:p-4 lg:gap-6 lg:p-6 overflow-x-auto">
             {children}
             </main>
