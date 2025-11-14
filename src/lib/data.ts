@@ -17,7 +17,7 @@ import {
   collectionGroup,
   setDoc
 } from 'firebase/firestore';
-import Dexie, { Table } from 'dexie';
+
 
 // --- TYPE DEFINITIONS ---
 
@@ -239,94 +239,6 @@ export type BookingStatusSummary = {
   fill: string;
 };
 
-// --- Dexie Local DB Setup ---
-
-class LocalDB extends Dexie {
-    properties!: Table<Property>;
-    tenants!: Table<Tenant>;
-    bookings!: Table<Booking>;
-    propertyExpenses!: Table<PropertyExpense>;
-    bookingExpenses!: Table<BookingExpense>;
-    payments!: Table<Payment>;
-    expenseCategories!: Table<ExpenseCategory>;
-    emailTemplates!: Table<EmailTemplate>;
-    settings!: Table<EmailSettings | AlertSettings>;
-    origins!: Table<Origin>;
-
-    constructor() {
-        super('gestionPWA');
-        this.version(1).stores({
-            properties: '++id, name',
-            tenants: '++id, name',
-            bookings: '++id, propertyId, tenantId, startDate',
-            propertyExpenses: '++id, propertyId, date',
-            bookingExpenses: '++id, bookingId, date',
-            payments: '++id, bookingId, date',
-            expenseCategories: '++id, name',
-            emailTemplates: '++id, name',
-            settings: 'id',
-            origins: '++id, name'
-        });
-    }
-}
-
-const localDB = new LocalDB();
-
-// --- Generic Data Fetcher with Offline Support ---
-
-async function fetchData<T>(
-    collectionName: keyof LocalDB,
-    firestoreCollection: any,
-    orderByField?: string
-): Promise<T[]> {
-    try {
-        // Network first strategy
-        console.log(`Fetching ${collectionName} from Firestore...`);
-        const q = orderByField ? query(firestoreCollection, orderBy(orderByField)) : firestoreCollection;
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(processDoc) as T[];
-        
-        // Update local DB
-        await localDB.table(collectionName).clear();
-        await localDB.table(collectionName).bulkAdd(data);
-        
-        console.log(`Updated local DB for ${collectionName}.`);
-        return data;
-    } catch (error) {
-        console.warn(`Firestore fetch failed for ${collectionName}, falling back to local DB.`, error);
-        const localData = await localDB.table(collectionName).toArray();
-        console.log(`Loaded ${localData.length} items from local DB for ${collectionName}.`);
-        if (localData.length === 0) {
-            console.error(`No local data available for ${collectionName}.`);
-            // Depending on requirements, we could re-throw or return empty.
-            // Returning empty allows the app to function without data.
-        }
-        return localData as T[];
-    }
-}
-
-async function fetchDocById<T>(
-    collectionName: keyof LocalDB,
-    id: string
-): Promise<T | undefined> {
-     try {
-        const docRef = doc(db, collectionName, id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const firestoreData = processDoc(docSnap) as T;
-            await localDB.table(collectionName).put(firestoreData);
-            return firestoreData;
-        }
-        // If not in firestore, still check local
-        throw new Error("Doc not found in Firestore");
-    } catch (error) {
-        console.warn(`Firestore getDoc failed for ${collectionName}/${id}, falling back to local DB.`, error);
-        const localData = await localDB.table(collectionName).get(id);
-        return localData as T | undefined;
-    }
-}
-
-
 // --- DATA ACCESS FUNCTIONS ---
 
 const propertiesCollection = collection(db, 'properties');
@@ -353,8 +265,6 @@ const addDefaultData = async (collRef: any, data: any[]) => {
             });
             await batch.commit();
             console.log(`Default data added to ${collRef.path}.`);
-        } else {
-            console.log(`Collection ${collRef.path} already has data. Skipping default data.`);
         }
     } catch(e) {
         console.log(`Could not check for default data for ${collRef.path}. Probably offline.`)
@@ -386,12 +296,16 @@ const initializeDefaultData = async () => {
 
 
 export async function getProperties(): Promise<Property[]> {
-  return fetchData<Property>('properties', propertiesCollection, 'name');
+  const q = query(propertiesCollection, orderBy("name"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(processDoc) as Property[];
 }
 
 export async function getPropertyById(id: string): Promise<Property | undefined> {
   if (!id) return undefined;
-  return fetchDocById<Property>('properties', id);
+  const docRef = doc(db, 'properties', id);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? processDoc(docSnap) as Property : undefined;
 }
 
 export async function addProperty(property: Omit<Property, 'id'>): Promise<Property> {
@@ -446,14 +360,17 @@ export async function deleteProperty(propertyId: string): Promise<void> {
 }
 
 
-
 export async function getTenants(): Promise<Tenant[]> {
-    return fetchData<Tenant>('tenants', tenantsCollection, 'name');
+    const q = query(tenantsCollection, orderBy("name"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as Tenant[];
 }
 
 export async function getTenantById(id: string): Promise<Tenant | undefined> {
     if (!id) return undefined;
-    return fetchDocById<Tenant>('tenants', id);
+    const docRef = doc(db, 'tenants', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? processDoc(docSnap) as Tenant : undefined;
 }
 
 export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
@@ -489,8 +406,6 @@ async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> 
             if (p.originalArsAmount) {
                 return acc + p.originalArsAmount;
             }
-            // Fallback: if a USD payment has no rate, we can't convert it accurately
-            // For now, we'll assume it doesn't contribute to the ARS balance in that edge case
             return p.exchangeRate ? acc + (p.amount * p.exchangeRate) : acc;
         }, 0);
         balance = booking.amount - totalPaidInArs;
@@ -507,68 +422,30 @@ async function getBookingDetails(booking: Booking): Promise<BookingWithDetails> 
 
 
 export async function getBookings(): Promise<BookingWithDetails[]> {
-    const allBookings = await fetchData<Booking>('bookings', bookingsCollection, 'startDate');
-    const allPayments = await fetchData<Payment>('payments', paymentsCollection);
+    const q = query(bookingsCollection, orderBy("startDate", "desc"));
+    const snapshot = await getDocs(q);
+    const allBookings = snapshot.docs.map(processDoc) as Booking[];
     
-    const detailedBookings = await Promise.all(allBookings.map(async (booking) => {
-        const [tenant, property] = await Promise.all([
-            getTenantById(booking.tenantId),
-            getPropertyById(booking.propertyId)
-        ]);
-        const paymentsForBooking = allPayments.filter(p => p.bookingId === booking.id);
-        const totalPaid = paymentsForBooking.reduce((acc, payment) => acc + payment.amount, 0);
-        
-        let balance;
-        if (booking.currency === 'USD') {
-             balance = booking.amount - totalPaid;
-        } else {
-             // For ARS bookings, the balance is best represented in ARS.
-             // Here we assume payments are converted to ARS at some rate for a true balance,
-             // but for simplicity, we just show the remaining ARS amount.
-             // A more complex system would track payments in both currencies or convert at payment time.
-             // For now, let's just subtract the USD payments converted at *some* rate.
-             const lastPaymentRate = paymentsForBooking.find(p => p.exchangeRate)?.exchangeRate || booking.exchangeRate;
-             if (lastPaymentRate) {
-                const totalPaidInArs = totalPaid * lastPaymentRate;
-                balance = booking.amount - totalPaidInArs;
-             } else {
-                // If no exchange rate, we can't calculate a meaningful mixed-currency balance.
-                // Show the original amount as the balance.
-                balance = booking.amount;
-             }
-        }
-
-        return { ...booking, tenant, property, totalPaid, balance };
-    }));
+    const detailedBookings = await Promise.all(allBookings.map(booking => getBookingDetails(booking)));
 
     return detailedBookings;
 }
 
 export async function getBookingsByPropertyId(propertyId: string): Promise<BookingWithDetails[]> {
-     try {
-        const q = query(bookingsCollection, where('propertyId', '==', propertyId));
-        const snapshot = await getDocs(q);
-        const propertyBookings = snapshot.docs.map(processDoc) as Booking[];
-        
-        await localDB.bookings.where('propertyId').equals(propertyId).delete();
-        await localDB.bookings.bulkAdd(propertyBookings);
-
-        const detailedBookings = await Promise.all(propertyBookings.map(booking => getBookingDetails(booking)));
-        detailedBookings.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-        return detailedBookings;
-
-    } catch (error) {
-        console.warn('Firestore getBookingsByPropertyId failed, falling back to local DB.', error);
-        const localBookings = await localDB.bookings.where('propertyId').equals(propertyId).toArray();
-        const detailedBookings = await Promise.all(localBookings.map(booking => getBookingDetails(booking)));
-        detailedBookings.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-        return detailedBookings;
-    }
+    const q = query(bookingsCollection, where('propertyId', '==', propertyId));
+    const snapshot = await getDocs(q);
+    const propertyBookings = snapshot.docs.map(processDoc) as Booking[];
+    
+    const detailedBookings = await Promise.all(propertyBookings.map(booking => getBookingDetails(booking)));
+    detailedBookings.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    return detailedBookings;
 }
 
 export async function getBookingById(id: string): Promise<Booking | undefined> {
     if (!id) return undefined;
-    return fetchDocById<Booking>('bookings', id);
+    const docRef = doc(db, 'bookings', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? processDoc(docSnap) as Booking : undefined;
 }
 
 
@@ -605,7 +482,9 @@ export async function deleteBooking(id: string): Promise<boolean> {
 }
 
 export async function getExpenseCategories(): Promise<ExpenseCategory[]> {
-    return fetchData<ExpenseCategory>('expenseCategories', expenseCategoriesCollection, 'name');
+    const q = query(expenseCategoriesCollection, orderBy("name"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as ExpenseCategory[];
 }
 
 export async function addExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
@@ -621,28 +500,21 @@ export async function updateExpenseCategory(updatedCategory: ExpenseCategory): P
 }
 
 export async function deleteExpenseCategory(id: string): Promise<void> {
-    // TODO: We might need to handle what happens to expenses that have this categoryId
     const docRef = doc(db, 'expenseCategories', id);
     await deleteDoc(docRef);
 }
 
 
 export async function getAllPropertyExpenses(): Promise<PropertyExpense[]> {
-    return fetchData<PropertyExpense>('propertyExpenses', propertyExpensesCollection);
+    const q = query(propertyExpensesCollection, orderBy("date", "desc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as PropertyExpense[];
 }
 
 export async function getPropertyExpensesByPropertyId(propertyId: string): Promise<PropertyExpense[]> {
-    try {
-        const q = query(propertyExpensesCollection, where('propertyId', '==', propertyId), orderBy('date', 'desc'));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(processDoc) as PropertyExpense[];
-        await localDB.propertyExpenses.where('propertyId').equals(propertyId).delete();
-        await localDB.propertyExpenses.bulkAdd(data);
-        return data;
-    } catch(e) {
-        console.warn("Could not fetch property expenses from firestore, using local DB", e);
-        return localDB.propertyExpenses.where('propertyId').equals(propertyId).reverse().sortBy('date');
-    }
+    const q = query(propertyExpensesCollection, where('propertyId', '==', propertyId), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as PropertyExpense[];
 }
 
 export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
@@ -664,21 +536,15 @@ export async function deletePropertyExpense(id: string): Promise<boolean> {
 }
 
 export async function getAllBookingExpenses(): Promise<BookingExpense[]> {
-    return fetchData<BookingExpense>('bookingExpenses', bookingExpensesCollection);
+    const q = query(bookingExpensesCollection, orderBy("date", "desc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as BookingExpense[];
 }
 
 export async function getBookingExpensesByBookingId(bookingId: string): Promise<BookingExpense[]> {
-    try {
-        const q = query(bookingExpensesCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(processDoc) as BookingExpense[];
-        await localDB.bookingExpenses.where('bookingId').equals(bookingId).delete();
-        await localDB.bookingExpenses.bulkAdd(data);
-        return data;
-    } catch (e) {
-        console.warn("Could not fetch booking expenses from firestore, using local DB", e);
-        return localDB.bookingExpenses.where('bookingId').equals(bookingId).reverse().sortBy('date');
-    }
+    const q = query(bookingExpensesCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as BookingExpense[];
 }
 
 export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
@@ -689,7 +555,7 @@ export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Pr
 export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense | null> {
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'bookingExpenses', id);
-await updateDoc(docRef, { ...data, currency: 'ARS' });
+    await updateDoc(docRef, { ...data, currency: 'ARS' });
     return { ...updatedExpense, currency: 'ARS' };
 }
 
@@ -700,17 +566,9 @@ export async function deleteBookingExpense(id: string): Promise<boolean> {
 }
 
 export async function getPaymentsByBookingId(bookingId: string): Promise<Payment[]> {
-    try {
-        const q = query(paymentsCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(processDoc) as Payment[];
-        await localDB.payments.where('bookingId').equals(bookingId).delete();
-        await localDB.payments.bulkAdd(data);
-        return data;
-    } catch (e) {
-        console.warn("Could not fetch payments from firestore, using local DB", e);
-        return localDB.payments.where('bookingId').equals(bookingId).reverse().sortBy('date');
-    }
+    const q = query(paymentsCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as Payment[];
 }
 
 export async function addPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
@@ -732,13 +590,15 @@ export async function deletePayment(id: string): Promise<boolean> {
 }
 
 export async function getAllPayments(): Promise<Payment[]> {
-    return fetchData<Payment>('payments', paymentsCollection);
+    const q = query(paymentsCollection, orderBy("date", "desc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as Payment[];
 }
 
 export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]> {
     const [payments, bookings, tenants, properties] = await Promise.all([
         getAllPayments(),
-        fetchData<Booking>('bookings', bookingsCollection),
+        getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
         getTenants(),
         getProperties(),
     ]);
@@ -767,9 +627,6 @@ export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]>
         };
     });
 
-    // Sort by date descending
-    detailedPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
     return detailedPayments;
 }
 
@@ -785,7 +642,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 
   const [allProperties, allBookings, allPropertyExpenses, allBookingExpenses, allPayments] = await Promise.all([
     getProperties(),
-    fetchData<Booking>('bookings', bookingsCollection),
+    getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
     getAllPropertyExpenses(),
     getAllBookingExpenses(),
     getAllPayments(),
@@ -908,7 +765,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
 export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
     const [properties, bookings, tenants, propertyExpenses, bookingExpenses, categories] = await Promise.all([
         getProperties(),
-        fetchData<Booking>('bookings', bookingsCollection),
+        getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
         getTenants(),
         getAllPropertyExpenses(),
         getAllBookingExpenses(),
@@ -966,7 +823,6 @@ export async function getBookingWithDetails(bookingId: string): Promise<BookingW
     const booking = await getBookingById(bookingId);
     if (!booking) return null;
     
-    // This now returns a more robust object, preventing crashes.
     return getBookingDetails(booking);
 }
 
@@ -974,9 +830,10 @@ export async function getBookingWithDetails(bookingId: string): Promise<BookingW
 // --- Email Template Functions ---
 
 export async function getEmailTemplates(): Promise<EmailTemplate[]> {
-  // Try to add default templates if they don't exist
   await initializeDefaultData();
-  return fetchData<EmailTemplate>('emailTemplates', emailTemplatesCollection, 'name');
+  const q = query(emailTemplatesCollection, orderBy("name"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(processDoc) as EmailTemplate[];
 }
 
 export async function addEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
@@ -999,27 +856,26 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
 
 // --- App Settings Functions ---
 
-async function getSetting<T extends {id: string}>(id: 'email' | 'alerts', defaults: Omit<T, 'id'>): Promise<T | null> {
-    try {
-        const docRef = doc(db, 'settings', id);
-        let docSnap = await getDoc(docRef);
-        
-        if (!docSnap.exists()) {
-            await setDoc(docRef, defaults);
-            docSnap = await getDoc(docRef);
-        }
-        const data = processDoc(docSnap) as T;
-        await localDB.settings.put(data);
-        return data;
-    } catch (e) {
-        console.warn(`Firestore getSetting for ${id} failed, falling back to local DB.`, e);
-        return await localDB.settings.get(id) as T || { id, ...defaults } as T;
+async function getSetting<T extends {id: string}>(id: 'email' | 'alerts'): Promise<T | null> {
+    const docRef = doc(db, 'settings', id);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+        return processDoc(docSnap) as T;
     }
+    
+    // If setting doesn't exist, create it with defaults
+    let defaults: any = {};
+    if (id === 'email') defaults = { replyToEmail: '' };
+    if (id === 'alerts') defaults = { checkInDays: 7, checkOutDays: 3 };
+    
+    await setDoc(docRef, defaults);
+    return { id, ...defaults } as T;
 }
 
 
 export async function getEmailSettings(): Promise<EmailSettings | null> {
-    return getSetting<'email' | any>('email', { replyToEmail: '' });
+    return getSetting<'email' | any>('email');
 }
 
 export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<EmailSettings> {
@@ -1029,7 +885,7 @@ export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): 
 }
 
 export async function getAlertSettings(): Promise<AlertSettings | null> {
-    return getSetting<'alerts' | any>('alerts', { checkInDays: 7, checkOutDays: 3 });
+    return getSetting<'alerts' | any>('alerts');
 }
 
 export async function updateAlertSettings(settings: Omit<AlertSettings, 'id'>): Promise<AlertSettings> {
@@ -1042,7 +898,9 @@ export async function updateAlertSettings(settings: Omit<AlertSettings, 'id'>): 
 // --- Origin Functions ---
 
 export async function getOrigins(): Promise<Origin[]> {
-  return fetchData<Origin>('origins', originsCollection, 'name');
+  const q = query(originsCollection, orderBy("name"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(processDoc) as Origin[];
 }
 
 export async function addOrigin(origin: Omit<Origin, 'id'>): Promise<Origin> {
@@ -1125,7 +983,6 @@ export async function getTenantsByOriginSummary(): Promise<TenantsByOriginSummar
                 name = origin.name;
                 color = origin.color;
             } else {
-                // This case should ideally not happen if data is consistent
                 name = "Origen Desconocido"
             }
         }
@@ -1254,7 +1111,7 @@ export async function getExpensesByPropertySummary(options?: { startDate?: strin
 
 export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSummary[]> {
   const [bookings, origins] = await Promise.all([
-    fetchData<Booking>('bookings', bookingsCollection),
+    getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
     getOrigins(),
   ]);
 
@@ -1310,7 +1167,7 @@ export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSumm
 }
 
 export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]> {
-  const bookings = await fetchData<Booking>('bookings', bookingsCollection);
+  const bookings = await getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]);
 
   if (bookings.length === 0) {
     return [];
