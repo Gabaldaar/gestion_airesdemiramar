@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, signInWithRedirect, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
+import { onAuthStateChanged, signInWithRedirect, GoogleAuthProvider, signOut as firebaseSignOut, User, getRedirectResult } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
@@ -30,6 +30,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(user);
       setLoading(false);
     });
+
+    // Handle redirect result
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // This is the successfully signed in user
+          const user = result.user;
+          setUser(user);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error getting redirect result: ", error);
+        setLoading(false);
+      });
+
 
     return () => unsubscribe();
   }, []);

@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import Logo from '@/assets/logo.png';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const { signInWithGoogle, user, loading } = useAuth();
   const router = useRouter();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -20,11 +21,14 @@ export default function LoginPage() {
   }, [user, loading, router]);
 
   const handleLogin = async () => {
+    setIsLoggingIn(true);
     try {
       await signInWithGoogle();
-      router.push('/');
+      // The user will be redirected to Google for sign-in.
+      // The page will reload and the useEffect will handle the redirect to '/'
     } catch (error) {
       console.error('Error during sign-in:', error);
+      setIsLoggingIn(false);
       // Optionally, show an error message to the user
     }
   };
@@ -50,8 +54,8 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button className="w-full" onClick={handleLogin} disabled={loading}>
-            Iniciar sesión con Google
+          <Button className="w-full" onClick={handleLogin} disabled={isLoggingIn}>
+            {isLoggingIn ? 'Redirigiendo...' : 'Iniciar sesión con Google'}
           </Button>
         </CardContent>
       </Card>
