@@ -18,7 +18,7 @@ interface PriceBreakdown {
     appliedDiscount: {
         percentage: number;
         nights: number;
-    };
+    } | null;
     minNightsRequired: number;
     priceConfigUsed: PriceConfig | null;
 }
@@ -49,7 +49,7 @@ const calculatePriceForStay = (
   
   const initialBreakdown: PriceBreakdown = {
         rawPrice: 0,
-        appliedDiscount: { percentage: 0, nights: 0 },
+        appliedDiscount: null,
         minNightsRequired: 0,
         priceConfigUsed: config || null
   };
@@ -117,7 +117,7 @@ const calculatePriceForStay = (
 
   // 3. Apply discount
   let finalPrice = rawPrice;
-  let appliedDiscount = { percentage: 0, nights: 0 };
+  let appliedDiscount = null;
   
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
@@ -317,10 +317,18 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
                                 
                                 <div className="text-xs text-muted-foreground space-y-1 pl-2 border-l-2">
                                    <p>Precio sin dto: {formatCurrency(priceResult.breakdown.rawPrice, priceResult.currency)}</p>
-                                    {priceResult.breakdown.appliedDiscount.percentage > 0 && (
+                                    {priceResult.breakdown.appliedDiscount ? (
                                         <p className="text-green-600 font-semibold">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
+                                    ) : (
+                                        <p>No se aplicaron descuentos.</p>
                                     )}
                                     <p>Estadía mínima requerida: {priceResult.breakdown.minNightsRequired} noches</p>
+                                    <div className="pt-2">
+                                        <h4 className="font-semibold text-foreground">Reglas de Precios Usadas:</h4>
+                                        <pre className="text-wrap bg-white dark:bg-black p-1 rounded-sm">
+                                            {JSON.stringify(priceResult.breakdown.priceConfigUsed, null, 2)}
+                                        </pre>
+                                    </div>
                                 </div>
                             </div>
                         )}
