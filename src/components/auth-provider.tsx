@@ -23,36 +23,35 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    // onAuthStateChanged handles the redirect result automatically.
-    // It's the single source of truth for the user's auth state.
+    // onAuthStateChanged es la única fuente de verdad.
+    // Maneja el estado inicial, los inicios de sesión, los cierres de sesión
+    // y el resultado de signInWithRedirect automáticamente.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     });
 
-    // Cleanup subscription on unmount
+    // Limpiar la suscripción al desmontar el componente.
     return () => unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    // Use signInWithRedirect as it's more robust in different environments
-    // than signInWithPopup.
     try {
+      // signInWithRedirect es más robusto en diferentes entornos.
       await signInWithRedirect(auth, provider);
+      // No es necesario manejar el resultado aquí, onAuthStateChanged lo hará.
     } catch (error) {
       console.error("Error signing in with Google: ", error);
-      throw error;
     }
   };
 
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      // The redirect to /login is handled by the LayoutManager
+      // onAuthStateChanged se encargará de poner user a null y el LayoutManager redirigirá.
     } catch (error) {
       console.error("Error signing out: ", error);
     }

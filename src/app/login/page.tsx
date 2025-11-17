@@ -6,36 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import Logo from '@/assets/logo.png';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const { signInWithGoogle, user, loading } = useAuth();
   const router = useRouter();
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
-    // If the user is authenticated and loading is complete, redirect to dashboard.
+    // Si la carga ha terminado y hay un usuario, redirigir al dashboard.
     if (!loading && user) {
       router.push('/');
     }
   }, [user, loading, router]);
 
-  const handleLogin = async () => {
-    setIsLoggingIn(true);
-    try {
-      // This will trigger the redirect to Google's login page.
-      // After login, the user will be redirected back and the
-      // AuthProvider's onAuthStateChanged will handle the session.
-      await signInWithGoogle();
-    } catch (error) {
-      console.error('Error during sign-in:', error);
-      setIsLoggingIn(false); // Only reset if there's an error during the redirect initiation.
-    }
-  };
-  
-  // While Firebase is initializing and checking the auth state,
-  // it's better to show a generic loading screen.
+  // Mientras Firebase está inicializando y comprobando el estado de autenticación,
+  // es mejor mostrar una pantalla de carga genérica.
   if (loading) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -44,8 +30,8 @@ export default function LoginPage() {
     );
   }
 
-  // If the user is already logged in, they will be redirected by the useEffect.
-  // We can show a loading state while that happens.
+  // Si el usuario ya está logueado, será redirigido por el useEffect.
+  // Se puede mostrar un mensaje mientras eso sucede.
   if (user) {
      return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -54,7 +40,7 @@ export default function LoginPage() {
     );
   }
   
-  // If not loading and no user, show the login page.
+  // Si no está cargando y no hay usuario, mostrar la página de login.
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <Card className="w-full max-w-sm">
@@ -68,8 +54,8 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button className="w-full" onClick={handleLogin} disabled={isLoggingIn}>
-            {isLoggingIn ? 'Redirigiendo a Google...' : 'Iniciar sesión con Google'}
+          <Button className="w-full" onClick={signInWithGoogle}>
+            Iniciar sesión con Google
           </Button>
         </CardContent>
       </Card>
