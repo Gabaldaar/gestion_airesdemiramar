@@ -1,15 +1,16 @@
 
+
 'use client';
 
 import { useState } from 'react';
-import { Property, Booking, PricingRule } from '@/lib/data';
+import { Property, Booking, PriceConfig } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
-import { differenceInDays, addDays, getYear, parse } from 'date-fns';
+import { differenceInDays, addDays, getYear, parse, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 interface AvailabilitySearcherProps {
@@ -19,64 +20,85 @@ interface AvailabilitySearcherProps {
 
 interface PriceResult {
   totalPrice: number;
-  currency: 'ARS' | 'USD';
+  currency: 'USD';
   nights: number;
   error?: string;
+  minNightsError?: string;
 }
 
+
+// --- New Pricing Logic ---
 const calculatePriceForStay = (
-  propertyRules: PricingRule[],
+  config: PriceConfig,
   startDate: Date,
   endDate: Date
 ): PriceResult => {
   const nights = differenceInDays(endDate, startDate);
-  if (nights <= 0) return { totalPrice: 0, currency: 'ARS', nights: 0, error: 'La fecha de salida debe ser posterior a la de entrada.' };
-
-  let totalPrice = 0;
-  let currency: 'ARS' | 'USD' = 'ARS';
-  let firstRuleCurrency: 'ARS' | 'USD' | undefined = undefined;
-
-  for (let i = 0; i < nights; i++) {
-    const currentDate = addDays(startDate, i);
-    const currentDay = currentDate.getDate();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = getYear(currentDate);
-
-    const applicableRule = propertyRules.find(rule => {
-      const from = parse(rule.desde, 'dd/MM', new Date());
-      const to = parse(rule.hasta, 'dd/MM', new Date());
-      const fromDate = new Date(currentYear, from.getMonth(), from.getDate());
-      let toDate = new Date(currentYear, to.getMonth(), to.getDate());
-      
-      // Handle year-spanning seasons (e.g., December to March)
-      if (fromDate > toDate) {
-        if (currentDate >= fromDate) {
-          // e.g. current is Dec 20, season is Dec 15 - Mar 15.
-          toDate.setFullYear(currentYear + 1);
-        } else {
-          // e.g. current is Jan 10, season is Dec 15 - Mar 15.
-          fromDate.setFullYear(currentYear - 1);
-        }
-      }
-
-      return currentDate >= fromDate && currentDate <= toDate;
-    });
-
-    if (!applicableRule) {
-      return { totalPrice: 0, currency: 'ARS', nights, error: `No se encontró precio para el día ${currentDate.toLocaleDateString()}` };
-    }
-
-    if (!firstRuleCurrency) {
-      firstRuleCurrency = applicableRule.moneda;
-    } else if (firstRuleCurrency !== applicableRule.moneda) {
-       return { totalPrice: 0, currency: 'ARS', nights, error: 'Las reglas de precios tienen monedas mixtas.' };
-    }
-    
-    currency = applicableRule.moneda;
-    totalPrice += applicableRule.precio;
+  if (nights <= 0) {
+    return { totalPrice: 0, currency: 'USD', nights: 0, error: 'La fecha de salida debe ser posterior a la de entrada.' };
   }
 
-  return { totalPrice, currency, nights };
+  // 1. Check minimum stay requirement
+  let requiredMinNights = config.minimoBase || 1;
+  const currentYear = getYear(startDate);
+
+  if (config.minimos && config.minimos.length > 0) {
+      for (const min of config.minimos) {
+          const from = parse(min['minimo-desde'], 'dd/MM', new Date());
+          const to = parse(min['minimo-hasta'], 'dd/MM', new Date());
+          const fromDate = new Date(currentYear, from.getMonth(), from.getDate());
+          let toDate = new Date(currentYear, to.getMonth(), to.getDate());
+          if (fromDate > toDate) toDate.setFullYear(currentYear + 1);
+
+          if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
+              requiredMinNights = min['minimo-valor'];
+              break;
+          }
+      }
+  }
+  
+  if (nights < requiredMinNights) {
+      return { totalPrice: 0, currency: 'USD', nights, minNightsError: `Se requiere un mínimo de ${requiredMinNights} noches.` };
+  }
+
+  // 2. Calculate raw total price
+  let totalPrice = 0;
+  for (let i = 0; i < nights; i++) {
+      const currentDate = addDays(startDate, i);
+      const currentDayYear = getYear(currentDate);
+      let nightPrice = config.base;
+
+      if (config.rangos && config.rangos.length > 0) {
+          for (const range of config.rangos) {
+              const from = parse(range['rango-desde'], 'dd/MM', new Date());
+              const to = parse(range['rango-hasta'], 'dd/MM', new Date());
+              const fromDate = new Date(currentDayYear, from.getMonth(), from.getDate());
+              let toDate = new Date(currentDayYear, to.getMonth(), to.getDate());
+              if (fromDate > toDate) toDate.setFullYear(currentDayYear + 1);
+              
+              if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
+                  nightPrice = range['rango-precio'];
+                  break;
+              }
+          }
+      }
+      totalPrice += nightPrice;
+  }
+
+  // 3. Apply discount
+  let finalPrice = totalPrice;
+  if (config.descuentos && config.descuentos.length > 0) {
+      const applicableDiscounts = config.descuentos
+          .filter(d => nights >= d['descuento-noches'])
+          .sort((a, b) => b['descuento-noches'] - a['descuento-noches']); // Get the best applicable discount
+
+      if (applicableDiscounts.length > 0) {
+          const discountPercentage = applicableDiscounts[0]['descuento-porcentaje'];
+          finalPrice = totalPrice * (1 - discountPercentage / 100);
+      }
+  }
+  
+  return { totalPrice: finalPrice, currency: 'USD', nights };
 };
 
 
@@ -109,7 +131,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
       if (!response.ok) {
         throw new Error('No se pudieron obtener las configuraciones de precios.');
       }
-      const priceConfigs: Record<string, { temporadas: PricingRule[] }> = await response.json();
+      const priceConfigs: Record<string, PriceConfig> = await response.json();
 
       // 2. Find available properties
       const available = allProperties.filter(property => {
@@ -127,13 +149,13 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
       // 3. Calculate price for each available property
       const resultsWithPrices = available.map(property => {
         const lookupName = property.priceSheetName || property.name;
-        const propertyRules = priceConfigs[lookupName]?.temporadas;
+        const propertyRules = priceConfigs[lookupName];
         let priceResult: PriceResult;
         
-        if (propertyRules && Array.isArray(propertyRules)) {
+        if (propertyRules && typeof propertyRules === 'object') {
           priceResult = calculatePriceForStay(propertyRules, fromDate, toDate);
         } else {
-          priceResult = { totalPrice: 0, currency: 'ARS', nights: 0, error: 'No se encontraron reglas de precios.' };
+          priceResult = { totalPrice: 0, currency: 'USD', nights: 0, error: 'No se encontraron reglas de precios.' };
         }
         return { property, priceResult };
       });
@@ -149,7 +171,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
     }
   };
 
-  const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
+  const formatCurrency = (amount: number, currency: 'USD') => {
     return new Intl.NumberFormat('es-AR', {
         style: 'currency',
         currency: currency,
@@ -234,6 +256,8 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
                       <div className="border-t p-4 flex items-center justify-between bg-muted/50">
                         {priceResult.error ? (
                             <span className="text-xs font-semibold text-destructive">{priceResult.error}</span>
+                        ) : priceResult.minNightsError ? (
+                            <span className="text-xs font-semibold text-yellow-600">{priceResult.minNightsError}</span>
                         ) : (
                             <>
                                 <div className="flex items-center gap-1.5 text-sm font-semibold">

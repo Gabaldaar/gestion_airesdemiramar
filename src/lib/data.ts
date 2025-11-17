@@ -241,16 +241,32 @@ export type BookingStatusSummary = {
 };
 
 // Type definition for the pricing rules coming from Google App Script
-export type PricingRule = {
-  temporada: string;
-  desde: string; // "DD/MM"
-  hasta: string; // "DD/MM"
-  precio: number;
-  moneda: 'ARS' | 'USD';
-  sabado_checkin: boolean;
-  sabado_checkout: boolean;
-  dias_minimos: number;
+export type PriceRange = {
+  'rango-desde': string; // "DD/MM"
+  'rango-hasta': string; // "DD/MM"
+  'rango-precio': number;
 };
+
+export type MinimumStay = {
+  'minimo-desde': string; // "DD/MM"
+  'minimo-hasta': string; // "DD/MM"
+  'minimo-valor': number;
+};
+
+export type Discount = {
+  'descuento-noches': number;
+  'descuento-porcentaje': number;
+};
+
+export type PriceConfig = {
+  base: number;
+  minimoBase: number;
+  rangos: PriceRange[];
+  minimos: MinimumStay[];
+  descuentos: Discount[];
+  propiedad: string;
+};
+
 
 // --- DATA ACCESS FUNCTIONS ---
 
