@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, signInWithRedirect, GoogleAuthProvider, signOut as firebaseSignOut, User, getRedirectResult } from 'firebase/auth';
+import { onAuthStateChanged, signInWithRedirect, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
@@ -26,32 +26,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
+    // onAuthStateChanged handles the redirect result automatically.
+    // It's the single source of truth for the user's auth state.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     });
 
-    // Handle redirect result
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          // This is the successfully signed in user
-          const user = result.user;
-          setUser(user);
-        }
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error getting redirect result: ", error);
-        setLoading(false);
-      });
-
-
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    // Use signInWithRedirect as it's more robust in different environments
+    // than signInWithPopup.
     try {
       await signInWithRedirect(auth, provider);
     } catch (error) {
@@ -63,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      // The redirect is handled by the layout manager
+      // The redirect to /login is handled by the LayoutManager
     } catch (error) {
       console.error("Error signing out: ", error);
     }

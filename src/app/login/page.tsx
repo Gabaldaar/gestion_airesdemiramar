@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
+    // If the user is authenticated and loading is complete, redirect to dashboard.
     if (!loading && user) {
       router.push('/');
     }
@@ -23,17 +24,19 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setIsLoggingIn(true);
     try {
+      // This will trigger the redirect to Google's login page.
+      // After login, the user will be redirected back and the
+      // AuthProvider's onAuthStateChanged will handle the session.
       await signInWithGoogle();
-      // The user will be redirected to Google for sign-in.
-      // The page will reload and the useEffect will handle the redirect to '/'
     } catch (error) {
       console.error('Error during sign-in:', error);
-      setIsLoggingIn(false);
-      // Optionally, show an error message to the user
+      setIsLoggingIn(false); // Only reset if there's an error during the redirect initiation.
     }
   };
-
-  if (loading || user) {
+  
+  // While Firebase is initializing and checking the auth state,
+  // it's better to show a generic loading screen.
+  if (loading) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
             <p className="text-muted-foreground">Cargando...</p>
@@ -41,6 +44,17 @@ export default function LoginPage() {
     );
   }
 
+  // If the user is already logged in, they will be redirected by the useEffect.
+  // We can show a loading state while that happens.
+  if (user) {
+     return (
+        <div className="flex items-center justify-center min-h-screen bg-muted/40">
+            <p className="text-muted-foreground">Sesión iniciada, redirigiendo...</p>
+        </div>
+    );
+  }
+  
+  // If not loading and no user, show the login page.
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <Card className="w-full max-w-sm">
@@ -55,7 +69,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <Button className="w-full" onClick={handleLogin} disabled={isLoggingIn}>
-            {isLoggingIn ? 'Redirigiendo...' : 'Iniciar sesión con Google'}
+            {isLoggingIn ? 'Redirigiendo a Google...' : 'Iniciar sesión con Google'}
           </Button>
         </CardContent>
       </Card>
