@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -32,7 +31,7 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 
 const mainNavItems = [
-  { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/', label: 'Inicio', icon: Home },
   { href: '/properties', label: 'Propiedades', icon: Building2 },
   { href: '/tenants', label: 'Inquilinos', icon: Users },
   { href: '/bookings', label: 'Reservas', icon: Calendar },
