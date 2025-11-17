@@ -22,9 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { addPayment, updatePayment } from '@/lib/actions';
+import { updatePayment } from '@/lib/actions';
 import { Payment } from '@/lib/data';
-import { Pencil, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -38,50 +38,62 @@ const initialState = {
   success: false,
 };
 
-function SubmitButton({ isEdit }: { isEdit: boolean }) {
+function SubmitButton() {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" disabled={pending}>
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isEdit ? 'Guardando...' : 'Añadiendo...'}
+                    Guardando...
                 </>
             ) : (
-                isEdit ? 'Guardar Cambios' : 'Añadir Pago'
+                'Guardar Cambios'
             )}
         </Button>
     )
 }
 
 interface PaymentEditFormProps {
-    payment?: Payment;
-    bookingId?: string;
+    payment: Payment;
     onPaymentUpdated: () => void;
     children?: ReactNode;
 }
 
 
-export function PaymentEditForm({ payment, bookingId, onPaymentUpdated, children }: PaymentEditFormProps) {
-  const isEdit = !!payment;
-  const action = isEdit ? updatePayment : addPayment;
+export function PaymentEditForm({ payment, onPaymentUpdated, children }: PaymentEditFormProps) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   
   const [isOpen, setIsOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(isEdit ? new Date(payment.date) : new Date());
-  const [currency, setCurrency] = useState<'ARS' | 'USD'>(isEdit ? (payment.originalArsAmount ? 'ARS' : 'USD') : 'USD');
-  const [exchangeRate, setExchangeRate] = useState(isEdit ? payment.exchangeRate?.toString() || '' : '');
+  const [date, setDate] = useState<Date | undefined>(new Date(payment.date));
+  const [currency, setCurrency] = useState<'ARS' | 'USD'>(payment.originalArsAmount ? 'ARS' : 'USD');
+  const [exchangeRate, setExchangeRate] = useState(payment.exchangeRate?.toString() || '');
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
   
   const handleCurrencyChange = (value: string) => {
     const newCurrency = value as 'ARS' | 'USD';
     setCurrency(newCurrency);
   };
 
+  const fetchRate = async () => {
+    setIsFetchingRate(true);
+    try {
+        const response = await fetch('/api/dollar-rate');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        setExchangeRate(data.venta.toString());
+    } catch (error) {
+        console.error("Failed to fetch dollar rate:", error);
+    } finally {
+        setIsFetchingRate(false);
+    }
+  };
+
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
-        const result = await action(initialState, formData);
+        const result = await updatePayment(initialState, formData);
         setState(result);
     });
   };
@@ -93,16 +105,15 @@ export function PaymentEditForm({ payment, bookingId, onPaymentUpdated, children
     }
   }, [state, onPaymentUpdated]);
 
-  // Reset state when dialog closes
   useEffect(() => {
     if (!isOpen) {
         setState(initialState);
-        setDate(isEdit ? new Date(payment.date) : new Date());
-        setCurrency(isEdit ? (payment.originalArsAmount ? 'ARS' : 'USD') : 'USD');
-        setExchangeRate(isEdit ? payment.exchangeRate?.toString() || '' : '');
+        setDate(new Date(payment.date));
+        setCurrency(payment.originalArsAmount ? 'ARS' : 'USD');
+        setExchangeRate(payment.exchangeRate?.toString() || '');
+        setIsFetchingRate(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isEdit]);
+  }, [isOpen, payment]);
 
 
   return (
@@ -117,14 +128,14 @@ export function PaymentEditForm({ payment, bookingId, onPaymentUpdated, children
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar' : 'Añadir'} Pago</DialogTitle>
+          <DialogTitle>Editar Pago</DialogTitle>
           <DialogDescription>
             Modifica los datos del pago.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction}>
-            {isEdit && <input type="hidden" name="id" value={payment.id} />}
-            <input type="hidden" name="bookingId" value={payment?.bookingId || bookingId} />
+            <input type="hidden" name="id" value={payment.id} />
+            <input type="hidden" name="bookingId" value={payment.bookingId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -173,26 +184,31 @@ export function PaymentEditForm({ payment, bookingId, onPaymentUpdated, children
                     <Label htmlFor="amount" className="text-right">
                     Monto
                     </Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={payment?.originalArsAmount || payment?.amount} className="col-span-3" required />
+                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={payment.originalArsAmount || payment.amount} className="col-span-3" required />
                 </div>
                  {currency === 'ARS' && (
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="exchangeRate" className="text-right">
                         Valor USD
                         </Label>
-                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" placeholder="Valor del USD en ARS" required value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} />
+                        <div className="col-span-3 flex items-center gap-2">
+                           <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" placeholder="Valor del USD en ARS" required value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} />
+                            <Button type="button" variant="outline" size="icon" onClick={fetchRate} disabled={isFetchingRate}>
+                                {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                            </Button>
+                        </div>
                     </div>
                 )}
                  <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="description" className="text-right pt-2">
                         Descripción
                     </Label>
-                    <Textarea id="description" name="description" defaultValue={payment?.description?.split('|')[0].trim()} className="col-span-3" placeholder="Comentarios sobre el pago..." />
+                    <Textarea id="description" name="description" defaultValue={payment.description?.split('|')[0].trim()} className="col-span-3" placeholder="Comentarios sobre el pago..." />
                 </div>
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                <SubmitButton isEdit={isEdit} />
+                <SubmitButton />
             </DialogFooter>
         </form>
          {state.message && !state.success && (

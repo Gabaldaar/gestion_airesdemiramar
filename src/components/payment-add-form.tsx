@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addPayment } from '@/lib/actions';
-import { PlusCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -59,12 +59,27 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
   const [exchangeRate, setExchangeRate] = useState('');
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
         const result = await addPayment(initialState, formData);
         setState(result);
     });
+  };
+
+  const fetchRate = async () => {
+    setIsFetchingRate(true);
+    try {
+        const response = await fetch('/api/dollar-rate');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        setExchangeRate(data.venta.toString());
+    } catch (error) {
+        console.error("Failed to fetch dollar rate:", error);
+    } finally {
+        setIsFetchingRate(false);
+    }
   };
 
   useEffect(() => {
@@ -74,7 +89,6 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
     }
   }, [state, onPaymentAdded, onOpenChange]);
 
-  // Reset form state when dialog is closed
   useEffect(() => {
     if (!isOpen) {
         formRef.current?.reset();
@@ -82,6 +96,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
         setCurrency('USD');
         setExchangeRate('');
         setState(initialState);
+        setIsFetchingRate(false);
     }
   }, [isOpen]);
   
@@ -157,7 +172,12 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
                         <Label htmlFor="exchangeRate" className="text-right">
                         Valor USD
                         </Label>
-                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" placeholder="Valor del USD en ARS" required value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} />
+                        <div className="col-span-3 flex items-center gap-2">
+                          <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" placeholder="Valor del USD en ARS" required value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} />
+                          <Button type="button" variant="outline" size="icon" onClick={fetchRate} disabled={isFetchingRate}>
+                              {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                          </Button>
+                        </div>
                     </div>
                 )}
                  <div className="grid grid-cols-4 items-start gap-4">
