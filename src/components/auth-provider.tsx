@@ -1,15 +1,12 @@
-
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { 
   onAuthStateChanged, 
-  signInWithRedirect, 
+  signInWithPopup, 
   GoogleAuthProvider, 
   signOut as firebaseSignOut, 
-  User,
-  setPersistence,
-  browserSessionPersistence
+  User 
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -44,11 +41,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      // Set session persistence BEFORE initiating the sign-in flow.
-      await setPersistence(auth, browserSessionPersistence);
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
     } catch (error) {
-      console.error("Error setting persistence or signing in with Google: ", error);
+      console.error("Error signing in with Google: ", error);
     }
   };
 
