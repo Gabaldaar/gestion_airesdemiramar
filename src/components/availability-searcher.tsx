@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
-import { differenceInDays, addDays, getYear, parse, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
+import { differenceInDays, addDays, getYear, parseISO, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 interface AvailabilitySearcherProps {
@@ -48,10 +48,17 @@ const calculatePriceForStay = (
           if (!min['minimo-desde'] || !min['minimo-hasta']) {
             continue;
           }
-          const from = parse(min['minimo-desde'], 'dd/MM', new Date());
-          const to = parse(min['minimo-hasta'], 'dd/MM', new Date());
-          const fromDate = new Date(currentYear, from.getMonth(), from.getDate());
-          let toDate = new Date(currentYear, to.getMonth(), to.getDate());
+          // The date from the sheet is DD/MM, we need to create a valid date object.
+          // We assume the year of the start date of the stay.
+          const fromParts = min['minimo-desde'].split('/');
+          const toParts = min['minimo-hasta'].split('/');
+          
+          if(fromParts.length !== 2 || toParts.length !== 2) continue;
+
+          const fromDate = new Date(currentYear, parseInt(fromParts[1]) - 1, parseInt(fromParts[0]));
+          let toDate = new Date(currentYear, parseInt(toParts[1]) - 1, parseInt(toParts[0]));
+          
+          // Handle ranges that cross a year boundary (e.g., Dec to Jan)
           if (fromDate > toDate) toDate.setFullYear(currentYear + 1);
 
           if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
@@ -78,10 +85,14 @@ const calculatePriceForStay = (
               if (!range['rango-desde'] || !range['rango-hasta']) {
                 continue;
               }
-              const from = parse(range['rango-desde'], 'dd/MM', new Date());
-              const to = parse(range['rango-hasta'], 'dd/MM', new Date());
-              const fromDate = new Date(currentDayYear, from.getMonth(), from.getDate());
-              let toDate = new Date(currentDayYear, to.getMonth(), to.getDate());
+              const fromParts = range['rango-desde'].split('/');
+              const toParts = range['rango-hasta'].split('/');
+              
+              if(fromParts.length !== 2 || toParts.length !== 2) continue;
+
+              const fromDate = new Date(currentDayYear, parseInt(fromParts[1]) - 1, parseInt(fromParts[0]));
+              let toDate = new Date(currentDayYear, parseInt(toParts[1]) - 1, parseInt(toParts[0]));
+             
               if (fromDate > toDate) toDate.setFullYear(currentDayYear + 1);
               
               if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
@@ -98,10 +109,12 @@ const calculatePriceForStay = (
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
           .filter(d => nights >= d['descuento-noches'])
-          .sort((a, b) => b['descuento-noches'] - a['descuento-noches']); // Get the best applicable discount
+          // Sort by highest discount percentage first to get the best deal
+          .sort((a, b) => b['descuento-porcentaje'] - a['descuento-porcentaje']);
 
       if (applicableDiscounts.length > 0) {
-          const discountPercentage = applicableDiscounts[0]['descuento-porcentaje'];
+          const bestDiscount = applicableDiscounts[0]; // The best discount is the first one after sorting
+          const discountPercentage = bestDiscount['descuento-porcentaje'];
           finalPrice = totalPrice * (1 - discountPercentage / 100);
       }
   }
@@ -147,8 +160,8 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
           b => b.propertyId === property.id && (!b.status || b.status === 'active')
         );
         const hasConflict = propertyBookings.some(booking => {
-          const bookingStart = new Date(booking.startDate);
-          const bookingEnd = new Date(booking.endDate);
+          const bookingStart = parseISO(booking.startDate);
+          const bookingEnd = parseISO(booking.endDate);
           return fromDate < bookingEnd && toDate > bookingStart;
         });
         return !hasConflict;
