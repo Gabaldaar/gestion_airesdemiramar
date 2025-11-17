@@ -70,14 +70,6 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
     }
   };
 
-  useEffect(() => {
-      if (currency === 'USD' && isOpen) {
-          if (!exchangeRate) {
-              fetchRate();
-          }
-      }
-  }, [currency, isOpen, exchangeRate]);
-
   const formAction = (formData: FormData) => {
     startTransition(async () => {
         const result = await updatePropertyExpense(initialState, formData);
@@ -91,6 +83,15 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
       onExpenseUpdated();
     }
   }, [state, onExpenseUpdated]);
+
+  useEffect(() => {
+    if (!isOpen) {
+        setState(initialState);
+        setDate(new Date(expense.date));
+        setCurrency(expense.originalUsdAmount ? 'USD' : 'ARS');
+        setExchangeRate(expense.exchangeRate?.toString() || '');
+    }
+  }, [isOpen, expense]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -144,7 +145,7 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
                     <Label htmlFor="categoryId" className="text-right">
                         Categoría
                     </Label>
-                    <Select name="categoryId" defaultValue={expense.categoryId}>
+                    <Select name="categoryId" defaultValue={expense.categoryId || 'none'}>
                         <SelectTrigger className="col-span-3">
                             <SelectValue placeholder="Selecciona una categoría" />
                         </SelectTrigger>

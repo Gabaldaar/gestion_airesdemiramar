@@ -71,13 +71,6 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
     }
   };
 
-  useEffect(() => {
-      if (currency === 'USD' && isOpen) {
-          fetchRate();
-      }
-  }, [currency, isOpen]);
-
-
   const formAction = (formData: FormData) => {
     startTransition(async () => {
         const result = await addPropertyExpense(initialState, formData);
@@ -88,10 +81,7 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
-      formRef.current?.reset();
-      setDate(new Date());
-      setCurrency('ARS');
-      setExchangeRate('');
+      resetForm();
     }
   }, [state]);
   
@@ -101,10 +91,11 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
     setCurrency('ARS');
     setExchangeRate('');
     setIsOpen(false);
+    setState(initialState);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); else setIsOpen(true);}}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <PlusCircle className="mr-2 h-4 w-4" />

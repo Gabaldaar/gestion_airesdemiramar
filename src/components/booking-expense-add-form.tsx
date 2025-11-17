@@ -77,13 +77,6 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories, i
   };
 
   useEffect(() => {
-      if (currency === 'USD' && isOpen) {
-          fetchRate();
-      }
-  }, [currency, isOpen]);
-
-
-  useEffect(() => {
     if (state.success) {
       onOpenChange(false);
       onExpenseAdded();
@@ -96,6 +89,7 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories, i
         setDate(new Date());
         setCurrency('ARS');
         setExchangeRate('');
+        setState(initialState);
     }
   }, [isOpen]);
 

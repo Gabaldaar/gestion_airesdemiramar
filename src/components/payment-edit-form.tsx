@@ -114,6 +114,7 @@ export function PaymentEditForm({ payment, bookingId, onPaymentUpdated, children
   // Reset state when dialog closes
   useEffect(() => {
     if (!isOpen) {
+        setState(initialState);
         setDate(isEdit ? new Date(payment.date) : new Date());
         setCurrency(isEdit ? (payment.originalArsAmount ? 'ARS' : 'USD') : 'USD');
         setExchangeRate(isEdit ? payment.exchangeRate?.toString() || '' : '');

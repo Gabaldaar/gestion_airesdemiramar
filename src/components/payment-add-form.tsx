@@ -96,6 +96,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
         setDate(new Date());
         setCurrency('USD');
         setExchangeRate('');
+        setState(initialState);
     }
   }, [isOpen]);
   
