@@ -126,7 +126,8 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
 
       // 3. Calculate price for each available property
       const resultsWithPrices = available.map(property => {
-        const propertyRules = priceConfigs[property.name];
+        const lookupName = property.priceSheetName || property.name;
+        const propertyRules = priceConfigs[lookupName];
         let priceResult: PriceResult;
         if (propertyRules) {
           priceResult = calculatePriceForStay(propertyRules, fromDate, toDate);

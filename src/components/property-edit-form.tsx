@@ -85,6 +85,10 @@ export function PropertyEditForm({ property }: { property: Property }) {
                     <Label htmlFor={`propertyUrl-${property.id}`}>Web de la Propiedad</Label>
                     <Input id={`propertyUrl-${property.id}`} type="text" name="propertyUrl" defaultValue={property.propertyUrl} placeholder="Ej: https://airbnb.com/h/mi-depto"/>
                 </div>
+                <div className="col-span-1">
+                    <Label htmlFor={`priceSheetName-${property.id}`}>Nombre en Hoja de Precios</Label>
+                    <Input id={`priceSheetName-${property.id}`} type="text" name="priceSheetName" defaultValue={property.priceSheetName} placeholder="Nombre exacto en la App Script"/>
+                </div>
                 <div className="col-span-1 md:col-span-2">
                     <Label htmlFor={`notes-${property.id}`}>Notas</Label>
                     <Textarea id={`notes-${property.id}`} name="notes" defaultValue={property.notes} />

@@ -101,6 +101,12 @@ export function PropertyAddForm() {
                     </Label>
                     <Input id="propertyUrl" name="propertyUrl" placeholder="Ej: https://airbnb.com/h/mi-depto" className="col-span-3" />
                 </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="priceSheetName" className="text-right">
+                    Nombre en Hoja de Precios
+                    </Label>
+                    <Input id="priceSheetName" name="priceSheetName" placeholder="Nombre exacto en la App Script" className="col-span-3" />
+                </div>
                  <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="notes" className="text-right pt-2">
                         Notas

@@ -39,6 +39,7 @@ export type Property = {
   address: string;
   imageUrl: string;
   propertyUrl?: string;
+  priceSheetName?: string;
   notes?: string;
   contractTemplate?: string;
   contractLogoUrl?: string;
