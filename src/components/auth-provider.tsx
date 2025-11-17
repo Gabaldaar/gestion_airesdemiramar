@@ -45,7 +45,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       // Set session persistence BEFORE initiating the sign-in flow.
-      // This is more robust for some dev environments.
       await setPersistence(auth, browserSessionPersistence);
       await signInWithRedirect(auth, provider);
     } catch (error) {
