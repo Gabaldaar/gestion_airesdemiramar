@@ -66,11 +66,11 @@ const calculatePriceForStay = (
   let requiredMinNights = config.minimoBase || 1;
   if (config.minimos && config.minimos.length > 0) {
       for (const min of config.minimos) {
-            if (!min.desde || !min.hasta) continue; // Skip if dates are missing
+            if (!min.desde || !min.hasta || !min.minimo) continue; // Skip if dates or value are missing
             
             try {
-                const fromDate = parse(min.desde, 'yyyy-MM-dd', new Date());
-                const toDate = parse(min.hasta, 'yyyy-MM-dd', new Date());
+                const fromDate = parse(min.desde, 'yyyy-MM-dd', new Date(0));
+                const toDate = parse(min.hasta, 'yyyy-MM-dd', new Date(0));
 
                 if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
                     requiredMinNights = min.minimo;
@@ -97,11 +97,11 @@ const calculatePriceForStay = (
 
       if (config.rangos && config.rangos.length > 0) {
           for (const range of config.rangos) {
-                if (!range.desde || !range.hasta) continue; // Skip if dates are missing
+                if (!range.desde || !range.hasta || !range.precio) continue; // Skip if dates or price are missing
 
                 try {
-                    const fromDate = parse(range.desde, 'yyyy-MM-dd', new Date());
-                    const toDate = parse(range.hasta, 'yyyy-MM-dd', new Date());
+                    const fromDate = parse(range.desde, 'yyyy-MM-dd', new Date(0));
+                    const toDate = parse(range.hasta, 'yyyy-MM-dd', new Date(0));
                 
                     if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
                         nightPrice = range.precio;
@@ -123,7 +123,7 @@ const calculatePriceForStay = (
   
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
-          .filter(d => nights >= d.noches)
+          .filter(d => d.noches && d.porcentaje && nights >= d.noches)
           .sort((a, b) => b.porcentaje - a.porcentaje); // Sort by highest percentage
       
       if (applicableDiscounts.length > 0) {
@@ -180,8 +180,9 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
           b => b.propertyId === property.id && (!b.status || b.status === 'active')
         );
         const hasConflict = propertyBookings.some(booking => {
-          const bookingStart = parse(booking.startDate, 'yyyy-MM-dd', new Date());
-          const bookingEnd = parse(booking.endDate, 'yyyy-MM-dd', new Date());
+          const bookingStart = parse(booking.startDate, 'yyyy-MM-dd', new Date(0));
+          const bookingEnd = parse(booking.endDate, 'yyyy-MM-dd', new Date(0));
+          // Check for overlap: new booking starts before old one ends AND new booking ends after old one starts
           return fromDate < bookingEnd && toDate > bookingStart;
         });
         return !hasConflict;
