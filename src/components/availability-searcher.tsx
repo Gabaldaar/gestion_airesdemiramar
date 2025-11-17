@@ -18,29 +18,48 @@ interface AvailabilitySearcherProps {
   allBookings: Booking[];
 }
 
+interface PriceBreakdown {
+    rawPrice: number;
+    appliedDiscount: {
+        percentage: number;
+        nights: number;
+    };
+    minNightsRequired: number;
+    priceConfigUsed: PriceConfig | null;
+}
+
 interface PriceResult {
   totalPrice: number;
   currency: 'USD';
   nights: number;
   error?: string;
   minNightsError?: string;
-  // Debug fields
-  rawPrice: number;
-  appliedDiscountPercentage: number;
-  appliedDiscountNights: number;
-  minNightsRequired: number;
+  breakdown: PriceBreakdown;
 }
 
 
 // --- New Pricing Logic ---
 const calculatePriceForStay = (
-  config: PriceConfig,
+  config: PriceConfig | undefined,
   startDate: Date,
   endDate: Date
 ): PriceResult => {
+    
   const nights = differenceInDays(endDate, startDate);
+  
+  const initialBreakdown: PriceBreakdown = {
+        rawPrice: 0,
+        appliedDiscount: { percentage: 0, nights: 0 },
+        minNightsRequired: 0,
+        priceConfigUsed: config || null
+  };
+
+  if (!config) {
+    return { totalPrice: 0, currency: 'USD', nights: 0, error: 'No se encontraron reglas de precios.', breakdown: initialBreakdown };
+  }
+
   if (nights <= 0) {
-    return { totalPrice: 0, currency: 'USD', nights: 0, error: 'La fecha de salida debe ser posterior a la de entrada.', rawPrice: 0, appliedDiscountPercentage: 0, appliedDiscountNights: 0, minNightsRequired: 0 };
+    return { totalPrice: 0, currency: 'USD', nights: 0, error: 'La fecha de salida debe ser posterior a la de entrada.', breakdown: initialBreakdown };
   }
 
   // 1. Check minimum stay requirement
@@ -49,27 +68,33 @@ const calculatePriceForStay = (
 
   if (config.minimos && config.minimos.length > 0) {
       for (const min of config.minimos) {
-          if (!min['minimo-desde'] || !min['minimo-hasta']) continue;
-          
-          const fromParts = min['minimo-desde'].split('/');
-          const toParts = min['minimo-hasta'].split('/');
-          
-          if(fromParts.length !== 2 || toParts.length !== 2) continue;
+            if (!min['minimo-desde'] || !min['minimo-hasta']) continue;
+            
+            const fromParts = min['minimo-desde'].split('/');
+            const toParts = min['minimo-hasta'].split('/');
 
-          const fromDate = new Date(currentYear, parseInt(fromParts[1]) - 1, parseInt(fromParts[0]));
-          let toDate = new Date(currentYear, parseInt(toParts[1]) - 1, parseInt(toParts[0]));
-          
-          if (fromDate > toDate) toDate.setFullYear(currentYear + 1);
+            if (fromParts.length !== 2 || toParts.length !== 2) continue;
 
-          if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
-              requiredMinNights = min['minimo-valor'];
-              break;
-          }
+            try {
+                const fromDate = new Date(currentYear, parseInt(fromParts[1]) - 1, parseInt(fromParts[0]));
+                let toDate = new Date(currentYear, parseInt(toParts[1]) - 1, parseInt(toParts[0]));
+                
+                if (fromDate > toDate) toDate.setFullYear(currentYear + 1);
+
+                if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
+                    requiredMinNights = min['minimo-valor'];
+                    break;
+                }
+            } catch (e) {
+                console.error("Error parsing min-stay dates: ", min, e);
+                continue;
+            }
       }
   }
   
   if (nights < requiredMinNights) {
-      return { totalPrice: 0, currency: 'USD', nights, minNightsError: `Se requiere un mínimo de ${requiredMinNights} noches.`, rawPrice: 0, appliedDiscountPercentage: 0, appliedDiscountNights: 0, minNightsRequired: requiredMinNights };
+      initialBreakdown.minNightsRequired = requiredMinNights;
+      return { totalPrice: 0, currency: 'USD', nights, minNightsError: `Se requiere un mínimo de ${requiredMinNights} noches.`, breakdown: initialBreakdown };
   }
 
   // 2. Calculate raw total price by iterating through each night
@@ -81,22 +106,27 @@ const calculatePriceForStay = (
 
       if (config.rangos && config.rangos.length > 0) {
           for (const range of config.rangos) {
-              if (!range['rango-desde'] || !range['rango-hasta']) continue;
+                if (!range['rango-desde'] || !range['rango-hasta']) continue;
 
-              const fromParts = range['rango-desde'].split('/');
-              const toParts = range['rango-hasta'].split('/');
-              
-              if(fromParts.length !== 2 || toParts.length !== 2) continue;
+                const fromParts = range['rango-desde'].split('/');
+                const toParts = range['rango-hasta'].split('/');
 
-              const fromDate = new Date(currentDayYear, parseInt(fromParts[1]) - 1, parseInt(fromParts[0]));
-              let toDate = new Date(currentDayYear, parseInt(toParts[1]) - 1, parseInt(toParts[0]));
-             
-              if (fromDate > toDate) toDate.setFullYear(currentDayYear + 1);
-              
-              if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
-                  nightPrice = range['rango-precio'];
-                  break; // Found the correct price for this night, stop searching ranges
-              }
+                if (fromParts.length !== 2 || toParts.length !== 2) continue;
+
+                try {
+                    const fromDate = new Date(currentDayYear, parseInt(fromParts[1]) - 1, parseInt(fromParts[0]));
+                    let toDate = new Date(currentDayYear, parseInt(toParts[1]) - 1, parseInt(toParts[0]));
+                
+                    if (fromDate > toDate) toDate.setFullYear(currentDayYear + 1);
+                    
+                    if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
+                        nightPrice = range['rango-precio'];
+                        break;
+                    }
+                } catch (e) {
+                    console.error("Error parsing price-range dates: ", range, e);
+                    continue;
+                }
           }
       }
       rawPrice += nightPrice;
@@ -109,7 +139,7 @@ const calculatePriceForStay = (
       const applicableDiscounts = config.descuentos
           .filter(d => nights >= d['descuento-noches'])
           // Sort by nights required descending to find the best applicable discount
-          .sort((a, b) => b['descuento-noches'] - a['descuento-noches']);
+          .sort((a, b) => b['descuento-porcentaje'] - a['descuento-porcentaje']);
       
       if (applicableDiscounts.length > 0) {
           const bestDiscount = applicableDiscounts[0];
@@ -118,14 +148,18 @@ const calculatePriceForStay = (
       }
   }
   
+  const finalBreakdown: PriceBreakdown = {
+      rawPrice: rawPrice, 
+      appliedDiscount: appliedDiscount,
+      minNightsRequired: requiredMinNights,
+      priceConfigUsed: config
+  };
+
   return { 
       totalPrice: finalPrice, 
       currency: 'USD', 
       nights, 
-      rawPrice: rawPrice, 
-      appliedDiscountPercentage: appliedDiscount.percentage,
-      appliedDiscountNights: appliedDiscount.nights,
-      minNightsRequired: requiredMinNights,
+      breakdown: finalBreakdown
     };
 };
 
@@ -180,11 +214,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
         const propertyRules = priceConfigs[lookupName];
         let priceResult: PriceResult;
         
-        if (propertyRules && typeof propertyRules === 'object') {
-          priceResult = calculatePriceForStay(propertyRules, fromDate, toDate);
-        } else {
-          priceResult = { totalPrice: 0, currency: 'USD', nights: 0, error: 'No se encontraron reglas de precios.', rawPrice: 0, appliedDiscountPercentage: 0, appliedDiscountNights: 0, minNightsRequired: 0 };
-        }
+        priceResult = calculatePriceForStay(propertyRules, fromDate, toDate);
         return { property, priceResult };
       });
       
@@ -297,12 +327,22 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
                                         {formatCurrency(priceResult.totalPrice, priceResult.currency)}
                                     </span>
                                 </div>
-                                <div className="text-xs text-muted-foreground space-y-1 pl-2 border-l-2">
-                                   <p>Precio base: {formatCurrency(priceResult.rawPrice, priceResult.currency)}</p>
-                                    {priceResult.appliedDiscountPercentage > 0 && (
-                                        <p className="text-green-600">Descuento: {priceResult.appliedDiscountPercentage}% por {priceResult.appliedDiscountNights}+ noches</p>
+                                
+                                <div className="text-xs text-muted-foreground space-y-2 pl-2 border-l-2">
+                                   <p>Precio sin dto: {formatCurrency(priceResult.breakdown.rawPrice, priceResult.currency)}</p>
+                                    {priceResult.breakdown.appliedDiscount.percentage > 0 && (
+                                        <p className="text-green-600">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
                                     )}
-                                    <p>Mínimo: {priceResult.minNightsRequired} noches</p>
+                                    <p>Mínimo noches: {priceResult.breakdown.minNightsRequired}</p>
+                                    
+                                    <div className="pt-2">
+                                        <p className="font-bold">Reglas de precios leídas:</p>
+                                        <p>Precio Base: {priceResult.breakdown.priceConfigUsed?.base}</p>
+                                        <p>Mínimo Base: {priceResult.breakdown.priceConfigUsed?.minimoBase}</p>
+                                        <div>Rangos: <pre className="whitespace-pre-wrap">{JSON.stringify(priceResult.breakdown.priceConfigUsed?.rangos, null, 2)}</pre></div>
+                                        <div>Mínimos: <pre className="whitespace-pre-wrap">{JSON.stringify(priceResult.breakdown.priceConfigUsed?.minimos, null, 2)}</pre></div>
+                                        <div>Descuentos: <pre className="whitespace-pre-wrap">{JSON.stringify(priceResult.breakdown.priceConfigUsed?.descuentos, null, 2)}</pre></div>
+                                    </div>
                                 </div>
                             </div>
                         )}
