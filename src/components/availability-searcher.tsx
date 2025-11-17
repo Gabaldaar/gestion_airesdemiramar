@@ -13,11 +13,6 @@ import Image from 'next/image';
 import { differenceInDays, addDays, getYear, parseISO, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
-interface AvailabilitySearcherProps {
-  allProperties: Property[];
-  allBookings: Booking[];
-}
-
 interface PriceBreakdown {
     rawPrice: number;
     appliedDiscount: {
@@ -124,14 +119,13 @@ const calculatePriceForStay = (
   let appliedDiscount = { percentage: 0, nights: 0 };
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
-          .filter(d => nights >= d['noches']) // Correct field name
-          // Sort by nights required descending to find the best applicable discount
-          .sort((a, b) => b['descuento'] - a['descuento']); // Correct field name
+          .filter(d => nights >= d.noches)
+          .sort((a, b) => b.descuento - a.descuento); // Sort by discount percentage descending to find the best applicable discount
       
       if (applicableDiscounts.length > 0) {
           const bestDiscount = applicableDiscounts[0];
-          finalPrice = rawPrice * (1 - bestDiscount['descuento'] / 100); // Correct field name
-          appliedDiscount = { percentage: bestDiscount['descuento'], nights: bestDiscount['noches'] }; // Correct field names
+          finalPrice = rawPrice * (1 - bestDiscount.descuento / 100);
+          appliedDiscount = { percentage: bestDiscount.descuento, nights: bestDiscount.noches };
       }
   }
   
@@ -315,21 +309,12 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
                                     </span>
                                 </div>
                                 
-                                <div className="text-xs text-muted-foreground space-y-2 pl-2 border-l-2">
+                                <div className="text-xs text-muted-foreground space-y-1 pl-2 border-l-2">
                                    <p>Precio sin dto: {formatCurrency(priceResult.breakdown.rawPrice, priceResult.currency)}</p>
                                     {priceResult.breakdown.appliedDiscount.percentage > 0 && (
-                                        <p className="text-green-600">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
+                                        <p className="text-green-600 font-semibold">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
                                     )}
                                     <p>Mínimo noches: {priceResult.breakdown.minNightsRequired}</p>
-                                    
-                                    <div className="pt-2">
-                                        <p className="font-bold">Reglas de precios leídas:</p>
-                                        <p>Precio Base: {priceResult.breakdown.priceConfigUsed?.base}</p>
-                                        <p>Mínimo Base: {priceResult.breakdown.priceConfigUsed?.minimoBase}</p>
-                                        <div>Rangos: <pre className="whitespace-pre-wrap">{JSON.stringify(priceResult.breakdown.priceConfigUsed?.rangos, null, 2)}</pre></div>
-                                        <div>Mínimos: <pre className="whitespace-pre-wrap">{JSON.stringify(priceResult.breakdown.priceConfigUsed?.minimos, null, 2)}</pre></div>
-                                        <div>Descuentos: <pre className="whitespace-pre-wrap">{JSON.stringify(priceResult.breakdown.priceConfigUsed?.descuentos, null, 2)}</pre></div>
-                                    </div>
                                 </div>
                             </div>
                         )}
