@@ -109,7 +109,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
       if (!response.ok) {
         throw new Error('No se pudieron obtener las configuraciones de precios.');
       }
-      const priceConfigs: Record<string, PricingRule[]> = await response.json();
+      const priceConfigs: Record<string, { temporadas: PricingRule[] }> = await response.json();
 
       // 2. Find available properties
       const available = allProperties.filter(property => {
@@ -127,9 +127,10 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
       // 3. Calculate price for each available property
       const resultsWithPrices = available.map(property => {
         const lookupName = property.priceSheetName || property.name;
-        const propertyRules = priceConfigs[lookupName];
+        const propertyRules = priceConfigs[lookupName]?.temporadas;
         let priceResult: PriceResult;
-        if (propertyRules) {
+        
+        if (propertyRules && Array.isArray(propertyRules)) {
           priceResult = calculatePriceForStay(propertyRules, fromDate, toDate);
         } else {
           priceResult = { totalPrice: 0, currency: 'ARS', nights: 0, error: 'No se encontraron reglas de precios.' };
