@@ -44,6 +44,10 @@ const calculatePriceForStay = (
 
   if (config.minimos && config.minimos.length > 0) {
       for (const min of config.minimos) {
+           // Skip if from/to dates are missing
+          if (!min['minimo-desde'] || !min['minimo-hasta']) {
+            continue;
+          }
           const from = parse(min['minimo-desde'], 'dd/MM', new Date());
           const to = parse(min['minimo-hasta'], 'dd/MM', new Date());
           const fromDate = new Date(currentYear, from.getMonth(), from.getDate());
@@ -70,6 +74,10 @@ const calculatePriceForStay = (
 
       if (config.rangos && config.rangos.length > 0) {
           for (const range of config.rangos) {
+              // Skip if from/to dates are missing
+              if (!range['rango-desde'] || !range['rango-hasta']) {
+                continue;
+              }
               const from = parse(range['rango-desde'], 'dd/MM', new Date());
               const to = parse(range['rango-hasta'], 'dd/MM', new Date());
               const fromDate = new Date(currentDayYear, from.getMonth(), from.getDate());
