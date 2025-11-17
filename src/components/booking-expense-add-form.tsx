@@ -23,7 +23,8 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { ExpenseCategory, getDollarRate } from '@/lib/data';
+import { ExpenseCategory } from '@/lib/data';
+import { getDollarRate } from '@/lib/api-actions';
 import { Tooltip, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 const initialState = {

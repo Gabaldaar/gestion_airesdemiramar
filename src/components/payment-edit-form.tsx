@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { addPayment, updatePayment } from '@/lib/actions';
-import { Payment, getDollarRate } from '@/lib/data';
+import { Payment } from '@/lib/data';
+import { getDollarRate } from '@/lib/api-actions';
 import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
