@@ -63,14 +63,13 @@ const calculatePriceForStay = (
   }
 
   // 1. Check minimum stay requirement
-  let requiredMinNights = config.minimoBase || 1;
-  if (config.minimos && config.minimos.length > 0) {
-      for (const min of config.minimos) {
+  let requiredMinNights = config.minimoNoches || 1;
+  if (config.minimosPorRango && config.minimosPorRango.length > 0) {
+      for (const min of config.minimosPorRango) {
             // Ensure fields exist before processing
             if (!min.desde || !min.hasta || !min.minimo) continue;
             
             try {
-                // Parse dates assuming they are at the start of the day in a neutral timezone
                 const fromDate = parseISO(min.desde + 'T00:00:00');
                 const toDate = parseISO(min.hasta + 'T23:59:59');
 

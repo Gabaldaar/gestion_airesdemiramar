@@ -260,9 +260,9 @@ export type Discount = {
 
 export type PriceConfig = {
   base: number;
-  minimoBase: number;
+  minimoNoches: number;
   rangos: PriceRange[];
-  minimos: MinimumStay[];
+  minimosPorRango: MinimumStay[];
   descuentos: Discount[];
   propiedad: string;
 };
