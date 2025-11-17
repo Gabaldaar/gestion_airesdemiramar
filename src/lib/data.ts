@@ -517,9 +517,10 @@ export async function deleteBooking(id: string): Promise<boolean> {
 }
 
 export async function getPaymentsByBookingId(bookingId: string): Promise<Payment[]> {
-    const q = query(paymentsCollection, where('bookingId', '==', bookingId), orderBy('date', 'asc'));
+    const q = query(paymentsCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as Payment[];
+    // Reverse the array to get ascending order for display
+    return (snapshot.docs.map(processDoc) as Payment[]).reverse();
 }
 
 export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]> {
