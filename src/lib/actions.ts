@@ -51,6 +51,35 @@ import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 
+export async function getUsdExchangeRate(): Promise<number | null> {
+  try {
+    const response = await fetch('https://dolarapi.com/v1/dolares/oficial', {
+      // Revalidate every hour to get fresh data without being too aggressive
+      next: { revalidate: 3600 },
+    });
+
+    if (!response.ok) {
+      console.error("DolarAPI request failed with status:", response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    // Check for 'venta' property and ensure it's a number
+    if (data && typeof data.venta === 'number') {
+      return data.venta;
+    }
+    
+    console.error("DolarAPI response did not contain a valid 'venta' value:", data);
+    return null;
+
+  } catch (error) {
+    console.error("Error fetching USD exchange rate from DolarAPI:", error);
+    return null;
+  }
+}
+
+
 export async function addProperty(previousState: any, formData: FormData) {
   const newPropertyData = {
     name: formData.get("name") as string,
@@ -924,4 +953,3 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     
 
     
-

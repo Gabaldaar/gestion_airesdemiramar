@@ -15,9 +15,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { updatePropertyExpense } from '@/lib/actions';
+import { updatePropertyExpense, getUsdExchangeRate } from '@/lib/actions';
 import { PropertyExpense, ExpenseCategory } from '@/lib/data';
-import { Pencil, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -25,6 +25,8 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
+import { useToast } from './ui/use-toast';
+import { Tooltip, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 const initialState = {
   message: '',
@@ -53,6 +55,9 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(expense.originalUsdAmount ? 'USD' : 'ARS');
+  const [exchangeRate, setExchangeRate] = useState(String(expense.exchangeRate || ''));
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const { toast } = useToast();
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -67,6 +72,25 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
       onExpenseUpdated();
     }
   }, [state, onExpenseUpdated]);
+
+  const fetchRate = async () => {
+    setIsFetchingRate(true);
+    const rate = await getUsdExchangeRate();
+    if (rate) {
+        setExchangeRate(String(rate));
+        toast({
+            title: "Tasa de cambio actualizada",
+            description: `Valor del dólar oficial vendedor: ${rate}`,
+        });
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No se pudo obtener la tasa de cambio. Por favor, ingrésala manualmente.",
+        });
+    }
+    setIsFetchingRate(false);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -159,7 +183,21 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
                         <Label htmlFor="exchangeRate" className="text-right">
                         Valor USD
                         </Label>
-                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" defaultValue={expense.exchangeRate} className="col-span-3" placeholder="Valor del USD en ARS" required />
+                        <div className='col-span-3 flex items-center gap-2'>
+                          <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} placeholder="Valor del USD en ARS" required />
+                           <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button type="button" variant="outline" size="icon" onClick={fetchRate} disabled={isFetchingRate}>
+                                            {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Obtener valor actual (DolarAPI)</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                     </div>
                 )}
                 <div className="grid grid-cols-4 items-start gap-4">
