@@ -49,4 +49,6 @@ declare module 'lucide-react' {
     export const Search: LucideIcon;
     export const BedDouble: LucideIcon;
     export const CalendarX: LucideIcon;
+    export const Calculator: LucideIcon;
+    export const Tag: LucideIcon;
 }

@@ -239,6 +239,18 @@ export type BookingStatusSummary = {
   fill: string;
 };
 
+// Type definition for the pricing rules coming from Google App Script
+export type PricingRule = {
+  temporada: string;
+  desde: string; // "DD/MM"
+  hasta: string; // "DD/MM"
+  precio: number;
+  moneda: 'ARS' | 'USD';
+  sabado_checkin: boolean;
+  sabado_checkout: boolean;
+  dias_minimos: number;
+};
+
 // --- DATA ACCESS FUNCTIONS ---
 
 const propertiesCollection = collection(db, 'properties');
