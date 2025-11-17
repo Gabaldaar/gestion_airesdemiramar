@@ -49,12 +49,8 @@ const calculatePriceForStay = (
 
   if (config.minimos && config.minimos.length > 0) {
       for (const min of config.minimos) {
-           // Skip if from/to dates are missing
-          if (!min['minimo-desde'] || !min['minimo-hasta']) {
-            continue;
-          }
-          // The date from the sheet is DD/MM, we need to create a valid date object.
-          // We assume the year of the start date of the stay.
+          if (!min['minimo-desde'] || !min['minimo-hasta']) continue;
+          
           const fromParts = min['minimo-desde'].split('/');
           const toParts = min['minimo-hasta'].split('/');
           
@@ -63,7 +59,6 @@ const calculatePriceForStay = (
           const fromDate = new Date(currentYear, parseInt(fromParts[1]) - 1, parseInt(fromParts[0]));
           let toDate = new Date(currentYear, parseInt(toParts[1]) - 1, parseInt(toParts[0]));
           
-          // Handle ranges that cross a year boundary (e.g., Dec to Jan)
           if (fromDate > toDate) toDate.setFullYear(currentYear + 1);
 
           if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
@@ -77,19 +72,17 @@ const calculatePriceForStay = (
       return { totalPrice: 0, currency: 'USD', nights, minNightsError: `Se requiere un mínimo de ${requiredMinNights} noches.`, rawPrice: 0, appliedDiscountPercentage: 0, appliedDiscountNights: 0, minNightsRequired: requiredMinNights };
   }
 
-  // 2. Calculate raw total price
-  let totalPrice = 0;
+  // 2. Calculate raw total price by iterating through each night
+  let rawPrice = 0;
   for (let i = 0; i < nights; i++) {
       const currentDate = addDays(startDate, i);
       const currentDayYear = getYear(currentDate);
-      let nightPrice = config.base;
+      let nightPrice = config.base; // Default to base price
 
       if (config.rangos && config.rangos.length > 0) {
           for (const range of config.rangos) {
-              // Skip if from/to dates are missing
-              if (!range['rango-desde'] || !range['rango-hasta']) {
-                continue;
-              }
+              if (!range['rango-desde'] || !range['rango-hasta']) continue;
+
               const fromParts = range['rango-desde'].split('/');
               const toParts = range['rango-hasta'].split('/');
               
@@ -102,25 +95,25 @@ const calculatePriceForStay = (
               
               if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
                   nightPrice = range['rango-precio'];
-                  break;
+                  break; // Found the correct price for this night, stop searching ranges
               }
           }
       }
-      totalPrice += nightPrice;
+      rawPrice += nightPrice;
   }
 
   // 3. Apply discount
-  let finalPrice = totalPrice;
+  let finalPrice = rawPrice;
   let appliedDiscount = { percentage: 0, nights: 0 };
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
           .filter(d => nights >= d['descuento-noches'])
-          // Sort by highest discount percentage first to get the best deal for the user
-          .sort((a, b) => b['descuento-porcentaje'] - a['descuento-porcentaje']);
+          // Sort by nights required descending to find the best applicable discount
+          .sort((a, b) => b['descuento-noches'] - a['descuento-noches']);
       
       if (applicableDiscounts.length > 0) {
           const bestDiscount = applicableDiscounts[0];
-          finalPrice = totalPrice * (1 - bestDiscount['descuento-porcentaje'] / 100);
+          finalPrice = rawPrice * (1 - bestDiscount['descuento-porcentaje'] / 100);
           appliedDiscount = { percentage: bestDiscount['descuento-porcentaje'], nights: bestDiscount['descuento-noches'] };
       }
   }
@@ -129,7 +122,7 @@ const calculatePriceForStay = (
       totalPrice: finalPrice, 
       currency: 'USD', 
       nights, 
-      rawPrice: totalPrice, 
+      rawPrice: rawPrice, 
       appliedDiscountPercentage: appliedDiscount.percentage,
       appliedDiscountNights: appliedDiscount.nights,
       minNightsRequired: requiredMinNights,
