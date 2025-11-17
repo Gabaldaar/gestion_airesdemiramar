@@ -70,16 +70,10 @@ const calculatePriceForStay = (
       for (const min of config.minimos) {
             if (!min['minimo-desde'] || !min['minimo-hasta']) continue;
             
-            const fromParts = min['minimo-desde'].split('/');
-            const toParts = min['minimo-hasta'].split('/');
-
-            if (fromParts.length !== 2 || toParts.length !== 2) continue;
-
             try {
-                const fromDate = new Date(currentYear, parseInt(fromParts[1]) - 1, parseInt(fromParts[0]));
-                let toDate = new Date(currentYear, parseInt(toParts[1]) - 1, parseInt(toParts[0]));
-                
-                if (fromDate > toDate) toDate.setFullYear(currentYear + 1);
+                // Correctly parse YYYY-MM-DD
+                const fromDate = parseISO(min['minimo-desde']);
+                let toDate = parseISO(min['minimo-hasta']);
 
                 if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
                     requiredMinNights = min['minimo-valor'];
@@ -101,26 +95,19 @@ const calculatePriceForStay = (
   let rawPrice = 0;
   for (let i = 0; i < nights; i++) {
       const currentDate = addDays(startDate, i);
-      const currentDayYear = getYear(currentDate);
       let nightPrice = config.base; // Default to base price
 
       if (config.rangos && config.rangos.length > 0) {
           for (const range of config.rangos) {
-                if (!range['rango-desde'] || !range['rango-hasta']) continue;
-
-                const fromParts = range['rango-desde'].split('/');
-                const toParts = range['rango-hasta'].split('/');
-
-                if (fromParts.length !== 2 || toParts.length !== 2) continue;
+                if (!range['desde'] || !range['hasta']) continue;
 
                 try {
-                    const fromDate = new Date(currentDayYear, parseInt(fromParts[1]) - 1, parseInt(fromParts[0]));
-                    let toDate = new Date(currentDayYear, parseInt(toParts[1]) - 1, parseInt(toParts[0]));
+                    // Correctly parse YYYY-MM-DD
+                    const fromDate = parseISO(range['desde']);
+                    let toDate = parseISO(range['hasta']);
                 
-                    if (fromDate > toDate) toDate.setFullYear(currentDayYear + 1);
-                    
                     if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
-                        nightPrice = range['rango-precio'];
+                        nightPrice = range['precio']; // Correct field name
                         break;
                     }
                 } catch (e) {
@@ -137,14 +124,14 @@ const calculatePriceForStay = (
   let appliedDiscount = { percentage: 0, nights: 0 };
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
-          .filter(d => nights >= d['descuento-noches'])
+          .filter(d => nights >= d['noches']) // Correct field name
           // Sort by nights required descending to find the best applicable discount
-          .sort((a, b) => b['descuento-porcentaje'] - a['descuento-porcentaje']);
+          .sort((a, b) => b['descuento'] - a['descuento']); // Correct field name
       
       if (applicableDiscounts.length > 0) {
           const bestDiscount = applicableDiscounts[0];
-          finalPrice = rawPrice * (1 - bestDiscount['descuento-porcentaje'] / 100);
-          appliedDiscount = { percentage: bestDiscount['descuento-porcentaje'], nights: bestDiscount['descuento-noches'] };
+          finalPrice = rawPrice * (1 - bestDiscount['descuento'] / 100); // Correct field name
+          appliedDiscount = { percentage: bestDiscount['descuento'], nights: bestDiscount['noches'] }; // Correct field names
       }
   }
   

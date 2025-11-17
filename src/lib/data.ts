@@ -242,20 +242,20 @@ export type BookingStatusSummary = {
 
 // Type definition for the pricing rules coming from Google App Script
 export type PriceRange = {
-  'rango-desde': string; // "DD/MM"
-  'rango-hasta': string; // "DD/MM"
-  'rango-precio': number;
+  desde: string; // "YYYY-MM-DD"
+  hasta: string; // "YYYY-MM-DD"
+  precio: number;
 };
 
 export type MinimumStay = {
-  'minimo-desde': string; // "DD/MM"
-  'minimo-hasta': string; // "DD/MM"
+  'minimo-desde': string; // "YYYY-MM-DD"
+  'minimo-hasta': string; // "YYYY-MM-DD"
   'minimo-valor': number;
 };
 
 export type Discount = {
-  'descuento-noches': number;
-  'descuento-porcentaje': number;
+  noches: number;
+  descuento: number;
 };
 
 export type PriceConfig = {
