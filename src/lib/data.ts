@@ -248,14 +248,14 @@ export type PriceRange = {
 };
 
 export type MinimumStay = {
-  'minimo-desde': string; // "YYYY-MM-DD"
-  'minimo-hasta': string; // "YYYY-MM-DD"
-  'minimo-valor': number;
+  desde: string; // "YYYY-MM-DD"
+  hasta: string; // "YYYY-MM-DD"
+  minimo: number;
 };
 
 export type Discount = {
   noches: number;
-  descuento: number;
+  porcentaje: number;
 };
 
 export type PriceConfig = {
@@ -477,6 +477,12 @@ export async function getBookingById(id: string): Promise<Booking | undefined> {
     return docSnap.exists() ? processDoc(docSnap) as Booking : undefined;
 }
 
+export async function getBookingWithDetails(id: string): Promise<BookingWithDetails | undefined> {
+    const booking = await getBookingById(id);
+    if (!booking) return undefined;
+    return getBookingDetails(booking);
+}
+
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
     const docRef = await addDoc(bookingsCollection, { ...booking, status: 'active' });
@@ -510,35 +516,78 @@ export async function deleteBooking(id: string): Promise<boolean> {
     return true;
 }
 
+export async function getPaymentsByBookingId(bookingId: string): Promise<Payment[]> {
+    const q = query(paymentsCollection, where('bookingId', '==', bookingId), orderBy('date', 'asc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as Payment[];
+}
+
+export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]> {
+    const q = query(paymentsCollection, orderBy("date", "desc"));
+    const paymentsSnapshot = await getDocs(q);
+    const payments = paymentsSnapshot.docs.map(processDoc) as Payment[];
+
+    // This can be slow if there are many payments. Consider optimizing if needed.
+    const paymentDetails = await Promise.all(payments.map(async (payment) => {
+        const booking = await getBookingById(payment.bookingId);
+        if (!booking) return { ...payment };
+        
+        const tenant = await getTenantById(booking.tenantId);
+        const property = await getPropertyById(booking.propertyId);
+        
+        return {
+            ...payment,
+            propertyId: property?.id,
+            propertyName: property?.name,
+            tenantId: tenant?.id,
+            tenantName: tenant?.name
+        };
+    }));
+
+    return paymentDetails;
+}
+
+
+export async function dbAddPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
+    const docRef = await addDoc(paymentsCollection, payment);
+    return { id: docRef.id, ...payment };
+}
+
+export async function dbUpdatePayment(updatedPayment: Payment): Promise<Payment> {
+    const { id, ...data } = updatedPayment;
+    const docRef = doc(db, 'payments', id);
+    await updateDoc(docRef, data);
+    return updatedPayment;
+}
+
+export async function dbDeletePayment(id: string): Promise<void> {
+    const docRef = doc(db, 'payments', id);
+    await deleteDoc(docRef);
+}
+
 export async function getExpenseCategories(): Promise<ExpenseCategory[]> {
     const q = query(expenseCategoriesCollection, orderBy("name"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(processDoc) as ExpenseCategory[];
 }
 
-export async function addExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
+export async function dbAddExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
     const docRef = await addDoc(expenseCategoriesCollection, category);
     return { id: docRef.id, ...category };
 }
 
-export async function updateExpenseCategory(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
+export async function dbUpdateExpenseCategory(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
     const { id, ...data } = updatedCategory;
     const docRef = doc(db, 'expenseCategories', id);
     await updateDoc(docRef, data);
     return updatedCategory;
 }
 
-export async function deleteExpenseCategory(id: string): Promise<void> {
+export async function dbDeleteExpenseCategory(id: string): Promise<void> {
     const docRef = doc(db, 'expenseCategories', id);
     await deleteDoc(docRef);
 }
 
-
-export async function getAllPropertyExpenses(): Promise<PropertyExpense[]> {
-    const q = query(propertyExpensesCollection, orderBy("date", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as PropertyExpense[];
-}
 
 export async function getPropertyExpensesByPropertyId(propertyId: string): Promise<PropertyExpense[]> {
     const q = query(propertyExpensesCollection, where('propertyId', '==', propertyId), orderBy('date', 'desc'));
@@ -546,29 +595,23 @@ export async function getPropertyExpensesByPropertyId(propertyId: string): Promi
     return snapshot.docs.map(processDoc) as PropertyExpense[];
 }
 
-export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
-    const docRef = await addDoc(propertyExpensesCollection, { ...expense, currency: 'ARS' });
+export async function dbAddPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
+    const docRef = await addDoc(propertyExpensesCollection, expense);
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
-export async function updatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense | null> {
+export async function dbUpdatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense> {
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'propertyExpenses', id);
-    await updateDoc(docRef, { ...data, currency: 'ARS' });
-    return { ...updatedExpense, currency: 'ARS' };
+    await updateDoc(docRef, data);
+    return updatedExpense;
 }
 
-export async function deletePropertyExpense(id: string): Promise<boolean> {
+export async function dbDeletePropertyExpense(id: string): Promise<void> {
     const docRef = doc(db, 'propertyExpenses', id);
     await deleteDoc(docRef);
-    return true;
 }
 
-export async function getAllBookingExpenses(): Promise<BookingExpense[]> {
-    const q = query(bookingExpensesCollection, orderBy("date", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as BookingExpense[];
-}
 
 export async function getBookingExpensesByBookingId(bookingId: string): Promise<BookingExpense[]> {
     const q = query(bookingExpensesCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
@@ -576,353 +619,281 @@ export async function getBookingExpensesByBookingId(bookingId: string): Promise<
     return snapshot.docs.map(processDoc) as BookingExpense[];
 }
 
-export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
-    const docRef = await addDoc(bookingExpensesCollection, { ...expense, currency: 'ARS' });
+export async function dbAddBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
+    const docRef = await addDoc(bookingExpensesCollection, expense);
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
-export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense | null> {
+export async function dbUpdateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense> {
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'bookingExpenses', id);
-    await updateDoc(docRef, { ...data, currency: 'ARS' });
-    return { ...updatedExpense, currency: 'ARS' };
+    await updateDoc(docRef, data);
+    return updatedExpense;
 }
 
-export async function deleteBookingExpense(id: string): Promise<boolean> {
+export async function dbDeleteBookingExpense(id: string): Promise<void> {
     const docRef = doc(db, 'bookingExpenses', id);
     await deleteDoc(docRef);
-    return true;
-}
-
-export async function getPaymentsByBookingId(bookingId: string): Promise<Payment[]> {
-    const q = query(paymentsCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as Payment[];
-}
-
-export async function addPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
-    const docRef = await addDoc(paymentsCollection, { ...payment, currency: 'USD' });
-    return { id: docRef.id, ...payment, currency: 'USD' };
-}
-
-export async function updatePayment(updatedPayment: Payment): Promise<Payment | null> {
-    const { id, ...data } = updatedPayment;
-    const docRef = doc(db, 'payments', id);
-    await updateDoc(docRef, { ...data, currency: 'USD' });
-    return { ...updatedPayment, currency: 'USD' };
-}
-
-export async function deletePayment(id: string): Promise<boolean> {
-    const docRef = doc(db, 'payments', id);
-    await deleteDoc(docRef);
-    return true;
-}
-
-export async function getAllPayments(): Promise<Payment[]> {
-    const q = query(paymentsCollection, orderBy("date", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as Payment[];
-}
-
-export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]> {
-    const [payments, bookings, tenants, properties] = await Promise.all([
-        getAllPayments(),
-        getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
-        getTenants(),
-        getProperties(),
-    ]);
-
-    const bookingsMap = new Map(bookings.map(b => [b.id, b]));
-    const tenantsMap = new Map(tenants.map(t => [t.id, t.name]));
-    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
-
-    const detailedPayments = payments.map(payment => {
-        const booking = bookingsMap.get(payment.bookingId);
-        if (!booking) {
-            return {
-                ...payment,
-                propertyName: 'Reserva eliminada',
-            };
-        }
-        const tenantName = tenantsMap.get(booking.tenantId);
-        const propertyName = propertiesMap.get(booking.propertyId);
-
-        return {
-            ...payment,
-            propertyId: booking.propertyId,
-            propertyName: propertyName || 'N/A',
-            tenantId: booking.tenantId,
-            tenantName: tenantName || 'N/A',
-        };
-    });
-
-    return detailedPayments;
-}
-
-
-export async function getFinancialSummaryByProperty(options?: { startDate?: string; endDate?: string }): Promise<FinancialSummaryByCurrency> {
-  const startDate = options?.startDate;
-  const endDate = options?.endDate;
-  const fromDate = startDate ? new Date(startDate) : null;
-  if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
-  
-  const toDate = endDate ? new Date(endDate) : null;
-  if (toDate) toDate.setUTCHours(23, 59, 59, 999);
-
-  const [allProperties, allBookings, allPropertyExpenses, allBookingExpenses, allPayments] = await Promise.all([
-    getProperties(),
-    getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
-    getAllPropertyExpenses(),
-    getAllBookingExpenses(),
-    getAllPayments(),
-  ]);
-
-
-  const isWithinDateRange = (dateStr: string) => {
-      if (!dateStr || (!fromDate && !toDate)) return true;
-      const itemDate = new Date(dateStr);
-      if (fromDate && itemDate < fromDate) return false;
-      if (toDate && itemDate > toDate) return false;
-      return true;
-  };
-  
-  const getAverageExchangeRate = (): number => {
-    const allTransactionsWithRate = [
-        ...allPayments.filter(p => p.exchangeRate), 
-        ...allPropertyExpenses.filter(e => e.exchangeRate),
-        ...allBookingExpenses.filter(e => e.exchangeRate)
-    ];
-
-    const validTransactions = allTransactionsWithRate.filter(t => isWithinDateRange(t.date));
-
-    if (validTransactions.length === 0) return 1000; // Default fallback
-    
-    const totalRate = validTransactions.reduce((acc, t) => acc + t.exchangeRate!, 0);
-    return totalRate / validTransactions.length;
-  }
-
-  const avgExchangeRate = getAverageExchangeRate();
-
-  const createSummaryForARS = (): FinancialSummary[] => {
-    return allProperties.map(property => {
-      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && (!b.status || b.status === 'active'));
-      
-      const incomeInArsFromArsBookings = propertyBookings
-        .filter(b => b.currency === 'ARS')
-        .reduce((acc, b) => acc + b.amount, 0);
-      
-      const incomeInArsFromUsdBookings = propertyBookings
-        .filter(b => b.currency === 'USD')
-        .reduce((acc, b) => acc + (b.amount * avgExchangeRate), 0);
-
-      const totalIncome = incomeInArsFromArsBookings + incomeInArsFromUsdBookings;
-
-      const propertyBookingIds = new Set(propertyBookings.map(b => b.id));
-      const propertyPayments = allPayments.filter(p => propertyBookingIds.has(p.bookingId) && isWithinDateRange(p.date));
-      const totalPayments = propertyPayments.reduce((acc, p) => acc + (p.originalArsAmount ?? (p.amount * avgExchangeRate)), 0);
-
-      const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id && isWithinDateRange(e.date));
-      const totalPropertyExpenses = propertyExpenses.reduce((acc, e) => acc + e.amount, 0);
-      
-      const relevantBookingIds = new Set(allBookings.filter(b => b.propertyId === property.id).map(b => b.id));
-      const relevantBookingExpenses = allBookingExpenses.filter(e => relevantBookingIds.has(e.bookingId) && isWithinDateRange(e.date));
-      const totalBookingExpenses = relevantBookingExpenses.reduce((acc, e) => acc + e.amount, 0);
-
-      const netResult = totalPayments - totalPropertyExpenses - totalBookingExpenses;
-
-      return {
-        propertyId: property.id,
-        propertyName: property.name,
-        totalIncome,
-        totalPayments,
-        balance: totalIncome - totalPayments,
-        totalPropertyExpenses,
-        totalBookingExpenses,
-        netResult,
-      };
-    });
-  }
-
-  const createSummaryForUSD = (): FinancialSummary[] => {
-    return allProperties.map(property => {
-      const propertyBookings = allBookings.filter(b => b.propertyId === property.id && isWithinDateRange(b.startDate) && (!b.status || b.status === 'active'));
-      
-      const incomeInUsdFromUsdBookings = propertyBookings
-          .filter(b => b.currency === 'USD')
-          .reduce((acc, b) => acc + b.amount, 0);
-
-      const safeAvgExchangeRate = avgExchangeRate || 1;
-      const incomeInUsdFromArsBookings = propertyBookings
-          .filter(b => b.currency === 'ARS')
-          .reduce((acc, b) => acc + (b.amount / (b.exchangeRate || safeAvgExchangeRate)), 0);
-
-      const totalIncome = incomeInUsdFromUsdBookings + incomeInUsdFromArsBookings;
-
-      const propertyBookingIds = new Set(propertyBookings.map(b => b.id));
-      const propertyPayments = allPayments.filter(p => propertyBookingIds.has(p.bookingId) && isWithinDateRange(p.date));
-      const totalPayments = propertyPayments.reduce((acc, p) => acc + p.amount, 0);
-
-      const propertyExpenses = allPropertyExpenses.filter(e => e.propertyId === property.id && isWithinDateRange(e.date));
-      const totalPropertyExpensesInUSD = propertyExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / (e.exchangeRate || safeAvgExchangeRate))), 0);
-
-      const relevantBookingIds = new Set(allBookings.filter(b => b.propertyId === property.id).map(b => b.id));
-      const relevantBookingExpenses = allBookingExpenses.filter(e => relevantBookingIds.has(e.bookingId) && isWithinDateRange(e.date));
-      const totalBookingExpensesInUSD = relevantBookingExpenses.reduce((acc, e) => acc + (e.originalUsdAmount ?? (e.amount / (e.exchangeRate || safeAvgExchangeRate))), 0);
-      
-      const netResult = totalPayments - totalPropertyExpensesInUSD - totalBookingExpensesInUSD;
-      
-      return {
-          propertyId: property.id,
-          propertyName: property.name,
-          totalIncome: totalIncome,
-          totalPayments: totalPayments,
-          balance: totalIncome - totalPayments,
-          totalPropertyExpenses: totalPropertyExpensesInUSD,
-          totalBookingExpenses: totalBookingExpensesInUSD,
-          netResult: netResult,
-      }
-    });
-  }
-
-  return {
-    ars: createSummaryForARS(),
-    usd: createSummaryForUSD(),
-  };
 }
 
 
 export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
-    const [properties, bookings, tenants, propertyExpenses, bookingExpenses, categories] = await Promise.all([
+    const [propExpensesSnap, bookExpensesSnap, properties, tenants, categories] = await Promise.all([
+        getDocs(query(propertyExpensesCollection, orderBy('date', 'desc'))),
+        getDocs(query(bookingExpensesCollection, orderBy('date', 'desc'))),
         getProperties(),
-        getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
         getTenants(),
-        getAllPropertyExpenses(),
-        getAllBookingExpenses(),
         getExpenseCategories(),
     ]);
 
     const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
     const tenantsMap = new Map(tenants.map(t => [t.id, t.name]));
-    const bookingsMap = new Map(bookings.map(b => [b.id, b]));
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
+    const bookingsMap = new Map<string, { propertyName: string, tenantName: string }>();
 
-    const getAverageExchangeRate = (): number => {
-        const allExpensesWithRate = [...propertyExpenses, ...bookingExpenses].filter(e => e.exchangeRate);
-        if (allExpensesWithRate.length === 0) return 1000; // Fallback
-        const totalRate = allExpensesWithRate.reduce((acc, e) => acc + e.exchangeRate!, 0);
-        return totalRate / allExpensesWithRate.length;
-    };
-    const avgExchangeRate = getAverageExchangeRate();
+    const allExpenses: UnifiedExpense[] = [];
 
-    const unifiedList: UnifiedExpense[] = [];
-
-    propertyExpenses.forEach(expense => {
-        unifiedList.push({
+    for (const doc of propExpensesSnap.docs) {
+        const expense = processDoc(doc) as PropertyExpense;
+        allExpenses.push({
             ...expense,
             type: 'Propiedad',
             amountARS: expense.amount,
-            amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate || 1)),
+            amountUSD: expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0),
             propertyName: propertiesMap.get(expense.propertyId) || 'N/A',
             categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
         });
+    }
+
+    for (const doc of bookExpensesSnap.docs) {
+        const expense = processDoc(doc) as BookingExpense;
+        let propertyName = 'N/A';
+        let tenantName = 'N/A';
+
+        if (bookingsMap.has(expense.bookingId)) {
+            propertyName = bookingsMap.get(expense.bookingId)!.propertyName;
+            tenantName = bookingsMap.get(expense.bookingId)!.tenantName;
+        } else {
+            const booking = await getBookingById(expense.bookingId);
+            if (booking) {
+                const propName = propertiesMap.get(booking.propertyId) || 'N/A';
+                const tenName = tenantsMap.get(booking.tenantId) || 'N/A';
+                bookingsMap.set(expense.bookingId, { propertyName: propName, tenantName: tenName });
+                propertyName = propName;
+                tenantName = tenName;
+            }
+        }
+        
+        allExpenses.push({
+            ...expense,
+            type: 'Reserva',
+            amountARS: expense.amount,
+            amountUSD: expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0),
+            propertyName,
+            tenantName,
+            categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
+        });
+    }
+    
+    // Since we query separately, we need to sort them together by date
+    allExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return allExpenses;
+}
+
+
+// --- FINANCIAL SUMMARY ---
+
+export async function getFinancialSummaryByProperty(options?: { startDate?: string; endDate?: string }): Promise<FinancialSummaryByCurrency> {
+    const [properties, bookings, propertyExpenses, bookingExpenses, payments] = await Promise.all([
+        getProperties(),
+        getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
+        getDocs(propertyExpensesCollection).then(snap => snap.docs.map(processDoc) as PropertyExpense[]),
+        getDocs(bookingExpensesCollection).then(snap => snap.docs.map(processDoc) as BookingExpense[]),
+        getDocs(paymentsCollection).then(snap => snap.docs.map(processDoc) as Payment[])
+    ]);
+    
+    const startDate = options?.startDate;
+    const endDate = options?.endDate;
+
+    const fromDate = startDate ? new Date(startDate) : null;
+    if (fromDate) fromDate.setUTCHours(0, 0, 0, 0); // Normalize to start of day
+    
+    const toDate = endDate ? new Date(endDate) : null;
+    if (toDate) toDate.setUTCHours(23, 59, 59, 999); // Normalize to end of day
+
+    const isWithinDateRange = (dateStr: string) => {
+        if (!dateStr || (!fromDate && !toDate)) return true;
+        const itemDate = new Date(dateStr);
+        if (fromDate && itemDate < fromDate) return false;
+        if (toDate && itemDate > toDate) return false;
+        return true;
+    };
+
+    const bookingsWithPaymentDate = bookings.filter(b => {
+        const firstPaymentForBooking = payments.find(p => p.bookingId === b.id);
+        if(firstPaymentForBooking) return isWithinDateRange(firstPaymentForBooking.date);
+        return isWithinDateRange(b.startDate); // Fallback to booking start date if no payment
     });
 
-    bookingExpenses.forEach(expense => {
-        const booking = bookingsMap.get(expense.bookingId);
-        if (booking) {
-            unifiedList.push({
-                ...expense,
-                type: 'Reserva',
-                amountARS: expense.amount,
-                amountUSD: expense.originalUsdAmount ?? (expense.amount / (expense.exchangeRate || avgExchangeRate || 1)),
-                propertyName: propertiesMap.get(booking.propertyId) || 'N/A',
-                tenantName: tenantsMap.get(booking.tenantId) || 'N_A',
-                categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
-            });
+    const activeBookings = bookingsWithPaymentDate.filter(b => b.status === 'active');
+    
+    const summaryByProperty: { [key: string]: FinancialSummary } = {};
+    const summaryByPropertyArs: { [key: string]: FinancialSummary } = {};
+    const bookingsMap = new Map(bookings.map(b => [b.id, b]));
+
+
+    const initializeSummary = (propertyId: string, propertyName: string) => ({
+        propertyId,
+        propertyName,
+        totalIncome: 0,
+        totalPayments: 0,
+        balance: 0,
+        totalPropertyExpenses: 0,
+        totalBookingExpenses: 0,
+        netResult: 0
+    });
+
+    properties.forEach(p => {
+        summaryByProperty[p.id] = initializeSummary(p.id, p.name);
+        summaryByPropertyArs[p.id] = initializeSummary(p.id, p.name);
+    });
+
+    activeBookings.forEach(booking => {
+        const propId = booking.propertyId;
+        if (booking.currency === 'USD') {
+            if (summaryByProperty[propId]) {
+                summaryByProperty[propId].totalIncome += booking.amount;
+            }
+        } else { // ARS
+            if (summaryByPropertyArs[propId]) {
+                summaryByPropertyArs[propId].totalIncome += booking.amount;
+            }
         }
     });
 
-    // Sort by date descending
-    unifiedList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    return unifiedList;
-}
-
-export async function getBookingWithDetails(bookingId: string): Promise<BookingWithDetails | null> {
-    const booking = await getBookingById(bookingId);
-    if (!booking) return null;
+    payments.filter(p => isWithinDateRange(p.date)).forEach(payment => {
+        const booking = bookingsMap.get(payment.bookingId);
+        if (booking) {
+            const propId = booking.propertyId;
+            if (booking.currency === 'USD') {
+                if (summaryByProperty[propId]) {
+                    summaryByProperty[propId].totalPayments += payment.amount;
+                }
+            } else { // ARS
+                 if (summaryByPropertyArs[propId]) {
+                     summaryByPropertyArs[propId].totalPayments += payment.originalArsAmount || 0;
+                 }
+            }
+        }
+    });
     
-    return getBookingDetails(booking);
+    propertyExpenses.filter(e => isWithinDateRange(e.date)).forEach(expense => {
+        const propId = expense.propertyId;
+        if (summaryByProperty[propId]) {
+            summaryByProperty[propId].totalPropertyExpenses += expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0);
+        }
+         if (summaryByPropertyArs[propId]) {
+            summaryByPropertyArs[propId].totalPropertyExpenses += expense.amount;
+        }
+    });
+    
+    bookingExpenses.filter(e => isWithinDateRange(e.date)).forEach(expense => {
+        const booking = bookingsMap.get(expense.bookingId);
+        if (booking) {
+            const propId = booking.propertyId;
+             if (booking.currency === 'USD') {
+                if (summaryByProperty[propId]) {
+                     summaryByProperty[propId].totalBookingExpenses += expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0);
+                }
+             } else {
+                 if (summaryByPropertyArs[propId]) {
+                    summaryByPropertyArs[propId].totalBookingExpenses += expense.amount;
+                }
+             }
+        }
+    });
+    
+    Object.values(summaryByProperty).forEach(summary => {
+        summary.balance = summary.totalIncome - summary.totalPayments;
+        summary.netResult = summary.totalIncome - (summary.totalPropertyExpenses + summary.totalBookingExpenses);
+    });
+
+    Object.values(summaryByPropertyArs).forEach(summary => {
+        summary.balance = summary.totalIncome - summary.totalPayments;
+        summary.netResult = summary.totalIncome - (summary.totalPropertyExpenses + summary.totalBookingExpenses);
+    });
+
+    return {
+        ars: Object.values(summaryByPropertyArs),
+        usd: Object.values(summaryByProperty)
+    };
 }
 
 
-// --- Email Template Functions ---
-
+// --- EMAIL TEMPLATES ---
 export async function getEmailTemplates(): Promise<EmailTemplate[]> {
-  await initializeDefaultData();
   const q = query(emailTemplatesCollection, orderBy("name"));
   const snapshot = await getDocs(q);
+  
+  if (snapshot.empty) {
+      await initializeDefaultData();
+      const newSnapshot = await getDocs(q);
+      return newSnapshot.docs.map(processDoc) as EmailTemplate[];
+  }
+
   return snapshot.docs.map(processDoc) as EmailTemplate[];
 }
 
-export async function addEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
+export async function dbAddEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
   const docRef = await addDoc(emailTemplatesCollection, template);
   return { id: docRef.id, ...template };
 }
 
-export async function updateEmailTemplate(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
+export async function dbUpdateEmailTemplate(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
   const { id, ...data } = updatedTemplate;
   const docRef = doc(db, 'emailTemplates', id);
   await updateDoc(docRef, data);
   return updatedTemplate;
 }
 
-export async function deleteEmailTemplate(id: string): Promise<void> {
+export async function dbDeleteEmailTemplate(id: string): Promise<void> {
   const docRef = doc(db, 'emailTemplates', id);
   await deleteDoc(docRef);
 }
 
 
-// --- App Settings Functions ---
-
-async function getSetting<T extends {id: string}>(id: 'email' | 'alerts'): Promise<T | null> {
-    const docRef = doc(db, 'settings', id);
+// --- SETTINGS ---
+export async function getSetting<T>(settingId: 'email' | 'alerts'): Promise<T | null> {
+    const docRef = doc(db, 'settings', settingId);
     const docSnap = await getDoc(docRef);
-    
     if (docSnap.exists()) {
-        return processDoc(docSnap) as T;
+        return { id: docSnap.id, ...docSnap.data() } as T;
     }
-    
-    // If setting doesn't exist, create it with defaults
-    let defaults: any = {};
-    if (id === 'email') defaults = { replyToEmail: '' };
-    if (id === 'alerts') defaults = { checkInDays: 7, checkOutDays: 3 };
-    
-    await setDoc(docRef, defaults);
-    return { id, ...defaults } as T;
+    // Provide default values if settings don't exist
+    if (settingId === 'alerts') {
+        return { id: 'alerts', checkInDays: 7, checkOutDays: 3 } as T;
+    }
+    return null;
 }
-
 
 export async function getEmailSettings(): Promise<EmailSettings | null> {
     return getSetting<'email' | any>('email');
 }
 
-export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<EmailSettings> {
+export async function dbUpdateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<void> {
     const docRef = doc(db, 'settings', 'email');
     await setDoc(docRef, settings, { merge: true });
-    return { id: 'email', ...settings };
 }
 
 export async function getAlertSettings(): Promise<AlertSettings | null> {
     return getSetting<'alerts' | any>('alerts');
 }
 
-export async function updateAlertSettings(settings: Omit<AlertSettings, 'id'>): Promise<AlertSettings> {
+export async function dbUpdateAlertSettings(settings: Omit<AlertSettings, 'id'>): Promise<void> {
     const docRef = doc(db, 'settings', 'alerts');
     await setDoc(docRef, settings, { merge: true });
-    return { id: 'alerts', ...settings };
 }
-
 
 // --- Origin Functions ---
 
@@ -932,19 +903,19 @@ export async function getOrigins(): Promise<Origin[]> {
   return snapshot.docs.map(processDoc) as Origin[];
 }
 
-export async function addOrigin(origin: Omit<Origin, 'id'>): Promise<Origin> {
+export async function dbAddOrigin(origin: Omit<Origin, 'id'>): Promise<Origin> {
   const docRef = await addDoc(originsCollection, origin);
   return { id: docRef.id, ...origin };
 }
 
-export async function updateOrigin(updatedOrigin: Origin): Promise<Origin> {
+export async function dbUpdateOrigin(updatedOrigin: Origin): Promise<Origin> {
   const { id, ...data } = updatedOrigin;
   const docRef = doc(db, 'origins', id);
   await updateDoc(docRef, data);
   return updatedOrigin;
 }
 
-export async function deleteOrigin(id: string): Promise<void> {
+export async function dbDeleteOrigin(id: string): Promise<void> {
   // Find tenants with this originId and unset it
   const tenantsToUpdateQuery = query(tenantsCollection, where('originId', '==', id));
   const tenantsSnapshot = await getDocs(tenantsToUpdateQuery);
@@ -1229,4 +1200,3 @@ export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]>
 
   return summary.filter(item => item.count > 0);
 }
-    

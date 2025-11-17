@@ -66,14 +66,14 @@ const calculatePriceForStay = (
   let requiredMinNights = config.minimoBase || 1;
   if (config.minimos && config.minimos.length > 0) {
       for (const min of config.minimos) {
-            if (!min['minimo-desde'] || !min['minimo-hasta']) continue;
+            if (!min.desde || !min.hasta) continue; // Skip if dates are missing
             
             try {
-                const fromDate = parse(min['minimo-desde'], 'yyyy-MM-dd', new Date());
-                const toDate = parse(min['minimo-hasta'], 'yyyy-MM-dd', new Date());
+                const fromDate = parse(min.desde, 'yyyy-MM-dd', new Date());
+                const toDate = parse(min.hasta, 'yyyy-MM-dd', new Date());
 
                 if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
-                    requiredMinNights = min['minimo-valor'];
+                    requiredMinNights = min.minimo;
                     break;
                 }
             } catch (e) {
@@ -83,8 +83,9 @@ const calculatePriceForStay = (
       }
   }
   
+  initialBreakdown.minNightsRequired = requiredMinNights;
+
   if (nights < requiredMinNights) {
-      initialBreakdown.minNightsRequired = requiredMinNights;
       return { totalPrice: 0, currency: 'USD', nights, minNightsError: `Se requiere un mínimo de ${requiredMinNights} noches.`, breakdown: initialBreakdown };
   }
 
@@ -96,14 +97,14 @@ const calculatePriceForStay = (
 
       if (config.rangos && config.rangos.length > 0) {
           for (const range of config.rangos) {
-                if (!range['desde'] || !range['hasta']) continue;
+                if (!range.desde || !range.hasta) continue; // Skip if dates are missing
 
                 try {
-                    const fromDate = parse(range['desde'], 'yyyy-MM-dd', new Date());
-                    const toDate = parse(range['hasta'], 'yyyy-MM-dd', new Date());
+                    const fromDate = parse(range.desde, 'yyyy-MM-dd', new Date());
+                    const toDate = parse(range.hasta, 'yyyy-MM-dd', new Date());
                 
                     if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
-                        nightPrice = range['precio'];
+                        nightPrice = range.precio;
                         break;
                     }
                 } catch (e) {
@@ -114,6 +115,7 @@ const calculatePriceForStay = (
       }
       rawPrice += nightPrice;
   }
+  initialBreakdown.rawPrice = rawPrice;
 
   // 3. Apply discount
   let finalPrice = rawPrice;
@@ -122,27 +124,21 @@ const calculatePriceForStay = (
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
           .filter(d => nights >= d.noches)
-          .sort((a, b) => b.descuento - a.descuento); 
+          .sort((a, b) => b.porcentaje - a.porcentaje); // Sort by highest percentage
       
       if (applicableDiscounts.length > 0) {
           const bestDiscount = applicableDiscounts[0];
-          finalPrice = rawPrice * (1 - bestDiscount.descuento / 100);
-          appliedDiscount = { percentage: bestDiscount.descuento, nights: bestDiscount.noches };
+          finalPrice = rawPrice * (1 - bestDiscount.porcentaje / 100);
+          appliedDiscount = { percentage: bestDiscount.porcentaje, nights: bestDiscount.noches };
       }
   }
+  initialBreakdown.appliedDiscount = appliedDiscount;
   
-  const finalBreakdown: PriceBreakdown = {
-      rawPrice: rawPrice, 
-      appliedDiscount: appliedDiscount,
-      minNightsRequired: requiredMinNights,
-      priceConfigUsed: config
-  };
-
   return { 
       totalPrice: finalPrice, 
       currency: 'USD', 
       nights, 
-      breakdown: finalBreakdown
+      breakdown: initialBreakdown
     };
 };
 
@@ -325,7 +321,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
                                     <p>Estadía mínima requerida: {priceResult.breakdown.minNightsRequired} noches</p>
                                     <div className="pt-2">
                                         <h4 className="font-semibold text-foreground">Reglas de Precios Usadas:</h4>
-                                        <pre className="text-wrap bg-white dark:bg-black p-1 rounded-sm">
+                                        <pre className="text-wrap bg-white dark:bg-black p-1 rounded-sm text-xs max-h-40 overflow-auto">
                                             {JSON.stringify(priceResult.breakdown.priceConfigUsed, null, 2)}
                                         </pre>
                                     </div>
