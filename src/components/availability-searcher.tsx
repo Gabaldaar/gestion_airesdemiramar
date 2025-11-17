@@ -3,7 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Property, Booking, PriceConfig } from '@/lib/data';
+import { Property, Booking, PriceConfig, PriceRange, MinimumStay, Discount } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -66,9 +66,11 @@ const calculatePriceForStay = (
   let requiredMinNights = config.minimoBase || 1;
   if (config.minimos && config.minimos.length > 0) {
       for (const min of config.minimos) {
-            if (!min.desde || !min.hasta || !min.minimo) continue; // Skip if dates or value are missing
+            // Ensure fields exist before processing
+            if (!min.desde || !min.hasta || !min.minimo) continue;
             
             try {
+                // Parse dates assuming they are at the start of the day in a neutral timezone
                 const fromDate = parse(min.desde, 'yyyy-MM-dd', new Date(0));
                 const toDate = parse(min.hasta, 'yyyy-MM-dd', new Date(0));
 
@@ -97,7 +99,8 @@ const calculatePriceForStay = (
 
       if (config.rangos && config.rangos.length > 0) {
           for (const range of config.rangos) {
-                if (!range.desde || !range.hasta || !range.precio) continue; // Skip if dates or price are missing
+                // Ensure fields exist
+                if (!range.desde || !range.hasta || !range.precio) continue;
 
                 try {
                     const fromDate = parse(range.desde, 'yyyy-MM-dd', new Date(0));
@@ -124,11 +127,11 @@ const calculatePriceForStay = (
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
           .filter(d => d.noches && d.porcentaje && nights >= d.noches)
-          .sort((a, b) => b.porcentaje - a.porcentaje); // Sort by highest percentage
+          .sort((a, b) => (b.porcentaje || 0) - (a.porcentaje || 0)); // Sort by highest percentage
       
       if (applicableDiscounts.length > 0) {
           const bestDiscount = applicableDiscounts[0];
-          finalPrice = rawPrice * (1 - bestDiscount.porcentaje / 100);
+          finalPrice = rawPrice * (1 - (bestDiscount.porcentaje || 0) / 100);
           appliedDiscount = { percentage: bestDiscount.porcentaje, nights: bestDiscount.noches };
       }
   }
@@ -180,8 +183,8 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
           b => b.propertyId === property.id && (!b.status || b.status === 'active')
         );
         const hasConflict = propertyBookings.some(booking => {
-          const bookingStart = parse(booking.startDate, 'yyyy-MM-dd', new Date(0));
-          const bookingEnd = parse(booking.endDate, 'yyyy-MM-dd', new Date(0));
+          const bookingStart = new Date(booking.startDate);
+          const bookingEnd = new Date(booking.endDate);
           // Check for overlap: new booking starts before old one ends AND new booking ends after old one starts
           return fromDate < bookingEnd && toDate > bookingStart;
         });
