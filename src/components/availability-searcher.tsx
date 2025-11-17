@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle, Info } from 'lucide-react';
 import Image from 'next/image';
-import { differenceInDays, addDays, getYear, parse, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
+import { differenceInDays, addDays, getYear, parseISO, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 interface PriceBreakdown {
@@ -71,8 +71,8 @@ const calculatePriceForStay = (
             
             try {
                 // Parse dates assuming they are at the start of the day in a neutral timezone
-                const fromDate = parse(min.desde, 'yyyy-MM-dd', new Date(0));
-                const toDate = parse(min.hasta, 'yyyy-MM-dd', new Date(0));
+                const fromDate = parseISO(min.desde + 'T00:00:00');
+                const toDate = parseISO(min.hasta + 'T23:59:59');
 
                 if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
                     requiredMinNights = min.minimo;
@@ -103,8 +103,8 @@ const calculatePriceForStay = (
                 if (!range.desde || !range.hasta || !range.precio) continue;
 
                 try {
-                    const fromDate = parse(range.desde, 'yyyy-MM-dd', new Date(0));
-                    const toDate = parse(range.hasta, 'yyyy-MM-dd', new Date(0));
+                    const fromDate = parseISO(range.desde + 'T00:00:00');
+                    const toDate = parseISO(range.hasta + 'T23:59:59');
                 
                     if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
                         nightPrice = range.precio;
@@ -122,7 +122,7 @@ const calculatePriceForStay = (
 
   // 3. Apply discount
   let finalPrice = rawPrice;
-  let appliedDiscount = null;
+  let appliedDiscount: { percentage: number; nights: number; } | null = null;
   
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
@@ -131,8 +131,10 @@ const calculatePriceForStay = (
       
       if (applicableDiscounts.length > 0) {
           const bestDiscount = applicableDiscounts[0];
-          finalPrice = rawPrice * (1 - (bestDiscount.porcentaje || 0) / 100);
-          appliedDiscount = { percentage: bestDiscount.porcentaje, nights: bestDiscount.noches };
+          if (bestDiscount.porcentaje && bestDiscount.noches) {
+            finalPrice = rawPrice * (1 - bestDiscount.porcentaje / 100);
+            appliedDiscount = { percentage: bestDiscount.porcentaje, nights: bestDiscount.noches };
+          }
       }
   }
   initialBreakdown.appliedDiscount = appliedDiscount;
