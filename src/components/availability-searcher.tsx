@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle, Info } from 'lucide-react';
 import Image from 'next/image';
-import { differenceInDays, addDays, getYear, parseISO, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
+import { differenceInDays, addDays, getYear, parse, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 interface PriceBreakdown {
@@ -64,14 +64,14 @@ const calculatePriceForStay = (
 
   // 1. Check minimum stay requirement
   let requiredMinNights = config.minimoNoches || 1;
-  if (config.minimosPorRango && config.minimosPorRango.length > 0) {
-      for (const min of config.minimosPorRango) {
-            // Ensure fields exist before processing
+  if (config.minimos) {
+      for (const min of config.minimos) {
             if (!min.desde || !min.hasta || !min.minimo) continue;
             
             try {
-                const fromDate = parseISO(min.desde + 'T00:00:00');
-                const toDate = parseISO(min.hasta + 'T23:59:59');
+                // Parse dates as YYYY-MM-DD
+                const fromDate = parse(min.desde, 'yyyy-MM-dd', new Date());
+                const toDate = parse(min.hasta, 'yyyy-MM-dd', new Date());
 
                 if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
                     requiredMinNights = min.minimo;
@@ -96,14 +96,13 @@ const calculatePriceForStay = (
       const currentDate = addDays(startDate, i);
       let nightPrice = config.base; // Default to base price
 
-      if (config.rangos && config.rangos.length > 0) {
+      if (config.rangos) {
           for (const range of config.rangos) {
-                // Ensure fields exist
                 if (!range.desde || !range.hasta || !range.precio) continue;
 
                 try {
-                    const fromDate = parseISO(range.desde + 'T00:00:00');
-                    const toDate = parseISO(range.hasta + 'T23:59:59');
+                    const fromDate = parse(range.desde, 'yyyy-MM-dd', new Date());
+                    const toDate = parse(range.hasta, 'yyyy-MM-dd', new Date());
                 
                     if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
                         nightPrice = range.precio;
@@ -123,7 +122,7 @@ const calculatePriceForStay = (
   let finalPrice = rawPrice;
   let appliedDiscount: { percentage: number; nights: number; } | null = null;
   
-  if (config.descuentos && config.descuentos.length > 0) {
+  if (config.descuentos) {
       const applicableDiscounts = config.descuentos
           .filter(d => d.noches && d.porcentaje && nights >= d.noches)
           .sort((a, b) => (b.porcentaje || 0) - (a.porcentaje || 0)); // Sort by highest percentage
@@ -324,12 +323,6 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
                                         <p>No se aplicaron descuentos.</p>
                                     )}
                                     <p>Estadía mínima requerida: {priceResult.breakdown.minNightsRequired} noches</p>
-                                    <div className="pt-2">
-                                        <h4 className="font-semibold text-foreground">Reglas de Precios Usadas:</h4>
-                                        <pre className="text-wrap bg-white dark:bg-black p-1 rounded-sm text-xs max-h-40 overflow-auto">
-                                            {JSON.stringify(priceResult.breakdown.priceConfigUsed, null, 2)}
-                                        </pre>
-                                    </div>
                                 </div>
                             </div>
                         )}
