@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addPropertyExpense } from '@/lib/actions';
-import { PlusCircle, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -25,8 +25,6 @@ import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { ExpenseCategory } from '@/lib/data';
-import { getDollarRate } from '@/lib/api-actions';
-import { Tooltip, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 const initialState = {
   message: '',
@@ -57,19 +55,6 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [exchangeRate, setExchangeRate] = useState('');
-  const [isFetchingRate, setIsFetchingRate] = useState(false);
-
-  const fetchRate = async () => {
-    setIsFetchingRate(true);
-    try {
-        const rate = await getDollarRate();
-        setExchangeRate(rate.toString());
-    } catch (error) {
-        console.error("Error fetching dollar rate:", error);
-    } finally {
-        setIsFetchingRate(false);
-    }
-  };
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -184,27 +169,7 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
                         <Label htmlFor="exchangeRate" className="text-right">
                         Valor USD
                         </Label>
-                        <div className="col-span-3 relative">
-                            <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" placeholder="Valor del USD en ARS" required value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} />
-                             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                                {isFetchingRate ? (
-                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                                ) : (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <button type="button" onClick={fetchRate}>
-                                                    <RefreshCw className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                                                </button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Actualizar cotización</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                )}
-                            </div>
-                        </div>
+                        <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" placeholder="Valor del USD en ARS" required value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} />
                     </div>
                 )}
                 <div className="grid grid-cols-4 items-start gap-4">
