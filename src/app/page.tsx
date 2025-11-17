@@ -11,6 +11,7 @@ import { useAuth } from "@/components/auth-provider";
 import { differenceInDays, startOfToday } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info } from "lucide-react";
+import AvailabilitySearcher from "@/components/availability-searcher";
 
 interface DashboardData {
     summaryByCurrency: FinancialSummaryByCurrency;
@@ -153,6 +154,9 @@ export default function DashboardPage() {
             totalProperties={totalProperties}
             totalTenants={totalTenants}
         />
+        
+        <AvailabilitySearcher allProperties={properties} allBookings={bookings} />
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-1 lg:col-span-4">
             <CardHeader>
