@@ -14,28 +14,29 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // If the user is logged in, redirect to the dashboard.
     if (!loading && user) {
       router.push('/');
     }
   }, [user, loading, router]);
 
-  const handleSignIn = () => {
-    signInWithGoogle().catch(error => {
-        console.error("Sign in failed", error);
-    });
+  const handleLogin = async () => {
+    try {
+      await signInWithGoogle();
+      router.push('/');
+    } catch (error) {
+      console.error('Error during sign-in:', error);
+      // Optionally, show an error message to the user
+    }
+  };
+
+  if (loading || user) {
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-muted/40">
+            <p className="text-muted-foreground">Cargando...</p>
+        </div>
+    );
   }
 
-  // While Firebase is initializing and checking the auth state
-  if (loading) {
-    return <p>Cargando...</p>;
-  }
-  
-  // If user is already logged in, show a redirecting message
-  if (user) {
-     return <p>Sesión iniciada, redirigiendo...</p>;
-  }
-  
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <Card className="w-full max-w-sm">
@@ -49,7 +50,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button className="w-full" onClick={handleSignIn}>
+          <Button className="w-full" onClick={handleLogin} disabled={loading}>
             Iniciar sesión con Google
           </Button>
         </CardContent>
