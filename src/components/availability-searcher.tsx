@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle, Info } from 'lucide-react';
 import Image from 'next/image';
-import { differenceInDays, addDays, getYear, parseISO, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
+import { differenceInDays, addDays, getYear, parse, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 interface PriceBreakdown {
@@ -30,6 +30,11 @@ interface PriceResult {
   error?: string;
   minNightsError?: string;
   breakdown: PriceBreakdown;
+}
+
+interface AvailabilitySearcherProps {
+    allProperties: Property[];
+    allBookings: Booking[];
 }
 
 
@@ -59,16 +64,13 @@ const calculatePriceForStay = (
 
   // 1. Check minimum stay requirement
   let requiredMinNights = config.minimoBase || 1;
-  const currentYear = getYear(startDate);
-
   if (config.minimos && config.minimos.length > 0) {
       for (const min of config.minimos) {
             if (!min['minimo-desde'] || !min['minimo-hasta']) continue;
             
             try {
-                // Correctly parse YYYY-MM-DD
-                const fromDate = parseISO(min['minimo-desde']);
-                let toDate = parseISO(min['minimo-hasta']);
+                const fromDate = parse(min['minimo-desde'], 'yyyy-MM-dd', new Date());
+                const toDate = parse(min['minimo-hasta'], 'yyyy-MM-dd', new Date());
 
                 if (isWithinIntervalDateFns(startDate, { start: fromDate, end: toDate })) {
                     requiredMinNights = min['minimo-valor'];
@@ -97,12 +99,11 @@ const calculatePriceForStay = (
                 if (!range['desde'] || !range['hasta']) continue;
 
                 try {
-                    // Correctly parse YYYY-MM-DD
-                    const fromDate = parseISO(range['desde']);
-                    let toDate = parseISO(range['hasta']);
+                    const fromDate = parse(range['desde'], 'yyyy-MM-dd', new Date());
+                    const toDate = parse(range['hasta'], 'yyyy-MM-dd', new Date());
                 
                     if (isWithinIntervalDateFns(currentDate, { start: fromDate, end: toDate })) {
-                        nightPrice = range['precio']; // Correct field name
+                        nightPrice = range['precio'];
                         break;
                     }
                 } catch (e) {
@@ -117,10 +118,11 @@ const calculatePriceForStay = (
   // 3. Apply discount
   let finalPrice = rawPrice;
   let appliedDiscount = { percentage: 0, nights: 0 };
+  
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
           .filter(d => nights >= d.noches)
-          .sort((a, b) => b.descuento - a.descuento); // Sort by discount percentage descending to find the best applicable discount
+          .sort((a, b) => b.descuento - a.descuento); 
       
       if (applicableDiscounts.length > 0) {
           const bestDiscount = applicableDiscounts[0];
@@ -182,8 +184,8 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
           b => b.propertyId === property.id && (!b.status || b.status === 'active')
         );
         const hasConflict = propertyBookings.some(booking => {
-          const bookingStart = parseISO(booking.startDate);
-          const bookingEnd = parseISO(booking.endDate);
+          const bookingStart = parse(booking.startDate, 'yyyy-MM-dd', new Date());
+          const bookingEnd = parse(booking.endDate, 'yyyy-MM-dd', new Date());
           return fromDate < bookingEnd && toDate > bookingStart;
         });
         return !hasConflict;
@@ -211,6 +213,10 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
   };
 
   const formatCurrency = (amount: number, currency: 'USD') => {
+    // Check if amount is a valid number before formatting
+    if (isNaN(amount) || amount === null) {
+      return 'US$ NaN';
+    }
     return new Intl.NumberFormat('es-AR', {
         style: 'currency',
         currency: currency,
@@ -314,7 +320,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
                                     {priceResult.breakdown.appliedDiscount.percentage > 0 && (
                                         <p className="text-green-600 font-semibold">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
                                     )}
-                                    <p>Mínimo noches: {priceResult.breakdown.minNightsRequired}</p>
+                                    <p>Estadía mínima requerida: {priceResult.breakdown.minNightsRequired} noches</p>
                                 </div>
                             </div>
                         )}
