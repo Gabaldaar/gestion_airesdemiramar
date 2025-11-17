@@ -4,11 +4,11 @@
 
 import { useState } from 'react';
 import { Property, Booking, PriceConfig } from '@/lib/data';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle } from 'lucide-react';
+import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle, Info } from 'lucide-react';
 import Image from 'next/image';
 import { differenceInDays, addDays, getYear, parseISO, isWithinInterval as isWithinIntervalDateFns } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -24,6 +24,11 @@ interface PriceResult {
   nights: number;
   error?: string;
   minNightsError?: string;
+  // Debug fields
+  rawPrice: number;
+  appliedDiscountPercentage: number;
+  appliedDiscountNights: number;
+  minNightsRequired: number;
 }
 
 
@@ -35,7 +40,7 @@ const calculatePriceForStay = (
 ): PriceResult => {
   const nights = differenceInDays(endDate, startDate);
   if (nights <= 0) {
-    return { totalPrice: 0, currency: 'USD', nights: 0, error: 'La fecha de salida debe ser posterior a la de entrada.' };
+    return { totalPrice: 0, currency: 'USD', nights: 0, error: 'La fecha de salida debe ser posterior a la de entrada.', rawPrice: 0, appliedDiscountPercentage: 0, appliedDiscountNights: 0, minNightsRequired: 0 };
   }
 
   // 1. Check minimum stay requirement
@@ -69,7 +74,7 @@ const calculatePriceForStay = (
   }
   
   if (nights < requiredMinNights) {
-      return { totalPrice: 0, currency: 'USD', nights, minNightsError: `Se requiere un mínimo de ${requiredMinNights} noches.` };
+      return { totalPrice: 0, currency: 'USD', nights, minNightsError: `Se requiere un mínimo de ${requiredMinNights} noches.`, rawPrice: 0, appliedDiscountPercentage: 0, appliedDiscountNights: 0, minNightsRequired: requiredMinNights };
   }
 
   // 2. Calculate raw total price
@@ -106,20 +111,29 @@ const calculatePriceForStay = (
 
   // 3. Apply discount
   let finalPrice = totalPrice;
+  let appliedDiscount = { percentage: 0, nights: 0 };
   if (config.descuentos && config.descuentos.length > 0) {
       const applicableDiscounts = config.descuentos
           .filter(d => nights >= d['descuento-noches'])
-          // Sort by highest discount percentage first to get the best deal
+          // Sort by highest discount percentage first to get the best deal for the user
           .sort((a, b) => b['descuento-porcentaje'] - a['descuento-porcentaje']);
-
+      
       if (applicableDiscounts.length > 0) {
-          const bestDiscount = applicableDiscounts[0]; // The best discount is the first one after sorting
-          const discountPercentage = bestDiscount['descuento-porcentaje'];
-          finalPrice = totalPrice * (1 - discountPercentage / 100);
+          const bestDiscount = applicableDiscounts[0];
+          finalPrice = totalPrice * (1 - bestDiscount['descuento-porcentaje'] / 100);
+          appliedDiscount = { percentage: bestDiscount['descuento-porcentaje'], nights: bestDiscount['descuento-noches'] };
       }
   }
   
-  return { totalPrice: finalPrice, currency: 'USD', nights };
+  return { 
+      totalPrice: finalPrice, 
+      currency: 'USD', 
+      nights, 
+      rawPrice: totalPrice, 
+      appliedDiscountPercentage: appliedDiscount.percentage,
+      appliedDiscountNights: appliedDiscount.nights,
+      minNightsRequired: requiredMinNights,
+    };
 };
 
 
@@ -176,7 +190,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
         if (propertyRules && typeof propertyRules === 'object') {
           priceResult = calculatePriceForStay(propertyRules, fromDate, toDate);
         } else {
-          priceResult = { totalPrice: 0, currency: 'USD', nights: 0, error: 'No se encontraron reglas de precios.' };
+          priceResult = { totalPrice: 0, currency: 'USD', nights: 0, error: 'No se encontraron reglas de precios.', rawPrice: 0, appliedDiscountPercentage: 0, appliedDiscountNights: 0, minNightsRequired: 0 };
         }
         return { property, priceResult };
       });
@@ -258,7 +272,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {results.map(({ property, priceResult }) => (
                   <Link href={`/properties/${property.id}`} key={property.id} className="group">
-                    <Card className="h-full overflow-hidden transition-all group-hover:shadow-lg">
+                    <Card className="flex flex-col h-full overflow-hidden transition-all group-hover:shadow-lg">
                       <CardHeader className="p-0">
                           <div className="relative aspect-video w-full">
                               <Image
@@ -270,27 +284,36 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
                               />
                           </div>
                       </CardHeader>
-                      <CardContent className="p-4">
+                      <CardContent className="p-4 flex-grow">
                           <CardTitle className="text-base">{property.name}</CardTitle>
                           <CardDescription>{property.address}</CardDescription>
                       </CardContent>
-                      <div className="border-t p-4 flex items-center justify-between bg-muted/50">
+                      <CardFooter className="flex flex-col items-start p-4 border-t bg-muted/50">
                         {priceResult.error ? (
-                            <span className="text-xs font-semibold text-destructive">{priceResult.error}</span>
+                            <span className="text-sm font-semibold text-destructive">{priceResult.error}</span>
                         ) : priceResult.minNightsError ? (
-                            <span className="text-xs font-semibold text-yellow-600">{priceResult.minNightsError}</span>
+                            <span className="text-sm font-semibold text-yellow-600">{priceResult.minNightsError}</span>
                         ) : (
-                            <>
-                                <div className="flex items-center gap-1.5 text-sm font-semibold">
-                                    <Tag className="h-4 w-4 text-muted-foreground" />
-                                    <span>{priceResult.nights} {priceResult.nights === 1 ? 'noche' : 'noches'}</span>
+                            <div className="w-full space-y-2 text-sm">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5 font-semibold">
+                                        <Tag className="h-4 w-4 text-muted-foreground" />
+                                        <span>{priceResult.nights} {priceResult.nights === 1 ? 'noche' : 'noches'}</span>
+                                    </div>
+                                    <span className="text-lg font-bold text-primary">
+                                        {formatCurrency(priceResult.totalPrice, priceResult.currency)}
+                                    </span>
                                 </div>
-                                <span className="text-lg font-bold text-primary">
-                                    {formatCurrency(priceResult.totalPrice, priceResult.currency)}
-                                </span>
-                            </>
+                                <div className="text-xs text-muted-foreground space-y-1 pl-2 border-l-2">
+                                   <p>Precio base: {formatCurrency(priceResult.rawPrice, priceResult.currency)}</p>
+                                    {priceResult.appliedDiscountPercentage > 0 && (
+                                        <p className="text-green-600">Descuento: {priceResult.appliedDiscountPercentage}% por {priceResult.appliedDiscountNights}+ noches</p>
+                                    )}
+                                    <p>Mínimo: {priceResult.minNightsRequired} noches</p>
+                                </div>
+                            </div>
                         )}
-                      </div>
+                      </CardFooter>
                     </Card>
                   </Link>
                 ))}
