@@ -14,14 +14,11 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Si la carga ha terminado y hay un usuario, redirigir al dashboard.
     if (!loading && user) {
       router.push('/');
     }
   }, [user, loading, router]);
 
-  // Mientras Firebase está inicializando y comprobando el estado de autenticación,
-  // es mejor mostrar una pantalla de carga genérica.
   if (loading) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -29,9 +26,7 @@ export default function LoginPage() {
         </div>
     );
   }
-
-  // Si el usuario ya está logueado, será redirigido por el useEffect.
-  // Se puede mostrar un mensaje mientras eso sucede.
+  
   if (user) {
      return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -40,7 +35,6 @@ export default function LoginPage() {
     );
   }
   
-  // Si no está cargando y no hay usuario, mostrar la página de login.
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <Card className="w-full max-w-sm">
