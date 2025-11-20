@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useActionState as useActionStateReact } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import { EmailSettings } from '@/lib/data';
 import { updateEmailSettings } from '@/lib/actions';
@@ -33,9 +33,17 @@ function SubmitButton() {
 }
 
 export function EmailSettingsManager({ initialSettings }: { initialSettings: EmailSettings | null }) {
-    const [state, formAction] = useActionStateReact(updateEmailSettings, initialState);
+    const [state, setState] = useState(initialState);
+    const [isPending, startTransition] = useTransition();
     const [replyToEmail, setReplyToEmail] = useState(initialSettings?.replyToEmail || '');
     const { toast } = useToast();
+
+    const formAction = (formData: FormData) => {
+        startTransition(async () => {
+            const result = await updateEmailSettings(initialState, formData);
+            setState(result);
+        });
+    };
 
     useEffect(() => {
         if (state.message) {
