@@ -13,6 +13,7 @@ import { BookingWithDetails } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { PaymentPreloadData } from './payment-add-form';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
 interface PaymentCalculatorProps {
@@ -144,7 +145,7 @@ export default function PaymentCalculator({ booking, onRegisterPayment }: Paymen
     };
     
     const handleRegister = (currency: 'USD' | 'ARS') => {
-        if (onRegisterPayment) {
+        if (onRegisterPayment && dollarRate) {
             const data: PaymentPreloadData = {
                 currency,
                 amount: currency === 'USD' ? resultUSD : resultARS,
@@ -236,24 +237,60 @@ export default function PaymentCalculator({ booking, onRegisterPayment }: Paymen
                          <div className="border-t pt-6 space-y-4 mt-6">
                             <h4 className="text-lg font-semibold text-center">Resultados del Cálculo por Porcentaje</h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="border rounded-lg p-4 space-y-2">
+                                <div className="border rounded-lg p-4 space-y-2 flex flex-col">
                                     <Label className="text-muted-foreground">Monto a Pagar (USD)</Label>
-                                    <div className="flex items-center justify-between gap-2">
-                                        <p className="text-2xl font-bold">{formatCurrency(resultUSD, 'USD')}</p>
-                                        <div className='flex gap-1'>
-                                            <Button variant="outline" size="icon" onClick={() => handleCopy(resultUSD, 'USD')}><Copy className="h-4 w-4" /></Button>
-                                            {onRegisterPayment && <Button variant="default" size="icon" onClick={() => handleRegister( 'USD')}><FileText className="h-4 w-4" /></Button>}
-                                        </div>
+                                    <p className="text-2xl font-bold flex-grow">{formatCurrency(resultUSD, 'USD')}</p>
+                                    <div className='flex gap-2 self-end'>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button variant="outline" size="icon" onClick={() => handleCopy(resultUSD, 'USD')}><Copy className="h-4 w-4" /></Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Copiar Monto en USD</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                        {onRegisterPayment && (
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button variant="default" size="icon" onClick={() => handleRegister('USD')}><FileText className="h-4 w-4" /></Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Registrar Pago en USD</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="border rounded-lg p-4 space-y-2">
+                                <div className="border rounded-lg p-4 space-y-2 flex flex-col">
                                     <Label className="text-muted-foreground">Monto a Pagar (ARS)</Label>
-                                    <div className="flex items-center justify-between gap-2">
-                                        <p className="text-2xl font-bold">{formatCurrency(resultARS, 'ARS')}</p>
-                                        <div className='flex gap-1'>
-                                            <Button variant="outline" size="icon" onClick={() => handleCopy(resultARS, 'ARS')}><Copy className="h-4 w-4" /></Button>
-                                            {onRegisterPayment && <Button variant="default" size="icon" onClick={() => handleRegister( 'ARS')}><FileText className="h-4 w-4" /></Button>}
-                                        </div>
+                                    <p className="text-2xl font-bold flex-grow">{formatCurrency(resultARS, 'ARS')}</p>
+                                    <div className='flex gap-2 self-end'>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button variant="outline" size="icon" onClick={() => handleCopy(resultARS, 'ARS')}><Copy className="h-4 w-4" /></Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Copiar Monto en ARS</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                         {onRegisterPayment && (
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button variant="default" size="icon" onClick={() => handleRegister('ARS')}><FileText className="h-4 w-4" /></Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Registrar Pago en ARS</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        )}
                                     </div>
                                 </div>
                             </div>
