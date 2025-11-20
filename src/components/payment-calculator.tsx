@@ -87,9 +87,11 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
             const newBaseAmount = baseAmountType === 'balance' ? booking.balance : booking.amount;
             setBaseAmount(newBaseAmount);
             setBaseCurrency(booking.currency);
-            setPercentage(30);
+            if (calcMode === 'by_percentage') {
+               setPercentage(30);
+            }
         }
-    }, [booking, baseAmountType]);
+    }, [booking, baseAmountType, calcMode]);
 
 
     // Calculation for 'by_percentage' mode
@@ -239,135 +241,140 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
                                 <Label htmlFor="calc-percentage">Porcentaje a Abonar (%)</Label>
                                 <Input id="calc-percentage" type="number" value={percentage} onChange={(e) => setPercentage(parseFloat(e.target.value) || 0)} />
                             </div>
-                             <div className="grid gap-1.5">
-                                <Label htmlFor="calc-dollar">Valor del Dólar</Label>
-                                <div className="flex items-center gap-2">
-                                    <Select value={dollarType} onValueChange={(v) => handleDollarTypeChange(v as DollarType)}>
-                                        <SelectTrigger className='w-fit'>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {(Object.keys(dollarTypeMap) as DollarType[]).map(type => (
-                                                <SelectItem key={type} value={type}>{dollarTypeMap[type]}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Input id="calc-dollar" type="number" value={dollarRate} onChange={(e) => setDollarRate(parseFloat(e.target.value) || '')} placeholder="Ej: 900.50"/>
-                                    <Button type="button" variant="outline" size="icon" onClick={() => fetchRate()} disabled={isFetchingRate}>
-                                        {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-
-                         <div className="border-t pt-6 space-y-4 mt-6">
-                            <h4 className="text-lg font-semibold text-center">Resultados del Cálculo por Porcentaje</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="border rounded-lg p-4 space-y-2 flex flex-col">
-                                    <Label className="text-muted-foreground">Monto a Pagar (USD)</Label>
-                                    <p className="text-2xl font-bold flex-grow">{formatCurrency(resultUSD, 'USD')}</p>
-                                    <div className='flex gap-2 self-end'>
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button variant="outline" size="icon" onClick={() => handleCopy(resultUSD, 'USD')}><Copy className="h-4 w-4" /></Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Copiar Monto en USD</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                        {onRegisterPayment && (
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button variant="default" size="icon" onClick={() => handleRegister('USD')}><FileText className="h-4 w-4" /></Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Registrar Pago en USD</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="border rounded-lg p-4 space-y-2 flex flex-col">
-                                    <Label className="text-muted-foreground">Monto a Pagar (ARS)</Label>
-                                    <p className="text-2xl font-bold flex-grow">{formatCurrency(resultARS, 'ARS')}</p>
-                                    <div className='flex gap-2 self-end'>
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button variant="outline" size="icon" onClick={() => handleCopy(resultARS, 'ARS')}><Copy className="h-4 w-4" /></Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Copiar Monto en ARS</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                         {onRegisterPayment && (
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button variant="default" size="icon" onClick={() => handleRegister('ARS')}><FileText className="h-4 w-4" /></Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Registrar Pago en ARS</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </TabsContent>
-                    {showTabs && (
-                         <TabsContent value="by_amount">
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end mt-4">
-                                <div className="grid gap-1.5">
-                                    <Label htmlFor="calc-amount-by-amount">Monto Total Reserva</Label>
-                                    <Input id="calc-amount-by-amount" type="number" value={baseAmount} onChange={(e) => setBaseAmount(parseFloat(e.target.value) || 0)} disabled={isBookingContext} />
-                                </div>
-                                 <div className="grid gap-1.5">
-                                    <Label htmlFor="calc-currency-by-amount">Moneda Monto Total</Label>
-                                    <Select value={baseCurrency} onValueChange={(val) => setBaseCurrency(val as 'USD' | 'ARS')} disabled={isBookingContext}>
-                                        <SelectTrigger id="calc-currency-by-amount">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="USD">USD</SelectItem>
-                                            <SelectItem value="ARS">ARS</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid gap-1.5">
-                                    <Label htmlFor="calc-paid-amount">Monto Recibido</Label>
-                                    <Input id="calc-paid-amount" type="number" value={paidAmount} onChange={(e) => setPaidAmount(parseFloat(e.target.value) || '')} />
-                                </div>
-                                <div className="grid gap-1.5">
-                                    <Label htmlFor="calc-paid-currency">Moneda del Pago</Label>
-                                    <Select value={paidCurrency} onValueChange={(val) => setPaidCurrency(val as 'USD' | 'ARS')}>
-                                        <SelectTrigger id="calc-paid-currency">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="USD">USD</SelectItem>
-                                            <SelectItem value="ARS">ARS</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                             </div>
-                             <div className="border-t pt-6 space-y-4 mt-6">
-                                <h4 className="text-lg font-semibold text-center">Resultados del Cálculo por Monto</h4>
-                                 <div className="border rounded-lg p-4 space-y-2 text-center">
-                                    <Label className="text-muted-foreground">Porcentaje del Monto Base</Label>
-                                    <p className="text-3xl font-bold text-primary">{resultPercentage > 0 ? resultPercentage.toFixed(2) : '0.00'}%</p>
-                                 </div>
-                             </div>
-                         </TabsContent>
-                    )}
+                     <TabsContent value="by_amount">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end mt-4">
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="calc-amount-by-amount">Monto Total Reserva</Label>
+                                <Input id="calc-amount-by-amount" type="number" value={baseAmount} onChange={(e) => setBaseAmount(parseFloat(e.target.value) || 0)} disabled={isBookingContext} />
+                            </div>
+                             <div className="grid gap-1.5">
+                                <Label htmlFor="calc-currency-by-amount">Moneda Monto Total</Label>
+                                <Select value={baseCurrency} onValueChange={(val) => setBaseCurrency(val as 'USD' | 'ARS')} disabled={isBookingContext}>
+                                    <SelectTrigger id="calc-currency-by-amount">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="USD">USD</SelectItem>
+                                        <SelectItem value="ARS">ARS</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="calc-paid-amount">Monto Recibido</Label>
+                                <Input id="calc-paid-amount" type="number" value={paidAmount} onChange={(e) => setPaidAmount(parseFloat(e.target.value) || '')} />
+                            </div>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="calc-paid-currency">Moneda del Pago</Label>
+                                <Select value={paidCurrency} onValueChange={(val) => setPaidCurrency(val as 'USD' | 'ARS')}>
+                                    <SelectTrigger id="calc-paid-currency">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="USD">USD</SelectItem>
+                                        <SelectItem value="ARS">ARS</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                         </div>
+                     </TabsContent>
                 </Tabs>
+                
+                {/* Shared Dollar Rate Input */}
+                <div className="border-t pt-4">
+                    <div className="grid gap-1.5 max-w-sm">
+                        <Label htmlFor="calc-dollar">Valor del Dólar</Label>
+                        <div className="flex items-center gap-2">
+                            <Select value={dollarType} onValueChange={(v) => handleDollarTypeChange(v as DollarType)}>
+                                <SelectTrigger className='w-fit'>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {(Object.keys(dollarTypeMap) as DollarType[]).map(type => (
+                                        <SelectItem key={type} value={type}>{dollarTypeMap[type]}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Input id="calc-dollar" type="number" value={dollarRate} onChange={(e) => setDollarRate(parseFloat(e.target.value) || '')} placeholder="Ej: 900.50"/>
+                            <Button type="button" variant="outline" size="icon" onClick={() => fetchRate()} disabled={isFetchingRate}>
+                                {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                {calcMode === 'by_percentage' ? (
+                     <div className="border-t pt-6 space-y-4 mt-6">
+                        <h4 className="text-lg font-semibold text-center">Resultados del Cálculo</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="border rounded-lg p-4 space-y-2 flex flex-col">
+                                <Label className="text-muted-foreground">Monto a Pagar (USD)</Label>
+                                <p className="text-2xl font-bold flex-grow">{formatCurrency(resultUSD, 'USD')}</p>
+                                <div className='flex gap-2 self-end'>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button variant="outline" size="icon" onClick={() => handleCopy(resultUSD, 'USD')}><Copy className="h-4 w-4" /></Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Copiar Monto en USD</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                    {onRegisterPayment && (
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button variant="default" size="icon" onClick={() => handleRegister('USD')}><FileText className="h-4 w-4" /></Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Registrar Pago en USD</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="border rounded-lg p-4 space-y-2 flex flex-col">
+                                <Label className="text-muted-foreground">Monto a Pagar (ARS)</Label>
+                                <p className="text-2xl font-bold flex-grow">{formatCurrency(resultARS, 'ARS')}</p>
+                                <div className='flex gap-2 self-end'>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button variant="outline" size="icon" onClick={() => handleCopy(resultARS, 'ARS')}><Copy className="h-4 w-4" /></Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Copiar Monto en ARS</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                     {onRegisterPayment && (
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button variant="default" size="icon" onClick={() => handleRegister('ARS')}><FileText className="h-4 w-4" /></Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Registrar Pago en ARS</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                     <div className="border-t pt-6 space-y-4 mt-6">
+                        <h4 className="text-lg font-semibold text-center">Resultados del Cálculo</h4>
+                         <div className="border rounded-lg p-4 space-y-2 text-center">
+                            <Label className="text-muted-foreground">Porcentaje del Monto Base</Label>
+                            <p className="text-3xl font-bold text-primary">{resultPercentage > 0 ? resultPercentage.toFixed(2) : '0.00'}%</p>
+                         </div>
+                     </div>
+                )}
             </CardContent>
         </Card>
     );
