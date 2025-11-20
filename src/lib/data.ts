@@ -1,5 +1,4 @@
 
-
 import { db } from './firebase';
 import {
   collection,
@@ -337,12 +336,12 @@ export async function getPropertyById(id: string): Promise<Property | undefined>
   return docSnap.exists() ? processDoc(docSnap) as Property : undefined;
 }
 
-export async function dbAddProperty(property: Omit<Property, 'id'>): Promise<Property> {
+export async function addProperty(property: Omit<Property, 'id'>): Promise<Property> {
     const docRef = await addDoc(propertiesCollection, property);
     return { id: docRef.id, ...property };
 }
 
-export async function dbUpdateProperty(updatedProperty: Partial<Property>): Promise<Property | null> {
+export async function updateProperty(updatedProperty: Partial<Property>): Promise<Property | null> {
     const { id, ...data } = updatedProperty;
     if (!id) throw new Error("Update property requires an ID.");
     const docRef = doc(db, 'properties', id);
@@ -351,7 +350,7 @@ export async function dbUpdateProperty(updatedProperty: Partial<Property>): Prom
     return newDoc.exists() ? processDoc(newDoc) as Property : null;
 }
 
-export async function dbDeleteProperty(propertyId: string): Promise<void> {
+export async function deleteProperty(propertyId: string): Promise<void> {
     const batch = writeBatch(db);
 
     // 1. Delete the property itself
@@ -402,19 +401,19 @@ export async function getTenantById(id: string): Promise<Tenant | undefined> {
     return docSnap.exists() ? processDoc(docSnap) as Tenant : undefined;
 }
 
-export async function dbAddTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
+export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
     const docRef = await addDoc(tenantsCollection, tenant);
     return { id: docRef.id, ...tenant };
 }
 
-export async function dbUpdateTenant(updatedTenant: Tenant): Promise<Tenant | null> {
+export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null> {
     const { id, ...data } = updatedTenant;
     const docRef = doc(db, 'tenants', id);
     await updateDoc(docRef, data);
     return updatedTenant;
 }
 
-export async function dbDeleteTenant(id: string): Promise<boolean> {
+export async function deleteTenant(id: string): Promise<boolean> {
     const docRef = doc(db, 'tenants', id);
     await deleteDoc(docRef);
     return true;
@@ -484,12 +483,12 @@ export async function getBookingWithDetails(id: string): Promise<BookingWithDeta
 }
 
 
-export async function dbAddBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
+export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
     const docRef = await addDoc(bookingsCollection, { ...booking, status: 'active' });
     return { id: docRef.id, ...booking, status: 'active' };
 }
 
-export async function dbUpdateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
+export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
     const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
@@ -498,7 +497,7 @@ export async function dbUpdateBooking(updatedBooking: Partial<Booking>): Promise
     return newDoc.exists() ? processDoc(newDoc) as Booking : null;
 }
 
-export async function dbDeleteBooking(id: string): Promise<boolean> {
+export async function deleteBooking(id: string): Promise<boolean> {
     const batch = writeBatch(db);
     
     const bookingRef = doc(db, 'bookings', id);
@@ -549,19 +548,19 @@ export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]>
 }
 
 
-export async function dbAddPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
+export async function addPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
     const docRef = await addDoc(paymentsCollection, payment);
     return { id: docRef.id, ...payment };
 }
 
-export async function dbUpdatePayment(updatedPayment: Payment): Promise<Payment> {
+export async function updatePayment(updatedPayment: Payment): Promise<Payment> {
     const { id, ...data } = updatedPayment;
     const docRef = doc(db, 'payments', id);
     await updateDoc(docRef, data);
     return updatedPayment;
 }
 
-export async function dbDeletePayment(id: string): Promise<void> {
+export async function deletePayment(id: string): Promise<void> {
     const docRef = doc(db, 'payments', id);
     await deleteDoc(docRef);
 }
@@ -572,19 +571,19 @@ export async function getExpenseCategories(): Promise<ExpenseCategory[]> {
     return snapshot.docs.map(processDoc) as ExpenseCategory[];
 }
 
-export async function dbAddExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
+export async function addExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
     const docRef = await addDoc(expenseCategoriesCollection, category);
     return { id: docRef.id, ...category };
 }
 
-export async function dbUpdateExpenseCategory(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
+export async function updateExpenseCategory(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
     const { id, ...data } = updatedCategory;
     const docRef = doc(db, 'expenseCategories', id);
     await updateDoc(docRef, data);
     return updatedCategory;
 }
 
-export async function dbDeleteExpenseCategory(id: string): Promise<void> {
+export async function deleteExpenseCategory(id: string): Promise<void> {
     const docRef = doc(db, 'expenseCategories', id);
     await deleteDoc(docRef);
 }
@@ -596,19 +595,19 @@ export async function getPropertyExpensesByPropertyId(propertyId: string): Promi
     return snapshot.docs.map(processDoc) as PropertyExpense[];
 }
 
-export async function dbAddPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
+export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
     const docRef = await addDoc(propertyExpensesCollection, expense);
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
-export async function dbUpdatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense> {
+export async function updatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense> {
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'propertyExpenses', id);
     await updateDoc(docRef, data);
     return updatedExpense;
 }
 
-export async function dbDeletePropertyExpense(id: string): Promise<void> {
+export async function deletePropertyExpense(id: string): Promise<void> {
     const docRef = doc(db, 'propertyExpenses', id);
     await deleteDoc(docRef);
 }
@@ -620,19 +619,19 @@ export async function getBookingExpensesByBookingId(bookingId: string): Promise<
     return snapshot.docs.map(processDoc) as BookingExpense[];
 }
 
-export async function dbAddBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
+export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
     const docRef = await addDoc(bookingExpensesCollection, expense);
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
-export async function dbUpdateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense> {
+export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense> {
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'bookingExpenses', id);
     await updateDoc(docRef, data);
     return updatedExpense;
 }
 
-export async function dbDeleteBookingExpense(id: string): Promise<void> {
+export async function deleteBookingExpense(id: string): Promise<void> {
     const docRef = doc(db, 'bookingExpenses', id);
     await deleteDoc(docRef);
 }
@@ -846,19 +845,19 @@ export async function getEmailTemplates(): Promise<EmailTemplate[]> {
   return snapshot.docs.map(processDoc) as EmailTemplate[];
 }
 
-export async function dbAddEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
+export async function addEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
   const docRef = await addDoc(emailTemplatesCollection, template);
   return { id: docRef.id, ...template };
 }
 
-export async function dbUpdateEmailTemplate(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
+export async function updateEmailTemplate(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
   const { id, ...data } = updatedTemplate;
   const docRef = doc(db, 'emailTemplates', id);
   await updateDoc(docRef, data);
   return updatedTemplate;
 }
 
-export async function dbDeleteEmailTemplate(id: string): Promise<void> {
+export async function deleteEmailTemplate(id: string): Promise<void> {
   const docRef = doc(db, 'emailTemplates', id);
   await deleteDoc(docRef);
 }
@@ -882,7 +881,7 @@ export async function getEmailSettings(): Promise<EmailSettings | null> {
     return getSetting<'email' | any>('email');
 }
 
-export async function dbUpdateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<void> {
+export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<void> {
     const docRef = doc(db, 'settings', 'email');
     await setDoc(docRef, settings, { merge: true });
 }
@@ -891,7 +890,7 @@ export async function getAlertSettings(): Promise<AlertSettings | null> {
     return getSetting<'alerts' | any>('alerts');
 }
 
-export async function dbUpdateAlertSettings(settings: Omit<AlertSettings, 'id'>): Promise<void> {
+export async function updateAlertSettings(settings: Omit<AlertSettings, 'id'>): Promise<void> {
     const docRef = doc(db, 'settings', 'alerts');
     await setDoc(docRef, settings, { merge: true });
 }
@@ -904,19 +903,19 @@ export async function getOrigins(): Promise<Origin[]> {
   return snapshot.docs.map(processDoc) as Origin[];
 }
 
-export async function dbAddOrigin(origin: Omit<Origin, 'id'>): Promise<Origin> {
+export async function addOrigin(origin: Omit<Origin, 'id'>): Promise<Origin> {
   const docRef = await addDoc(originsCollection, origin);
   return { id: docRef.id, ...origin };
 }
 
-export async function dbUpdateOrigin(updatedOrigin: Origin): Promise<Origin> {
+export async function updateOrigin(updatedOrigin: Origin): Promise<Origin> {
   const { id, ...data } = updatedOrigin;
   const docRef = doc(db, 'origins', id);
   await updateDoc(docRef, data);
   return updatedOrigin;
 }
 
-export async function dbDeleteOrigin(id: string): Promise<void> {
+export async function deleteOrigin(id: string): Promise<void> {
   // Find tenants with this originId and unset it
   const tenantsToUpdateQuery = query(tenantsCollection, where('originId', '==', id));
   const tenantsSnapshot = await getDocs(tenantsToUpdateQuery);
