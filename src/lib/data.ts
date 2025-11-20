@@ -262,7 +262,7 @@ export type PriceConfig = {
   base: number;
   minimoNoches: number;
   rangos: PriceRange[];
-  minimosPorRango: MinimumStay[];
+  minimos: MinimumStay[];
   descuentos: Discount[];
   propiedad: string;
 };
@@ -337,12 +337,12 @@ export async function getPropertyById(id: string): Promise<Property | undefined>
   return docSnap.exists() ? processDoc(docSnap) as Property : undefined;
 }
 
-export async function addProperty(property: Omit<Property, 'id'>): Promise<Property> {
+export async function dbAddProperty(property: Omit<Property, 'id'>): Promise<Property> {
     const docRef = await addDoc(propertiesCollection, property);
     return { id: docRef.id, ...property };
 }
 
-export async function updateProperty(updatedProperty: Partial<Property>): Promise<Property | null> {
+export async function dbUpdateProperty(updatedProperty: Partial<Property>): Promise<Property | null> {
     const { id, ...data } = updatedProperty;
     if (!id) throw new Error("Update property requires an ID.");
     const docRef = doc(db, 'properties', id);
@@ -351,7 +351,7 @@ export async function updateProperty(updatedProperty: Partial<Property>): Promis
     return newDoc.exists() ? processDoc(newDoc) as Property : null;
 }
 
-export async function deleteProperty(propertyId: string): Promise<void> {
+export async function dbDeleteProperty(propertyId: string): Promise<void> {
     const batch = writeBatch(db);
 
     // 1. Delete the property itself
@@ -402,19 +402,19 @@ export async function getTenantById(id: string): Promise<Tenant | undefined> {
     return docSnap.exists() ? processDoc(docSnap) as Tenant : undefined;
 }
 
-export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
+export async function dbAddTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
     const docRef = await addDoc(tenantsCollection, tenant);
     return { id: docRef.id, ...tenant };
 }
 
-export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null> {
+export async function dbUpdateTenant(updatedTenant: Tenant): Promise<Tenant | null> {
     const { id, ...data } = updatedTenant;
     const docRef = doc(db, 'tenants', id);
     await updateDoc(docRef, data);
     return updatedTenant;
 }
 
-export async function deleteTenant(id: string): Promise<boolean> {
+export async function dbDeleteTenant(id: string): Promise<boolean> {
     const docRef = doc(db, 'tenants', id);
     await deleteDoc(docRef);
     return true;
@@ -484,12 +484,12 @@ export async function getBookingWithDetails(id: string): Promise<BookingWithDeta
 }
 
 
-export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
+export async function dbAddBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
     const docRef = await addDoc(bookingsCollection, { ...booking, status: 'active' });
     return { id: docRef.id, ...booking, status: 'active' };
 }
 
-export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
+export async function dbUpdateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
     const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
@@ -498,7 +498,7 @@ export async function updateBooking(updatedBooking: Partial<Booking>): Promise<B
     return newDoc.exists() ? processDoc(newDoc) as Booking : null;
 }
 
-export async function deleteBooking(id: string): Promise<boolean> {
+export async function dbDeleteBooking(id: string): Promise<boolean> {
     const batch = writeBatch(db);
     
     const bookingRef = doc(db, 'bookings', id);
