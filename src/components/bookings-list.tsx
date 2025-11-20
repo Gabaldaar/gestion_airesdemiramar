@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -599,6 +600,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     <PaymentCalculator 
                         booking={calculatorBooking}
                         onRegisterPayment={(data) => handleRegisterPayment(calculatorBooking.id, data)}
+                        showTabs={true}
                     />
                 </DialogContent>
             </Dialog>

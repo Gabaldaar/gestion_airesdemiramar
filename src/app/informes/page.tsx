@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { 
@@ -206,7 +207,7 @@ function InformesPageContent() {
             </CardContent>
         </Card>
 
-        <PaymentCalculator />
+        <PaymentCalculator showTabs={true} />
 
         <Card>
              <CardHeader>

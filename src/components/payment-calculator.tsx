@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,12 +20,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 interface PaymentCalculatorProps {
     booking?: BookingWithDetails;
     onRegisterPayment?: (data: PaymentPreloadData) => void;
+    showTabs?: boolean;
 }
 
 type CalcMode = 'by_percentage' | 'by_amount';
 type BaseAmountType = 'total' | 'balance';
 
-export default function PaymentCalculator({ booking, onRegisterPayment }: PaymentCalculatorProps) {
+export default function PaymentCalculator({ booking, onRegisterPayment, showTabs = false }: PaymentCalculatorProps) {
     const [calcMode, setCalcMode] = useState<CalcMode>('by_percentage');
     
     // State for 'by_percentage' mode
@@ -113,28 +115,28 @@ export default function PaymentCalculator({ booking, onRegisterPayment }: Paymen
     
     // Calculation for 'by_amount' mode
     useEffect(() => {
-        if (calcMode !== 'by_amount' || !booking) return;
+        if (calcMode !== 'by_amount') return;
 
         const calculate = () => {
-            if (!paidAmount || !dollarRate || !booking) {
-                setResultPercentage(0);
-                return;
+            if (!paidAmount || !dollarRate || !baseAmount) {
+                 setResultPercentage(0);
+                 return;
             }
             
-            const bookingAmountInUSD = booking.currency === 'ARS' ? booking.amount / dollarRate : booking.amount;
-            if (bookingAmountInUSD === 0) {
+            const baseAmountInUSD = baseCurrency === 'ARS' ? baseAmount / dollarRate : baseAmount;
+            if (baseAmountInUSD === 0) {
                  setResultPercentage(0);
                  return;
             }
 
             const paidAmountInUSD = paidCurrency === 'ARS' ? paidAmount / dollarRate : paidAmount;
 
-            const percentageOfTotal = (paidAmountInUSD / bookingAmountInUSD) * 100;
+            const percentageOfTotal = (paidAmountInUSD / baseAmountInUSD) * 100;
             setResultPercentage(percentageOfTotal);
         }
         calculate();
 
-    }, [paidAmount, paidCurrency, dollarRate, booking, calcMode])
+    }, [paidAmount, paidCurrency, dollarRate, baseAmount, baseCurrency, calcMode])
 
     const handleCopy = (value: number, curr: 'USD' | 'ARS') => {
         navigator.clipboard.writeText(value.toFixed(2));
@@ -175,12 +177,12 @@ export default function PaymentCalculator({ booking, onRegisterPayment }: Paymen
                     Calculadora de Pagos
                 </CardTitle>
                 <CardDescription>
-                    {isBookingContext ? "Calcula un pago para esta reserva." : "Calcula un pago en base a un porcentaje."}
+                    {isBookingContext ? "Calcula un pago para esta reserva." : "Herramienta para cálculos de pagos hipotéticos."}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <Tabs value={calcMode} onValueChange={(val) => setCalcMode(val as CalcMode)} className="w-full">
-                    {isBookingContext && (
+                    {showTabs && (
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="by_percentage">Calcular por %</TabsTrigger>
                             <TabsTrigger value="by_amount">Calcular por Monto</TabsTrigger>
@@ -204,11 +206,11 @@ export default function PaymentCalculator({ booking, onRegisterPayment }: Paymen
                                 </div>
                             )}
                             <div className="grid gap-1.5">
-                                <Label htmlFor="calc-amount">Monto de la Reserva</Label>
+                                <Label htmlFor="calc-amount">Monto Base</Label>
                                 <Input id="calc-amount" type="number" value={baseAmount} onChange={(e) => setBaseAmount(parseFloat(e.target.value) || 0)} disabled={isBookingContext} />
                             </div>
                             <div className="grid gap-1.5">
-                                <Label htmlFor="calc-currency">Moneda</Label>
+                                <Label htmlFor="calc-currency">Moneda del Monto Base</Label>
                                 <Select value={baseCurrency} onValueChange={(val) => setBaseCurrency(val as 'USD' | 'ARS')} disabled={isBookingContext}>
                                     <SelectTrigger id="calc-currency">
                                         <SelectValue />
@@ -296,9 +298,25 @@ export default function PaymentCalculator({ booking, onRegisterPayment }: Paymen
                             </div>
                         </div>
                     </TabsContent>
-                    {isBookingContext && (
+                    {showTabs && (
                          <TabsContent value="by_amount">
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end mt-4">
+                                <div className="grid gap-1.5">
+                                    <Label htmlFor="calc-amount-by-amount">Monto Total Reserva</Label>
+                                    <Input id="calc-amount-by-amount" type="number" value={baseAmount} onChange={(e) => setBaseAmount(parseFloat(e.target.value) || 0)} disabled={isBookingContext} />
+                                </div>
+                                 <div className="grid gap-1.5">
+                                    <Label htmlFor="calc-currency-by-amount">Moneda Monto Total</Label>
+                                    <Select value={baseCurrency} onValueChange={(val) => setBaseCurrency(val as 'USD' | 'ARS')} disabled={isBookingContext}>
+                                        <SelectTrigger id="calc-currency-by-amount">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="USD">USD</SelectItem>
+                                            <SelectItem value="ARS">ARS</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                                 <div className="grid gap-1.5">
                                     <Label htmlFor="calc-paid-amount">Monto Recibido</Label>
                                     <Input id="calc-paid-amount" type="number" value={paidAmount} onChange={(e) => setPaidAmount(parseFloat(e.target.value) || '')} />
@@ -319,7 +337,7 @@ export default function PaymentCalculator({ booking, onRegisterPayment }: Paymen
                              <div className="border-t pt-6 space-y-4 mt-6">
                                 <h4 className="text-lg font-semibold text-center">Resultados del Cálculo por Monto</h4>
                                  <div className="border rounded-lg p-4 space-y-2 text-center">
-                                    <Label className="text-muted-foreground">Porcentaje de la Reserva</Label>
+                                    <Label className="text-muted-foreground">Porcentaje del Monto Base</Label>
                                     <p className="text-3xl font-bold text-primary">{resultPercentage > 0 ? resultPercentage.toFixed(2) : '0.00'}%</p>
                                  </div>
                              </div>
