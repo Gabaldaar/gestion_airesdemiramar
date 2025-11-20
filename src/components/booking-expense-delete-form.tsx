@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,7 @@ export function BookingExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expe
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
-        const result = await deleteBookingExpense(state, formData);
+        const result = await deleteBookingExpense(initialState, formData);
         setState(result);
     });
   }
@@ -92,5 +92,3 @@ export function BookingExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expe
     </Dialog>
   );
 }
-
-    

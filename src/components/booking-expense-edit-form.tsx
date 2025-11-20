@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useActionState as useActionStateReact } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -49,12 +49,20 @@ function SubmitButton() {
 }
 
 export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated }: { expense: BookingExpense, categories: ExpenseCategory[], onExpenseUpdated: () => void; }) {
-  const [state, formAction] = useActionStateReact(updateBookingExpense, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(expense.originalUsdAmount ? 'USD' : 'ARS');
   const [exchangeRate, setExchangeRate] = useState(expense.exchangeRate?.toString() || '');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await updateBookingExpense(initialState, formData);
+        setState(result);
+    });
+  };
 
   const fetchRate = async () => {
     setIsFetchingRate(true);
@@ -79,7 +87,7 @@ export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated }
 
   useEffect(() => {
       if (!isOpen) {
-          // formAction(initialState);
+          setState(initialState);
           setDate(new Date(expense.date));
           setCurrency(expense.originalUsdAmount ? 'USD' : 'ARS');
           setExchangeRate(expense.exchangeRate?.toString() || '');

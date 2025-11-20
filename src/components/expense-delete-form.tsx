@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,7 @@ export function ExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expenseId: 
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
-        const result = await deletePropertyExpense(state, formData);
+        const result = await deletePropertyExpense(initialState, formData);
         setState(result);
     });
   }
