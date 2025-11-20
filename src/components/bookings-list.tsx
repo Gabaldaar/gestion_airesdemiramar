@@ -35,7 +35,7 @@ import { Landmark, Wallet, Pencil, Trash2, FileText, Calculator } from 'lucide-r
 import { useState, useEffect } from 'react';
 import { EmailSender } from "./email-sender";
 import useWindowSize from '@/hooks/use-window-size';
-import { PaymentAddForm } from "./payment-add-form";
+import { PaymentAddForm, PaymentPreloadData } from "./payment-add-form";
 import { BookingExpenseAddForm } from "./booking-expense-add-form";
 import PaymentCalculator from "./payment-calculator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
@@ -444,6 +444,8 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [addingPaymentForBookingId, setAddingPaymentForBookingId] = useState<string | undefined>(undefined);
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
+  const [paymentPreloadData, setPaymentPreloadData] = useState<PaymentPreloadData | undefined>(undefined);
+
   const [addingExpenseForBookingId, setAddingExpenseForBookingId] = useState<string | undefined>(undefined);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
@@ -471,6 +473,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
 
   const handleAddPaymentClick = (bookingId: string) => {
     setAddingPaymentForBookingId(bookingId);
+    setPaymentPreloadData(undefined); // Clear any previous preload data
     setIsAddPaymentOpen(true);
   }
 
@@ -483,6 +486,13 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     setCalculatorBooking(booking);
     setIsCalculatorOpen(true);
   };
+
+  const handleRegisterPayment = (bookingId: string, data: PaymentPreloadData) => {
+    setIsCalculatorOpen(false); // Close calculator
+    setAddingPaymentForBookingId(bookingId);
+    setPaymentPreloadData(data);
+    setIsAddPaymentOpen(true);
+  }
 
   const handleUpdate = () => {
     // A simple page refresh is enough when server actions handle revalidation
@@ -567,6 +577,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                 onPaymentAdded={handleUpdate}
                 isOpen={isAddPaymentOpen}
                 onOpenChange={setIsAddPaymentOpen}
+                preloadData={paymentPreloadData}
             />
         )}
         {addingExpenseForBookingId && (
@@ -586,8 +597,8 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                         <DialogDescription>Reserva en {calculatorBooking.property?.name}</DialogDescription>
                     </DialogHeader>
                     <PaymentCalculator 
-                        initialAmount={calculatorBooking.amount}
-                        initialCurrency={calculatorBooking.currency}
+                        booking={calculatorBooking}
+                        onRegisterPayment={(data) => handleRegisterPayment(calculatorBooking.id, data)}
                     />
                 </DialogContent>
             </Dialog>
@@ -595,5 +606,3 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
-
-    

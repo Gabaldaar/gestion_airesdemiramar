@@ -29,6 +29,13 @@ const initialState = {
   success: false,
 };
 
+export interface PaymentPreloadData {
+    amount: number;
+    currency: 'USD' | 'ARS';
+    exchangeRate?: number;
+}
+
+
 function SubmitButton() {
     const { pending } = useFormStatus();
     return (
@@ -50,14 +57,16 @@ interface PaymentAddFormProps {
     onPaymentAdded: () => void;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    preloadData?: PaymentPreloadData;
 }
 
-export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange }: PaymentAddFormProps) {
+export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange, preloadData }: PaymentAddFormProps) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('USD');
+  const [amount, setAmount] = useState('');
   const [exchangeRate, setExchangeRate] = useState('');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
 
@@ -89,16 +98,30 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
     }
   }, [state, onPaymentAdded, onOpenChange]);
 
+  const resetForm = () => {
+    formRef.current?.reset();
+    setDate(new Date());
+    setCurrency('USD');
+    setAmount('');
+    setExchangeRate('');
+    setState(initialState);
+    setIsFetchingRate(false);
+  }
+
   useEffect(() => {
-    if (!isOpen) {
-        formRef.current?.reset();
-        setDate(new Date());
-        setCurrency('USD');
-        setExchangeRate('');
-        setState(initialState);
-        setIsFetchingRate(false);
+    if (isOpen) {
+        if (preloadData) {
+            setAmount(preloadData.amount.toString());
+            setCurrency(preloadData.currency);
+            setExchangeRate(preloadData.exchangeRate?.toString() || '');
+        } else {
+            resetForm(); // Reset only if no data is preloaded
+        }
+    } else {
+        resetForm(); // Always reset when closing
     }
-  }, [isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, preloadData]);
   
   const handleCurrencyChange = (value: string) => {
     const newCurrency = value as 'ARS' | 'USD';
@@ -165,7 +188,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
                     <Label htmlFor="amount" className="text-right">
                     Monto
                     </Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
+                    <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" value={amount} onChange={(e) => setAmount(e.target.value)} required />
                 </div>
                 {currency === 'ARS' && (
                      <div className="grid grid-cols-4 items-center gap-4">
