@@ -3,35 +3,35 @@
 
 import { revalidatePath } from "next/cache";
 import { 
-    dbAddTenant, 
-    dbUpdateTenant,
-    dbDeleteTenant,
-    dbAddBooking,
-    dbUpdateBooking,
-    dbDeleteBooking,
-    dbAddPropertyExpense,
-    dbUpdatePropertyExpense,
-    dbDeletePropertyExpense,
-    dbAddBookingExpense,
-    dbUpdateBookingExpense,
-    dbDeleteBookingExpense,
-    dbAddPayment,
-    dbUpdatePayment,
-    dbDeletePayment,
-    dbAddProperty,
-    dbUpdateProperty,
-    dbDeleteProperty,
-    dbAddExpenseCategory,
-    dbUpdateExpenseCategory,
-    dbDeleteExpenseCategory,
-    dbAddEmailTemplate,
-    dbUpdateEmailTemplate,
-    dbDeleteEmailTemplate,
-    dbUpdateEmailSettings,
-    dbUpdateAlertSettings,
-    dbAddOrigin,
-    dbUpdateOrigin,
-    dbDeleteOrigin,
+    addTenant as addTenantDb,
+    updateTenant as updateTenantDb,
+    deleteTenant as deleteTenantDb,
+    addBooking as addBookingDb,
+    updateBooking as updateBookingDb,
+    deleteBooking as deleteBookingDb,
+    addPropertyExpense as addPropertyExpenseDb,
+    updatePropertyExpense as updatePropertyExpenseDb,
+    deletePropertyExpense as deletePropertyExpenseDb,
+    addBookingExpense as addBookingExpenseDb,
+    updateBookingExpense as updateBookingExpenseDb,
+    deleteBookingExpense as deleteBookingExpenseDb,
+    addPayment as addPaymentDb,
+    updatePayment as updatePaymentDb,
+    deletePayment as deletePaymentDb,
+    addProperty as addPropertyDb,
+    updateProperty as updatePropertyDb,
+    deleteProperty as deletePropertyDb,
+    addExpenseCategory as addExpenseCategoryDb,
+    updateExpenseCategory as updateExpenseCategoryDb,
+    deleteExpenseCategory as deleteExpenseCategoryDb,
+    addEmailTemplate as addEmailTemplateDb,
+    updateEmailTemplate as updateEmailTemplateDb,
+    deleteEmailTemplate as deleteEmailTemplateDb,
+    updateEmailSettings as updateEmailSettingsDb,
+    updateAlertSettings as updateAlertSettingsDb,
+    addOrigin as addOriginDb,
+    updateOrigin as updateOriginDb,
+    deleteOrigin as deleteOriginDb,
     getBookingById,
     getPropertyById,
     getTenantById,
@@ -62,15 +62,12 @@ export async function addProperty(previousState: any, formData: FormData) {
     contractTemplate: formData.get("contractTemplate") as string || "",
     customField1Label: formData.get("customField1Label") as string,
     customField1Value: formData.get("customField1Value") as string,
-    customField2Label: formData.get("customField2Label") as string,
-    customField2Value: formData.get("customField2Value") as string,
-    customField3Label: formData.get("customField3Label") as string,
-    customField3Value: formData.get("customField3Value") as string,
-    customField4Label: formData.get("customField4Label") as string,
-    customField4Value: formData.get("customField4Value") as string,
-    customField5Label: formData.get("customField5Label") as string,
+    customField2Label: formData.get("customField2Value") as string,
+    customField3Label: formData.get("customField3Value") as string,
+    customField4Label: formData.get("customField4Value") as string,
+    customField5Label: formData.get("customField5Value") as string,
     customField5Value: formData.get("customField5Value") as string,
-    customField6Label: formData.get("customField6Label") as string,
+    customField6Label: formData.get("customField6Value") as string,
     customField6Value: formData.get("customField6Value") as string,
   };
 
@@ -79,7 +76,7 @@ export async function addProperty(previousState: any, formData: FormData) {
   }
 
   try {
-    await dbAddProperty(newPropertyData);
+    await addPropertyDb(newPropertyData);
     revalidatePath("/settings");
     revalidatePath("/properties");
     revalidatePath("/");
@@ -103,13 +100,10 @@ export async function updateProperty(previousState: any, formData: FormData) {
     contractTemplate: formData.get("contractTemplate") as string,
     customField1Label: formData.get("customField1Label") as string,
     customField1Value: formData.get("customField1Value") as string,
-    customField2Label: formData.get("customField2Label") as string,
-    customField2Value: formData.get("customField2Value") as string,
-    customField3Label: formData.get("customField3Label") as string,
-    customField3Value: formData.get("customField3Value") as string,
-    customField4Label: formData.get("customField4Label") as string,
-    customField4Value: formData.get("customField4Value") as string,
-    customField5Label: formData.get("customField5Label") as string,
+    customField2Label: formData.get("customField2Value") as string,
+    customField3Label: formData.get("customField3Value") as string,
+    customField4Label: formData.get("customField4Value") as string,
+    customField5Label: formData.get("customField5Value") as string,
     customField5Value: formData.get("customField5Value") as string,
     customField6Label: formData.get("customField6Label") as string,
     customField6Value: formData.get("customField6Value") as string,
@@ -120,7 +114,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
   }
   
   try {
-    await dbUpdateProperty(propertyData);
+    await updatePropertyDb(propertyData);
     revalidatePath("/settings");
     revalidatePath("/properties");
     revalidatePath(`/properties/${propertyData.id}`);
@@ -146,7 +140,7 @@ export async function deleteProperty(previousState: any, formData: FormData) {
     }
 
     try {
-        await dbDeleteProperty(id);
+        await deletePropertyDb(id);
         revalidatePath("/settings");
         revalidatePath("/properties");
         revalidatePath("/");
@@ -177,7 +171,7 @@ export async function addTenant(previousState: any, formData: FormData) {
   };
 
   try {
-    await dbAddTenant(newTenant);
+    await addTenantDb(newTenant);
     revalidatePath("/tenants");
     revalidatePath("/reports");
     return { success: true, message: "Inquilino añadido correctamente." };
@@ -202,7 +196,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
   };
 
   try {
-    await dbUpdateTenant(updatedTenant);
+    await updateTenantDb(updatedTenant);
     revalidatePath("/tenants");
     revalidatePath("/bookings");
     revalidatePath("/");
@@ -222,7 +216,7 @@ export async function deleteTenant(previousState: any, formData: FormData) {
     }
   
     try {
-      await dbDeleteTenant(id);
+      await deleteTenantDb(id);
       revalidatePath("/tenants");
       revalidatePath("/reports");
       return { success: true, message: "Inquilino eliminado correctamente." };
@@ -257,7 +251,7 @@ export async function addBooking(previousState: any, formData: FormData) {
     }
 
     try {
-        await dbAddBooking(bookingData);
+        await addBookingDb(bookingData);
         revalidatePathsAfterBooking(bookingData.propertyId);
         return { success: true, message: "Reserva creada correctamente." };
     } catch (dbError: any) {
@@ -323,7 +317,7 @@ export async function updateBooking(previousState: any, formData: FormData): Pro
              delete (finalBookingState as Partial<Booking>).originId;
         }
         
-        const updatedBookingFromDb = await dbUpdateBooking(finalBookingState);
+        const updatedBookingFromDb = await updateBookingDb(finalBookingState);
 
         revalidatePathsAfterBooking(finalBookingState.propertyId);
         return { success: true, message: "Reserva actualizada correctamente.", updatedBooking: updatedBookingFromDb };
@@ -344,7 +338,7 @@ export async function deleteBooking(previousState: any, formData: FormData) {
     }
 
     try {
-        await dbDeleteBooking(id);
+        await deleteBookingDb(id);
         revalidatePathsAfterBooking(propertyId);
         return { success: true, message: "Reserva eliminada correctamente." };
     } catch (dbError: any) {
@@ -421,7 +415,7 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
             ...expenseData
         };
 
-        await dbAddPropertyExpense(newExpense as Omit<PropertyExpense, 'id'>);
+        await addPropertyExpenseDb(newExpense as Omit<PropertyExpense, 'id'>);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
         revalidatePath('/expenses');
@@ -450,7 +444,7 @@ export async function updatePropertyExpense(previousState: any, formData: FormDa
             currency: 'ARS',
         };
 
-        await dbUpdatePropertyExpense(updatedExpense);
+        await updatePropertyExpenseDb(updatedExpense);
         revalidatePath(`/properties/${propertyId}`);
         revalidatePath('/reports');
         revalidatePath('/expenses');
@@ -474,7 +468,7 @@ export async function deletePropertyExpense(previousState: any, formData: FormDa
         }
         const propertyId = expenseDoc.data()?.propertyId;
 
-        await dbDeletePropertyExpense(id);
+        await deletePropertyExpenseDb(id);
 
         if (propertyId) {
             revalidatePath(`/properties/${propertyId}`);
@@ -504,7 +498,7 @@ export async function addBookingExpense(previousState: any, formData: FormData) 
             ...expenseData
         };
 
-        await dbAddBookingExpense(newExpense as Omit<BookingExpense, 'id'>);
+        await addBookingExpenseDb(newExpense as Omit<BookingExpense, 'id'>);
         const booking = await getBookingById(bookingId);
         if (booking) {
             revalidatePathsAfterBooking(booking.propertyId);
@@ -534,7 +528,7 @@ export async function updateBookingExpense(previousState: any, formData: FormDat
             currency: 'ARS',
         };
 
-        await dbUpdateBookingExpense(updatedExpense);
+        await updateBookingExpenseDb(updatedExpense);
         const booking = await getBookingById(bookingId);
         if (booking) {
             revalidatePathsAfterBooking(booking.propertyId);
@@ -560,7 +554,7 @@ export async function deleteBookingExpense(previousState: any, formData: FormDat
         }
         const bookingId = expenseDoc.data()?.bookingId;
 
-        await dbDeleteBookingExpense(id);
+        await deleteBookingExpenseDb(id);
         
         if (bookingId) {
             const booking = await getBookingById(bookingId);
@@ -624,7 +618,7 @@ export async function addPayment(previousState: any, formData: FormData) {
 
 
     try {
-        await dbAddPayment(paymentPayload as Omit<Payment, 'id'>);
+        await addPaymentDb(paymentPayload as Omit<Payment, 'id'>);
         const booking = await getBookingById(bookingId);
         if (booking) {
             revalidatePathsAfterBooking(booking.propertyId);
@@ -687,7 +681,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
     if (paymentPayload.originalArsAmount === undefined) delete paymentPayload.originalArsAmount;
 
     try {
-        await dbUpdatePayment(paymentPayload as Payment);
+        await updatePaymentDb(paymentPayload as Payment);
         const booking = await getBookingById(bookingId);
         if (booking) {
             revalidatePathsAfterBooking(booking.propertyId);
@@ -713,7 +707,7 @@ export async function deletePayment(previousState: any, formData: FormData) {
         }
         const bookingId = paymentDoc.data()?.bookingId;
 
-        await dbDeletePayment(id);
+        await deletePaymentDb(id);
 
         if (bookingId) {
             const booking = await getBookingById(bookingId);
@@ -739,7 +733,7 @@ export async function addExpenseCategory(previousState: any, formData: FormData)
     return { success: false, message: 'El nombre de la categoría es obligatorio.' };
   }
   try {
-    await dbAddExpenseCategory({ name });
+    await addExpenseCategoryDb({ name });
     revalidatePath('/settings');
     revalidatePath('/expenses');
     return { success: true, message: 'Categoría añadida.' };
@@ -755,7 +749,7 @@ export async function updateExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'Faltan datos para actualizar la categoría.' };
   }
   try {
-    await dbUpdateExpenseCategory({ id, name });
+    await updateExpenseCategoryDb({ id, name });
     revalidatePath('/settings');
      revalidatePath('/expenses');
     return { success: true, message: 'Categoría actualizada.' };
@@ -770,7 +764,7 @@ export async function deleteExpenseCategory(previousState: any, formData: FormDa
     return { success: false, message: 'ID de categoría no válido.' };
   }
   try {
-    await dbDeleteExpenseCategory(id);
+    await deleteExpenseCategoryDb(id);
     revalidatePath('/settings');
     revalidatePath('/expenses');
     return { success: true, message: 'Categoría eliminada.' };
@@ -789,7 +783,7 @@ export async function addEmailTemplate(previousState: any, formData: FormData) {
     return { success: false, message: 'Todos los campos son obligatorios.' };
   }
   try {
-    await dbAddEmailTemplate({ name, subject, body });
+    await addEmailTemplateDb({ name, subject, body });
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla añadida.' };
   } catch (error: any) {
@@ -807,7 +801,7 @@ export async function updateEmailTemplate(previousState: any, formData: FormData
     return { success: false, message: 'Faltan datos para actualizar la plantilla.' };
   }
   try {
-    await dbUpdateEmailTemplate({ id, name, subject, body });
+    await updateEmailTemplateDb({ id, name, subject, body });
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla actualizada.' };
   } catch (error: any) {
@@ -821,7 +815,7 @@ export async function deleteEmailTemplate(previousState: any, formData: FormData
     return { success: false, message: 'ID de plantilla no válido.' };
   }
   try {
-    await dbDeleteEmailTemplate(id);
+    await deleteEmailTemplateDb(id);
     revalidatePath('/templates');
     return { success: true, message: 'Plantilla eliminada.' };
   } catch (error: any) {
@@ -838,7 +832,7 @@ export async function updateEmailSettings(previousState: any, formData: FormData
     }
 
     try {
-        await dbUpdateEmailSettings({ replyToEmail });
+        await updateEmailSettingsDb({ replyToEmail });
         revalidatePath('/settings');
         return { success: true, message: 'Configuración de email guardada.' };
     } catch (error: any) {
@@ -858,7 +852,7 @@ export async function updateAlertSettings(previousState: any, formData: FormData
     }
 
     try {
-        await dbUpdateAlertSettings({ checkInDays, checkOutDays });
+        await updateAlertSettingsDb({ checkInDays, checkOutDays });
         revalidatePath('/settings');
         revalidatePath('/');
         return { success: true, message: 'Configuración de alertas guardada.' };
@@ -876,7 +870,7 @@ export async function addOrigin(previousState: any, formData: FormData) {
     return { success: false, message: 'El nombre y el color son obligatorios.' };
   }
   try {
-    await dbAddOrigin({ name, color });
+    await addOriginDb({ name, color });
     revalidatePath('/settings');
     revalidatePath('/tenants');
     revalidatePath('/bookings');
@@ -895,7 +889,7 @@ export async function updateOrigin(previousState: any, formData: FormData) {
     return { success: false, message: 'Faltan datos para actualizar el origen.' };
   }
   try {
-    await dbUpdateOrigin({ id, name, color });
+    await updateOriginDb({ id, name, color });
     revalidatePath('/settings');
     revalidatePath('/tenants');
     revalidatePath('/bookings');
@@ -912,7 +906,7 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     return { success: false, message: 'ID de origen no válido.' };
   }
   try {
-    await dbDeleteOrigin(id);
+    await deleteOriginDb(id);
     revalidatePath('/settings');
     revalidatePath('/tenants');
     revalidatePath('/bookings');
@@ -927,3 +921,6 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
 
     
 
+
+
+    
