@@ -25,6 +25,14 @@ interface PaymentCalculatorProps {
 
 type CalcMode = 'by_percentage' | 'by_amount';
 type BaseAmountType = 'total' | 'balance';
+type DollarType = 'oficial' | 'blue' | 'bolsa';
+
+const dollarTypeMap: Record<DollarType, string> = {
+    oficial: 'Oficial',
+    blue: 'Blue',
+    bolsa: 'Bolsa (MEP)',
+};
+
 
 export default function PaymentCalculator({ booking, onRegisterPayment, showTabs = false }: PaymentCalculatorProps) {
     const [calcMode, setCalcMode] = useState<CalcMode>('by_percentage');
@@ -43,14 +51,15 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
     const [resultPercentage, setResultPercentage] = useState(0);
 
     const [dollarRate, setDollarRate] = useState<number | ''>('');
+    const [dollarType, setDollarType] = useState<DollarType>('oficial');
     const [isFetchingRate, setIsFetchingRate] = useState(false);
     
     const { toast } = useToast();
 
-    const fetchRate = async () => {
+    const fetchRate = async (type: DollarType = dollarType) => {
         setIsFetchingRate(true);
         try {
-            const response = await fetch('/api/dollar-rate');
+            const response = await fetch(`/api/dollar-rate?type=${type}`);
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             setDollarRate(data.venta);
@@ -168,6 +177,11 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
     }
     
     const isBookingContext = !!booking;
+    
+    const handleDollarTypeChange = (type: DollarType) => {
+        setDollarType(type);
+        fetchRate(type);
+    }
 
     return (
         <Card>
@@ -225,11 +239,21 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
                                 <Label htmlFor="calc-percentage">Porcentaje a Abonar (%)</Label>
                                 <Input id="calc-percentage" type="number" value={percentage} onChange={(e) => setPercentage(parseFloat(e.target.value) || 0)} />
                             </div>
-                            <div className="grid gap-1.5">
+                             <div className="grid gap-1.5">
                                 <Label htmlFor="calc-dollar">Valor del Dólar</Label>
                                 <div className="flex items-center gap-2">
+                                    <Select value={dollarType} onValueChange={(v) => handleDollarTypeChange(v as DollarType)}>
+                                        <SelectTrigger className='w-fit'>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {(Object.keys(dollarTypeMap) as DollarType[]).map(type => (
+                                                <SelectItem key={type} value={type}>{dollarTypeMap[type]}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                     <Input id="calc-dollar" type="number" value={dollarRate} onChange={(e) => setDollarRate(parseFloat(e.target.value) || '')} placeholder="Ej: 900.50"/>
-                                    <Button type="button" variant="outline" size="icon" onClick={fetchRate} disabled={isFetchingRate}>
+                                    <Button type="button" variant="outline" size="icon" onClick={() => fetchRate()} disabled={isFetchingRate}>
                                         {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                                     </Button>
                                 </div>

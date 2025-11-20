@@ -1,12 +1,20 @@
 
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const type = searchParams.get('type') || 'oficial'; // Default to 'oficial'
+
+    const validTypes = ['oficial', 'blue', 'bolsa', 'contadoconliqui', 'tarjeta', 'cripto'];
+    if (!validTypes.includes(type)) {
+        return NextResponse.json({ error: 'Invalid dollar type specified' }, { status: 400 });
+    }
+
     // We add a cache-busting parameter to ensure we get the latest rate
-    const response = await fetch('https://dolarapi.com/v1/dolares/oficial?_=' + new Date().getTime(), {
+    const response = await fetch(`https://dolarapi.com/v1/dolares/${type}?_=` + new Date().getTime(), {
       next: {
-        revalidate: 600, // Revalidate every 10 minutes
+        revalidate: 300, // Revalidate every 5 minutes
       },
     });
 
