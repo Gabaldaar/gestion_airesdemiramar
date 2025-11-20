@@ -38,6 +38,7 @@ import BookingStatusChart from "@/components/booking-status-chart";
 import NetIncomeDistributionChart from "@/components/net-income-distribution-chart";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import PaymentCalculator from "@/components/payment-calculator";
 
 interface InformesData {
     financialSummary: FinancialSummaryByCurrency;
@@ -204,6 +205,8 @@ function InformesPageContent() {
                 <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
             </CardContent>
         </Card>
+
+        <PaymentCalculator />
 
         <Card>
              <CardHeader>
@@ -402,3 +405,5 @@ export default function InformesPage() {
         </Suspense>
     )
 }
+
+    
