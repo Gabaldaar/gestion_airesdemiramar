@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useActionState as useActionStateReact } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -55,12 +55,20 @@ interface BookingExpenseAddFormProps {
 }
 
 export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories, isOpen, onOpenChange }: BookingExpenseAddFormProps) {
-  const [state, formAction] = useActionStateReact(addBookingExpense, initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [exchangeRate, setExchangeRate] = useState('');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
+
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await addBookingExpense(initialState, formData);
+        setState(result);
+    });
+  };
 
   const fetchRate = async () => {
     setIsFetchingRate(true);
@@ -89,9 +97,8 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories, i
         setDate(new Date());
         setCurrency('ARS');
         setExchangeRate('');
+        setState(initialState);
         setIsFetchingRate(false);
-        // This is a React Hook, so we can't use it here. Let's reset the state object directly.
-        // formAction(initialState);
     }
   }, [isOpen]);
 
