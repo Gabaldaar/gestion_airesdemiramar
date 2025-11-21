@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     const CRON_SECRET = process.env.CRON_SECRET;
 
-    if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
+    if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET.trim()}`) {
         console.error("CRON JOB: Error de autenticación. El CRON_SECRET no coincide o no se proporcionó.");
         return new Response('Unauthorized', { status: 401 });
     }
