@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 
 // --- TEMPORARY DEBUGGING ---
-// Hardcoding VAPID details to eliminate environment variable issues.
-const VAPID_PUBLIC_KEY = "BIaDcv3JWrc9prYBtgdH5p4CX0BWSLEZ06BVWRL-j_4LuWORrX-2IqkEKjPcTzO0cGdxIAQjrdroHOqR0EmZwIA";
-const VAPID_PRIVATE_KEY = "VTy1hHCW-H0DXUCYGfr_sV_ynnVZIous4rhYN4tc1rY";
-const VAPID_MAILTO = "gab.aldazabal@gmail.com";
+// REEMPLAZA ESTOS VALORES CON TUS NUEVAS CLAVES
+const VAPID_PUBLIC_KEY = "<TU_NUEVA_CLAVE_PUBLICA>";
+const VAPID_PRIVATE_KEY = "<TU_NUEVA_CLAVE_PRIVADA>";
+const VAPID_MAILTO = "<TU_EMAIL_DE_CONTACTO>";
 // --- END TEMPORARY DEBUGGING ---
 
 // Configure web-push with your VAPID details

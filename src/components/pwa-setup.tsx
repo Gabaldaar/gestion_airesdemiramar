@@ -28,7 +28,7 @@ const PwaSetup = () => {
     // 1. Register Service Worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/sw.js")
+        .register("/sw-v2.js")
         .then((registration) => {
             console.log("Service Worker registrado con éxito:", registration);
             // 2. Request Push Notification Permission
