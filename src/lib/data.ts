@@ -205,6 +205,17 @@ export type AlertSettings = {
     checkOutDays: number;
 };
 
+export type PushSubscription = {
+    id: string; // Using endpoint as ID for simplicity
+    endpoint: string;
+    expirationTime?: number | null;
+    keys: {
+        p256dh: string;
+        auth: string;
+    };
+}
+
+
 export type TenantsByOriginSummary = {
   name: string;
   count: number;
@@ -279,6 +290,8 @@ const expenseCategoriesCollection = collection(db, 'expenseCategories');
 const emailTemplatesCollection = collection(db, 'emailTemplates');
 const settingsCollection = collection(db, 'settings');
 const originsCollection = collection(db, 'origins');
+const pushSubscriptionsCollection = collection(db, 'pushSubscriptions');
+
 
 
 // Helper function to add default data only if the collection is empty
@@ -1199,4 +1212,31 @@ export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]>
   ];
 
   return summary.filter(item => item.count > 0);
+}
+
+
+// --- PUSH NOTIFICATIONS ---
+
+export async function savePushSubscription(subscription: any): Promise<void> {
+    const subData: PushSubscription = {
+        id: subscription.endpoint, // Use endpoint as unique ID
+        endpoint: subscription.endpoint,
+        expirationTime: subscription.expirationTime,
+        keys: {
+            p256dh: subscription.keys.p256dh,
+            auth: subscription.keys.auth,
+        },
+    };
+    const docRef = doc(db, 'pushSubscriptions', subData.id);
+    await setDoc(docRef, subData, { merge: true });
+}
+
+export async function getPushSubscriptions(): Promise<PushSubscription[]> {
+    const snapshot = await getDocs(pushSubscriptionsCollection);
+    return snapshot.docs.map(processDoc) as PushSubscription[];
+}
+
+export async function deletePushSubscription(id: string): Promise<void> {
+    const docRef = doc(db, 'pushSubscriptions', id);
+    await deleteDoc(docRef);
 }

@@ -32,6 +32,7 @@ import {
     addOrigin as addOriginDb,
     updateOrigin as updateOriginDb,
     deleteOrigin as deleteOriginDb,
+    savePushSubscription as savePushSubscriptionDb,
     getBookingById,
     getPropertyById,
     getTenantById,
@@ -912,6 +913,16 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     revalidatePath('/bookings');
     revalidatePath('/reports');
     return { success: true, message: 'Origen eliminado.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+// --- PUSH NOTIFICATIONS ---
+export async function savePushSubscription(subscription: any) {
+  try {
+    await savePushSubscriptionDb(subscription);
+    return { success: true, message: 'Suscripción guardada.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }

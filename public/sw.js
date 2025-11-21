@@ -1,27 +1,25 @@
-// Define a name for our cache
-const CACHE_NAME = 'gestion-pwa-cache-v1.4';
 
-// List of files to cache
+const CACHE_NAME = 'mi-app-cache-v1';
+// Lista de recursos esenciales para la "carcasa" de la aplicación.
 const urlsToCache = [
   '/',
   '/manifest.json',
-  // Add other static assets like CSS, JS, and images you want to precache.
-  // Next.js automatically chunks these, so you might need to adjust based on your build output.
+  // Agrega aquí los íconos y otros assets estáticos cruciales
 ];
 
-// Install a service worker
+// 1. Instalación del Service Worker: Cachear la carcasa de la aplicación.
 self.addEventListener('install', event => {
-  // Perform install steps
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('Opened cache');
+      .then(cache => {
+        console.log('Cache abierto');
         return cache.addAll(urlsToCache);
       })
   );
+  self.skipWaiting();
 });
 
-// Activate the service worker and clean up old caches
+// 2. Activación del Service Worker: Limpiar cachés antiguas.
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -29,64 +27,91 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Deleting old cache:', cacheName);
+            console.log('Borrando caché antigua:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
+  );
+});
+
+// 3. Interceptación de Peticiones (Fetch)
+self.addEventListener('fetch', event => {
+  const { request } = event;
+
+  // No interceptar peticiones de la API de Firestore ni del Cron
+  if (request.url.includes('firestore.googleapis.com') || request.url.includes('/api/cron/')) {
+    return;
+  }
+  
+  // Estrategia "Network First" para la navegación y otros recursos.
+  event.respondWith(
+    fetch(request)
+      .then(response => {
+        // Si la petición a la red es exitosa, la usamos y la guardamos en caché.
+        if (response && response.status === 200) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then(cache => {
+              cache.put(request, responseToCache);
+            });
+        }
+        return response;
+      })
+      .catch(() => {
+        // Si la red falla (estamos offline), intentamos servir desde la caché.
+        return caches.match(request).then(response => {
+          if (response) {
+            return response;
+          }
+          // Opcional: Podrías devolver una página offline personalizada aquí si no se encuentra en caché.
+        });
+      })
   );
 });
 
 
-// --- Fetch Event Strategies ---
-
-// 1. Network Only for Firestore API calls
-// Allows the app's logic in data.ts to handle the try/catch for Dexie fallback.
-const firestoreApiStrategy = (event) => {
-  return fetch(event.request);
-};
-
-// 2. Network First, then Cache for navigation and main resources
-const networkFirstStrategy = (event) => {
-  return fetch(event.request)
-    .then(response => {
-      // Check if we received a valid response
-      if (!response || response.status !== 200 || response.type !== 'basic') {
-        // If not, we don't cache it, but we return it.
-        return response;
-      }
-
-      // IMPORTANT: Clone the response. A response is a stream
-      // and because we want the browser to consume the response
-      // as well as the cache consuming the response, we need
-      // to clone it so we have two streams.
-      const responseToCache = response.clone();
-
-      caches.open(CACHE_NAME)
-        .then(cache => {
-          cache.put(event.request, responseToCache);
-        });
-
-      return response;
-    })
-    .catch(() => {
-      // If the network request fails, try to get it from the cache.
-      return caches.match(event.request);
-    });
-};
-
-// Listen for fetch events
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-
-  // If the request is for the Firestore API, use a network-only strategy.
-  // The app logic will handle offline fallback to Dexie.
-  if (url.hostname.includes('firestore.googleapis.com')) {
-    event.respondWith(firestoreApiStrategy(event));
+// 4. Listen for Push Notifications
+self.addEventListener('push', function(event) {
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      console.error('Error parsing push data:', e);
+      data = { title: 'Notificación', body: event.data.text() };
+    }
   }
-  // For all other requests (navigation, static assets, etc.), use network-first.
-  else {
-    event.respondWith(networkFirstStrategy(event));
-  }
+
+  const title = data.title || 'Recordatorio';
+  const options = {
+    body: data.body || 'Tienes un nuevo recordatorio.',
+    icon: data.icon || '/icons/icon-192x192.png',
+    badge: data.badge || '/icons/icon-96x96.png',
+    tag: data.tag || 'default-tag', // Tag to group notifications
+    renotify: true, // Renotify if a new notification has the same tag
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Optional: Handle notification click
+self.addEventListener('notificationclick', function(event) {
+  console.log('On notification click: ', event.notification.tag);
+  event.notification.close();
+
+  // This looks to see if the current is already open and
+  // focuses if it is
+  event.waitUntil(clients.matchAll({
+    type: "window"
+  }).then(function(clientList) {
+    for (var i = 0; i < clientList.length; i++) {
+      var client = clientList[i];
+      if (client.url == '/' && 'focus' in client)
+        return client.focus();
+    }
+    if (clients.openWindow)
+      return clients.openWindow('/');
+  }));
 });
