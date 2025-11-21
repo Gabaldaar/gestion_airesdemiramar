@@ -35,11 +35,6 @@ export async function POST(request: NextRequest) {
             getPushSubscriptions()
         ]);
         
-        if (!alertSettings) {
-            console.log("CRON JOB: No hay configuración de alertas. Saltando.");
-            return NextResponse.json({ success: true, message: 'No alert settings configured. Skipping.', notificationsSent: 0 });
-        }
-        
         console.log(`CRON JOB: Encontradas ${subscriptions.length} suscripciones a notificaciones.`);
         if (subscriptions.length === 0) {
             console.log("CRON JOB: No hay suscripciones activas. Saltando.");
@@ -109,7 +104,7 @@ export async function POST(request: NextRequest) {
                 console.log(`CRON JOB: Enviando ${notificationsToSend.length} notificaciones a ${sub.endpoint.substring(0, 40)}...`);
                 return Promise.all(notificationsToSend.map(payload => 
                     webpush.sendNotification(pushSubscription, JSON.stringify(payload)).catch(error => {
-                        console.error(`CRON JOB: Error enviando notificación a ${sub.endpoint}:`, error);
+                        console.error(`CRON JOB: Error enviando notificación a ${sub.id}:`, error.body);
                         // If the subscription is no longer valid, delete it
                         if (error.statusCode === 404 || error.statusCode === 410) {
                             console.log(`CRON JOB: Suscripción ${sub.id} ha expirado. Borrando.`);
