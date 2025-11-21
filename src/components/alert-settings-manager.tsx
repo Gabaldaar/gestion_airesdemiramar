@@ -73,6 +73,7 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
         if (!isPushSupported) return;
         setIsSubscribing(true);
 
+        // Explicitly wait for the service worker to be ready
         const registration = await navigator.serviceWorker.ready;
         
         let permission = Notification.permission;
