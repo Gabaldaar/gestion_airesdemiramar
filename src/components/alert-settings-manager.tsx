@@ -13,7 +13,7 @@ import { useToast } from './ui/use-toast';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 
 // --- TEMPORARY DEBUGGING ---
-const VAPID_PUBLIC_KEY = "<TU_NUEVA_CLAVE_PUBLICA>";
+const VAPID_PUBLIC_KEY = "BIaDcv3JWrc9prYBtgdH5p4CX0BWSLEZ06BVWRL-j_4LuWORrX-2IqkEKjPcTzO0cGdxIAQjrdroHOqR0EmZwIA";
 // --- END TEMPORARY DEBUGGING ---
 
 const initialState = {
