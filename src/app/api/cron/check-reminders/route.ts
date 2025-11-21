@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
         }
 
         const today = startOfToday();
-        const checkInDays = alertSettings.checkInDays;
-        const checkOutDays = alertSettings.checkOutDays;
+        const checkInAlertDays = [7, 3, 1, 0];
+        const checkOutAlertDays = [7, 3, 1, 0];
         const notificationsToSend = [];
 
         for (const booking of allBookings) {
@@ -53,26 +53,26 @@ export async function POST(request: NextRequest) {
             // Check-in Reminders
             const checkInDate = new Date(booking.startDate);
             const daysUntilCheckIn = differenceInDays(checkInDate, today);
-            // --- TEMPORARY TEST CHANGE: Use <= instead of === ---
-            if (daysUntilCheckIn >= 0 && daysUntilCheckIn <= checkInDays) {
+
+            if (checkInAlertDays.includes(daysUntilCheckIn)) {
                 notificationsToSend.push({
                     title: `Recordatorio Check-in (${booking.property?.name})`,
-                    body: `${booking.tenant?.name} llega en ${daysUntilCheckIn} días.`,
+                    body: `${booking.tenant?.name} llega ${daysUntilCheckIn === 0 ? 'hoy' : `en ${daysUntilCheckIn} día(s)`}.`,
                     icon: '/icons/icon-192x192.png',
-                    tag: `checkin-${booking.id}`
+                    tag: `checkin-${booking.id}-${daysUntilCheckIn}`
                 });
             }
 
             // Check-out Reminders
             const checkOutDate = new Date(booking.endDate);
             const daysUntilCheckOut = differenceInDays(checkOutDate, today);
-            // --- TEMPORARY TEST CHANGE: Use <= instead of === ---
-            if (daysUntilCheckOut >= 0 && daysUntilCheckOut <= checkOutDays) {
+            
+            if (checkOutAlertDays.includes(daysUntilCheckOut)) {
                  notificationsToSend.push({
                     title: `Recordatorio Check-out (${booking.property?.name})`,
-                    body: `${booking.tenant?.name} se retira en ${daysUntilCheckOut} días.`,
+                    body: `${booking.tenant?.name} se retira ${daysUntilCheckOut === 0 ? 'hoy' : `en ${daysUntilCheckOut} día(s)`}.`,
                     icon: '/icons/icon-192x192.png',
-                    tag: `checkout-${booking.id}`
+                    tag: `checkout-${booking.id}-${daysUntilCheckOut}`
                 });
             }
         }
