@@ -1217,9 +1217,9 @@ export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]>
 
 // --- PUSH NOTIFICATIONS ---
 
-export async function savePushSubscription(subscription: any): Promise<void> {
+export async function savePushSubscription(subscription: any, safeId: string): Promise<void> {
     const subData: PushSubscription = {
-        id: subscription.endpoint, // Use endpoint as unique ID
+        id: safeId,
         endpoint: subscription.endpoint,
         expirationTime: subscription.expirationTime,
         keys: {

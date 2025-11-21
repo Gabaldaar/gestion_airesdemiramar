@@ -921,9 +921,12 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
 // --- PUSH NOTIFICATIONS ---
 export async function savePushSubscription(subscription: any) {
   try {
-    await savePushSubscriptionDb(subscription);
+    // Firestore disallows '/' in document IDs. Encode the endpoint to be safe.
+    const safeId = btoa(subscription.endpoint);
+    await savePushSubscriptionDb(subscription, safeId);
     return { success: true, message: 'Suscripción guardada.' };
   } catch (error: any) {
+    console.error("Error saving push subscription:", error)
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
