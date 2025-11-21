@@ -5,17 +5,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 
 // Configure web-push with your VAPID details
-if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_MAILTO) {
-    let mailto = process.env.VAPID_MAILTO;
-    if (!mailto.startsWith('mailto:')) {
-        mailto = `mailto:${mailto}`;
-    }
-    webpush.setVapidDetails(
-        mailto,
-        process.env.VAPID_PUBLIC_KEY,
-        process.env.VAPID_PRIVATE_KEY
-    );
-}
+// This setup is now unconditional to ensure it always runs.
+// If environment variables are missing, the server will throw a clearer error.
+const mailto = process.env.VAPID_MAILTO || '';
+webpush.setVapidDetails(
+    mailto.startsWith('mailto:') ? mailto : `mailto:${mailto}`,
+    process.env.VAPID_PUBLIC_KEY || '',
+    process.env.VAPID_PRIVATE_KEY || ''
+);
 
 
 export async function POST(request: NextRequest) {
