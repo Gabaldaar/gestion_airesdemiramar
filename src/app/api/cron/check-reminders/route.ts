@@ -4,14 +4,18 @@ import { differenceInDays, startOfToday } from 'date-fns';
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 
+// --- TEMPORARY DEBUGGING ---
+// Hardcoding VAPID details to eliminate environment variable issues.
+const VAPID_PUBLIC_KEY = "<TU_NUEVA_CLAVE_PUBLICA>";
+const VAPID_PRIVATE_KEY = "<TU_NUEVA_CLAVE_PRIVADA>";
+const VAPID_MAILTO = "<TU_EMAIL_DE_CONTACTO>";
+// --- END TEMPORARY DEBUGGING ---
+
 // Configure web-push with your VAPID details
-// This setup is now unconditional to ensure it always runs.
-// If environment variables are missing, the server will throw a clearer error.
-const mailto = process.env.VAPID_MAILTO || '';
 webpush.setVapidDetails(
-    mailto.startsWith('mailto:') ? mailto : `mailto:${mailto}`,
-    process.env.VAPID_PUBLIC_KEY || '',
-    process.env.VAPID_PRIVATE_KEY || ''
+    VAPID_MAILTO.startsWith('mailto:') ? VAPID_MAILTO : `mailto:${VAPID_MAILTO}`,
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
 );
 
 
@@ -103,8 +107,8 @@ export async function POST(request: NextRequest) {
                     webpush.sendNotification(pushSubscription, JSON.stringify(payload)).catch(error => {
                         console.error(`CRON JOB: Error enviando notificación a ${sub.id}:`, error.body);
                         // If the subscription is no longer valid, delete it
-                        if (error.statusCode === 404 || error.statusCode === 410) {
-                            console.log(`CRON JOB: Suscripción ${sub.id} ha expirado. Borrando.`);
+                        if (error.statusCode === 404 || error.statusCode === 410 || error.message.includes('do not correspond')) {
+                            console.log(`CRON JOB: Suscripción ${sub.id} ha expirado o es inválida. Borrando.`);
                             return deletePushSubscription(sub.id);
                         }
                     })

@@ -12,6 +12,10 @@ import { Loader2, BellRing, BellOff } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 
+// --- TEMPORARY DEBUGGING ---
+const VAPID_PUBLIC_KEY = "<TU_NUEVA_CLAVE_PUBLICA>";
+// --- END TEMPORARY DEBUGGING ---
+
 const initialState = {
   message: '',
   success: false,
@@ -93,7 +97,7 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
             return;
         }
 
-        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        const vapidPublicKey = VAPID_PUBLIC_KEY;
         if (!vapidPublicKey) {
             console.error("VAPID public key not found.");
             toast({ title: "Error de configuración", description: "Falta la clave pública VAPID.", variant: "destructive" });
