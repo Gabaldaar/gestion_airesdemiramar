@@ -53,10 +53,11 @@ export async function POST(request: NextRequest) {
             // Check-in Reminders
             const checkInDate = new Date(booking.startDate);
             const daysUntilCheckIn = differenceInDays(checkInDate, today);
-            if (daysUntilCheckIn === checkInDays) {
+            // --- TEMPORARY TEST CHANGE: Use <= instead of === ---
+            if (daysUntilCheckIn >= 0 && daysUntilCheckIn <= checkInDays) {
                 notificationsToSend.push({
                     title: `Recordatorio Check-in (${booking.property?.name})`,
-                    body: `${booking.tenant?.name} llega en ${checkInDays} días.`,
+                    body: `${booking.tenant?.name} llega en ${daysUntilCheckIn} días.`,
                     icon: '/icons/icon-192x192.png',
                     tag: `checkin-${booking.id}`
                 });
@@ -65,10 +66,11 @@ export async function POST(request: NextRequest) {
             // Check-out Reminders
             const checkOutDate = new Date(booking.endDate);
             const daysUntilCheckOut = differenceInDays(checkOutDate, today);
-            if (daysUntilCheckOut === checkOutDays) {
+            // --- TEMPORARY TEST CHANGE: Use <= instead of === ---
+            if (daysUntilCheckOut >= 0 && daysUntilCheckOut <= checkOutDays) {
                  notificationsToSend.push({
                     title: `Recordatorio Check-out (${booking.property?.name})`,
-                    body: `${booking.tenant?.name} se retira en ${checkOutDays} días.`,
+                    body: `${booking.tenant?.name} se retira en ${daysUntilCheckOut} días.`,
                     icon: '/icons/icon-192x192.png',
                     tag: `checkout-${booking.id}`
                 });
