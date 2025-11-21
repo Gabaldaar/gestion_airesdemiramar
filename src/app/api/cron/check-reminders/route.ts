@@ -6,8 +6,12 @@ import webpush from 'web-push';
 
 // Configure web-push with your VAPID details
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_MAILTO) {
+    let mailto = process.env.VAPID_MAILTO;
+    if (!mailto.startsWith('mailto:')) {
+        mailto = `mailto:${mailto}`;
+    }
     webpush.setVapidDetails(
-        process.env.VAPID_MAILTO,
+        mailto,
         process.env.VAPID_PUBLIC_KEY,
         process.env.VAPID_PRIVATE_KEY
     );
