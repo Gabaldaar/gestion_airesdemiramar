@@ -21,14 +21,14 @@ export function checkDateConflict(
   const selectedStart = selectedRange.from;
   const selectedEnd = selectedRange.to;
 
+  // Filter for active bookings only, excluding the one being edited
+  const activeBookings = existingBookings.filter(booking => 
+    (!booking.status || booking.status === 'active') && booking.id !== currentBookingId
+  );
+
   // A conflict exists if the selected range starts before an existing one ends,
   // AND the selected range ends after an existing one starts.
-  // The equality checks are crucial for detecting back-to-back bookings.
-  for (const booking of existingBookings) {
-    if (booking.id === currentBookingId) {
-      continue;
-    }
-
+  for (const booking of activeBookings) {
     const bookingStart = new Date(booking.startDate);
     const bookingEnd = new Date(booking.endDate);
     

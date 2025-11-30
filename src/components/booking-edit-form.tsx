@@ -287,7 +287,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="originId">Origen</Label>
-                        <Select name="originId" defaultValue={booking.originId}>
+                        <Select name="originId" defaultValue={booking.originId || undefined}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un origen" />
                             </SelectTrigger>
