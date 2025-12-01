@@ -5,11 +5,9 @@
 import type { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
 import webpush, { type PushSubscription } from 'web-push';
-import { differenceInHours } from 'date-fns';
+import { differenceInHours, startOfToday, endOfDay, addDays } from 'date-fns';
 
 // --- INICIALIZACIÓN DE FIREBASE ADMIN (MÉTODO ROBUSTO) ---
-// Este método reconstruye la credencial a partir de variables de entorno individuales
-// para evitar problemas de formato y el límite de 4KB de Netlify.
 if (!admin.apps.length) {
     try {
         const serviceAccount = {
@@ -50,53 +48,77 @@ interface NotificationTriggerData {
 
 async function checkAndSendNotifications() {
     let notificationsSent = 0;
-    const NOTIFICATION_COOLDOWN_HOURS = 1;
+    const NOTIFICATION_COOLDOWN_HOURS = 12; // Aumentado para no ser muy repetitivo
+    const alertSettings = (await db.doc('settings/alerts').get()).data() || { checkInDays: 7, checkOutDays: 3 };
 
-    // --- START CUSTOM LOGIC FOR RENTAL APP ---
-    const now = new Date();
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const notificationTriggers: NotificationTriggerData[] = [];
+    const today = startOfToday();
 
-    const rentalsSnap = await db.collection('rentals')
-                              .where('endDate', '>=', now)
-                              .where('endDate', '<=', tomorrow)
+    // --- 1. Lógica para Check-outs próximos ---
+    const checkOutLimitDate = endOfDay(addDays(today, alertSettings.checkOutDays || 3));
+    const checkOutsSnap = await db.collection('rentals')
+                              .where('status', '==', 'active')
+                              .where('endDate', '>=', today)
+                              .where('endDate', '<=', checkOutLimitDate)
                               .get();
                               
-    if (rentalsSnap.empty) {
-        console.log('[CRON] No rentals are ending soon.');
-        return 0;
+    if (!checkOutsSnap.empty) {
+        console.log(`[CRON] Encontrados ${checkOutsSnap.size} check-outs próximos.`);
+        for (const doc of checkOutsSnap.docs) {
+            const rental = doc.data();
+            notificationTriggers.push({
+                id: `${doc.id}-checkout`,
+                title: 'Check-out Próximo',
+                body: `El check-out de ${rental.tenantName} en "${rental.propertyName}" es pronto.`,
+                icon: '/icons/icon-192x192.png',
+                lastNotificationSent: rental.lastCheckoutNotificationSent,
+                docPath: doc.ref.path
+            });
+        }
+    } else {
+        console.log('[CRON] No hay check-outs próximos.');
     }
     
-    const notificationTriggers: NotificationTriggerData[] = [];
-    
-    for (const doc of rentalsSnap.docs) {
-        const rental = doc.data();
-        notificationTriggers.push({
-            id: doc.id,
-            title: 'Fin de Alquiler Próximo',
-            body: `El alquiler para "${rental.propertyName}" finaliza pronto.`,
-            icon: '/icon-192x192.png',
-            lastNotificationSent: rental.lastNotificationSent,
-            docPath: doc.ref.path
-        });
+    // --- 2. Lógica para Check-ins próximos ---
+    const checkInLimitDate = endOfDay(addDays(today, alertSettings.checkInDays || 7));
+    const checkInsSnap = await db.collection('rentals')
+                              .where('status', '==', 'active')
+                              .where('startDate', '>=', today)
+                              .where('startDate', '<=', checkInLimitDate)
+                              .get();
+
+    if (!checkInsSnap.empty) {
+        console.log(`[CRON] Encontrados ${checkInsSnap.size} check-ins próximos.`);
+        for (const doc of checkInsSnap.docs) {
+            const rental = doc.data();
+            notificationTriggers.push({
+                id: `${doc.id}-checkin`,
+                title: 'Check-in Próximo',
+                body: `El check-in de ${rental.tenantName} en "${rental.propertyName}" es pronto.`,
+                icon: '/icons/icon-192x192.png',
+                lastNotificationSent: rental.lastCheckinNotificationSent,
+                docPath: doc.ref.path
+            });
+        }
+    } else {
+        console.log('[CRON] No hay check-ins próximos.');
     }
-    
-    // --- END CUSTOM LOGIC ---
 
     if (notificationTriggers.length === 0) {
-        console.log('[CRON] No items triggered a notification.');
+        console.log('[CRON] No hay eventos que disparen una notificación.');
         return 0;
     }
 
     const subscriptions = await getAllSubscriptions();
     if (subscriptions.length === 0) {
-        console.log('[CRON] No active push subscriptions found.');
+        console.log('[CRON] No se encontraron suscripciones push activas.');
         return 0;
     }
     
     for (const trigger of notificationTriggers) {
         const lastSent = trigger.lastNotificationSent ? new Date(trigger.lastNotificationSent) : null;
         if (lastSent && differenceInHours(new Date(), lastSent) < NOTIFICATION_COOLDOWN_HOURS) {
-            console.log(`[CRON] Skipping notification for ${trigger.id} (sent recently).`);
+            console.log(`[CRON] Saltando notificación para ${trigger.id} (enviada recientemente).`);
             continue;
         }
 
@@ -109,8 +131,10 @@ async function checkAndSendNotifications() {
         await Promise.all(sendPromises);
         notificationsSent++;
 
+        // Actualizar el timestamp en el documento para evitar reenvíos
+        const fieldToUpdate = trigger.id.endsWith('-checkout') ? 'lastCheckoutNotificationSent' : 'lastCheckinNotificationSent';
         await db.doc(trigger.docPath).update({
-            lastNotificationSent: new Date().toISOString()
+            [fieldToUpdate]: new Date().toISOString()
         });
     }
 
@@ -121,25 +145,27 @@ async function checkAndSendNotifications() {
 // FUNCIONES DE SOPORTE (Generalmente no necesitas cambiar esto)
 // ==================================================================
 async function getAllSubscriptions(): Promise<PushSubscription[]> {
-    const subscriptionsSnap = await db.collection('subscriptions').get();
+    const subscriptionsSnap = await db.collection('pushSubscriptions').get();
     if (subscriptionsSnap.empty) {
         return [];
     }
-    return subscriptionsSnap.docs.map(doc => doc.data().subscription as PushSubscription);
+    // El documento contiene el objeto de suscripción completo
+    return subscriptionsSnap.docs.map(doc => doc.data() as PushSubscription);
 }
 
 async function sendNotification(subscription: PushSubscription, payload: string) {
     try {
         await webpush.sendNotification(subscription, payload);
+        console.log('[CRON] Notificación enviada exitosamente.');
     } catch (error: any) {
         if (error.statusCode === 410 || error.statusCode === 404) {
-            console.log('[CRON] Subscription expired. Deleting from DB...');
+            console.log('[CRON] La suscripción ha expirado o no se encuentra. Eliminando de la BD...');
             const endpointEncoded = Buffer.from(subscription.endpoint).toString('base64');
-            db.collection('subscriptions').doc(endpointEncoded).delete().catch(delErr => {
-                console.error(`[CRON] Failed to delete expired subscription ${endpointEncoded}:`, delErr);
+            db.collection('pushSubscriptions').doc(endpointEncoded).delete().catch(delErr => {
+                console.error(`[CRON] Falló la eliminación de la suscripción expirada ${endpointEncoded}:`, delErr);
             });
         } else {
-            console.error(`[CRON] Failed to send notification:`, error.message);
+            console.error(`[CRON] Falló el envío de la notificación:`, error.message);
         }
     }
 }
@@ -152,7 +178,7 @@ export const handler: Handler = async () => {
   console.log('[Netlify Function] - checkReminders: Cron job triggered.');
 
   if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-     console.error("[CRON] VAPID keys are not set. Cannot send push notifications.");
+     console.error("[CRON] Las claves VAPID no están configuradas. No se pueden enviar notificaciones push.");
      return { statusCode: 500, body: 'VAPID keys are not set on the server.' };
   }
 
@@ -165,12 +191,12 @@ export const handler: Handler = async () => {
 
   try {
     const totalNotificationsSent = await checkAndSendNotifications();
-    const successMessage = `Cron job completed. Sent notifications for ${totalNotificationsSent} events.`;
+    const successMessage = `Cron job completado. Se enviaron notificaciones para ${totalNotificationsSent} eventos.`;
     console.log(`[Netlify Function] - checkReminders: ${successMessage}`);
     return { statusCode: 200, body: successMessage };
 
   } catch (error: any) {
-    console.error('[Netlify Function] - checkReminders: Error during execution:', error);
-    return { statusCode: 500, body: `Internal server error: ${error.message}` };
+    console.error('[Netlify Function] - checkReminders: Error durante la ejecución:', error);
+    return { statusCode: 500, body: `Error interno del servidor: ${error.message}` };
   }
 }
