@@ -7,24 +7,29 @@ import { differenceInDays, startOfToday } from 'date-fns';
 
 // --- Firebase Admin SDK Initialization ---
 try {
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const serviceAccount = {
+      projectId: process.env.FB_PROJECT_ID,
+      privateKeyId: process.env.FB_PRIVATE_KEY_ID,
+      privateKey: process.env.FB_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      clientEmail: process.env.FB_CLIENT_EMAIL,
+      clientId: process.env.FB_CLIENT_ID,
+      authUri: "https://accounts.google.com/o/oauth2/auth",
+      tokenUri: "https://oauth2.googleapis.com/token",
+      authProviderX509CertUrl: "https://www.googleapis.com/oauth2/v1/certs",
+      clientX509CertUrl: process.env.FB_CLIENT_X509_CERT_URL,
+    };
 
-    if (!serviceAccountKey) {
-        throw new Error('La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está configurada.');
+    if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
+        throw new Error('Faltan variables de entorno de Firebase (FB_PROJECT_ID, FB_PRIVATE_KEY, FB_CLIENT_EMAIL).');
     }
-
-    // Decodificar la clave desde Base64
-    const decodedKey = Buffer.from(serviceAccountKey, 'base64').toString('utf-8');
-    const serviceAccount = JSON.parse(decodedKey);
     
     if (!admin.apps.length) {
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
+            credential: admin.credential.cert(serviceAccount as admin.ServiceAccount)
         });
     }
 } catch (error: any) {
     console.error(`[CRON] Falló la inicialización de Firebase Admin SDK: ${error.message}`);
-    // No lanzamos un error aquí para que Netlify no mate la función antes de que pueda devolver una respuesta.
 }
 
 
@@ -113,7 +118,7 @@ export const handler: Handler = async () => {
 
     // Check if Firebase was initialized correctly
     if (!admin.apps.length) {
-        const errorMessage = 'Firebase Admin SDK no inicializado. Revisa la variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY.';
+        const errorMessage = 'Firebase Admin SDK no inicializado. Revisa las variables de entorno de Firebase.';
         console.error(`[CRON] ${errorMessage}`);
         return { statusCode: 500, body: errorMessage };
     }
