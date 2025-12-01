@@ -49,13 +49,15 @@ interface NotificationTriggerData {
 async function checkAndSendNotifications() {
     let notificationsSent = 0;
     // Lee la configuración guardada por el usuario, o usa valores por defecto (7 días para check-in, 3 para check-out).
-    const alertSettings = (await db.doc('settings/alerts').get()).data() || { checkInDays: 7, checkOutDays: 3 };
+    const alertSettingsDoc = await db.collection('settings').doc('alerts').get();
+    const alertSettings = alertSettingsDoc.exists ? alertSettingsDoc.data() : { checkInDays: 7, checkOutDays: 3 };
+
 
     const notificationTriggers: NotificationTriggerData[] = [];
     const today = startOfToday();
 
     // --- 1. Lógica para Check-outs ---
-    const checkOutLimitDate = endOfDay(addDays(today, alertSettings.checkOutDays || 3));
+    const checkOutLimitDate = endOfDay(addDays(today, alertSettings?.checkOutDays || 3));
     const checkOutsSnap = await db.collection('rentals')
                               .where('status', '==', 'active')
                               .where('endDate', '>=', today)
@@ -94,7 +96,7 @@ async function checkAndSendNotifications() {
     }
     
     // --- 2. Lógica para Check-ins ---
-    const checkInLimitDate = endOfDay(addDays(today, alertSettings.checkInDays || 7));
+    const checkInLimitDate = endOfDay(addDays(today, alertSettings?.checkInDays || 7));
     const checkInsSnap = await db.collection('rentals')
                               .where('status', '==', 'active')
                               .where('startDate', '>=', today)
