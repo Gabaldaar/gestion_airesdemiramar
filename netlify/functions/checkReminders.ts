@@ -4,21 +4,17 @@ import admin from 'firebase-admin';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import webpush, { type PushSubscription } from 'web-push';
 import { differenceInDays, startOfToday } from 'date-fns';
+import serviceAccount from '../../firebase-service-account.json';
 
 // Initialize Firebase Admin SDK if not already initialized
 if (!admin.apps.length) {
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountKey) {
-        throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.");
+    try {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (error: any) {
+        throw new Error(`Failed to initialize Firebase Admin SDK: ${error.message}. Make sure firebase-service-account.json is correctly populated.`);
     }
-    
-    // Parse the service account key from a base64 encoded string
-    const decodedKey = Buffer.from(serviceAccountKey, 'base64').toString('utf-8');
-    const serviceAccount = JSON.parse(decodedKey);
-
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
 }
 
 const db = getFirestore();
