@@ -1,0 +1,3 @@
+[build]
+  # Directorio donde Netlify buscará las funciones a desplegar.
+  functions = "netlify/functions"
