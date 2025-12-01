@@ -1,3 +1,3 @@
 [build]
-  # Directorio donde Netlify buscará las funciones a desplegar.
-  functions = "netlify/functions"
+  # Directorio donde Netlify buscará las funciones ya compiladas por netlify-lambda.
+  functions = "netlify/functions-built"
