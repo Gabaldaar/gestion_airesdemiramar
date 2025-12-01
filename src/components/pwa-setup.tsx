@@ -28,7 +28,7 @@ const PwaSetup = () => {
     // 1. Register Service Worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/sw-v2.js")
+        .register("/sw.js") // Using the new sw.js from the kit
         .then((registration) => {
             console.log("Service Worker registrado con éxito:", registration);
             // 2. Request Push Notification Permission
@@ -52,14 +52,7 @@ const PwaSetup = () => {
           return;
       }
 
-      // Request permission
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-          console.log('Push notification permission granted.');
-          createPushSubscription(registration);
-      } else {
-          console.log('Push notification permission not granted.');
-      }
+      // We don't auto-request permission here. The user will do it from the Settings page.
   };
 
   const createPushSubscription = async (registration: ServiceWorkerRegistration) => {
@@ -78,28 +71,10 @@ const PwaSetup = () => {
             return;
         }
 
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-        });
-
-        console.log("User subscribed:", subscription);
-
-        // Send the subscription to your server
-        await savePushSubscription(JSON.parse(JSON.stringify(subscription)));
-
-        toast({
-            title: "Notificaciones activadas",
-            description: "Recibirás recordatorios de check-in y check-out.",
-        });
-
+        // We don't auto-subscribe here. The user will initiate from the settings page.
+        
     } catch (error) {
-        console.error("Failed to subscribe the user: ", error);
-         toast({
-            title: "Error de Notificaciones",
-            description: "No se pudieron activar las notificaciones push.",
-            variant: "destructive",
-        });
+        console.error("Failed to check for existing subscription: ", error);
     }
   }
 
