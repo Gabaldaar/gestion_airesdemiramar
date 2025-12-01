@@ -8,10 +8,13 @@ import { differenceInDays, startOfToday } from 'date-fns';
 
 // --- Firebase Admin SDK Initialization ---
 try {
+    // Decode the base64 encoded private key
+    const privateKey = Buffer.from(process.env.FB_PRIVATE_KEY || '', 'base64').toString('utf8');
+
     const serviceAccount = {
       projectId: process.env.FB_PROJECT_ID,
       privateKeyId: process.env.FB_PRIVATE_KEY_ID,
-      privateKey: process.env.FB_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      privateKey: privateKey,
       clientEmail: process.env.FB_CLIENT_EMAIL,
       clientId: process.env.FB_CLIENT_ID,
       authUri: "https://accounts.google.com/o/oauth2/auth",
