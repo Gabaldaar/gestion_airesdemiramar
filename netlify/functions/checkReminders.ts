@@ -25,29 +25,32 @@ interface NotificationTriggerData {
 }
 
 // --- FIREBASE ADMIN INITIALIZATION (CORRECTED FOR NETLIFY) ---
-// This block ensures a clear failure if the environment variable is missing or malformed.
 if (!admin.apps.length) {
     try {
-        const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-        if (!serviceAccountString) {
-            throw new Error('La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está configurada.');
-        }
+        const serviceAccount = {
+            projectId: process.env.FB_PROJECT_ID,
+            privateKeyId: process.env.FB_PRIVATE_KEY_ID,
+            privateKey: process.env.FB_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            clientEmail: process.env.FB_CLIENT_EMAIL,
+            clientId: process.env.FB_CLIENT_ID,
+            client_x509_cert_url: process.env.FB_CLIENT_X509_CERT_URL,
+        };
 
-        const serviceAccount = JSON.parse(serviceAccountString);
+        if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
+            throw new Error('Faltan variables de entorno de Firebase (FB_PROJECT_ID, FB_PRIVATE_KEY, FB_CLIENT_EMAIL) para inicializar el SDK de Admin.');
+        }
 
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
         });
-        console.log('[Firebase Admin] Inicializado correctamente a través de la clave de servicio.');
+        console.log('[Firebase Admin] Inicializado correctamente desde variables de entorno individuales.');
 
     } catch (error: any) {
-        // This will now provide a clear error message in the logs if JSON parsing fails
-        // or if the key is otherwise invalid.
         console.error('[Firebase Admin] La inicialización falló catastróficamente:', error.message);
-        // We must throw the error to stop the function from continuing with a broken config.
         throw error;
     }
 }
+
 
 const db = admin.firestore();
 
@@ -170,10 +173,11 @@ export const handler: Handler = async () => {
   }
 
   webpush.setVapidDetails(
-      'mailto:your-email@example.com', // Reemplaza con tu email
+      process.env.VAPID_MAILTO || 'mailto:your-email@example.com',
       process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       process.env.VAPID_PRIVATE_KEY
   );
+  console.log('[CRON] VAPID details set.');
 
   try {
     const totalNotificationsSent = await checkAndSendNotifications();
