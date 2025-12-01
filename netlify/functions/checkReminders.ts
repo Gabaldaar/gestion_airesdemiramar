@@ -7,32 +7,23 @@ import { differenceInDays, startOfToday } from 'date-fns';
 
 // --- Firebase Admin SDK Initialization ---
 try {
-    const privateKey = process.env.FB_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-    if (!process.env.FB_PROJECT_ID || !privateKey || !process.env.FB_CLIENT_EMAIL) {
-        throw new Error('Missing required Firebase environment variables (FB_PROJECT_ID, FB_PRIVATE_KEY, FB_CLIENT_EMAIL).');
+    if (!serviceAccountKey) {
+        throw new Error('La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está configurada.');
     }
 
-    const serviceAccount = {
-      type: 'service_account',
-      project_id: process.env.FB_PROJECT_ID,
-      private_key_id: process.env.FB_PRIVATE_KEY_ID,
-      private_key: privateKey,
-      client_email: process.env.FB_CLIENT_EMAIL,
-      client_id: process.env.FB_CLIENT_ID,
-      auth_uri: "https://accounts.google.com/o/oauth2/auth",
-      token_uri: "https://oauth2.googleapis.com/token",
-      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-      client_x509_cert_url: process.env.FB_CLIENT_X509_CERT_URL,
-    };
+    // Decodificar la clave desde Base64
+    const decodedKey = Buffer.from(serviceAccountKey, 'base64').toString('utf-8');
+    const serviceAccount = JSON.parse(decodedKey);
     
     if (!admin.apps.length) {
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount as admin.ServiceAccount)
+            credential: admin.credential.cert(serviceAccount)
         });
     }
 } catch (error: any) {
-    console.error(`[CRON] Failed to initialize Firebase Admin SDK: ${error.message}`);
+    console.error(`[CRON] Falló la inicialización de Firebase Admin SDK: ${error.message}`);
     // No lanzamos un error aquí para que Netlify no mate la función antes de que pueda devolver una respuesta.
 }
 
@@ -122,7 +113,7 @@ export const handler: Handler = async () => {
 
     // Check if Firebase was initialized correctly
     if (!admin.apps.length) {
-        const errorMessage = 'Firebase Admin SDK not initialized. Check environment variables.';
+        const errorMessage = 'Firebase Admin SDK no inicializado. Revisa la variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY.';
         console.error(`[CRON] ${errorMessage}`);
         return { statusCode: 500, body: errorMessage };
     }
@@ -132,8 +123,8 @@ export const handler: Handler = async () => {
     const vapidMailto = process.env.VAPID_MAILTO;
 
     if (!vapidPublicKey || !vapidPrivateKey || !vapidMailto) {
-        console.error("[CRON] VAPID keys or mailto are not set.");
-        return { statusCode: 500, body: 'VAPID keys are not configured.' };
+        console.error("[CRON] Las claves VAPID o el mailto no están configurados.");
+        return { statusCode: 500, body: 'Las claves VAPID no están configuradas.' };
     }
 
     try {
@@ -142,7 +133,7 @@ export const handler: Handler = async () => {
 
         const alertSettings = await getAlertSettings();
         if (!alertSettings) {
-            console.log('[CRON] No alert settings found. Skipping checks.');
+            console.log('[CRON] No se encontraron configuraciones de alerta. Saltando verificaciones.');
             return { statusCode: 200, body: 'No alert settings configured.' };
         }
 
@@ -152,7 +143,7 @@ export const handler: Handler = async () => {
         ]);
 
         if (allSubscriptions.length === 0) {
-            console.log('[CRON] No active push subscriptions found.');
+            console.log('[CRON] No se encontraron suscripciones push activas.');
             return { statusCode: 200, body: 'No subscriptions to send notifications to.' };
         }
 
@@ -182,15 +173,15 @@ export const handler: Handler = async () => {
         }
         
         if (notificationsSentCount === 0) {
-            console.log('[CRON] No notifications to send today.');
+            console.log('[CRON] No hay notificaciones para enviar hoy.');
         }
 
-        const successMessage = `CRON job executed. Sent ${notificationsSentCount} notification type(s) to ${allSubscriptions.length} subscription(s).`;
+        const successMessage = `CRON job ejecutado. Se enviaron ${notificationsSentCount} tipo(s) de notificación a ${allSubscriptions.length} suscripción(es).`;
         console.log(`[CRON] ${successMessage}`);
         return { statusCode: 200, body: successMessage };
 
     } catch (error: any) {
-        console.error('[CRON] An unexpected error occurred:', error);
+        console.error('[CRON] Ocurrió un error inesperado:', error);
         return { statusCode: 500, body: `Internal Server Error: ${error.message}` };
     }
 };
