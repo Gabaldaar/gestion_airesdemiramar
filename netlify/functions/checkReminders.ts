@@ -5,16 +5,39 @@ import type { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
 import webpush, { type PushSubscription } from 'web-push';
 import { differenceInHours } from 'date-fns';
-import path from 'path';
-import fs from 'fs';
 
-// ================================================================
-// TOTAL ISOLATION: TYPES AND FIREBASE INIT ARE SELF-CONTAINED
-// This removes all dependencies on the Next.js project structure (@/)
-// to prevent silent build failures in the Netlify environment.
-// ================================================================
+// --- INICIALIZACIÓN DE FIREBASE ADMIN (MÉTODO ROBUSTO) ---
+// Este método reconstruye la credencial a partir de variables de entorno individuales
+// para evitar problemas de formato y el límite de 4KB de Netlify.
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = {
+            projectId: process.env.FB_PROJECT_ID,
+            privateKey: process.env.FB_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            clientEmail: process.env.FB_CLIENT_EMAIL,
+        };
 
-// --- TYPE DEFINITIONS ---
+        if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
+            throw new Error('Faltan variables de entorno cruciales de Firebase (FB_PROJECT_ID, FB_PRIVATE_KEY, FB_CLIENT_EMAIL).');
+        }
+
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+        });
+        console.log('[Firebase Admin] Inicializado correctamente desde variables de entorno individuales.');
+
+    } catch (error: any) {
+        console.error('[Firebase Admin] La inicialización falló catastróficamente:', error.message);
+        throw error;
+    }
+}
+
+const db = admin.firestore();
+
+
+// ==================================================================
+// ESTA ES LA SECCIÓN QUE DEBES ADAPTAR PARA TU NUEVA APLICACIÓN
+// ==================================================================
 interface NotificationTriggerData {
   id: string; 
   title: string;
@@ -24,51 +47,14 @@ interface NotificationTriggerData {
   docPath: string;
 }
 
-// --- FIREBASE ADMIN INITIALIZATION (CORRECTED FOR NETLIFY) ---
-// This version reads the service account key from a file bundled with the function.
-if (!admin.apps.length) {
-    try {
-        // The service account file is expected to be in the same directory as the built function.
-        const serviceAccountPath = path.resolve(__dirname, 'service-account.json');
-
-        if (!fs.existsSync(serviceAccountPath)) {
-            throw new Error('El archivo de credenciales de Firebase (service-account.json) no se encontró. Asegúrate de haberlo subido junto con la función en Netlify.');
-        }
-
-        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-        });
-
-        console.log('[Firebase Admin] Inicializado correctamente desde el archivo service-account.json.');
-
-    } catch (error: any) {
-        console.error('[Firebase Admin] La inicialización falló catastróficamente:', error.message);
-        // Throw the error to ensure the function fails clearly if initialization doesn't work.
-        throw error;
-    }
-}
-
-
-const db = admin.firestore();
-
-
-// ==================================================================
-// ESTA ES LA SECCIÓN QUE DEBES ADAPTAR PARA TU NUEVA APLICACIÓN
-// ==================================================================
 async function checkAndSendNotifications() {
     let notificationsSent = 0;
     const NOTIFICATION_COOLDOWN_HOURS = 1;
 
     // --- START CUSTOM LOGIC FOR RENTAL APP ---
-    
-    // EXAMPLE: Find rentals ending in the next 24 hours
-    // THIS IS JUST AN EXAMPLE, REPLACE IT WITH YOUR ACTUAL LOGIC.
     const now = new Date();
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-    // ADAPT THIS QUERY: Change 'rentals' and the fields to match your Firestore structure.
     const rentalsSnap = await db.collection('rentals')
                               .where('endDate', '>=', now)
                               .where('endDate', '<=', tomorrow)
@@ -83,8 +69,6 @@ async function checkAndSendNotifications() {
     
     for (const doc of rentalsSnap.docs) {
         const rental = doc.data();
-        
-        // ADAPT THIS LOGIC: Build the notification content based on your data.
         notificationTriggers.push({
             id: doc.id,
             title: 'Fin de Alquiler Próximo',
