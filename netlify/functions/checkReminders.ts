@@ -8,18 +8,12 @@ import { differenceInDays, startOfToday } from 'date-fns';
 // --- Firebase Admin SDK Initialization ---
 try {
   if (!admin.apps.length) {
-    const privateKey = process.env.FB_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-    if (!process.env.FB_PROJECT_ID || !privateKey || !process.env.FB_CLIENT_EMAIL) {
-        throw new Error('Las variables de entorno de Firebase (FB_PROJECT_ID, FB_PRIVATE_KEY, FB_CLIENT_EMAIL) no están configuradas.');
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      throw new Error('La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está configurada.');
     }
-
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
     admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FB_PROJECT_ID,
-        privateKey: privateKey,
-        clientEmail: process.env.FB_CLIENT_EMAIL,
-      })
+      credential: admin.credential.cert(serviceAccount)
     });
   }
 } catch (error: any) {
@@ -112,7 +106,7 @@ export const handler: Handler = async () => {
 
     // Check if Firebase was initialized correctly
     if (!admin.apps.length) {
-        const errorMessage = 'Firebase Admin SDK no inicializado. Revisa las variables de entorno de Firebase (FB_...).';
+        const errorMessage = 'Firebase Admin SDK no inicializado. Revisa la variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY.';
         console.error(`[CRON] ${errorMessage}`);
         return { statusCode: 500, body: errorMessage };
     }
