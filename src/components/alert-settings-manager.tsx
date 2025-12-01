@@ -12,16 +12,6 @@ import { Loader2, BellRing, BellOff } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 
-// --- TEMPORARY DEBUGGING ---
-// REEMPLAZA ESTE VALOR CON TU NUEVA CLAVE PUBLICA
-const VAPID_PUBLIC_KEY = "<TU_NUEVA_CLAVE_PUBLICA>";
-// --- END TEMPORARY DEBUGGING ---
-
-const initialState = {
-  message: '',
-  success: false,
-};
-
 function SubmitButton() {
     const { pending } = useFormStatus();
     return (
@@ -55,7 +45,7 @@ function urlBase64ToUint8Array(base64String: string) {
 
 
 export function AlertSettingsManager({ initialSettings }: { initialSettings: AlertSettings | null }) {
-    const [state, setState] = useState(initialState);
+    const [state, setState] = useState({ message: '', success: false });
     const [isPending, startTransition] = useTransition();
     const [checkInDays, setCheckInDays] = useState(initialSettings?.checkInDays ?? 7);
     const [checkOutDays, setCheckOutDays] = useState(initialSettings?.checkOutDays ?? 3);
@@ -98,7 +88,7 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
             return;
         }
 
-        const vapidPublicKey = VAPID_PUBLIC_KEY;
+        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         if (!vapidPublicKey) {
             console.error("VAPID public key not found.");
             toast({ title: "Error de configuración", description: "Falta la clave pública VAPID.", variant: "destructive" });
@@ -144,7 +134,7 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
 
     const formAction = (formData: FormData) => {
         startTransition(async () => {
-            const result = await updateAlertSettings(initialState, formData);
+            const result = await updateAlertSettings({ message: '', success: false }, formData);
             setState(result);
         });
     };

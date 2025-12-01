@@ -4,23 +4,33 @@ import { differenceInDays, startOfToday } from 'date-fns';
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 
-// --- TEMPORARY DEBUGGING ---
-// REEMPLAZA ESTOS VALORES CON TUS NUEVAS CLAVES
-const VAPID_PUBLIC_KEY = "<TU_NUEVA_CLAVE_PUBLICA>";
-const VAPID_PRIVATE_KEY = "<TU_NUEVA_CLAVE_PRIVADA>";
-const VAPID_MAILTO = "<TU_EMAIL_DE_CONTACTO>";
-// --- END TEMPORARY DEBUGGING ---
-
-// Configure web-push with your VAPID details
-webpush.setVapidDetails(
-    VAPID_MAILTO.startsWith('mailto:') ? VAPID_MAILTO : `mailto:${VAPID_MAILTO}`,
-    VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY
-);
-
-
 export async function POST(request: NextRequest) {
     console.log("CRON JOB: Iniciando ejecución...");
+    
+    // --- VAPID Configuration (Moved inside handler) ---
+    const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+    const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+    const VAPID_MAILTO = process.env.VAPID_MAILTO;
+
+    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_MAILTO) {
+        console.error("CRON JOB: Faltan las variables de entorno VAPID. Asegúrate de que VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, y VAPID_MAILTO estén configuradas.");
+        return new Response('VAPID keys not configured', { status: 500 });
+    }
+
+    try {
+        webpush.setVapidDetails(
+            VAPID_MAILTO.startsWith('mailto:') ? VAPID_MAILTO : `mailto:${VAPID_MAILTO}`,
+            VAPID_PUBLIC_KEY,
+            VAPID_PRIVATE_KEY
+        );
+    } catch (error) {
+        console.error('CRON JOB: Error al configurar las credenciales VAPID. Verifica el formato de las claves.', error);
+        // The error from web-push is often a simple string, not an Error object
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return new Response(`Error in VAPID setup: ${errorMessage}`, { status: 500 });
+    }
+    // --- End VAPID Configuration ---
+
     const authHeader = request.headers.get('authorization');
     const CRON_SECRET = process.env.CRON_SECRET;
 
