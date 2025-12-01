@@ -5,7 +5,7 @@
 import type { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
 import webpush, { type PushSubscription } from 'web-push';
-import { differenceInHours, startOfToday, endOfDay, addDays } from 'date-fns';
+import { differenceInDays, startOfToday, endOfDay, addDays } from 'date-fns';
 
 // --- INICIALIZACIÓN DE FIREBASE ADMIN (MÉTODO ROBUSTO) ---
 if (!admin.apps.length) {
@@ -43,6 +43,7 @@ interface NotificationTriggerData {
   body: string;
   icon?: string;
   docPath: string;
+  fieldToUpdate: 'initialCheckoutNotificationSent' | 'initialCheckinNotificationSent' | 'finalCheckoutNotificationSent' | 'finalCheckinNotificationSent';
 }
 
 async function checkAndSendNotifications() {
@@ -53,56 +54,82 @@ async function checkAndSendNotifications() {
     const notificationTriggers: NotificationTriggerData[] = [];
     const today = startOfToday();
 
-    // --- 1. Lógica para Check-outs próximos ---
-    // Busca check-outs que estén en la ventana de aviso y que NUNCA hayan recibido una notificación
+    // --- 1. Lógica para Check-outs ---
     const checkOutLimitDate = endOfDay(addDays(today, alertSettings.checkOutDays || 3));
     const checkOutsSnap = await db.collection('rentals')
                               .where('status', '==', 'active')
                               .where('endDate', '>=', today)
                               .where('endDate', '<=', checkOutLimitDate)
-                              .where('lastCheckoutNotificationSent', '==', null)
                               .get();
                               
     if (!checkOutsSnap.empty) {
-        console.log(`[CRON] Encontrados ${checkOutsSnap.size} check-outs próximos sin notificar.`);
         for (const doc of checkOutsSnap.docs) {
             const rental = doc.data();
-            notificationTriggers.push({
-                id: `${doc.id}-checkout`,
-                title: 'Check-out Próximo',
-                body: `El check-out de ${rental.tenantName} en "${rental.propertyName}" es pronto.`,
-                icon: '/icons/icon-192x192.png',
-                docPath: doc.ref.path
-            });
+            const rentalEndDate = new Date(rental.endDate.toDate ? rental.endDate.toDate() : rental.endDate);
+            const daysUntilCheckout = differenceInDays(rentalEndDate, today);
+
+            // Condición 1: Primer aviso (si no se ha enviado antes)
+            if (!rental.initialCheckoutNotificationSent) {
+                notificationTriggers.push({
+                    id: `${doc.id}-checkout-initial`,
+                    title: 'Check-out Próximo',
+                    body: `El check-out de ${rental.tenantName} en "${rental.propertyName}" es pronto.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: 'initialCheckoutNotificationSent'
+                });
+            }
+            // Condición 2: Aviso final (si no se ha enviado antes y falta 1 día)
+            if (daysUntilCheckout === 1 && !rental.finalCheckoutNotificationSent) {
+                 notificationTriggers.push({
+                    id: `${doc.id}-checkout-final`,
+                    title: '¡Mañana es el Check-out!',
+                    body: `Recuerda el check-out de ${rental.tenantName} en "${rental.propertyName}" mañana.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: 'finalCheckoutNotificationSent'
+                });
+            }
         }
-    } else {
-        console.log('[CRON] No hay check-outs próximos que necesiten notificación.');
     }
     
-    // --- 2. Lógica para Check-ins próximos ---
-    // Busca check-ins que estén en la ventana de aviso y que NUNCA hayan recibido una notificación
+    // --- 2. Lógica para Check-ins ---
     const checkInLimitDate = endOfDay(addDays(today, alertSettings.checkInDays || 7));
     const checkInsSnap = await db.collection('rentals')
                               .where('status', '==', 'active')
                               .where('startDate', '>=', today)
                               .where('startDate', '<=', checkInLimitDate)
-                              .where('lastCheckinNotificationSent', '==', null)
                               .get();
 
     if (!checkInsSnap.empty) {
-        console.log(`[CRON] Encontrados ${checkInsSnap.size} check-ins próximos sin notificar.`);
         for (const doc of checkInsSnap.docs) {
             const rental = doc.data();
-            notificationTriggers.push({
-                id: `${doc.id}-checkin`,
-                title: 'Check-in Próximo',
-                body: `El check-in de ${rental.tenantName} en "${rental.propertyName}" es pronto.`,
-                icon: '/icons/icon-192x192.png',
-                docPath: doc.ref.path
-            });
+            const rentalStartDate = new Date(rental.startDate.toDate ? rental.startDate.toDate() : rental.startDate);
+            const daysUntilCheckin = differenceInDays(rentalStartDate, today);
+
+            // Condición 1: Primer aviso
+            if (!rental.initialCheckinNotificationSent) {
+                notificationTriggers.push({
+                    id: `${doc.id}-checkin-initial`,
+                    title: 'Check-in Próximo',
+                    body: `El check-in de ${rental.tenantName} en "${rental.propertyName}" es pronto.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: 'initialCheckinNotificationSent'
+                });
+            }
+            // Condición 2: Aviso final
+            if (daysUntilCheckin === 1 && !rental.finalCheckinNotificationSent) {
+                 notificationTriggers.push({
+                    id: `${doc.id}-checkin-final`,
+                    title: '¡Mañana hay un Check-in!',
+                    body: `Recuerda el check-in de ${rental.tenantName} en "${rental.propertyName}" mañana.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: 'finalCheckinNotificationSent'
+                });
+            }
         }
-    } else {
-        console.log('[CRON] No hay check-ins próximos que necesiten notificación.');
     }
 
     if (notificationTriggers.length === 0) {
@@ -126,11 +153,9 @@ async function checkAndSendNotifications() {
         await Promise.all(sendPromises);
         notificationsSent++;
 
-        // Actualizar el timestamp en el documento para evitar reenvíos futuros.
-        // Una vez que se establece este campo, la consulta anterior lo ignorará.
-        const fieldToUpdate = trigger.id.endsWith('-checkout') ? 'lastCheckoutNotificationSent' : 'lastCheckinNotificationSent';
+        // Marcar el tipo de notificación específica como enviada.
         await db.doc(trigger.docPath).update({
-            [fieldToUpdate]: new Date().toISOString()
+            [trigger.fieldToUpdate]: new Date().toISOString()
         });
         console.log(`[CRON] Notificación para ${trigger.id} enviada y marcada.`)
     }
