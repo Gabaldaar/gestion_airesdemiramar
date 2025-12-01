@@ -1,4 +1,3 @@
-
 // netlify/functions/checkReminders.ts
 'use server';
 
@@ -48,7 +47,9 @@ interface NotificationTriggerData {
 
 async function checkAndSendNotifications() {
     let notificationsSent = 0;
-    const NOTIFICATION_COOLDOWN_HOURS = 12; // Aumentado para no ser muy repetitivo
+    // No enviar notificaciones para el mismo evento más de una vez cada 12 horas.
+    const NOTIFICATION_COOLDOWN_HOURS = 12;
+    // Lee la configuración guardada por el usuario, o usa valores por defecto (7 días para check-in, 3 para check-out).
     const alertSettings = (await db.doc('settings/alerts').get()).data() || { checkInDays: 7, checkOutDays: 3 };
 
     const notificationTriggers: NotificationTriggerData[] = [];
