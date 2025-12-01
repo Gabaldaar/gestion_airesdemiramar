@@ -1,32 +1,29 @@
 
-
 import type { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import webpush, { type PushSubscription } from 'web-push';
 import { differenceInDays, startOfToday } from 'date-fns';
-import path from 'path';
-import fs from 'fs';
 
 // --- Firebase Admin SDK Initialization ---
 try {
-    if (!admin.apps.length) {
-        // Lee las credenciales desde un archivo local.
-        // __dirname apunta al directorio de la función en Netlify.
-        const serviceAccountPath = path.resolve(__dirname, '..', '..', 'private', 'service-account.json');
-        
-        if (!fs.existsSync(serviceAccountPath)) {
-            throw new Error('El archivo de credenciales de Firebase (private/service-account.json) no se encontró.');
-        }
-        
-        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+  if (!admin.apps.length) {
+    const privateKey = process.env.FB_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
+    if (!process.env.FB_PROJECT_ID || !privateKey || !process.env.FB_CLIENT_EMAIL) {
+        throw new Error('Las variables de entorno de Firebase (FB_PROJECT_ID, FB_PRIVATE_KEY, FB_CLIENT_EMAIL) no están configuradas.');
     }
+
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FB_PROJECT_ID,
+        privateKey: privateKey,
+        clientEmail: process.env.FB_CLIENT_EMAIL,
+      })
+    });
+  }
 } catch (error: any) {
-    console.error(`[CRON] Falló la inicialización de Firebase Admin SDK: ${error.message}`);
+  console.error(`[CRON] Falló la inicialización de Firebase Admin SDK: ${error.message}`);
 }
 
 
@@ -115,7 +112,7 @@ export const handler: Handler = async () => {
 
     // Check if Firebase was initialized correctly
     if (!admin.apps.length) {
-        const errorMessage = 'Firebase Admin SDK no inicializado. Revisa las credenciales en private/service-account.json.';
+        const errorMessage = 'Firebase Admin SDK no inicializado. Revisa las variables de entorno de Firebase (FB_...).';
         console.error(`[CRON] ${errorMessage}`);
         return { statusCode: 500, body: errorMessage };
     }
