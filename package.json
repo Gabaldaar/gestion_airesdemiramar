@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && netlify-lambda build netlify/functions",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
@@ -47,7 +47,6 @@
     "@types/react-dom": "^18",
     "@types/recharts": "^1.8.29",
     "@types/web-push": "^3.6.3",
-    "netlify-lambda": "^2.0.16",
     "postcss": "^8",
     "sharp": "^0.33.4",
     "tailwindcss": "^3.4.1",
