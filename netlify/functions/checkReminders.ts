@@ -56,71 +56,35 @@ async function checkAndSendNotifications() {
     const notificationTriggers: NotificationTriggerData[] = [];
     const today = startOfToday();
 
-    // --- 1. Lógica para Check-outs ---
-    const checkOutLimitDate = endOfDay(addDays(today, alertSettings?.checkOutDays || 3));
-    const checkOutsSnap = await db.collection('rentals')
-                              .where('status', '==', 'active')
-                              .where('endDate', '>=', today)
-                              .where('endDate', '<=', checkOutLimitDate)
-                              .get();
-                              
-    if (!checkOutsSnap.empty) {
-        for (const doc of checkOutsSnap.docs) {
-            const rental = doc.data();
-            const rentalEndDate = new Date(rental.endDate.toDate ? rental.endDate.toDate() : rental.endDate);
-            const daysUntilCheckout = differenceInDays(rentalEndDate, today);
+    // Obtener todos los alquileres activos
+    const rentalsSnap = await db.collection('rentals').where('status', '==', 'active').get();
 
-            // Condición 1: Primer aviso (si no se ha enviado antes)
-            if (!rental.initialCheckoutNotificationSent) {
-                notificationTriggers.push({
-                    id: `${doc.id}-checkout-initial`,
-                    title: 'Check-out Próximo',
-                    body: `El check-out de ${rental.tenantName} en "${rental.propertyName}" es pronto.`,
-                    icon: '/icons/icon-192x192.png',
-                    docPath: doc.ref.path,
-                    fieldToUpdate: 'initialCheckoutNotificationSent'
-                });
-            }
-            // Condición 2: Aviso final (si no se ha enviado antes y falta 1 día)
-            if (daysUntilCheckout === 1 && !rental.finalCheckoutNotificationSent) {
-                 notificationTriggers.push({
-                    id: `${doc.id}-checkout-final`,
-                    title: '¡Mañana es el Check-out!',
-                    body: `Recuerda el check-out de ${rental.tenantName} en "${rental.propertyName}" mañana.`,
-                    icon: '/icons/icon-192x192.png',
-                    docPath: doc.ref.path,
-                    fieldToUpdate: 'finalCheckoutNotificationSent'
-                });
-            }
-        }
+    if (rentalsSnap.empty) {
+        console.log('[CRON] No hay alquileres activos.');
+        return 0;
     }
-    
-    // --- 2. Lógica para Check-ins ---
-    const checkInLimitDate = endOfDay(addDays(today, alertSettings?.checkInDays || 7));
-    const checkInsSnap = await db.collection('rentals')
-                              .where('status', '==', 'active')
-                              .where('startDate', '>=', today)
-                              .where('startDate', '<=', checkInLimitDate)
-                              .get();
 
-    if (!checkInsSnap.empty) {
-        for (const doc of checkInsSnap.docs) {
-            const rental = doc.data();
-            const rentalStartDate = new Date(rental.startDate.toDate ? rental.startDate.toDate() : rental.startDate);
-            const daysUntilCheckin = differenceInDays(rentalStartDate, today);
+    for (const doc of rentalsSnap.docs) {
+        const rental = doc.data();
+        const rentalStartDate = new Date(rental.startDate.toDate ? rental.startDate.toDate() : rental.startDate);
+        const rentalEndDate = new Date(rental.endDate.toDate ? rental.endDate.toDate() : rental.endDate);
+        const daysUntilCheckin = differenceInDays(rentalStartDate, today);
+        const daysUntilCheckout = differenceInDays(rentalEndDate, today);
 
-            // Condición 1: Primer aviso
-            if (!rental.initialCheckinNotificationSent) {
+        // --- Lógica de Notificación para Check-in ---
+        if (daysUntilCheckin >= 0) { // Solo para fechas futuras
+            // Condición 1: Primer aviso en el día exacto configurado
+            if (daysUntilCheckin === (alertSettings?.checkInDays || 7) && !rental.initialCheckinNotificationSent) {
                 notificationTriggers.push({
                     id: `${doc.id}-checkin-initial`,
                     title: 'Check-in Próximo',
-                    body: `El check-in de ${rental.tenantName} en "${rental.propertyName}" es pronto.`,
+                    body: `El check-in de ${rental.tenantName} en "${rental.propertyName}" es en ${daysUntilCheckin} días.`,
                     icon: '/icons/icon-192x192.png',
                     docPath: doc.ref.path,
                     fieldToUpdate: 'initialCheckinNotificationSent'
                 });
             }
-            // Condición 2: Aviso final
+            // Condición 2: Aviso final un día antes
             if (daysUntilCheckin === 1 && !rental.finalCheckinNotificationSent) {
                  notificationTriggers.push({
                     id: `${doc.id}-checkin-final`,
@@ -129,6 +93,32 @@ async function checkAndSendNotifications() {
                     icon: '/icons/icon-192x192.png',
                     docPath: doc.ref.path,
                     fieldToUpdate: 'finalCheckinNotificationSent'
+                });
+            }
+        }
+        
+        // --- Lógica de Notificación para Check-out ---
+        if (daysUntilCheckout >= 0) { // Solo para fechas futuras
+            // Condición 1: Primer aviso en el día exacto configurado
+            if (daysUntilCheckout === (alertSettings?.checkOutDays || 3) && !rental.initialCheckoutNotificationSent) {
+                notificationTriggers.push({
+                    id: `${doc.id}-checkout-initial`,
+                    title: 'Check-out Próximo',
+                    body: `El check-out de ${rental.tenantName} en "${rental.propertyName}" es en ${daysUntilCheckout} días.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: 'initialCheckoutNotificationSent'
+                });
+            }
+            // Condición 2: Aviso final un día antes
+            if (daysUntilCheckout === 1 && !rental.finalCheckoutNotificationSent) {
+                 notificationTriggers.push({
+                    id: `${doc.id}-checkout-final`,
+                    title: '¡Mañana es el Check-out!',
+                    body: `Recuerda el check-out de ${rental.tenantName} en "${rental.propertyName}" mañana.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: 'finalCheckoutNotificationSent'
                 });
             }
         }
