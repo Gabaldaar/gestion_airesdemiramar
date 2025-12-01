@@ -5,31 +5,24 @@ import admin from 'firebase-admin';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import webpush, { type PushSubscription } from 'web-push';
 import { differenceInDays, startOfToday } from 'date-fns';
+import path from 'path';
+import fs from 'fs';
 
 // --- Firebase Admin SDK Initialization ---
 try {
-    // Decode the base64 encoded private key
-    const privateKey = Buffer.from(process.env.FB_PRIVATE_KEY || '', 'base64').toString('utf8');
-
-    const serviceAccount = {
-      projectId: process.env.FB_PROJECT_ID,
-      privateKeyId: process.env.FB_PRIVATE_KEY_ID,
-      privateKey: privateKey,
-      clientEmail: process.env.FB_CLIENT_EMAIL,
-      clientId: process.env.FB_CLIENT_ID,
-      authUri: "https://accounts.google.com/o/oauth2/auth",
-      tokenUri: "https://oauth2.googleapis.com/token",
-      authProviderX509CertUrl: "https://www.googleapis.com/oauth2/v1/certs",
-      clientX509CertUrl: process.env.FB_CLIENT_X509_CERT_URL,
-    };
-
-    if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
-        throw new Error('Faltan variables de entorno de Firebase (FB_PROJECT_ID, FB_PRIVATE_KEY, FB_CLIENT_EMAIL).');
-    }
-    
     if (!admin.apps.length) {
+        // Lee las credenciales desde un archivo local.
+        // __dirname apunta al directorio de la función en Netlify.
+        const serviceAccountPath = path.resolve(__dirname, '..', '..', 'private', 'service-account.json');
+        
+        if (!fs.existsSync(serviceAccountPath)) {
+            throw new Error('El archivo de credenciales de Firebase (private/service-account.json) no se encontró.');
+        }
+        
+        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount as admin.ServiceAccount)
+            credential: admin.credential.cert(serviceAccount)
         });
     }
 } catch (error: any) {
@@ -122,7 +115,7 @@ export const handler: Handler = async () => {
 
     // Check if Firebase was initialized correctly
     if (!admin.apps.length) {
-        const errorMessage = 'Firebase Admin SDK no inicializado. Revisa las variables de entorno de Firebase.';
+        const errorMessage = 'Firebase Admin SDK no inicializado. Revisa las credenciales en private/service-account.json.';
         console.error(`[CRON] ${errorMessage}`);
         return { statusCode: 500, body: errorMessage };
     }
@@ -194,5 +187,3 @@ export const handler: Handler = async () => {
         return { statusCode: 500, body: `Internal Server Error: ${error.message}` };
     }
 };
-
-    
