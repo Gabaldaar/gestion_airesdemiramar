@@ -1,4 +1,3 @@
-
 // netlify/functions/checkReminders.ts
 'use server';
 
@@ -6,7 +5,8 @@ import type { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
 import webpush, { type PushSubscription } from 'web-push';
 import { differenceInHours } from 'date-fns';
-
+import path from 'path';
+import fs from 'fs';
 
 // ================================================================
 // TOTAL ISOLATION: TYPES AND FIREBASE INIT ARE SELF-CONTAINED
@@ -25,28 +25,27 @@ interface NotificationTriggerData {
 }
 
 // --- FIREBASE ADMIN INITIALIZATION (CORRECTED FOR NETLIFY) ---
+// This version reads the service account key from a file bundled with the function.
 if (!admin.apps.length) {
     try {
-        const serviceAccount = {
-            projectId: process.env.FB_PROJECT_ID,
-            privateKeyId: process.env.FB_PRIVATE_KEY_ID,
-            privateKey: process.env.FB_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            clientEmail: process.env.FB_CLIENT_EMAIL,
-            clientId: process.env.FB_CLIENT_ID,
-            client_x509_cert_url: process.env.FB_CLIENT_X509_CERT_URL,
-        };
+        // The service account file is expected to be in the same directory as the built function.
+        const serviceAccountPath = path.resolve(__dirname, 'service-account.json');
 
-        if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
-            throw new Error('Faltan variables de entorno de Firebase (FB_PROJECT_ID, FB_PRIVATE_KEY, FB_CLIENT_EMAIL) para inicializar el SDK de Admin.');
+        if (!fs.existsSync(serviceAccountPath)) {
+            throw new Error('El archivo de credenciales de Firebase (service-account.json) no se encontró. Asegúrate de haberlo subido junto con la función en Netlify.');
         }
+
+        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
         });
-        console.log('[Firebase Admin] Inicializado correctamente desde variables de entorno individuales.');
+
+        console.log('[Firebase Admin] Inicializado correctamente desde el archivo service-account.json.');
 
     } catch (error: any) {
         console.error('[Firebase Admin] La inicialización falló catastróficamente:', error.message);
+        // Throw the error to ensure the function fails clearly if initialization doesn't work.
         throw error;
     }
 }
@@ -150,7 +149,7 @@ async function sendNotification(subscription: PushSubscription, payload: string)
     } catch (error: any) {
         if (error.statusCode === 410 || error.statusCode === 404) {
             console.log('[CRON] Subscription expired. Deleting from DB...');
-            const endpointEncoded = encodeURIComponent(subscription.endpoint);
+            const endpointEncoded = Buffer.from(subscription.endpoint).toString('base64');
             db.collection('subscriptions').doc(endpointEncoded).delete().catch(delErr => {
                 console.error(`[CRON] Failed to delete expired subscription ${endpointEncoded}:`, delErr);
             });
