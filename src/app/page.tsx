@@ -79,8 +79,10 @@ export default function DashboardPage() {
 
     const totalIncomeArs = summaryByCurrency.ars.reduce((acc, item) => acc + item.totalIncome, 0);
     const totalNetResultArs = summaryByCurrency.ars.reduce((acc, item) => acc + item.netResult, 0);
+    const totalBalanceArs = summaryByCurrency.ars.reduce((acc, item) => acc + item.balance, 0);
     const totalIncomeUsd = summaryByCurrency.usd.reduce((acc, item) => acc + item.totalIncome, 0);
     const totalNetResultUsd = summaryByCurrency.usd.reduce((acc, item) => acc + item.netResult, 0);
+    const totalBalanceUsd = summaryByCurrency.usd.reduce((acc, item) => acc + item.balance, 0);
 
     const totalProperties = properties.length;
     const totalTenants = tenants.length;
@@ -149,8 +151,10 @@ export default function DashboardPage() {
         <DashboardStats
             totalIncomeArs={totalIncomeArs}
             totalNetResultArs={totalNetResultArs}
+            totalBalanceArs={totalBalanceArs}
             totalIncomeUsd={totalIncomeUsd}
             totalNetResultUsd={totalNetResultUsd}
+            totalBalanceUsd={totalBalanceUsd}
             totalProperties={totalProperties}
             totalTenants={totalTenants}
         />

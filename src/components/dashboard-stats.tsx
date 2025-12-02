@@ -11,8 +11,10 @@ import { DollarSign, Building, Users, TrendingUp } from "lucide-react"
 interface DashboardStatsProps {
   totalIncomeArs: number;
   totalNetResultArs: number;
+  totalBalanceArs: number;
   totalIncomeUsd: number;
   totalNetResultUsd: number;
+  totalBalanceUsd: number;
   totalProperties: number;
   totalTenants: number;
 }
@@ -20,8 +22,10 @@ interface DashboardStatsProps {
 export default function DashboardStats({
   totalIncomeArs,
   totalNetResultArs,
+  totalBalanceArs,
   totalIncomeUsd,
   totalNetResultUsd,
+  totalBalanceUsd,
   totalProperties,
   totalTenants,
 }: DashboardStatsProps) {
@@ -56,6 +60,20 @@ export default function DashboardStats({
           <div className="text-2xl font-bold">{formatCurrency(totalIncomeUsd, 'USD')}</div>
           <p className="text-xs text-muted-foreground">
              {formatCurrency(totalIncomeArs, 'ARS')}
+          </p>
+        </CardContent>
+      </Card>
+       <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">
+            Saldo a Cobrar
+          </CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalBalanceUsd, 'USD')}</div>
+          <p className="text-xs text-muted-foreground">
+             {formatCurrency(totalBalanceArs, 'ARS')}
           </p>
         </CardContent>
       </Card>
