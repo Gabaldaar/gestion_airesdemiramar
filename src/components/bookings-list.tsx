@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin, ExpenseCategory, getExpenseCategories } from "@/lib/data";
-import { format, differenceInDays, isWithinInterval } from 'date-fns';
+import { format, differenceInDays, isWithinInterval, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
@@ -179,13 +179,14 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
 
   const isCancelled = booking.status === 'cancelled';
   const isPending = booking.status === 'pending';
-  const isInactive = isCancelled || isPending;
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const startDate = new Date(booking.startDate);
   const endDate = new Date(booking.endDate);
   const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
+  const isPastBooking = isPast(endDate) && !isCurrent;
+  const isInactive = isCancelled || isPending || isPastBooking;
 
 
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
@@ -245,10 +246,16 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   
   
   return (
-    <TableRow key={booking.id} className={cn(isCancelled && "bg-red-500/10", isPending && "bg-yellow-500/10", isCurrent && "bg-green-500/10")}>
+    <TableRow key={booking.id} className={cn(
+        isCancelled && "bg-red-500/10", 
+        isPending && "bg-yellow-500/10", 
+        isCurrent && "bg-green-500/10",
+        isPastBooking && "bg-gray-500/10 opacity-70"
+        )}>
         {showProperty && <TableCell className={cn("font-bold")}>
             {isCancelled && <Badge variant="destructive" className="mr-2">CANCELADA</Badge>}
             {isPending && <Badge variant="secondary" className="mr-2 bg-yellow-400 text-black">EN ESPERA</Badge>}
+            {isPastBooking && <Badge variant="secondary" className="mr-2">CUMPLIDA</Badge>}
             <span className={cn(
                 getBookingColorClass(booking),
                 isCancelled && "text-red-600 line-through",
@@ -359,13 +366,14 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
 function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void }) {
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
-    const isInactive = isCancelled || isPending;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const startDate = new Date(booking.startDate);
     const endDate = new Date(booking.endDate);
     const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
+    const isPastBooking = isPast(endDate) && !isCurrent;
+    const isInactive = isCancelled || isPending || isPastBooking;
     
     const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
 
@@ -385,10 +393,17 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     };
 
     return (
-        <Card className={cn("w-full", isCancelled && "bg-red-500/10 border-red-500/20", isPending && "bg-yellow-500/10 border-yellow-500/20", isCurrent && "bg-green-500/10 border-green-500/20")}>
+        <Card className={cn(
+            "w-full", 
+            isCancelled && "bg-red-500/10 border-red-500/20", 
+            isPending && "bg-yellow-500/10 border-yellow-500/20", 
+            isCurrent && "bg-green-500/10 border-green-500/20",
+            isPastBooking && "bg-gray-500/10 border-gray-500/20 opacity-70"
+            )}>
             <CardHeader className="p-4">
                  {isCancelled && <Badge variant="destructive" className="mr-2 w-fit">CANCELADA</Badge>}
                 {isPending && <Badge variant="secondary" className="mr-2 w-fit bg-yellow-400 text-black">EN ESPERA</Badge>}
+                {isPastBooking && <Badge variant="secondary" className="mr-2 w-fit">CUMPLIDA</Badge>}
                 <CardTitle className={cn("text-lg", isCurrent && "text-green-600")}>
                     {showProperty ? (
                         <span className={cn(
