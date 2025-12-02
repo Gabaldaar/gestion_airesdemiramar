@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -21,6 +22,7 @@ import {
 
 
 type ContractStatusFilter = 'all' | ContractStatus;
+type SortOrder = 'upcoming' | 'recent';
 
 interface StatusFilters {
   current: boolean;
@@ -57,6 +59,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
   const [contractStatusFilter, setContractStatusFilter] = useState<ContractStatusFilter>('all');
   const [originIdFilter, setOriginIdFilter] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('upcoming');
   const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
@@ -87,10 +90,9 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     
     const hasActiveStatusFilter = activeStatusFilters.length > 0;
 
-    return bookingsForTenant.filter(booking => {
+    const filtered = bookingsForTenant.filter(booking => {
         
         const bookingStartDate = new Date(booking.startDate);
-        const bookingEndDate = new Date(booking.endDate);
         
       // Property Filter
       if (propertyIdFilter !== 'all' && booking.propertyId !== propertyIdFilter) {
@@ -117,6 +119,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
       // Status Filter
       if (hasActiveStatusFilter) {
+        const bookingEndDate = new Date(booking.endDate);
         const bookingVisualStatuses = new Set<string>();
 
         if (booking.status === 'cancelled') {
@@ -143,7 +146,15 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
       
       return true;
     });
-  }, [bookingsForTenant, fromDate, toDate, statusFilters, propertyIdFilter, contractStatusFilter, originIdFilter]);
+
+    // Apply sorting
+    return filtered.sort((a, b) => {
+        const dateA = new Date(a.startDate).getTime();
+        const dateB = new Date(b.startDate).getTime();
+        return sortOrder === 'upcoming' ? dateA - dateB : dateB - dateA;
+    });
+
+  }, [bookingsForTenant, fromDate, toDate, statusFilters, propertyIdFilter, contractStatusFilter, originIdFilter, sortOrder]);
   
   // Effect to update the count in the parent component
   useEffect(() => {
@@ -158,6 +169,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     setPropertyIdFilter('all');
     setContractStatusFilter('all');
     setOriginIdFilter('all');
+    setSortOrder('upcoming');
   };
 
   const handleDownloadCSV = () => {
@@ -231,7 +243,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             <div className="grid gap-2">
                 <Label>Desde</Label>
                 <DatePicker date={fromDate} onDateSelect={setFromDate} placeholder="Desde" />
@@ -336,6 +348,18 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
                       {origins.map(o => (
                           <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
                       ))}
+                  </SelectContent>
+              </Select>
+          </div>
+          <div className="grid gap-2">
+              <Label>Ordenar Por</Label>
+              <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrder)}>
+                  <SelectTrigger>
+                      <SelectValue placeholder="Ordenar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="upcoming">Próximas Primero</SelectItem>
+                      <SelectItem value="recent">Recientes Primero</SelectItem>
                   </SelectContent>
               </Select>
           </div>
