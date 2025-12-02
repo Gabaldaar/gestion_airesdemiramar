@@ -194,11 +194,6 @@ export default function PropertyDetailPage() {
   const CustomDayContent: React.FC<DayProps> = (props) => (
     <DayContentWithTooltip {...props} data={data} />
   );
-  
-    const sortedBookings = useMemo(() => {
-        if (!bookings) return [];
-        return [...bookings].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-    }, [bookings]);
 
   return (
     <div className="flex-1 space-y-4">
@@ -301,7 +296,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <BookingsList bookings={sortedBookings} properties={properties} tenants={tenants} origins={origins} />
+                <BookingsList bookings={bookings} properties={properties} tenants={tenants} origins={origins} />
                 </CardContent>
             </Card>
             </TabsContent>
@@ -350,4 +345,3 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
-

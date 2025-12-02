@@ -33,7 +33,7 @@ import { BookingDeleteForm } from './booking-delete-form';
 import { NotesViewer } from './notes-viewer';
 import { GuaranteeManager } from './guarantee-manager';
 import { Landmark, Wallet, Pencil, Trash2, FileText, Calculator } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { EmailSender } from "./email-sender";
 import useWindowSize from '@/hooks/use-window-size';
 import { PaymentAddForm, PaymentPreloadData } from "./payment-add-form";
@@ -468,15 +468,18 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   const [calculatorBooking, setCalculatorBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
-
   const { width } = useWindowSize();
   const useCardView = width < 1280; 
+
+  const sortedBookings = useMemo(() => {
+    return [...bookings].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  }, [bookings]);
 
   useEffect(() => {
     getExpenseCategories().then(setExpenseCategories);
   }, []);
 
-  if (bookings.length === 0) {
+  if (sortedBookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
   }
 
@@ -517,7 +520,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   
   const CardView = () => (
     <div className="space-y-4">
-        {bookings.map((booking) => (
+        {sortedBookings.map((booking) => (
         <BookingCard
             key={booking.id}
             booking={booking}
@@ -548,7 +551,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             </TableRow>
         </TableHeader>
         <TableBody>
-            {bookings.map((booking) => (
+            {sortedBookings.map((booking) => (
                 <BookingRow 
                     key={booking.id}
                     booking={booking} 
