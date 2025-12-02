@@ -21,6 +21,7 @@ import {
 import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
+import ExpensesList from '@/components/expenses-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, useMemo, FC } from 'react';
@@ -195,8 +196,9 @@ export default function PropertyDetailPage() {
   );
   
     const sortedBookings = useMemo(() => {
-        return [...bookings].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-    }, [bookings]);
+        if (!data || !data.bookings) return [];
+        return [...data.bookings].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    }, [data]);
 
   return (
     <div className="flex-1 space-y-4">
@@ -348,3 +350,4 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
+
