@@ -22,7 +22,7 @@ import {
 
 
 type ContractStatusFilter = 'all' | ContractStatus;
-type SortOrder = 'upcoming' | 'recent';
+type SortOrder = 'upcoming' | 'distant';
 
 interface StatusFilters {
   current: boolean;
@@ -359,7 +359,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
                   </SelectTrigger>
                   <SelectContent>
                       <SelectItem value="upcoming">Próximas Primero</SelectItem>
-                      <SelectItem value="recent">Recientes Primero</SelectItem>
+                      <SelectItem value="distant">Lejanas Primero</SelectItem>
                   </SelectContent>
               </Select>
           </div>

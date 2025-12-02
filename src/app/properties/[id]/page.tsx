@@ -22,7 +22,6 @@ import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpens
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
-import ExpensesList from '@/components/expenses-list';
 import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, useMemo, FC } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -194,6 +193,10 @@ export default function PropertyDetailPage() {
   const CustomDayContent: React.FC<DayProps> = (props) => (
     <DayContentWithTooltip {...props} data={data} />
   );
+  
+    const sortedBookings = useMemo(() => {
+        return [...bookings].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    }, [bookings]);
 
   return (
     <div className="flex-1 space-y-4">
@@ -296,7 +299,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <BookingsList bookings={bookings} properties={properties} tenants={tenants} origins={origins} />
+                <BookingsList bookings={sortedBookings} properties={properties} tenants={tenants} origins={origins} />
                 </CardContent>
             </Card>
             </TabsContent>
