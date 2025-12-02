@@ -196,9 +196,9 @@ export default function PropertyDetailPage() {
   );
   
     const sortedBookings = useMemo(() => {
-        if (!data || !data.bookings) return [];
-        return [...data.bookings].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-    }, [data]);
+        if (!bookings) return [];
+        return [...bookings].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    }, [bookings]);
 
   return (
     <div className="flex-1 space-y-4">
