@@ -39,7 +39,7 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
     
     // State for 'by_percentage' mode
     const [baseAmountType, setBaseAmountType] = useState<BaseAmountType>('total');
-    const [percentage, setPercentage] = useState(booking ? 30 : 50);
+    const [percentage, setPercentage] = useState(30);
     const [baseAmount, setBaseAmount] = useState(booking?.amount || 0);
     const [baseCurrency, setBaseCurrency] = useState<'USD' | 'ARS'>(booking?.currency || 'USD');
     const [resultUSD, setResultUSD] = useState(0);
