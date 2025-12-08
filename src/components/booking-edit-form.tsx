@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select"
 import { updateBooking } from '@/lib/actions';
 import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins, BookingWithDetails, BookingStatus } from '@/lib/data';
-import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
+import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
 import { cn, checkDateConflict } from "@/lib/utils"
@@ -34,6 +34,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
 import { DateRange } from 'react-day-picker';
 import { Textarea } from './ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -83,6 +91,10 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   });
   const [conflict, setConflict] = useState<Booking | null>(null);
 
+  // Combobox state
+  const [tenantComboboxOpen, setTenantComboboxOpen] = useState(false);
+  const [selectedTenantId, setSelectedTenantId] = useState(booking.tenantId);
+
   const formAction = (formData: FormData) => {
     startTransition(async () => {
         const result = await updateBooking(initialState, formData);
@@ -104,6 +116,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     // It resets the form state to match the currently selected booking.
     useEffect(() => {
         if (booking) {
+            setSelectedTenantId(booking.tenantId);
             setDate({
                 from: new Date(booking.startDate),
                 to: new Date(booking.endDate)
@@ -229,18 +242,50 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="tenantId">Inquilino</Label>
-                        <Select name="tenantId" defaultValue={String(booking.tenantId)} required>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {tenants.map(tenant => (
-                                    <SelectItem key={tenant.id} value={tenant.id}>
+                        <input type="hidden" name="tenantId" value={selectedTenantId} required />
+                        <Popover open={tenantComboboxOpen} onOpenChange={setTenantComboboxOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={tenantComboboxOpen}
+                                className="w-full justify-between"
+                                >
+                                {selectedTenantId
+                                    ? tenants.find((tenant) => tenant.id === selectedTenantId)?.name
+                                    : "Selecciona un inquilino..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[375px] p-0">
+                                <Command>
+                                <CommandInput placeholder="Buscar inquilino..." />
+                                 <CommandList>
+                                    <CommandEmpty>No se encontró ningún inquilino.</CommandEmpty>
+                                    <CommandGroup>
+                                    {tenants.map((tenant) => (
+                                        <CommandItem
+                                        key={tenant.id}
+                                        value={tenant.id}
+                                        onSelect={(currentValue) => {
+                                            setSelectedTenantId(currentValue === selectedTenantId ? "" : currentValue);
+                                            setTenantComboboxOpen(false);
+                                        }}
+                                        >
+                                        <Check
+                                            className={cn(
+                                            "mr-2 h-4 w-4",
+                                            selectedTenantId === tenant.id ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
                                         {tenant.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                                        </CommandItem>
+                                    ))}
+                                    </CommandGroup>
+                                </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="dates">Fechas</Label>

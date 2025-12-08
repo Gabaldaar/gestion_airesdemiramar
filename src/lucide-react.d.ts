@@ -1,4 +1,3 @@
-
 // This is a placeholder file to make TypeScript happy
 // because lucide-react doesn't have its own types.
 declare module 'lucide-react' {
@@ -51,4 +50,6 @@ declare module 'lucide-react' {
     export const CalendarX: LucideIcon;
     export const Calculator: LucideIcon;
     export const Tag: LucideIcon;
+    export const ChevronsUpDown: LucideIcon;
+    export const Check: LucideIcon;
 }
