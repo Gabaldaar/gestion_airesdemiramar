@@ -213,9 +213,10 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                                 {tenants.map((tenant) => (
                                     <CommandItem
                                     key={tenant.id}
-                                    value={tenant.id}
+                                    value={tenant.name}
                                     onSelect={(currentValue) => {
-                                        setSelectedTenantId(currentValue === selectedTenantId ? "" : currentValue);
+                                        const tenantId = tenants.find(t => t.name.toLowerCase() === currentValue.toLowerCase())?.id || '';
+                                        setSelectedTenantId(tenantId === selectedTenantId ? "" : tenantId);
                                         setTenantComboboxOpen(false);
                                     }}
                                     >
