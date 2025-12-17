@@ -12,6 +12,7 @@ import { differenceInDays, startOfToday } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info } from "lucide-react";
 import AvailabilitySearcher from "@/components/availability-searcher";
+import PaymentCalculator from "@/components/payment-calculator";
 
 interface DashboardData {
     summaryByCurrency: FinancialSummaryByCurrency;
@@ -160,6 +161,8 @@ export default function DashboardPage() {
         />
         
         <AvailabilitySearcher allProperties={properties} allBookings={bookings} />
+        
+        <PaymentCalculator showTabs={true} />
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-1 lg:col-span-4">
@@ -188,5 +191,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    
