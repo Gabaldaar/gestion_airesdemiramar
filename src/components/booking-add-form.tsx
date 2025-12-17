@@ -24,11 +24,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { addBooking } from '@/lib/actions';
-import { Tenant, Booking, Origin, getOrigins, BookingStatus } from '@/lib/data';
+import { Tenant, Booking, Origin, getOrigins, BookingStatus, PriceConfig, getPropertyById } from '@/lib/data';
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
-import { cn, checkDateConflict } from "@/lib/utils"
+import { cn, checkDateConflict, calculatePriceForStay } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
@@ -77,6 +77,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<DateRange | undefined>(undefined);
   const [conflict, setConflict] = useState<Booking | null>(null);
+  const [amount, setAmount] = useState<number | string>('');
 
   // Combobox state
   const [tenantComboboxOpen, setTenantComboboxOpen] = useState(false);
@@ -94,6 +95,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     setDate(undefined);
     setConflict(null);
     setSelectedTenantId('');
+    setAmount('');
   };
 
   useEffect(() => {
@@ -104,13 +106,48 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   }, [state]);
 
   useEffect(() => {
-    if (date?.from && date?.to) {
-        const conflictingBooking = checkDateConflict(date, existingBookings, '');
-        setConflict(conflictingBooking);
-    } else {
-        setConflict(null);
-    }
-  }, [date, existingBookings]);
+    const calculateAndSetPrice = async () => {
+        if (date?.from && date?.to) {
+            const conflictingBooking = checkDateConflict(date, existingBookings, '');
+            setConflict(conflictingBooking);
+
+            // Fetch property and price configs
+            try {
+                const [property, priceConfigsResponse] = await Promise.all([
+                    getPropertyById(propertyId),
+                    fetch('/api/get-price-configurations')
+                ]);
+
+                if (!property || !priceConfigsResponse.ok) {
+                    console.error("No se pudo obtener la propiedad o la configuración de precios.");
+                    setAmount(''); // Reset amount on error
+                    return;
+                }
+
+                const priceConfigs: Record<string, PriceConfig> = await priceConfigsResponse.json();
+                const lookupName = property.priceSheetName || property.name;
+                const propertyRules = priceConfigs[lookupName];
+
+                const priceResult = calculatePriceForStay(propertyRules, date.from, date.to);
+
+                if (priceResult && !priceResult.error && !priceResult.minNightsError) {
+                    setAmount(priceResult.totalPrice.toFixed(2));
+                } else {
+                    setAmount(''); // Reset if there's an error or min nights not met
+                }
+
+            } catch (error) {
+                console.error("Error al calcular el precio:", error);
+                setAmount('');
+            }
+        } else {
+            setConflict(null);
+            setAmount(''); // Reset amount if dates are cleared
+        }
+    };
+    
+    calculateAndSetPrice();
+  }, [date, existingBookings, propertyId]);
   
    useEffect(() => {
     if (isOpen) {
@@ -297,7 +334,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 <div className="flex gap-4">
                     <div className="space-y-2 flex-1">
                         <Label htmlFor="amount">Monto</Label>
-                        <Input id="amount" name="amount" type="number" step="0.01" required />
+                        <Input id="amount" name="amount" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="currency">Moneda</Label>
