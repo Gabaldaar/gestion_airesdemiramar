@@ -29,7 +29,7 @@ import { Tenant, Booking, Origin, getOrigins, BookingStatus, PriceConfig, getPro
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
-import { cn } from "@/lib/utils"
+import { cn, checkDateConflict } from "@/lib/utils"
 import { calculatePriceForStay } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar"
 import {
