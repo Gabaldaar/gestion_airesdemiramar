@@ -183,12 +183,12 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
                                         <span>{priceResult.nights} {priceResult.nights === 1 ? 'noche' : 'noches'}</span>
                                     </div>
                                     <span className="text-lg font-bold text-primary">
-                                        {formatCurrency(priceResult.totalPrice, priceResult.currency)}
+                                        {formatCurrency(Math.round(priceResult.totalPrice), priceResult.currency)}
                                     </span>
                                 </div>
                                 
                                 <div className="text-xs text-muted-foreground space-y-1 pl-2 border-l-2">
-                                   <p>Precio sin dto: {formatCurrency(priceResult.breakdown.rawPrice, priceResult.currency)}</p>
+                                   <p>Precio sin dto: {formatCurrency(Math.round(priceResult.breakdown.rawPrice), priceResult.currency)}</p>
                                     {priceResult.breakdown.appliedDiscount ? (
                                         <p className="text-green-600 font-semibold">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
                                     ) : (

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useMemo, useTransition } from 'react';
@@ -28,7 +29,8 @@ import { Tenant, Booking, Origin, getOrigins, BookingStatus, PriceConfig, getPro
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
-import { cn, checkDateConflict, calculatePriceForStay } from "@/lib/utils"
+import { cn } from "@/lib/utils"
+import { calculatePriceForStay } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
@@ -131,7 +133,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 const priceResult = calculatePriceForStay(propertyRules, date.from, date.to);
 
                 if (priceResult && !priceResult.error && !priceResult.minNightsError) {
-                    setAmount(priceResult.totalPrice.toFixed(2));
+                    setAmount(Math.round(priceResult.totalPrice).toString());
                 } else {
                     setAmount(''); // Reset if there's an error or min nights not met
                 }
