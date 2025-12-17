@@ -19,9 +19,10 @@ interface DatePickerProps {
     date: Date | undefined;
     onDateSelect: (date: Date | undefined) => void;
     placeholder?: string;
+    defaultMonth?: Date;
 }
 
-export function DatePicker({ date, onDateSelect, placeholder = "Selecciona una fecha" }: DatePickerProps) {
+export function DatePicker({ date, onDateSelect, placeholder = "Selecciona una fecha", defaultMonth }: DatePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
@@ -49,6 +50,7 @@ export function DatePicker({ date, onDateSelect, placeholder = "Selecciona una f
             mode="single"
             selected={date}
             onSelect={handleDateSelect}
+            defaultMonth={defaultMonth || date}
             initialFocus
             locale={es}
             />

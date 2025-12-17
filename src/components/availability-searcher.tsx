@@ -243,7 +243,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
           </div>
           <div className="grid gap-1.5 flex-1">
             <label className="text-sm font-medium">Hasta</label>
-            <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Fecha de Check-out" />
+            <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Fecha de Check-out" defaultMonth={fromDate} />
           </div>
           <Button onClick={handleSearch} disabled={!fromDate || !toDate || isSearching}>
             {isSearching ? (
