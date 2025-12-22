@@ -231,9 +231,9 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
 
     if (isUpcoming) {
       const daysUntilStart = differenceInDays(startDate, today);
-      if (daysUntilStart < 7) return { textColor: "text-red-600", bgColor: "" };
-      if (daysUntilStart < 15) return { textColor: "text-orange-600", bgColor: "" };
-      if (daysUntilStart < 30) return { textColor: "text-blue-600", bgColor: "" };
+      if (daysUntilStart < 7) return { textColor: "text-red-600", bgColor: "bg-red-500/10" };
+      if (daysUntilStart < 15) return { textColor: "text-orange-600", bgColor: "bg-orange-500/10" };
+      if (daysUntilStart < 30) return { textColor: "text-blue-600", bgColor: "bg-blue-500/10" };
     }
     
     return { textColor: "", bgColor: "" };
@@ -388,6 +388,24 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
         return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency, maximumFractionDigits: 0 }).format(amount);
     }
+
+    const getBookingStatusStyles = (booking: BookingWithDetails): { textColor: string; cardClassName: string } => {
+        if (booking.status === 'cancelled') return { textColor: "text-red-600 line-through", cardClassName: "bg-red-500/10 border-red-500/20" };
+        if (booking.status === 'pending') return { textColor: "text-amber-600", cardClassName: "bg-yellow-500/10 border-yellow-500/20" };
+        if (isCurrent) return { textColor: "text-green-600", cardClassName: "bg-green-500/10 border-green-500/20" };
+        if (isPastBooking) return { textColor: "text-muted-foreground", cardClassName: "bg-gray-500/10 border-gray-500/20 opacity-70" };
+
+        if (isUpcoming) {
+            const daysUntilStart = differenceInDays(startDate, today);
+            if (daysUntilStart < 7) return { textColor: "text-red-600", cardClassName: "bg-red-500/10 border-red-500/20" };
+            if (daysUntilStart < 15) return { textColor: "text-orange-600", cardClassName: "bg-orange-500/10 border-orange-500/20" };
+            if (daysUntilStart < 30) return { textColor: "text-blue-600", cardClassName: "bg-blue-500/10 border-blue-500/20" };
+        }
+        
+        return { textColor: "", cardClassName: "" };
+    };
+
+    const { textColor, cardClassName } = getBookingStatusStyles(booking);
     
     const getBalanceColorClass = () => {
         if (isInactive) return 'text-muted-foreground';
@@ -400,14 +418,11 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     const daysUntilEnd = differenceInDays(endDate, today);
     
     let daysRemainingText: string | null = null;
-    let daysRemainingColor: string = '';
+    let daysRemainingColor: string = textColor;
 
     if (!isCancelled && !isPending) {
         if (isUpcoming && daysUntilStart >= 0) {
             daysRemainingText = `Faltan ${daysUntilStart} ${daysUntilStart === 1 ? 'día' : 'días'} para el check-in`;
-            if(daysUntilStart < 7) daysRemainingColor = "text-red-600";
-            else if (daysUntilStart < 15) daysRemainingColor = "text-orange-600";
-            else if (daysUntilStart < 30) daysRemainingColor = "text-blue-600";
         } else if (isCurrent && daysUntilEnd >= 0) {
             daysRemainingText = `Faltan ${daysUntilEnd} ${daysUntilEnd === 1 ? 'día' : 'días'} para el check-out`;
             daysRemainingColor = 'text-green-600';
@@ -416,24 +431,14 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
 
 
     return (
-        <Card className={cn(
-            "w-full", 
-            isCancelled && "bg-red-500/10 border-red-500/20", 
-            isPending && "bg-yellow-500/10 border-yellow-500/20", 
-            isCurrent && "bg-green-500/10 border-green-500/20",
-            isPastBooking && "bg-gray-500/10 border-gray-500/20 opacity-70"
-            )}>
+        <Card className={cn("w-full", cardClassName)}>
             <CardHeader className="p-4">
                  {isCancelled && <Badge variant="destructive" className="mr-2 w-fit">CANCELADA</Badge>}
                 {isPending && <Badge variant="secondary" className="mr-2 w-fit bg-yellow-400 text-black">EN ESPERA</Badge>}
                 {isPastBooking && <Badge variant="secondary" className="mr-2 w-fit">CUMPLIDA</Badge>}
-                <CardTitle className={cn("text-lg", isCurrent && "text-green-600")}>
+                <CardTitle className={cn("text-lg", textColor)}>
                     {showProperty ? (
-                        <span className={cn(
-                            isCurrent && "text-green-600",
-                            isCancelled && "text-red-600 line-through",
-                            isPending && "text-amber-600"
-                        )}>
+                        <span className={cn(textColor)}>
                             {booking.property?.name || 'N/A'}
                         </span>
                     ) : (booking.tenant?.name || 'N/A')}
@@ -608,10 +613,10 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     <div>
         <div className="flex items-center space-x-4 mb-2 text-xs text-muted-foreground">
             <span className="font-semibold">Leyenda:</span>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-600 mr-1"></div>&lt; 30 días</div>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-orange-600 mr-1"></div>&lt; 15 días</div>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-600 mr-1"></div>&lt; 7 días</div>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-600 mr-1"></div>En Curso</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-500/20 border border-blue-500 mr-1"></div>&lt; 30 días</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-orange-500/20 border border-orange-500 mr-1"></div>&lt; 15 días</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500 mr-1"></div>&lt; 7 días</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500 mr-1"></div>En Curso</div>
         </div>
         
         {useCardView ? <CardView /> : <TableView />}
