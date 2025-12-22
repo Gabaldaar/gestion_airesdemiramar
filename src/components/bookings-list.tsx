@@ -197,7 +197,7 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   const endDate = new Date(booking.endDate);
   const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
   const isPastBooking = isPast(endDate) && !isCurrent;
-  const isInactive = isCancelled || isPending || isPastBooking;
+  const isUpcoming = !isPastBooking && !isCurrent;
 
 
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
@@ -224,32 +224,26 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
         }).format(amount);
     }
   
-  const getBookingColorClass = (booking: BookingWithDetails): string => {
-    if (booking.status !== 'active') return "";
+  const getBookingStatusStyles = (booking: BookingWithDetails): { textColor: string; bgColor: string } => {
+    if (booking.status === 'cancelled') return { textColor: "text-red-600 line-through", bgColor: "bg-red-500/10" };
+    if (booking.status === 'pending') return { textColor: "text-amber-600", bgColor: "bg-yellow-500/10" };
+    if (isCurrent) return { textColor: "text-green-600", bgColor: "bg-green-500/10" };
+    if (isPastBooking) return { textColor: "text-muted-foreground", bgColor: "bg-gray-500/10 opacity-70" };
 
-    if (isCurrent) {
-        return "text-green-600"; // En curso
+    if (isUpcoming) {
+      const daysUntilStart = differenceInDays(startDate, today);
+      if (daysUntilStart < 7) return { textColor: "text-red-600", bgColor: "" };
+      if (daysUntilStart < 15) return { textColor: "text-orange-600", bgColor: "" };
+      if (daysUntilStart < 30) return { textColor: "text-blue-600", bgColor: "" };
     }
     
-    const daysUntilStart = differenceInDays(startDate, today);
-
-    if (daysUntilStart < 0) {
-        return "text-muted-foreground"; // Cerrada
-    }
-    if (daysUntilStart < 7) {
-      return "text-red-600";
-    }
-    if (daysUntilStart < 15) {
-      return "text-orange-600";
-    }
-    if (daysUntilStart < 30) {
-      return "text-blue-600";
-    }
-    return "";
+    return { textColor: "", bgColor: "" };
   };
 
+  const {textColor, bgColor} = getBookingStatusStyles(booking);
+
   const getBalanceColorClass = () => {
-    if (isInactive) return 'bg-gray-500 hover:bg-gray-600';
+    if (isCancelled || isPending || isPastBooking) return 'bg-gray-500 hover:bg-gray-600';
     if (booking.balance <= 0) return 'bg-green-600 hover:bg-green-700';
     if (booking.balance >= booking.amount) return 'bg-red-600 hover:bg-red-700';
     return 'bg-orange-500 hover:bg-orange-600';
@@ -257,26 +251,16 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   
   
   return (
-    <TableRow key={booking.id} className={cn(
-        isCancelled && "bg-red-500/10", 
-        isPending && "bg-yellow-500/10", 
-        isCurrent && "bg-green-500/10",
-        isPastBooking && "bg-gray-500/10 opacity-70"
-        )}>
+    <TableRow key={booking.id} className={bgColor}>
         {showProperty && <TableCell className={cn("font-bold")}>
             {isCancelled && <Badge variant="destructive" className="mr-2">CANCELADA</Badge>}
             {isPending && <Badge variant="secondary" className="mr-2 bg-yellow-400 text-black">EN ESPERA</Badge>}
             {isPastBooking && <Badge variant="secondary" className="mr-2">CUMPLIDA</Badge>}
-            <span className={cn(
-                getBookingColorClass(booking),
-                isCancelled && "text-red-600 line-through",
-                isPending && "text-amber-600",
-                isCurrent && "text-green-600"
-            )}>
+            <span className={textColor}>
                 {booking.property?.name || 'N/A'}
             </span>
         </TableCell>}
-        <TableCell className={cn(isInactive && "text-muted-foreground")}>
+        <TableCell className={cn(isCancelled || isPending || isPastBooking) && "text-muted-foreground"}>
             <div className='flex items-center h-full'>
                 <span
                     className="line-clamp-2 max-w-[150px]"
@@ -285,25 +269,25 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
                 </span>
             </div>
         </TableCell>
-        <TableCell className={cn("whitespace-nowrap", isInactive && "text-muted-foreground")}>
+        <TableCell className={cn("whitespace-nowrap", (isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
           <div className="flex flex-col">
               <span>{formatDate(booking.startDate)} → {formatDate(booking.endDate)}</span>
               <span className="text-xs text-muted-foreground">{nights} noches</span>
           </div>
       </TableCell>
-      <TableCell className={cn("hidden md:table-cell", isInactive && "text-muted-foreground")}>
+      <TableCell className={cn("hidden md:table-cell", (isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
         {origin ? (
             <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
                 {origin.name}
             </Badge>
         ) : null}
       </TableCell>
-      <TableCell className={cn(isInactive && "text-muted-foreground")}>
+      <TableCell className={cn((isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
         <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                  <Link href={`/contract?id=${booking.id}`} target="_blank" className={cn(isInactive && "pointer-events-none")}>
-                    <Badge className={cn("cursor-pointer", isInactive ? "bg-gray-500" : contractInfo.className)}>
+                  <Link href={`/contract?id=${booking.id}`} target="_blank" className={cn((isCancelled || isPending || isPastBooking) && "pointer-events-none")}>
+                    <Badge className={cn("cursor-pointer", (isCancelled || isPending || isPastBooking) ? "bg-gray-500" : contractInfo.className)}>
                         {contractInfo.text}
                     </Badge>
                 </Link>
@@ -314,13 +298,13 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell className={cn("hidden lg:table-cell", isInactive && "text-muted-foreground")}>
+      <TableCell className={cn("hidden lg:table-cell", (isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
         <GuaranteeManager booking={booking} isOpen={false} onOpenChange={()=>{}}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                     <Badge 
-                        className={cn("cursor-pointer", isInactive ? "bg-gray-500" : guaranteeInfo.className)}
+                        className={cn("cursor-pointer", (isCancelled || isPending || isPastBooking) ? "bg-gray-500" : guaranteeInfo.className)}
                         onClick={() => {}}
                         role="button"
                     >
@@ -334,11 +318,11 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
             </TooltipProvider>
         </GuaranteeManager>
       </TableCell>
-      <TableCell className={cn(isInactive && "text-muted-foreground")}>
+      <TableCell className={cn((isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
           <TooltipProvider>
               <Tooltip>
                   <TooltipTrigger asChild>
-                      <Badge variant="secondary" className={cn("cursor-default", isInactive && "bg-gray-400 text-muted-foreground")}>{formatCurrency(booking.amount, booking.currency)}</Badge>
+                      <Badge variant="secondary" className={cn("cursor-default", (isCancelled || isPending || isPastBooking) && "bg-gray-400 text-muted-foreground")}>{formatCurrency(booking.amount, booking.currency)}</Badge>
                   </TooltipTrigger>
                   <TooltipContent>
                       <p>Valor del Alquiler</p>
@@ -346,7 +330,7 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
               </Tooltip>
           </TooltipProvider>
       </TableCell>
-      <TableCell className={cn(isInactive && "text-muted-foreground")}>
+      <TableCell className={cn((isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
           <TooltipProvider>
               <Tooltip>
                   <TooltipTrigger asChild>
@@ -647,3 +631,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   );
 }
 
+
+
+    
