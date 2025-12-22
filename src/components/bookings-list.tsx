@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -433,8 +432,8 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
 
 
     return (
-        <Card className={cn("w-full", cardClassName)}>
-            <CardHeader className="p-4">
+        <Card className="w-full">
+            <CardHeader className={cn("p-4 rounded-t-lg", cardClassName)}>
                  {isCancelled && <Badge variant="destructive" className="mr-2 w-fit">CANCELADA</Badge>}
                 {isPending && <Badge variant="secondary" className="mr-2 w-fit bg-yellow-400 text-black">EN ESPERA</Badge>}
                 {isPastBooking && <Badge variant="secondary" className="mr-2 w-fit">CUMPLIDA</Badge>}
@@ -445,7 +444,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
                         </span>
                     ) : (booking.tenant?.name || 'N/A')}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className={cn(cardClassName.includes('bg-') && "text-foreground/80")}>
                     {showProperty ? (booking.tenant?.name || 'N/A') : booking.property?.name}
                 </CardDescription>
             </CardHeader>
@@ -677,9 +676,5 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
-
-
-
-    
 
     
