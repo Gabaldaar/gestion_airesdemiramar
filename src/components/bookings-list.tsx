@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin, ExpenseCategory, getExpenseCategories } from "@/lib/data";
-import { format, differenceInDays, isWithinInterval, isPast } from 'date-fns';
+import { format, differenceInDays, isWithinInterval, isPast, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
@@ -191,8 +191,7 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   const isCancelled = booking.status === 'cancelled';
   const isPending = booking.status === 'pending';
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = startOfToday();
   const startDate = new Date(booking.startDate);
   const endDate = new Date(booking.endDate);
   const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
@@ -249,7 +248,21 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
     return 'bg-orange-500 hover:bg-orange-600';
   };
   
+  const daysUntilStart = differenceInDays(startDate, today);
+  const daysUntilEnd = differenceInDays(endDate, today);
   
+  let daysRemainingText: string | null = null;
+  let daysRemainingColor: string = textColor;
+
+  if (!isCancelled && !isPending) {
+    if (isUpcoming && daysUntilStart >= 0) {
+      daysRemainingText = `Faltan ${daysUntilStart} ${daysUntilStart === 1 ? 'día' : 'días'} para el check-in`;
+    } else if (isCurrent && daysUntilEnd >= 0) {
+      daysRemainingText = `Faltan ${daysUntilEnd} ${daysUntilEnd === 1 ? 'día' : 'días'} para el check-out`;
+      daysRemainingColor = 'text-green-600';
+    }
+  }
+
   return (
     <TableRow key={booking.id} className={bgColor}>
         {showProperty && <TableCell className={cn("font-bold")}>
@@ -273,6 +286,9 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
           <div className="flex flex-col">
               <span>{formatDate(booking.startDate)} → {formatDate(booking.endDate)}</span>
               <span className="text-xs text-muted-foreground">{nights} noches</span>
+               {daysRemainingText && (
+                  <span className={cn("text-xs font-semibold", daysRemainingColor)}>{daysRemainingText}</span>
+               )}
           </div>
       </TableCell>
       <TableCell className={cn("hidden md:table-cell", (isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
@@ -355,13 +371,13 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfToday();
     const startDate = new Date(booking.startDate);
     const endDate = new Date(booking.endDate);
     const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
     const isPastBooking = isPast(endDate) && !isCurrent;
     const isInactive = isCancelled || isPending || isPastBooking;
+    const isUpcoming = !isPastBooking && !isCurrent;
     
     const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
 
@@ -379,6 +395,25 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
         if (booking.balance >= booking.amount) return 'text-red-600';
         return 'text-orange-600';
     };
+
+    const daysUntilStart = differenceInDays(startDate, today);
+    const daysUntilEnd = differenceInDays(endDate, today);
+    
+    let daysRemainingText: string | null = null;
+    let daysRemainingColor: string = '';
+
+    if (!isCancelled && !isPending) {
+        if (isUpcoming && daysUntilStart >= 0) {
+            daysRemainingText = `Faltan ${daysUntilStart} ${daysUntilStart === 1 ? 'día' : 'días'} para el check-in`;
+            if(daysUntilStart < 7) daysRemainingColor = "text-red-600";
+            else if (daysUntilStart < 15) daysRemainingColor = "text-orange-600";
+            else if (daysUntilStart < 30) daysRemainingColor = "text-blue-600";
+        } else if (isCurrent && daysUntilEnd >= 0) {
+            daysRemainingText = `Faltan ${daysUntilEnd} ${daysUntilEnd === 1 ? 'día' : 'días'} para el check-out`;
+            daysRemainingColor = 'text-green-600';
+        }
+    }
+
 
     return (
         <Card className={cn(
@@ -410,7 +445,12 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
             <CardContent className="p-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <div className="flex justify-between col-span-2">
                     <span className="text-muted-foreground">Estadía</span>
-                    <span className="font-medium">{formatDate(booking.startDate)} → {formatDate(booking.endDate)} ({nights}n)</span>
+                    <div className="flex flex-col items-end">
+                       <span className="font-medium">{formatDate(booking.startDate)} → {formatDate(booking.endDate)} ({nights}n)</span>
+                       {daysRemainingText && (
+                            <span className={cn("text-xs font-semibold", daysRemainingColor)}>{daysRemainingText}</span>
+                       )}
+                    </div>
                 </div>
                 {origin && (
                     <div className="flex justify-between col-span-2">
