@@ -223,23 +223,24 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
         }).format(amount);
     }
   
-  const getBookingStatusStyles = (booking: BookingWithDetails): { textColor: string; bgColor: string } => {
-    if (booking.status === 'cancelled') return { textColor: "text-red-600 line-through", bgColor: "bg-red-500/10" };
-    if (booking.status === 'pending') return { textColor: "text-amber-600", bgColor: "bg-yellow-500/10" };
-    if (isCurrent) return { textColor: "text-green-600", bgColor: "bg-green-500/10" };
-    if (isPastBooking) return { textColor: "text-muted-foreground", bgColor: "bg-gray-500/10 opacity-70" };
+  const getBookingStatusStyles = (booking: BookingWithDetails): { titleColor: string; bgColor: string } => {
+    const daysUntilStart = differenceInDays(new Date(booking.startDate), startOfToday());
+    
+    if (booking.status === 'cancelled') return { titleColor: "text-red-600 line-through", bgColor: "bg-red-500/10" };
+    if (booking.status === 'pending') return { titleColor: "text-amber-600", bgColor: "bg-yellow-500/10" };
+    if (isCurrent) return { titleColor: "text-green-600", bgColor: "bg-green-500/10" };
+    if (isPastBooking) return { titleColor: "text-muted-foreground", bgColor: "bg-gray-500/10 opacity-70" };
 
-    if (isUpcoming) {
-      const daysUntilStart = differenceInDays(startDate, today);
-      if (daysUntilStart < 7) return { textColor: "text-red-600", bgColor: "bg-red-500/10" };
-      if (daysUntilStart < 15) return { textColor: "text-orange-600", bgColor: "bg-orange-500/10" };
-      if (daysUntilStart < 30) return { textColor: "text-blue-600", bgColor: "bg-blue-500/10" };
+    if (isUpcoming && daysUntilStart >= 0) {
+      if (daysUntilStart < 7) return { titleColor: "text-red-700", bgColor: "bg-red-500/10" };
+      if (daysUntilStart < 15) return { titleColor: "text-orange-700", bgColor: "bg-orange-500/10" };
+      if (daysUntilStart < 30) return { titleColor: "text-blue-700", bgColor: "bg-blue-500/10" };
     }
     
-    return { textColor: "", bgColor: "" };
+    return { titleColor: "", bgColor: "" };
   };
 
-  const {textColor, bgColor} = getBookingStatusStyles(booking);
+  const {titleColor, bgColor} = getBookingStatusStyles(booking);
 
   const getBalanceColorClass = () => {
     if (isCancelled || isPending || isPastBooking) return 'bg-gray-500 hover:bg-gray-600';
@@ -252,7 +253,7 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   const daysUntilEnd = differenceInDays(endDate, today);
   
   let daysRemainingText: string | null = null;
-  let daysRemainingColor: string = textColor;
+  let daysRemainingColor: string = titleColor;
 
   if (!isCancelled && !isPending) {
     if (isUpcoming && daysUntilStart >= 0) {
@@ -265,15 +266,15 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
 
   return (
     <TableRow key={booking.id} className={bgColor}>
-        {showProperty && <TableCell className={cn("font-bold")}>
+        {showProperty && <TableCell>
             {isCancelled && <Badge variant="destructive" className="mr-2">CANCELADA</Badge>}
             {isPending && <Badge variant="secondary" className="mr-2 bg-yellow-400 text-black">EN ESPERA</Badge>}
             {isPastBooking && <Badge variant="secondary" className="mr-2">CUMPLIDA</Badge>}
-            <span className={textColor}>
+            <span className={cn("font-bold", titleColor)}>
                 {booking.property?.name || 'N/A'}
             </span>
         </TableCell>}
-        <TableCell className={cn(isCancelled || isPending || isPastBooking) && "text-muted-foreground"}>
+        <TableCell className={cn((isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
             <div className='flex items-center h-full'>
                 <span
                     className="line-clamp-2 max-w-[150px]"
@@ -389,23 +390,24 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
         return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency, maximumFractionDigits: 0 }).format(amount);
     }
 
-    const getBookingStatusStyles = (booking: BookingWithDetails): { textColor: string; cardClassName: string } => {
-        if (booking.status === 'cancelled') return { textColor: "text-red-600 line-through", cardClassName: "bg-red-500/10 border-red-500/20" };
-        if (booking.status === 'pending') return { textColor: "text-amber-600", cardClassName: "bg-yellow-500/10 border-yellow-500/20" };
-        if (isCurrent) return { textColor: "text-green-600", cardClassName: "bg-green-500/10 border-green-500/20" };
-        if (isPastBooking) return { textColor: "text-muted-foreground", cardClassName: "bg-gray-500/10 border-gray-500/20 opacity-70" };
+    const getBookingStatusStyles = (booking: BookingWithDetails): { titleColor: string; cardClassName: string } => {
+        const daysUntilStart = differenceInDays(new Date(booking.startDate), startOfToday());
 
-        if (isUpcoming) {
-            const daysUntilStart = differenceInDays(startDate, today);
-            if (daysUntilStart < 7) return { textColor: "text-red-600", cardClassName: "bg-red-500/10 border-red-500/20" };
-            if (daysUntilStart < 15) return { textColor: "text-orange-600", cardClassName: "bg-orange-500/10 border-orange-500/20" };
-            if (daysUntilStart < 30) return { textColor: "text-blue-600", cardClassName: "bg-blue-500/10 border-blue-500/20" };
+        if (booking.status === 'cancelled') return { titleColor: "text-red-600 line-through", cardClassName: "bg-red-500/10 border-red-500/20" };
+        if (booking.status === 'pending') return { titleColor: "text-amber-600", cardClassName: "bg-yellow-500/10 border-yellow-500/20" };
+        if (isCurrent) return { titleColor: "text-green-600", cardClassName: "bg-green-500/10 border-green-500/20" };
+        if (isPastBooking) return { titleColor: "text-muted-foreground", cardClassName: "bg-gray-500/10 border-gray-500/20 opacity-70" };
+
+        if (isUpcoming && daysUntilStart >= 0) {
+            if (daysUntilStart < 7) return { titleColor: "text-red-700", cardClassName: "bg-red-500/10 border-red-500/20" };
+            if (daysUntilStart < 15) return { titleColor: "text-orange-700", cardClassName: "bg-orange-500/10 border-orange-500/20" };
+            if (daysUntilStart < 30) return { titleColor: "text-blue-700", cardClassName: "bg-blue-500/10 border-blue-500/20" };
         }
         
-        return { textColor: "", cardClassName: "" };
+        return { titleColor: "text-primary", cardClassName: "" };
     };
 
-    const { textColor, cardClassName } = getBookingStatusStyles(booking);
+    const { titleColor, cardClassName } = getBookingStatusStyles(booking);
     
     const getBalanceColorClass = () => {
         if (isInactive) return 'text-muted-foreground';
@@ -418,7 +420,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     const daysUntilEnd = differenceInDays(endDate, today);
     
     let daysRemainingText: string | null = null;
-    let daysRemainingColor: string = textColor;
+    let daysRemainingColor: string = titleColor;
 
     if (!isCancelled && !isPending) {
         if (isUpcoming && daysUntilStart >= 0) {
@@ -436,9 +438,9 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
                  {isCancelled && <Badge variant="destructive" className="mr-2 w-fit">CANCELADA</Badge>}
                 {isPending && <Badge variant="secondary" className="mr-2 w-fit bg-yellow-400 text-black">EN ESPERA</Badge>}
                 {isPastBooking && <Badge variant="secondary" className="mr-2 w-fit">CUMPLIDA</Badge>}
-                <CardTitle className={cn("text-lg", textColor)}>
+                <CardTitle className={cn("text-lg", titleColor)}>
                     {showProperty ? (
-                        <span className={cn(textColor)}>
+                        <span className={cn(titleColor)}>
                             {booking.property?.name || 'N/A'}
                         </span>
                     ) : (booking.tenant?.name || 'N/A')}
@@ -613,10 +615,10 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     <div>
         <div className="flex items-center space-x-4 mb-2 text-xs text-muted-foreground">
             <span className="font-semibold">Leyenda:</span>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-500/20 border border-blue-500 mr-1"></div>&lt; 30 días</div>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-orange-500/20 border border-orange-500 mr-1"></div>&lt; 15 días</div>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500 mr-1"></div>&lt; 7 días</div>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500 mr-1"></div>En Curso</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-500/20 border border-blue-700 mr-1"></div>&lt; 30 días</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-orange-500/20 border border-orange-700 mr-1"></div>&lt; 15 días</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-700 mr-1"></div>&lt; 7 días</div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-600 mr-1"></div>En Curso</div>
         </div>
         
         {useCardView ? <CardView /> : <TableView />}
@@ -677,5 +679,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
 }
 
 
+
+    
 
     

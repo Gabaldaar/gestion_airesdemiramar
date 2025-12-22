@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -202,11 +203,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         )}>
         <div className={cn("hidden border-r bg-muted/40 md:flex md:flex-col")}>
             <div className="flex h-14 items-center justify-between border-b px-4 lg:h-[60px] lg:px-6">
-                <Link href="/" className={cn("flex items-center gap-2 font-semibold text-primary", isCollapsed && "justify-center")}>
+                <Link href="/" className={cn("flex items-center gap-2 font-semibold text-primary", isCollapsed && "justify-center w-full")}>
                     <Image src={Logo} alt="Logo de la aplicacion" width={isCollapsed ? 40 : 180} height={40} className={cn('transition-all', isCollapsed && 'w-auto h-auto')}/>
                     <span className={cn('sr-only', isCollapsed && 'hidden')}>Aires de Miramar</span>
                 </Link>
-                <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className={cn(isCollapsed && 'mr-auto')}>
+                <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className={cn(isCollapsed && 'hidden')}>
                     <ChevronLeft className={cn("h-5 w-5 transition-transform", isCollapsed && "rotate-180")} />
                 </Button>
             </div>
@@ -253,3 +254,5 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
+
+    
