@@ -23,7 +23,7 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { getDatosImputacion, DatosImputacion } from '@/lib/finance-api';
+import { DatosImputacion } from '@/lib/finance-api';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
@@ -118,11 +118,18 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
   }
 
   useEffect(() => {
+    // This now runs on the client side
     const fetchFinanceData = async () => {
         setIsFetchingFinanceData(true);
         setFinanceApiError(null);
         try {
-            const data = await getDatosImputacion();
+            // Call our own proxy endpoint
+            const response = await fetch('/api/finance-proxy/datos-imputacion');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch from proxy');
+            }
+            const data: DatosImputacion = await response.json();
             setDatosImputacion(data);
         } catch (error) {
             console.error("Error fetching finance data:", error);
@@ -302,4 +309,3 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
     </Dialog>
   );
 }
-

@@ -47,38 +47,8 @@ const apiHeaders = {
 
 
 /**
- * Fetches imputation data (categories, accounts, wallets) from the finance API.
- * This function is executed on the server and calls the external API directly.
- * @returns {Promise<DatosImputacion>}
- * @throws {Error} if the API call fails.
- */
-export async function getDatosImputacion(): Promise<DatosImputacion> {
-    const externalApiUrl = `${API_BASE_URL}/api/datos-imputacion`;
-
-    try {
-        const response = await fetch(externalApiUrl, {
-            method: 'GET',
-            headers: apiHeaders,
-            cache: 'no-store', // Ensure fresh data and prevent static rendering issues
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: "Error parsing API error response." }));
-            throw new Error(errorData.error || `Error ${response.status} fetching imputation data.`);
-        }
-
-        const data: DatosImputacion = await response.json();
-        return data;
-    } catch (error) {
-        console.error('[Finance API Client Error - getDatosImputacion]:', error);
-        // Re-throw a more user-friendly error
-        throw new Error('Failed to connect to the finance API. Please check if the external API is running and CORS is configured.');
-    }
-}
-
-
-/**
  * Registers a new income/payment in the finance application.
+ * This function is still a server action as it's called from another server action (addPayment)
  * @param {RegistrarCobroPayload} payload - The data for the new payment.
  * @returns {Promise<{success: boolean; id_registro_creado?: string; error?: string}>}
  */
