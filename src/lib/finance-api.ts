@@ -48,29 +48,33 @@ const headers = {
 
 /**
  * Fetches imputation data (categories, accounts, wallets) from the finance API.
+ * This now calls an internal proxy route to avoid CORS issues in development.
  * @returns {Promise<DatosImputacion>}
  * @throws {Error} if the API call fails.
  */
 export async function getDatosImputacion(): Promise<DatosImputacion> {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/datos-imputacion`, {
+        // We call our internal proxy instead of the external API directly
+        const internalUrl = new URL('/api/finance-proxy/datos-imputacion', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+        
+        const response = await fetch(internalUrl.toString(), {
             method: 'GET',
-            headers: headers,
-            // Revalidate frequently to get fresh data, but cache for a short period
+            headers: {
+                'Content-Type': 'application/json',
+            },
             next: { revalidate: 300 } 
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || `Error ${response.status} fetching imputation data.`);
+            throw new Error(errorData.error || `Error ${response.status} fetching imputation data via proxy.`);
         }
 
         const data: DatosImputacion = await response.json();
         return data;
     } catch (error) {
-        console.error('[Finance API Error - getDatosImputacion]:', error);
-        // In a real scenario, you might want to return empty arrays or handle this more gracefully
-        throw new Error('Failed to connect to the finance API.');
+        console.error('[Finance API Proxy Error - getDatosImputacion]:', error);
+        throw new Error('Failed to connect to the finance API via proxy.');
     }
 }
 
