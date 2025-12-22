@@ -57,14 +57,14 @@ async function checkAndSendNotifications() {
 
     // Consulta mejorada: Obtener todas las reservas que terminan a partir de hoy.
     // Esto incluye las activas y las futuras, sin depender del campo 'status'.
-    const rentalsSnap = await db.collection('rentals').where('endDate', '>=', today).get();
+    const bookingsSnap = await db.collection('bookings').where('endDate', '>=', today).get();
 
-    if (rentalsSnap.empty) {
+    if (bookingsSnap.empty) {
         console.log('[CRON] No hay alquileres activos o futuros.');
         return 0;
     }
 
-    for (const doc of rentalsSnap.docs) {
+    for (const doc of bookingsSnap.docs) {
         const rental = doc.data();
         // Ignorar si el estado es explícitamente 'cancelled' o 'pending'
         if (rental.status === 'cancelled' || rental.status === 'pending') {
