@@ -54,8 +54,9 @@ const headers = {
  */
 export async function getDatosImputacion(): Promise<DatosImputacion> {
     try {
-        // We call our internal proxy instead of the external API directly
-        const internalUrl = new URL('/api/finance-proxy/datos-imputacion', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+        // Construct the full, absolute URL for our internal proxy
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const internalUrl = new URL('/api/finance-proxy/datos-imputacion', appUrl);
         
         const response = await fetch(internalUrl.toString(), {
             method: 'GET',
