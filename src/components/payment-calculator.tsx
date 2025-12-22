@@ -88,7 +88,11 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
             setBaseAmount(newBaseAmount);
             setBaseCurrency(booking.currency);
             if (calcMode === 'by_percentage') {
-               setPercentage(30);
+               if (baseAmountType === 'balance') {
+                   setPercentage(100);
+               } else {
+                   setPercentage(30);
+               }
             }
         }
     }, [booking, baseAmountType, calcMode]);
