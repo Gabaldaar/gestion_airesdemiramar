@@ -58,6 +58,9 @@ export async function getDatosImputacion(): Promise<DatosImputacion> {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         const internalUrl = new URL('/api/finance-proxy/datos-imputacion', appUrl);
         
+        // --- DEBUGGING LOG ---
+        console.log(`[finance-api.ts] Intentando conectar al proxy en: ${internalUrl.toString()}`);
+        
         const response = await fetch(internalUrl.toString(), {
             method: 'GET',
             headers: {
@@ -74,7 +77,7 @@ export async function getDatosImputacion(): Promise<DatosImputacion> {
         const data: DatosImputacion = await response.json();
         return data;
     } catch (error) {
-        console.error('[Finance API Proxy Error - getDatosImputacion]:', error);
+        console.error('[Finance API Client Error - getDatosImputacion]:', error);
         throw new Error('Failed to connect to the finance API via proxy.');
     }
 }

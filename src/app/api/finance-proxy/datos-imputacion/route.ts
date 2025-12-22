@@ -17,41 +17,46 @@ const corsHeaders = {
 };
 
 export async function GET(request: Request) {
+    console.log('[Proxy GET] Petición recibida en el proxy.');
     try {
-        const apiResponse = await fetch(`${API_BASE_URL}/api/datos-imputacion`, {
+        const externalApiUrl = `${API_BASE_URL}/api/datos-imputacion`;
+        console.log(`[Proxy GET] Llamando a la API externa en: ${externalApiUrl}`);
+
+        const apiResponse = await fetch(externalApiUrl, {
             method: 'GET',
             headers: apiHeaders,
-            // We ask the downstream API to revalidate, but we also control our own cache.
-            // Using a short revalidation here for development proxy.
             next: { revalidate: 60 } 
         });
+
+        console.log(`[Proxy GET] Respuesta de la API externa recibida con estado: ${apiResponse.status}`);
 
         const data = await apiResponse.json();
 
         if (!apiResponse.ok) {
-            // Forward the error from the external API
+            console.error(`[Proxy GET] Error de la API externa:`, data);
             return NextResponse.json(
                 { error: data.error || 'Failed to fetch from external API' },
-                { status: apiResponse.status }
+                { status: apiResponse.status, headers: corsHeaders }
             );
         }
 
-        // Return the successful response with CORS headers for our own app
+        console.log('[Proxy GET] Devolviendo datos exitosamente.');
         return NextResponse.json(data, {
             headers: corsHeaders
         });
 
     } catch (error) {
-        console.error('[API Proxy Error]:', error);
+        console.error('[Proxy GET] Error catastrófico en el proxy:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown proxy error occurred';
         return NextResponse.json(
             { error: 'API Proxy failed', details: errorMessage },
-            { status: 500 }
+            { status: 500, headers: corsHeaders }
         );
     }
 }
 
 // Handler for OPTIONS preflight requests
 export async function OPTIONS(request: Request) {
+  console.log('[Proxy OPTIONS] Petición preflight recibida y gestionada.');
   return new Response(null, { headers: corsHeaders, status: 204 });
 }
