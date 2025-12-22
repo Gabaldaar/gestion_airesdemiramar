@@ -23,6 +23,9 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
+import { getDatosImputacion, DatosImputacion } from '@/lib/finance-api';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 const initialState = {
   message: '',
@@ -36,11 +39,10 @@ export interface PaymentPreloadData {
 }
 
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
+function SubmitButton({ isPending, isDisabled }: { isPending: boolean, isDisabled: boolean }) {
     return (
-        <Button type="submit" disabled={pending}>
-            {pending ? (
+        <Button type="submit" disabled={isPending || isDisabled}>
+            {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Añadiendo...
@@ -69,6 +71,11 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
   const [amount, setAmount] = useState('');
   const [exchangeRate, setExchangeRate] = useState('');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
+
+  // State for finance API data
+  const [datosImputacion, setDatosImputacion] = useState<DatosImputacion | null>(null);
+  const [financeApiError, setFinanceApiError] = useState<string | null>(null);
+  const [isFetchingFinanceData, setIsFetchingFinanceData] = useState(false);
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -106,19 +113,40 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
     setExchangeRate('');
     setState(initialState);
     setIsFetchingRate(false);
+    setDatosImputacion(null);
+    setFinanceApiError(null);
   }
 
   useEffect(() => {
+    const fetchFinanceData = async () => {
+        setIsFetchingFinanceData(true);
+        setFinanceApiError(null);
+        try {
+            const data = await getDatosImputacion();
+            setDatosImputacion(data);
+        } catch (error) {
+            console.error("Error fetching finance data:", error);
+            setFinanceApiError(error instanceof Error ? error.message : "Error al conectar con la API de finanzas.");
+        } finally {
+            setIsFetchingFinanceData(false);
+        }
+    }
+
     if (isOpen) {
+        fetchFinanceData();
         if (preloadData) {
             setAmount(preloadData.amount.toString());
             setCurrency(preloadData.currency);
             setExchangeRate(preloadData.exchangeRate?.toString() || '');
         } else {
-            resetForm(); // Reset only if no data is preloaded
+            // Do not reset fully, just prepare for new input
+            setAmount('');
+            setCurrency('USD');
+            setExchangeRate('');
+            setDate(new Date());
         }
     } else {
-        resetForm(); // Always reset when closing
+        resetForm();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, preloadData]);
@@ -127,14 +155,16 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
     const newCurrency = value as 'ARS' | 'USD';
     setCurrency(newCurrency);
   }
+  
+  const isSubmitDisabled = isFetchingFinanceData || !!financeApiError;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Añadir Pago</DialogTitle>
           <DialogDescription>
-            Completa los datos del pago.
+            Completa los datos del pago. Se registrará en esta app y en el sistema de finanzas.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} ref={formRef}>
@@ -209,10 +239,60 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
                     </Label>
                     <Textarea id="description" name="description" className="col-span-3" placeholder="Comentarios sobre el pago..." />
                 </div>
+
+                {/* Finance API Fields */}
+                <div className='border-t pt-4 mt-2 grid gap-4'>
+                    <h4 className="text-md font-medium text-center col-span-4">Datos para App de Finanzas</h4>
+                    {isFetchingFinanceData && <div className='text-center text-sm text-muted-foreground'><Loader2 className="mr-2 h-4 w-4 animate-spin inline-block"/>Cargando datos...</div>}
+                    {financeApiError && (
+                        <Alert variant="destructive" className="col-span-4">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Error de API de Finanzas</AlertTitle>
+                            <AlertDescription>{financeApiError}</AlertDescription>
+                        </Alert>
+                    )}
+                    {datosImputacion && !isFetchingFinanceData && (
+                        <>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="categoria_id" className="text-right">Categoría</Label>
+                                <Select name="categoria_id" required>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Selecciona una categoría" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {datosImputacion.categorias.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="cuenta_id" className="text-right">Cuenta</Label>
+                                <Select name="cuenta_id" required>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Selecciona una cuenta" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {datosImputacion.cuentas.map(cta => <SelectItem key={cta.id} value={cta.id}>{cta.nombre}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="billetera_id" className="text-right">Billetera</Label>
+                                <Select name="billetera_id" required>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Selecciona una billetera" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {datosImputacion.billeteras.map(bill => <SelectItem key={bill.id} value={bill.id}>{bill.nombre}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                <SubmitButton />
+                <SubmitButton isPending={isPending} isDisabled={isSubmitDisabled} />
             </DialogFooter>
         </form>
          {state.message && !state.success && (
@@ -222,3 +302,4 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
     </Dialog>
   );
 }
+

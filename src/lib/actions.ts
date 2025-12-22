@@ -50,6 +50,7 @@ import {
 } from "./data";
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { registrarCobro, RegistrarCobroPayload } from './finance-api';
 
 
 export async function addProperty(previousState: any, formData: FormData) {
@@ -577,9 +578,14 @@ export async function addPayment(previousState: any, formData: FormData) {
     const date = formData.get("date") as string;
     const description = formData.get("description") as string;
     const exchangeRateStr = formData.get("exchangeRate") as string;
+    
+    // Finance API fields
+    const categoria_id = formData.get('categoria_id') as string;
+    const cuenta_id = formData.get('cuenta_id') as string;
+    const billetera_id = formData.get('billetera_id') as string;
 
-    if (!bookingId || !originalAmount || !currency || !date) {
-        return { success: false, message: "Todos los campos son obligatorios." };
+    if (!bookingId || !originalAmount || !currency || !date || !categoria_id || !cuenta_id || !billetera_id) {
+        return { success: false, message: "Todos los campos, incluidos los de finanzas, son obligatorios." };
     }
     
     const paymentPayload: {
@@ -598,6 +604,7 @@ export async function addPayment(previousState: any, formData: FormData) {
         description,
     };
 
+    let monto_usd: number | undefined;
 
     if (currency === 'ARS') {
         const rate = parseFloat(exchangeRateStr);
@@ -608,6 +615,8 @@ export async function addPayment(previousState: any, formData: FormData) {
         paymentPayload.amount = originalAmount / paymentPayload.exchangeRate;
         paymentPayload.originalArsAmount = originalAmount;
         
+        monto_usd = paymentPayload.amount;
+
         const arsFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(originalAmount);
         const rateFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(paymentPayload.exchangeRate);
         const autoDescription = `El pago se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
@@ -617,14 +626,43 @@ export async function addPayment(previousState: any, formData: FormData) {
     if (paymentPayload.exchangeRate === undefined) delete paymentPayload.exchangeRate;
     if (paymentPayload.originalArsAmount === undefined) delete paymentPayload.originalArsAmount;
 
-
     try {
-        await addPaymentDb(paymentPayload as Omit<Payment, 'id'>);
+        const newPayment = await addPaymentDb(paymentPayload as Omit<Payment, 'id'>);
         const booking = await getBookingById(bookingId);
+        
+        if (booking) {
+            const tenant = await getTenantById(booking.tenantId);
+            const property = await getPropertyById(booking.propertyId);
+
+            // Register payment in the finance app
+            const cobroPayload: RegistrarCobroPayload = {
+                fecha: date,
+                monto: originalAmount,
+                moneda: currency,
+                monto_usd: monto_usd,
+                tasa_cambio: currency === 'ARS' ? paymentPayload.exchangeRate : undefined,
+                categoria_id: categoria_id,
+                cuenta_id: cuenta_id,
+                billetera_id: billetera_id,
+                descripcion: `Pago reserva ${property?.name || ''} - ${tenant?.name || ''}`,
+                id_externo: newPayment.id,
+            };
+            const financeApiResult = await registrarCobro(cobroPayload);
+
+            if (!financeApiResult.success) {
+                // Optional: Rollback payment creation or just warn the user
+                console.warn("Finance API registration failed:", financeApiResult.error);
+                // For simplicity, we'll just revalidate and let the user know.
+                 revalidatePathsAfterBooking(booking.propertyId);
+                return { success: true, message: `Pago guardado en esta app, pero falló la sincronización con Finanzas: ${financeApiResult.error}` };
+            }
+        }
+        
         if (booking) {
             revalidatePathsAfterBooking(booking.propertyId);
         }
-        return { success: true, message: "Pago añadido correctamente." };
+
+        return { success: true, message: "Pago añadido y sincronizado con Finanzas." };
     } catch (error: any) {
         console.error(error)
         return { success: false, message: `Error de base de datos: ${error.message}` };
