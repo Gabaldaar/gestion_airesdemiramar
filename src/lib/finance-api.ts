@@ -40,7 +40,7 @@ export interface RegistrarCobroPayload {
 const API_BASE_URL = 'https://gestionomiscuentas.netlify.app';
 const API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW'; // This should be in an environment variable
 
-const headers = {
+const apiHeaders = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${API_KEY}`
 };
@@ -48,29 +48,25 @@ const headers = {
 
 /**
  * Fetches imputation data (categories, accounts, wallets) from the finance API.
- * This now calls an internal proxy route to avoid CORS issues in development.
+ * This function is executed on the server and calls the external API directly.
  * @returns {Promise<DatosImputacion>}
  * @throws {Error} if the API call fails.
  */
 export async function getDatosImputacion(): Promise<DatosImputacion> {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const proxyUrl = `${appUrl}/api/finance-proxy/datos-imputacion`;
+
     try {
-        // Construct the full, absolute URL for our internal proxy
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const internalUrl = new URL('/api/finance-proxy/datos-imputacion', appUrl);
-        
-        // --- DEBUGGING LOG ---
-        console.log(`[finance-api.ts] Intentando conectar al proxy en: ${internalUrl.toString()}`);
-        
-        const response = await fetch(internalUrl.toString(), {
+        const response = await fetch(proxyUrl, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
-            next: { revalidate: 300 } 
+            cache: 'no-store',
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({ error: "Error parsing proxy error response." }));
             throw new Error(errorData.error || `Error ${response.status} fetching imputation data via proxy.`);
         }
 
@@ -92,7 +88,7 @@ export async function registrarCobro(payload: RegistrarCobroPayload) {
      try {
         const response = await fetch(`${API_BASE_URL}/api/registrar-cobro`, {
             method: 'POST',
-            headers: headers,
+            headers: apiHeaders,
             body: JSON.stringify(payload)
         });
 
