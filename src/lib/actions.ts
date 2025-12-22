@@ -50,7 +50,38 @@ import {
 } from "./data";
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { registrarCobro, RegistrarCobroPayload } from './finance-api';
+import { RegistrarCobroPayload, API_BASE_URL, apiHeaders } from './finance-api';
+
+
+/**
+ * Registers a new income/payment in the finance application.
+ * @param {RegistrarCobroPayload} payload - The data for the new payment.
+ * @returns {Promise<{success: boolean; id_registro_creado?: string; error?: string}>}
+ */
+export async function registrarCobro(payload: RegistrarCobroPayload) {
+     try {
+        const response = await fetch(`${API_BASE_URL}/api/registrar-cobro`, {
+            method: 'POST',
+            headers: apiHeaders,
+            body: JSON.stringify(payload),
+            cache: 'no-store',
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(responseData.error || `Error ${response.status} registering payment.`);
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('[Finance API Error - registrarCobro]:', error);
+        if (error instanceof Error) {
+            return { success: false, error: error.message };
+        }
+        return { success: false, error: 'An unknown error occurred while registering the payment.' };
+    }
+}
 
 
 export async function addProperty(previousState: any, formData: FormData) {

@@ -23,7 +23,7 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { DatosImputacion } from '@/lib/finance-api';
+import { DatosImputacion, FINANCE_API_KEY } from '@/lib/finance-api';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
@@ -118,13 +118,16 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
   }
 
   useEffect(() => {
-    // This now runs on the client side
     const fetchFinanceData = async () => {
         setIsFetchingFinanceData(true);
         setFinanceApiError(null);
         try {
-            // Call our own proxy endpoint
-            const response = await fetch('/api/finance-proxy/datos-imputacion');
+            const response = await fetch('/api/finance-proxy/datos-imputacion', {
+                method: 'POST', // Use POST to send the key in the body
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey: FINANCE_API_KEY }),
+            });
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to fetch from proxy');
@@ -132,8 +135,9 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
             const data: DatosImputacion = await response.json();
             setDatosImputacion(data);
         } catch (error) {
-            console.error("Error fetching finance data:", error);
-            setFinanceApiError(error instanceof Error ? error.message : "Error al conectar con la API de finanzas.");
+            const errorMessage = error instanceof Error ? error.message : "Error desconocido."
+            console.error("Error fetching finance data:", errorMessage);
+            setFinanceApiError(`Failed to connect to the finance API via proxy: ${errorMessage}`);
         } finally {
             setIsFetchingFinanceData(false);
         }
@@ -146,7 +150,6 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
             setCurrency(preloadData.currency);
             setExchangeRate(preloadData.exchangeRate?.toString() || '');
         } else {
-            // Do not reset fully, just prepare for new input
             setAmount('');
             setCurrency('USD');
             setExchangeRate('');
