@@ -9,6 +9,13 @@ const apiHeaders = {
     'Authorization': `Bearer ${API_KEY}`
 };
 
+// Define los headers de CORS en un solo lugar para reutilizarlos
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
 export async function GET(request: Request) {
     try {
         const apiResponse = await fetch(`${API_BASE_URL}/api/datos-imputacion`, {
@@ -31,11 +38,7 @@ export async function GET(request: Request) {
 
         // Return the successful response with CORS headers for our own app
         return NextResponse.json(data, {
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
-            }
+            headers: corsHeaders
         });
 
     } catch (error) {
@@ -50,10 +53,5 @@ export async function GET(request: Request) {
 
 // Handler for OPTIONS preflight requests
 export async function OPTIONS(request: Request) {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  };
-  return new Response(null, { headers, status: 204 });
+  return new Response(null, { headers: corsHeaders, status: 204 });
 }
