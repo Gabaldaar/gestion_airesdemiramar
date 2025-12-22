@@ -53,28 +53,26 @@ const apiHeaders = {
  * @throws {Error} if the API call fails.
  */
 export async function getDatosImputacion(): Promise<DatosImputacion> {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const proxyUrl = `${appUrl}/api/finance-proxy/datos-imputacion`;
+    const externalApiUrl = `${API_BASE_URL}/api/datos-imputacion`;
 
     try {
-        const response = await fetch(proxyUrl, {
+        const response = await fetch(externalApiUrl, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            cache: 'no-store',
+            headers: apiHeaders,
+            cache: 'no-store', // Ensure fresh data and prevent static rendering issues
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: "Error parsing proxy error response." }));
-            throw new Error(errorData.error || `Error ${response.status} fetching imputation data via proxy.`);
+            const errorData = await response.json().catch(() => ({ error: "Error parsing API error response." }));
+            throw new Error(errorData.error || `Error ${response.status} fetching imputation data.`);
         }
 
         const data: DatosImputacion = await response.json();
         return data;
     } catch (error) {
         console.error('[Finance API Client Error - getDatosImputacion]:', error);
-        throw new Error('Failed to connect to the finance API via proxy.');
+        // Re-throw a more user-friendly error
+        throw new Error('Failed to connect to the finance API. Please check if the external API is running and CORS is configured.');
     }
 }
 
@@ -89,7 +87,8 @@ export async function registrarCobro(payload: RegistrarCobroPayload) {
         const response = await fetch(`${API_BASE_URL}/api/registrar-cobro`, {
             method: 'POST',
             headers: apiHeaders,
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            cache: 'no-store',
         });
 
         const responseData = await response.json();
