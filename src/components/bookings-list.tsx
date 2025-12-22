@@ -32,7 +32,7 @@ import { BookingEditForm } from './booking-edit-form';
 import { BookingDeleteForm } from './booking-delete-form';
 import { NotesViewer } from './notes-viewer';
 import { GuaranteeManager } from './guarantee-manager';
-import { Landmark, Wallet, Pencil, Trash2, FileText, Calculator } from 'lucide-react';
+import { Landmark, Wallet, Pencil, Trash2, FileText, Calculator, Mail } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { EmailSender } from "./email-sender";
 import useWindowSize from '@/hooks/use-window-size';
@@ -65,7 +65,7 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-700' }
 };
 
-function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalculatorOpen }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void }) {
+function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
     const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
@@ -144,6 +144,18 @@ function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalcula
                     </Tooltip>
                 </TooltipProvider>
             </BookingExpensesManager>
+            
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEmailOpen(booking)} disabled={isInactive || !booking.tenant?.email}>
+                            <Mail className="h-4 w-4" />
+                            <span className="sr-only">Enviar Email</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Enviar Email</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
 
             <TooltipProvider>
                 <Tooltip>
@@ -174,8 +186,7 @@ function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalcula
     )
 }
 
-function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void }) {
-  const [isEmailOpen, setIsEmailOpen] = useState(false);
+function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
 
   const isCancelled = booking.status === 'cancelled';
   const isPending = booking.status === 'pending';
@@ -267,18 +278,11 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
         </TableCell>}
         <TableCell className={cn(isInactive && "text-muted-foreground")}>
             <div className='flex items-center h-full'>
-            <EmailSender 
-                    booking={booking} 
-                    isOpen={isEmailOpen} 
-                    onOpenChange={setIsEmailOpen}>
-                    <button
-                        onClick={() => setIsEmailOpen(true)}
-                        className="text-left hover:underline disabled:no-underline disabled:cursor-not-allowed line-clamp-2 max-w-[150px]"
-                        disabled={!booking.tenant?.email || isInactive}
-                    >
-                        {booking.tenant?.name || 'N/A'}
-                    </button>
-                </EmailSender>
+                <span
+                    className="line-clamp-2 max-w-[150px]"
+                >
+                    {booking.tenant?.name || 'N/A'}
+                </span>
             </div>
         </TableCell>
         <TableCell className={cn("whitespace-nowrap", isInactive && "text-muted-foreground")}>
@@ -357,13 +361,13 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
           </TooltipProvider>
       </TableCell>
       <TableCell className="text-right">
-        <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onAddExpense={onAddExpense} onCalculatorOpen={onCalculatorOpen}/>
+        <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onAddExpense={onAddExpense} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} />
       </TableCell>
     </TableRow>
   );
 }
 
-function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void }) {
+function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
 
@@ -448,7 +452,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
                 </div>
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onAddExpense={onAddExpense} onCalculatorOpen={onCalculatorOpen} />
+                <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onAddExpense={onAddExpense} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} />
             </CardFooter>
         </Card>
     )
@@ -467,6 +471,8 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
   const [calculatorBooking, setCalculatorBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [emailBooking, setEmailBooking] = useState<BookingWithDetails | undefined>(undefined);
+  const [isEmailOpen, setIsEmailOpen] = useState(false);
 
   const { width } = useWindowSize();
   const useCardView = width < 1280; 
@@ -505,6 +511,11 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     setCalculatorBooking(booking);
     setIsCalculatorOpen(true);
   };
+  
+  const handleEmailOpen = (booking: BookingWithDetails) => {
+    setEmailBooking(booking);
+    setIsEmailOpen(true);
+  }
 
   const handleRegisterPayment = (bookingId: string, data: PaymentPreloadData) => {
     setIsCalculatorOpen(false); // Close calculator
@@ -530,6 +541,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             onAddPayment={handleAddPaymentClick}
             onAddExpense={handleAddExpenseClick}
             onCalculatorOpen={handleCalculatorOpen}
+            onEmailOpen={handleEmailOpen}
         />
         ))}
     </div>
@@ -561,6 +573,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     onAddPayment={handleAddPaymentClick}
                     onAddExpense={handleAddExpenseClick}
                     onCalculatorOpen={handleCalculatorOpen}
+                    onEmailOpen={handleEmailOpen}
                 />
             ))}
         </TableBody>
@@ -623,6 +636,14 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                 </DialogContent>
             </Dialog>
         )}
+        {emailBooking && (
+             <EmailSender 
+                booking={emailBooking} 
+                isOpen={isEmailOpen}
+                onOpenChange={setIsEmailOpen}
+             />
+        )}
     </div>
   );
 }
+

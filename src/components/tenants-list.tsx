@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from "next/link";
@@ -70,7 +71,11 @@ function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Te
     const waLink = formatWhatsAppLink(tenant.phone);
     return (
         <TableRow key={tenant.id}>
-            <TableCell className="font-medium">{tenant.name}</TableCell>
+            <TableCell className="font-medium">
+                <a href={`mailto:${tenant.email}`} className="text-primary hover:underline">
+                    {tenant.name}
+                </a>
+            </TableCell>
             <TableCell>
                 {origin ? (
                     <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
@@ -107,7 +112,11 @@ function TenantCard({ tenant, origin, onDataChanged, onEditTenant }: { tenant: T
         <Card>
             <CardHeader className="p-4">
                 <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{tenant.name}</CardTitle>
+                    <CardTitle className="text-lg">
+                        <a href={`mailto:${tenant.email}`} className="text-primary hover:underline">
+                            {tenant.name}
+                        </a>
+                    </CardTitle>
                     {origin && (
                          <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
                             {origin.name}
@@ -198,3 +207,4 @@ export default function TenantsList({ tenants, origins, onDataChanged, onEditTen
     
     return useCardView ? <CardView /> : <TableView />;
 }
+
