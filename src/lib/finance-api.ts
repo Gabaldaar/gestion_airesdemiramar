@@ -1,4 +1,3 @@
-'use server';
 
 // Define the structure for the data we expect from the finance API
 export interface Categoria {
