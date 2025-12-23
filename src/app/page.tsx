@@ -10,9 +10,11 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { differenceInDays, startOfToday } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle, Info, Copy } from "lucide-react";
 import AvailabilitySearcher from "@/components/availability-searcher";
 import PaymentCalculator from "@/components/payment-calculator";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 interface DashboardData {
     summaryByCurrency: FinancialSummaryByCurrency;
@@ -26,6 +28,7 @@ export default function DashboardPage() {
     const { user } = useAuth();
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
 
     useEffect(() => {
         if (user) {
@@ -70,6 +73,25 @@ export default function DashboardPage() {
             return daysUntil >= 0 && daysUntil <= checkOutDays;
         }).sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
     }, [data]);
+
+    const handleCopy = (type: 'check-ins' | 'check-outs') => {
+        let textToCopy = '';
+        if (type === 'check-ins') {
+            textToCopy = `Próximos Check-ins:\n` + upcomingCheckIns.map(b => 
+                `- ${b.property?.name}: ${b.tenant?.name} llega el ${new Date(b.startDate).toLocaleDateString('es-AR')}.`
+            ).join('\n');
+        } else {
+            textToCopy = `Próximos Check-outs:\n` + upcomingCheckOuts.map(b => 
+                `- ${b.property?.name}: ${b.tenant?.name} se retira el ${new Date(b.endDate).toLocaleDateString('es-AR')}.`
+            ).join('\n');
+        }
+
+        navigator.clipboard.writeText(textToCopy);
+        toast({
+            title: "Copiado",
+            description: "El resumen de alertas se ha copiado al portapapeles.",
+        });
+    };
 
 
     if (loading || !data) {
@@ -121,30 +143,44 @@ export default function DashboardPage() {
         {upcomingCheckIns.length > 0 && (
              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>¡Atención! Próximos Check-ins</AlertTitle>
-                <AlertDescription>
-                    Tienes {upcomingCheckIns.length} check-in(s) en los próximos {data.alertSettings?.checkInDays ?? 7} días.
-                    <ul className="list-disc pl-5 mt-2">
-                    {upcomingCheckIns.map(b => (
-                        <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> llega el <strong>{new Date(b.startDate).toLocaleDateString('es-AR')}</strong>.</li>
-                    ))}
-                    </ul>
-                </AlertDescription>
+                <div className="flex justify-between items-start w-full">
+                    <div>
+                        <AlertTitle>¡Atención! Próximos Check-ins</AlertTitle>
+                        <AlertDescription>
+                            Tienes {upcomingCheckIns.length} check-in(s) en los próximos {data.alertSettings?.checkInDays ?? 7} días.
+                            <ul className="list-disc pl-5 mt-2">
+                            {upcomingCheckIns.map(b => (
+                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> llega el <strong>{new Date(b.startDate).toLocaleDateString('es-AR')}</strong>.</li>
+                            ))}
+                            </ul>
+                        </AlertDescription>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => handleCopy('check-ins')}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </div>
             </Alert>
         )}
         
         {upcomingCheckOuts.length > 0 && (
             <Alert variant="default" className="border-blue-500 text-blue-800 dark:border-blue-400 dark:text-blue-300 [&>svg]:text-blue-500">
                 <Info className="h-4 w-4" />
-                <AlertTitle className="text-blue-800 dark:text-blue-300">Aviso: Próximos Check-outs</AlertTitle>
-                <AlertDescription>
-                    Tienes {upcomingCheckOuts.length} check-out(s) en los próximos {data.alertSettings?.checkOutDays ?? 3} días.
-                     <ul className="list-disc pl-5 mt-2">
-                    {upcomingCheckOuts.map(b => (
-                        <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> se retira el <strong>{new Date(b.endDate).toLocaleDateString('es-AR')}</strong>.</li>
-                    ))}
-                    </ul>
-                </AlertDescription>
+                <div className="flex justify-between items-start w-full">
+                    <div>
+                        <AlertTitle className="text-blue-800 dark:text-blue-300">Aviso: Próximos Check-outs</AlertTitle>
+                        <AlertDescription>
+                            Tienes {upcomingCheckOuts.length} check-out(s) en los próximos {data.alertSettings?.checkOutDays ?? 3} días.
+                             <ul className="list-disc pl-5 mt-2">
+                            {upcomingCheckOuts.map(b => (
+                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> se retira el <strong>{new Date(b.endDate).toLocaleDateString('es-AR')}</strong>.</li>
+                            ))}
+                            </ul>
+                        </AlertDescription>
+                    </div>
+                     <Button variant="ghost" size="icon" onClick={() => handleCopy('check-outs')}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </div>
             </Alert>
         )}
 
