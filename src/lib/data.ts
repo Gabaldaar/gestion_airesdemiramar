@@ -15,7 +15,7 @@ import {
   writeBatch,
   collectionGroup,
   setDoc,
-  FieldPath
+  FieldPath,
 } from 'firebase/firestore';
 
 
@@ -1241,3 +1241,5 @@ export async function deletePushSubscription(id: string): Promise<void> {
     const docRef = doc(db, 'pushSubscriptions', id);
     await deleteDoc(docRef);
 }
+
+    
