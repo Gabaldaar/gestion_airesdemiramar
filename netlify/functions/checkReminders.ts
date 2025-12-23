@@ -55,24 +55,38 @@ async function checkAndSendNotifications() {
     const notificationTriggers: NotificationTriggerData[] = [];
     const today = startOfToday();
 
-    // Consulta mejorada: Obtener todas las reservas que terminan a partir de hoy.
-    // Esto incluye las activas y las futuras, sin depender del campo 'status'.
-    const bookingsSnap = await db.collection('bookings').where('endDate', '>=', today).get();
+    // Consulta corregida: Obtener todas las reservas que NO estén canceladas.
+    // Esto es más robusto y permite que el código filtre por fechas.
+    const bookingsSnap = await db.collection('bookings').where('status', '!=', 'cancelled').get();
+
 
     if (bookingsSnap.empty) {
-        console.log('[CRON] No hay alquileres activos o futuros.');
+        console.log('[CRON] No hay alquileres activos, futuros o pendientes.');
         return 0;
     }
 
     for (const doc of bookingsSnap.docs) {
         const rental = doc.data();
-        // Ignorar si el estado es explícitamente 'cancelled' o 'pending'
-        if (rental.status === 'cancelled' || rental.status === 'pending') {
+        // Ignorar si el estado es 'pending' (en espera), ya que no requiere notificación aún.
+        if (rental.status === 'pending') {
             continue;
         }
 
-        const rentalStartDate = rental.startDate.toDate ? rental.startDate.toDate() : new Date(rental.startDate);
-        const rentalEndDate = rental.endDate.toDate ? rental.endDate.toDate() : new Date(rental.endDate);
+        // Conversión segura de Timestamps o strings a Date
+        const rentalStartDate = rental.startDate?.toDate ? rental.startDate.toDate() : new Date(rental.startDate);
+        const rentalEndDate = rental.endDate?.toDate ? rental.endDate.toDate() : new Date(rental.endDate);
+        
+        // Ignorar si las fechas son inválidas
+        if (isNaN(rentalStartDate.getTime()) || isNaN(rentalEndDate.getTime())) {
+            console.warn(`[CRON] Saltando reserva ${doc.id} por tener fechas inválidas.`);
+            continue;
+        }
+        
+        // Solo procesar reservas que no hayan terminado ya
+        if (rentalEndDate < today) {
+            continue;
+        }
+
         const daysUntilCheckin = differenceInDays(rentalStartDate, today);
         const daysUntilCheckout = differenceInDays(rentalEndDate, today);
 
