@@ -23,7 +23,7 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { DatosImputacion, FINANCE_API_KEY } from '@/lib/finance-api';
+import { DatosImputacion } from '@/lib/finance-api';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
@@ -122,15 +122,16 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
         setIsFetchingFinanceData(true);
         setFinanceApiError(null);
         try {
+            const apiKey = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW'; // Hardcoded API Key
             const response = await fetch('/api/finance-proxy/datos-imputacion', {
-                method: 'POST', // Use POST to send the key in the body
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey: FINANCE_API_KEY }),
+                body: JSON.stringify({ apiKey: apiKey }),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to fetch from proxy');
+                throw new Error(errorData.error || `Failed to fetch from proxy`);
             }
             const data: DatosImputacion = await response.json();
             setDatosImputacion(data);
