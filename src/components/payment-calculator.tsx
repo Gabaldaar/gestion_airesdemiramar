@@ -153,11 +153,15 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
 
     }, [paidAmount, paidCurrency, dollarRate, baseAmount, baseCurrency, calcMode])
 
-    const handleCopy = (value: number, curr: 'USD' | 'ARS') => {
-        navigator.clipboard.writeText(value.toFixed(2));
+    const handleCopy = () => {
+        if (!booking) return;
+
+        const textToCopy = `Reserva para ${booking.tenant?.name || 'N/A'} en ${booking.property?.name || 'N/A'}\n\nMonto a pagar en USD: ${formatCurrency(resultUSD, 'USD')}\nMonto a pagar en Pesos: ${formatCurrency(resultARS, 'ARS')}`;
+        
+        navigator.clipboard.writeText(textToCopy);
         toast({
             title: 'Copiado',
-            description: `Monto en ${curr} copiado al portapapeles.`,
+            description: `Resumen del pago copiado al portapapeles.`,
         });
     };
     
@@ -310,22 +314,28 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
 
                 {calcMode === 'by_percentage' ? (
                      <div className="border-t pt-6 space-y-4 mt-6">
-                        <h4 className="text-lg font-semibold text-center">Resultados del Cálculo</h4>
+                        <div className="flex justify-center items-center relative">
+                            <h4 className="text-lg font-semibold text-center">Resultados del Cálculo</h4>
+                            {isBookingContext && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="absolute right-0" onClick={handleCopy}>
+                                                <Copy className="h-5 w-5" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Copiar Resumen</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="border rounded-lg p-4 space-y-2 flex flex-col">
                                 <Label className="text-muted-foreground">Monto a Pagar (USD)</Label>
                                 <p className="text-2xl font-bold flex-grow">{formatCurrency(resultUSD, 'USD')}</p>
                                 <div className='flex gap-2 self-end'>
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon" onClick={() => handleCopy(resultUSD, 'USD')}><Copy className="h-4 w-4" /></Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Copiar Monto en USD</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
                                     {onRegisterPayment && (
                                         <TooltipProvider>
                                             <Tooltip>
@@ -344,16 +354,6 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
                                 <Label className="text-muted-foreground">Monto a Pagar (ARS)</Label>
                                 <p className="text-2xl font-bold flex-grow">{formatCurrency(resultARS, 'ARS')}</p>
                                 <div className='flex gap-2 self-end'>
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon" onClick={() => handleCopy(resultARS, 'ARS')}><Copy className="h-4 w-4" /></Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Copiar Monto en ARS</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
                                      {onRegisterPayment && (
                                         <TooltipProvider>
                                             <Tooltip>
