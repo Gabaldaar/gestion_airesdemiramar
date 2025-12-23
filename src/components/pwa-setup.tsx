@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -31,31 +32,16 @@ const PwaSetup = () => {
         .register("/sw.js") // Using the new sw.js from the kit
         .then((registration) => {
             console.log("Service Worker registrado con éxito:", registration);
-            // 2. Request Push Notification Permission
-            subscribeToPushNotifications(registration);
+            // 2. Automatically try to subscribe if permission is already granted
+            if (Notification.permission === 'granted') {
+              subscribeToPushNotifications(registration);
+            }
         })
         .catch((error) => console.log("Error en el registro del Service Worker:", error));
     }
   }, []);
 
   const subscribeToPushNotifications = async (registration: ServiceWorkerRegistration) => {
-      // Check if permission is already granted
-      if (Notification.permission === 'granted') {
-          console.log('Push notification permission already granted.');
-          createPushSubscription(registration);
-          return;
-      }
-      
-      // Don't request if denied, user has to manually enable it
-      if (Notification.permission === 'denied') {
-          console.warn('Push notification permission has been denied.');
-          return;
-      }
-
-      // We don't auto-request permission here. The user will do it from the Settings page.
-  };
-
-  const createPushSubscription = async (registration: ServiceWorkerRegistration) => {
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!vapidPublicKey) {
       console.error("VAPID public key not found. Skipping push subscription.");
@@ -65,16 +51,27 @@ const PwaSetup = () => {
     try {
         const existingSubscription = await registration.pushManager.getSubscription();
         if (existingSubscription) {
-            console.log("User is already subscribed.");
-            // Optionally, resend subscription to server to ensure it's up to date
+            console.log("User is already subscribed. Syncing with server.");
+            // Resend subscription to server to ensure it's up to date
             await savePushSubscription(JSON.parse(JSON.stringify(existingSubscription)));
             return;
         }
-
-        // We don't auto-subscribe here. The user will initiate from the settings page.
         
+        // If no subscription exists, create a new one.
+        // This will only happen if permission was granted but subscription was lost.
+        console.log("No existing subscription, creating a new one...");
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        });
+
+        await savePushSubscription(JSON.parse(JSON.stringify(subscription)));
+        console.log("New subscription created and saved.");
+
     } catch (error) {
-        console.error("Failed to check for existing subscription: ", error);
+        console.error("Failed to create or sync push subscription: ", error);
+        // We don't toast here to avoid bothering the user on every load if something is wrong.
+        // The manual button in settings is the place for user-facing errors.
     }
   }
 

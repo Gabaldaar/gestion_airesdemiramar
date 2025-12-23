@@ -8,7 +8,7 @@ import { updateAlertSettings, savePushSubscription as savePushSubscriptionAction
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, BellRing, BellOff } from 'lucide-react';
+import { Loader2, BellRing } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 
@@ -67,9 +67,6 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
     const handleSubscribe = async () => {
         if (!isPushSupported) return;
         setIsSubscribing(true);
-
-        // Explicitly wait for the service worker to be ready
-        const registration = await navigator.serviceWorker.ready;
         
         let permission = Notification.permission;
         if (permission === 'default') {
@@ -87,6 +84,9 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
             setIsSubscribing(false);
             return;
         }
+        
+        // At this point, permission is granted.
+        toast({ title: 'Permiso concedido', description: 'Suscribiendo este dispositivo...', variant: 'default' });
 
         const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         if (!vapidPublicKey) {
@@ -97,23 +97,27 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
         }
 
         try {
+            const registration = await navigator.serviceWorker.ready;
+            
+            // Unsubscribe from any existing subscription on this device to ensure a fresh one
             const existingSubscription = await registration.pushManager.getSubscription();
             if (existingSubscription) {
                 await existingSubscription.unsubscribe();
-                console.log("Unsubscribed from old subscription.");
             }
 
+            // Create a new subscription
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
             });
             
+            // Send the new subscription to the server
             const result = await savePushSubscriptionAction(JSON.parse(JSON.stringify(subscription)));
 
             if (result.success) {
                 toast({
-                    title: "¡Suscripción exitosa!",
-                    description: "Ahora recibirás notificaciones en este dispositivo.",
+                    title: "¡Dispositivo suscrito!",
+                    description: "Ahora recibirás notificaciones aquí.",
                 });
             } else {
                  throw new Error(result.message);
@@ -122,8 +126,8 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
         } catch (error) {
             console.error("Failed to subscribe:", error);
             toast({
-                title: "Error al suscribirse",
-                description: "No se pudo completar la suscripción a las notificaciones.",
+                title: "Error al suscribir",
+                description: (error instanceof Error ? error.message : "No se pudo completar la suscripción."),
                 variant: "destructive"
             });
         } finally {
@@ -164,7 +168,7 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
                 <div className="space-y-2">
                     <Label htmlFor="checkInDays">Días de aviso para Check-in</Label>
                     <p className="text-sm text-muted-foreground">
-                        Mostrar una alerta en el dashboard cuando un check-in esté a esta cantidad de días (o menos).
+                        Comenzar a notificar cuando un check-in esté a esta cantidad de días (o menos).
                     </p>
                     <Input 
                         id="checkInDays" 
@@ -178,7 +182,7 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
                 <div className="space-y-2">
                     <Label htmlFor="checkOutDays">Días de aviso para Check-out</Label>
                     <p className="text-sm text-muted-foreground">
-                        Mostrar una alerta cuando un check-out esté a esta cantidad de días (o menos).
+                        Comenzar a notificar cuando un check-out esté a esta cantidad de días (o menos).
                     </p>
                     <Input 
                         id="checkOutDays" 
@@ -200,19 +204,19 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
                         </span>
                     </AlertTitle>
                     <AlertDescription>
-                        Usa este botón para activar o reactivar las notificaciones push en este dispositivo si no las estás recibiendo.
+                        Activa las notificaciones en tu navegador. Si ya están activadas pero no recibes alertas, usa este botón para forzar una re-suscripción de este dispositivo.
                     </AlertDescription>
                  </Alert>
                 <Button onClick={handleSubscribe} disabled={isSubscribing || !isPushSupported}>
                     {isSubscribing ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Suscribiendo...
+                            Procesando...
                         </>
                     ) : (
                         <>
                             <BellRing className="mr-2 h-4 w-4" />
-                            Activar/Reactivar Notificaciones Push
+                            Activar / Re-suscribir Dispositivo
                         </>
                     )}
                 </Button>
@@ -220,5 +224,3 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
         </div>
     );
 }
-
-    
