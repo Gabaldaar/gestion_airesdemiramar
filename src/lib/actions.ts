@@ -835,7 +835,7 @@ export async function addPayment(previousState: any, formData: FormData) {
         }
         return {
             success: true,
-            message: `Pago guardado y sincronizado. Respuesta API: ${JSON.stringify(financeApiResult)}`,
+            message: `Pago guardado y sincronizado. ID remoto: ${financeApiResult.id_registro_creado}`,
         };
     }
 

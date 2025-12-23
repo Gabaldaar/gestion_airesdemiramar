@@ -123,21 +123,19 @@ export function PaymentAddForm({
   };
 
   useEffect(() => {
-    if (state.success) {
+    if (state.message) { // Show toast when state.message changes
       toast({
-        title: 'Éxito',
-        description: state.message || 'Pago añadido correctamente.',
-      });
-      onOpenChange(false);
-      onPaymentAdded();
-    } else if (state.message) {
-      toast({
-        title: 'Error',
+        title: state.success ? 'Éxito' : 'Error',
         description: state.message,
-        variant: 'destructive',
+        variant: state.success ? 'default' : 'destructive',
       });
+      if (state.success) {
+        onOpenChange(false);
+        onPaymentAdded();
+      }
     }
   }, [state, onPaymentAdded, onOpenChange, toast]);
+
 
   const resetForm = () => {
     formRef.current?.reset();
