@@ -4,7 +4,7 @@
 
 import type { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
-import webpush, { type PushSubscription } from 'web-push';
+import webpush, { type PushSubscription, type WebPushError } from 'web-push';
 import { differenceInDays, startOfToday } from 'date-fns';
 
 // --- INICIALIZACIÓN DE FIREBASE ADMIN (MÉTODO ROBUSTO) ---
@@ -172,15 +172,24 @@ async function sendNotification(subscription: PushSubscription, payload: string)
     try {
         await webpush.sendNotification(subscription, payload);
         console.log('[CRON] Notificación enviada exitosamente.');
-    } catch (error: any) {
-        if (error.statusCode === 410 || error.statusCode === 404) {
+    } catch (error) {
+        const webPushError = error as WebPushError;
+        // Códigos 404 y 410 significan que la suscripción ya no es válida.
+        if (webPushError.statusCode === 410 || webPushError.statusCode === 404) {
             console.log('[CRON] La suscripción ha expirado o no se encuentra. Eliminando de la BD...');
             const endpointEncoded = Buffer.from(subscription.endpoint).toString('base64');
             db.collection('pushSubscriptions').doc(endpointEncoded).delete().catch(delErr => {
                 console.error(`[CRON] Falló la eliminación de la suscripción expirada ${endpointEncoded}:`, delErr);
             });
-        } else {
-            console.error(`[CRON] Falló el envío de la notificación:`, error.message);
+        } else if (webPushError.message === 'Received unexpected response code') {
+             console.log('[CRON] Código de respuesta inesperado. La suscripción probablemente es inválida. Eliminando de la BD...');
+             const endpointEncoded = Buffer.from(subscription.endpoint).toString('base64');
+             db.collection('pushSubscriptions').doc(endpointEncoded).delete().catch(delErr => {
+                console.error(`[CRON] Falló la eliminación de la suscripción inválida ${endpointEncoded}:`, delErr);
+            });
+        }
+        else {
+            console.error(`[CRON] Falló el envío de la notificación:`, webPushError.message);
         }
     }
 }
@@ -192,13 +201,13 @@ async function sendNotification(subscription: PushSubscription, payload: string)
 export const handler: Handler = async () => {
   console.log('[Netlify Function] - checkReminders: Cron job triggered.');
 
-  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-     console.error("[CRON] Las claves VAPID no están configuradas. No se pueden enviar notificaciones push.");
-     return { statusCode: 500, body: 'VAPID keys are not set on the server.' };
+  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY || !process.env.VAPID_MAILTO) {
+     console.error("[CRON] Las claves VAPID o VAPID_MAILTO no están configuradas. No se pueden enviar notificaciones push.");
+     return { statusCode: 500, body: 'VAPID keys or mailto are not set on the server.' };
   }
 
   webpush.setVapidDetails(
-      process.env.VAPID_MAILTO || 'mailto:your-email@example.com',
+      process.env.VAPID_MAILTO,
       process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       process.env.VAPID_PRIVATE_KEY
   );
