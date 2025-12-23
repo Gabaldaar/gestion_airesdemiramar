@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -10,7 +11,7 @@ import {
 import { getBookings, getProperties, getTenants, BookingWithDetails, Property, Tenant, Origin, getOrigins } from "@/lib/data";
 import BookingsClient from "@/components/bookings-client";
 import { useAuth } from "@/components/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 
 interface BookingsData {
@@ -27,8 +28,9 @@ export default function BookingsPage() {
   const [filteredBookingCount, setFilteredBookingCount] = useState<number | null>(null);
   const searchParams = useSearchParams();
   const tenantId = searchParams.get('tenantId') || undefined;
+  const [key, setKey] = useState(0); // State to force re-render
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (user) {
         setLoading(true);
         Promise.all([
@@ -38,12 +40,21 @@ export default function BookingsPage() {
             getOrigins(),
         ]).then(([allBookings, properties, tenants, origins]) => {
             setData({ allBookings, properties, tenants, origins });
-            setFilteredBookingCount(allBookings.length);
+            if (filteredBookingCount === null) {
+              setFilteredBookingCount(allBookings.length);
+            }
             setLoading(false);
         });
     }
-  }, [user]);
+  }, [user, filteredBookingCount]);
+  
+  useEffect(() => {
+    fetchData();
+  }, [user, key]); // Re-fetch when user or key changes
 
+  const handleDataChanged = () => {
+    setKey(prevKey => prevKey + 1); // Increment key to trigger re-fetch
+  };
 
   if (loading || !data) {
       return <p>Cargando reservas...</p>;
@@ -83,6 +94,7 @@ export default function BookingsPage() {
         origins={origins}
         initialTenantIdFilter={tenantId}
         onFilteredBookingsChange={setFilteredBookingCount}
+        onDataChanged={handleDataChanged}
         />
     </CardContent>
     </Card>

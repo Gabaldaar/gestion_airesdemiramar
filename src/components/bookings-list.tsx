@@ -47,6 +47,7 @@ interface BookingsListProps {
   tenants: Tenant[];
   origins?: Origin[];
   showProperty?: boolean;
+  onDataChanged: () => void;
 }
 
 const contractStatusMap: Record<ContractStatus, { text: string, className: string }> = {
@@ -489,7 +490,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
 }
 
 
-export default function BookingsList({ bookings, properties, tenants, origins, showProperty = false }: BookingsListProps) {
+export default function BookingsList({ bookings, properties, tenants, origins, showProperty = false, onDataChanged }: BookingsListProps) {
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [addingPaymentForBookingId, setAddingPaymentForBookingId] = useState<string | undefined>(undefined);
@@ -553,12 +554,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     setPaymentPreloadData(data);
     setIsAddPaymentOpen(true);
   }
-
-  const handleUpdate = () => {
-    // This function will be called from child components.
-    // The parent component that fetches data will handle re-fetching.
-    // For now, it can be empty as revalidation is handled by server actions.
-  };
   
   const CardView = () => (
     <div className="space-y-4">
@@ -631,13 +626,13 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                 allBookings={bookings}
                 isOpen={isEditOpen}
                 onOpenChange={setIsEditOpen}
-                onBookingUpdated={handleUpdate}
+                onBookingUpdated={onDataChanged}
             />
         )}
         {addingPaymentForBookingId && (
              <PaymentAddForm
                 bookingId={addingPaymentForBookingId}
-                onPaymentAdded={handleUpdate}
+                onPaymentAdded={onDataChanged}
                 isOpen={isAddPaymentOpen}
                 onOpenChange={setIsAddPaymentOpen}
                 preloadData={paymentPreloadData}
@@ -646,7 +641,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
         {addingExpenseForBookingId && (
              <BookingExpenseAddForm
                 bookingId={addingExpenseForBookingId}
-                onExpenseAdded={handleUpdate}
+                onExpenseAdded={onDataChanged}
                 categories={expenseCategories}
                 isOpen={isAddExpenseOpen}
                 onOpenChange={setIsAddExpenseOpen}

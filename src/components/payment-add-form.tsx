@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -347,13 +348,13 @@ export function PaymentAddForm({
                 </Alert>
               )}
               {datosImputacion && (
-                <>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="categoria_id" className="text-right">
+                <div className="space-y-4">
+                  <div className="grid gap-1">
+                    <Label htmlFor="categoria_id">
                       Categoría
                     </Label>
                     <Select name="categoria_id" required={areFinanceFieldsRequired}>
-                      <SelectTrigger className="col-span-3">
+                      <SelectTrigger>
                         <SelectValue placeholder="Selecciona una categoría" />
                       </SelectTrigger>
                       <SelectContent>
@@ -365,12 +366,12 @@ export function PaymentAddForm({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="cuenta_id" className="text-right">
+                  <div className="grid gap-1">
+                    <Label htmlFor="cuenta_id">
                       Cuenta
                     </Label>
                     <Select name="cuenta_id" required={areFinanceFieldsRequired}>
-                      <SelectTrigger className="col-span-3">
+                      <SelectTrigger>
                         <SelectValue placeholder="Selecciona una cuenta" />
                       </SelectTrigger>
                       <SelectContent>
@@ -382,12 +383,12 @@ export function PaymentAddForm({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="billetera_id" className="text-right">
+                  <div className="grid gap-1">
+                    <Label htmlFor="billetera_id">
                       Billetera
                     </Label>
                     <Select name="billetera_id" required={areFinanceFieldsRequired}>
-                      <SelectTrigger className="col-span-3">
+                      <SelectTrigger>
                         <SelectValue placeholder="Selecciona una billetera" />
                       </SelectTrigger>
                       <SelectContent>
@@ -399,7 +400,7 @@ export function PaymentAddForm({
                       </SelectContent>
                     </Select>
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>

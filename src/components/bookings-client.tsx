@@ -50,9 +50,10 @@ interface BookingsClientProps {
   origins: Origin[];
   initialTenantIdFilter?: string;
   onFilteredBookingsChange: (count: number) => void;
+  onDataChanged: () => void;
 }
 
-export default function BookingsClient({ initialBookings, properties, tenants, origins, initialTenantIdFilter, onFilteredBookingsChange }: BookingsClientProps) {
+export default function BookingsClient({ initialBookings, properties, tenants, origins, initialTenantIdFilter, onFilteredBookingsChange, onDataChanged }: BookingsClientProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [statusFilters, setStatusFilters] = useState<StatusFilters>(initialStatusFilters);
@@ -376,7 +377,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
               </Button>
           </div>
       </div>
-      <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} origins={origins} showProperty={true} />
+      <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} origins={origins} showProperty={true} onDataChanged={onDataChanged} />
     </div>
   );
 }

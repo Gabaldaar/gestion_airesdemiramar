@@ -1,4 +1,5 @@
 
+'use client';
 
 import {
   Table,
@@ -18,9 +19,10 @@ import { ExpenseDeleteForm } from "./expense-delete-form";
 interface ExpensesListProps {
   expenses: PropertyExpense[];
   categories: ExpenseCategory[];
+  onDataChanged: () => void;
 }
 
-export default function ExpensesList({ expenses, categories }: ExpensesListProps) {
+export default function ExpensesList({ expenses, categories, onDataChanged }: ExpensesListProps) {
   if (expenses.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay gastos para mostrar.</p>;
   }
@@ -42,10 +44,6 @@ export default function ExpensesList({ expenses, categories }: ExpensesListProps
 
   const totalAmount = expenses.reduce((acc, expense) => acc + expense.amount, 0);
 
-  const handleAction = () => {
-    window.location.reload();
-  };
-
   return (
     <Table>
       <TableHeader>
@@ -66,8 +64,8 @@ export default function ExpensesList({ expenses, categories }: ExpensesListProps
             <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                    <ExpenseEditForm expense={expense} categories={categories} />
-                    <ExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleAction} />
+                    <ExpenseEditForm expense={expense} categories={categories} onExpenseUpdated={onDataChanged} />
+                    <ExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={onDataChanged} />
                 </div>
             </TableCell>
           </TableRow>

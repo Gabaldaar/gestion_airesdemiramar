@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Image from 'next/image';
@@ -24,7 +23,7 @@ import BookingsList from '@/components/bookings-list';
 import ExpensesList from '@/components/expenses-list';
 import { ExpenseAddForm } from '@/components/expense-add-form';
 import { PropertyNotesForm } from '@/components/property-notes-form';
-import { useEffect, useState, useMemo, FC } from 'react';
+import { useEffect, useState, useMemo, FC, useCallback } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Copy, Calendar as CalendarIcon, ExternalLink } from 'lucide-react';
@@ -93,45 +92,49 @@ export default function PropertyDetailPage() {
   const { toast } = useToast();
   const { width } = useWindowSize();
   const isMobile = width < 768;
+  const [key, setKey] = useState(0); // State to force re-render
+
+  const fetchData = useCallback(async () => {
+    if (user && propertyId) {
+        setLoading(true);
+        try {
+            const [property, properties, tenants, bookings, expenses, categories, origins] = await Promise.all([
+                getPropertyById(propertyId),
+                getProperties(),
+                getTenants(),
+                getBookingsByPropertyId(propertyId),
+                getPropertyExpensesByPropertyId(propertyId),
+                getExpenseCategories(),
+                getOrigins(),
+            ]);
+
+            if (!property) {
+                setData(null);
+            } else {
+                setData({ property, properties, tenants, bookings, expenses, categories, origins });
+            }
+        } catch (error) {
+            console.error("Error fetching property details:", error);
+            setData(null);
+        } finally {
+            setLoading(false);
+        }
+    }
+  }, [user, propertyId]);
+  
+  useEffect(() => {
+    fetchData();
+  }, [fetchData, key]); // Re-fetch when fetchData or key changes
+
+  const handleDataChanged = () => {
+    setKey(prevKey => prevKey + 1);
+  };
 
 
   useEffect(() => {
     // This runs on the client, so `window` is available
     setBaseUrl(window.location.origin);
   }, []);
-
-
-  useEffect(() => {
-    if (user && propertyId) {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const [property, properties, tenants, bookings, expenses, categories, origins] = await Promise.all([
-                    getPropertyById(propertyId),
-                    getProperties(),
-                    getTenants(),
-                    getBookingsByPropertyId(propertyId),
-                    getPropertyExpensesByPropertyId(propertyId),
-                    getExpenseCategories(),
-                    getOrigins(),
-                ]);
-
-                if (!property) {
-                    // Not found logic will be handled by the return below
-                    setData(null);
-                } else {
-                    setData({ property, properties, tenants, bookings, expenses, categories, origins });
-                }
-            } catch (error) {
-                console.error("Error fetching property details:", error);
-                setData(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }
-  }, [user, propertyId]);
   
     const dayModifiers = useMemo(() => {
         if (!data) return {};
@@ -296,7 +299,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <BookingsList bookings={bookings} properties={properties} tenants={tenants} origins={origins} />
+                <BookingsList bookings={bookings} properties={properties} tenants={tenants} origins={origins} onDataChanged={handleDataChanged} />
                 </CardContent>
             </Card>
             </TabsContent>
@@ -309,7 +312,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <ExpensesList expenses={expenses} categories={categories} />
+                <ExpensesList expenses={expenses} categories={categories} onDataChanged={handleDataChanged} />
                 </CardContent>
             </Card>
             </TabsContent>

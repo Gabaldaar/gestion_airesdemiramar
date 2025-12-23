@@ -49,7 +49,7 @@ import {
   BookingStatus,
 } from './data';
 import { db } from './firebase';
-import { doc, getDoc, FieldPath } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 // Define the payload for the finance API registration
 export interface RegistrarCobroPayload {
@@ -835,7 +835,7 @@ export async function addPayment(previousState: any, formData: FormData) {
         }
         return {
             success: true,
-            message: `Pago guardado y sincronizado. ID remoto: ${financeApiResult.id_registro_creado}`,
+            message: "Pago guardado y sincronizado con la app de finanzas.",
         };
     }
 

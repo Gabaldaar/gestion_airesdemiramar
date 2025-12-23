@@ -63,7 +63,7 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, onPaymentDeleted]);
+  }, [state]);
   
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
