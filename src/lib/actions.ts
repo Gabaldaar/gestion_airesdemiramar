@@ -160,7 +160,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
     customField4Label: formData.get('customField4Value') as string,
     customField5Label: formData.get('customField5Value') as string,
     customField5Value: formData.get('customField5Value') as string,
-    customField6Label: formData.get('customField6Label') as string,
+    customField6Label: formData.get('customField6Value') as string,
     customField6Value: formData.get('customField6Value') as string,
   };
 
@@ -728,17 +728,20 @@ export async function addPayment(previousState: any, formData: FormData) {
     !bookingId ||
     !originalAmount ||
     !currency ||
-    !date ||
-    !categoria_id ||
-    !cuenta_id ||
-    !billetera_id
+    !date
   ) {
     return {
       success: false,
       message:
-        'Todos los campos, incluidos los de finanzas, son obligatorios.',
+        'Faltan campos obligatorios para el pago.',
     };
   }
+  
+  const hasFinanceFields = categoria_id && cuenta_id && billetera_id;
+  if (!hasFinanceFields) {
+      console.warn("Faltan campos de finanzas, el pago no será sincronizado.");
+  }
+
 
   const paymentPayload: {
     bookingId: string;
@@ -795,7 +798,7 @@ export async function addPayment(previousState: any, formData: FormData) {
     const newPayment = await addPaymentDb(paymentPayload as Omit<Payment, 'id'>);
     const booking = await getBookingById(bookingId);
 
-    if (booking) {
+    if (booking && hasFinanceFields) {
       const tenant = await getTenantById(booking.tenantId);
       const property = await getPropertyById(booking.propertyId);
 
@@ -832,8 +835,13 @@ export async function addPayment(previousState: any, formData: FormData) {
     if (booking) {
       revalidatePathsAfterBooking(booking.propertyId);
     }
+    
+    let successMessage = 'Pago añadido correctamente.';
+    if(hasFinanceFields) successMessage += ' y sincronizado con Finanzas.';
+    else successMessage += ' No se sincronizó con Finanzas por falta de datos.'
 
-    return { success: true, message: 'Pago añadido y sincronizado con Finanzas.' };
+
+    return { success: true, message: successMessage };
   } catch (error: any) {
     console.error(error);
     return { success: false, message: `Error de base de datos: ${error.message}` };

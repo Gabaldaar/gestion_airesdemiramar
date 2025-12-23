@@ -11,8 +11,8 @@ export async function GET(request: Request) {
     const externalApiUrl = `${API_BASE_URL}/api/datos-imputacion`;
 
     if (!FINANCE_API_KEY) {
-        // This check is for our own server's configuration, just in case.
-        throw new Error("Internal Server Error: API Key not configured on this server.");
+        // This is an internal sanity check.
+        throw new Error("Internal Server Error: API Key not configured.");
     }
 
     const headersForExternalApi = {
@@ -37,9 +37,10 @@ export async function GET(request: Request) {
         try {
             errorBody = await response.text();
         } catch (e2) {
-             // Ignore if we can't read the body
+             // Ignore if we can't read the body, use the default message.
         }
       }
+      // Prepend the status code to the error message for clarity.
       throw new Error(`Error ${response.status}: ${errorBody}`);
     }
     

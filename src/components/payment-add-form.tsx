@@ -202,8 +202,7 @@ export function PaymentAddForm({
         <DialogHeader>
           <DialogTitle>Añadir Pago</DialogTitle>
           <DialogDescription>
-            Completa los datos del pago. Se registrará en esta app y en el
-            sistema de finanzas.
+            Completa los datos del pago. Se registrará en esta app y se intentará sincronizar con el sistema de finanzas.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} ref={formRef}>
