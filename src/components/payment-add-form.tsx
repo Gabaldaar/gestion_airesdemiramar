@@ -32,7 +32,6 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 
-// Define types here since finance-api.ts is removed
 export interface Categoria { id: string; nombre: string; }
 export interface Cuenta { id: string; nombre: string; }
 export interface Billetera { id: string; nombre: string; }
@@ -41,7 +40,6 @@ export interface DatosImputacion {
     cuentas: Cuenta[];
     billeteras: Billetera[];
 }
-
 
 const initialState = {
   message: '',
@@ -99,10 +97,6 @@ export function PaymentAddForm({
   const [isFetchingFinanceData, setIsFetchingFinanceData] = useState(false);
   const [financeApiError, setFinanceApiError] = useState<string | null>(null);
   
-  const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW';
-  const API_BASE_URL = 'https://gestionomiscuentas.netlify.app';
-
-
   const formAction = (formData: FormData) => {
     startTransition(async () => {
       const result = await addPayment(initialState, formData);
@@ -163,23 +157,12 @@ export function PaymentAddForm({
       setIsFetchingFinanceData(true);
       setFinanceApiError(null);
       try {
-        const externalApiUrl = `${API_BASE_URL}/api/datos-imputacion`;
-
-        const headersForExternalApi = {
-          'Authorization': `Bearer ${FINANCE_API_KEY}`,
-          'Content-Type': 'application/json',
-        };
-
-        const response = await fetch(externalApiUrl, {
-          method: 'GET',
-          headers: headersForExternalApi,
-          cache: 'no-store', // Prevent caching of the API response
-        });
+        const response = await fetch('/api/finance-proxy');
         
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Respuesta no válida de la API de finanzas.');
+          throw new Error(data.error || 'Respuesta no válida del proxy de finanzas.');
         }
 
         setDatosImputacion(data);
@@ -188,11 +171,6 @@ export function PaymentAddForm({
           error instanceof Error ? error.message : 'Error desconocido.';
         console.error('Error fetching finance data:', errorMessage);
         setFinanceApiError(`No se pudo conectar a la API de finanzas. Causa: ${errorMessage}`);
-        toast({
-          title: 'Error de API de Finanzas',
-          description: `No se pudieron cargar los datos de imputación.`,
-          variant: 'destructive',
-        });
       } finally {
         setIsFetchingFinanceData(false);
       }
@@ -205,9 +183,8 @@ export function PaymentAddForm({
         setCurrency(preloadData.currency);
         setExchangeRate(preloadData.exchangeRate?.toString() || '');
       } else {
-        // Only reset if not preloading data
         resetForm();
-        fetchFinanceData(); // Fetch again after reset
+        fetchFinanceData();
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

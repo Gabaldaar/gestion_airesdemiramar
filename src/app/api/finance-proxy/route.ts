@@ -2,13 +2,18 @@
 import { NextResponse } from 'next/server';
 
 // --- Configuration ---
+// THIS IS THE CORRECT, CENTRALIZED PLACE FOR THE KEY
+const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW'; 
 const API_BASE_URL = 'https://gestionomiscuentas.netlify.app';
-const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW'; // Hardcoded for simplicity and robustness
 
 // This handles GET requests to /api/finance-proxy
 export async function GET(request: Request) {
   try {
     const externalApiUrl = `${API_BASE_URL}/api/datos-imputacion`;
+
+    if (!FINANCE_API_KEY) {
+        throw new Error("Internal Server Error: API Key not configured.");
+    }
 
     const headersForExternalApi = {
       'Authorization': `Bearer ${FINANCE_API_KEY}`,
@@ -30,13 +35,7 @@ export async function GET(request: Request) {
     const data = await response.json();
     
     // Return the successful response from the external API to our client
-    return NextResponse.json(data, {
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        }
-    });
+    return NextResponse.json(data);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido en el servidor proxy.';
@@ -45,24 +44,7 @@ export async function GET(request: Request) {
       { error: `Error en el proxy interno: ${errorMessage}` },
       { 
         status: 500,
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        }
       }
     );
   }
-}
-
-// This handles the preflight OPTIONS request from the browser
-export async function OPTIONS(request: Request) {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
 }
