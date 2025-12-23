@@ -28,10 +28,20 @@ import {
   SelectValue,
 } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { DatosImputacion } from '@/lib/finance-api';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { useToast } from './ui/use-toast';
+
+// Define types here since finance-api.ts is removed
+export interface Categoria { id: string; nombre: string; }
+export interface Cuenta { id: string; nombre: string; }
+export interface Billetera { id: string; nombre: string; }
+export interface DatosImputacion {
+    categorias: Categoria[];
+    cuentas: Cuenta[];
+    billeteras: Billetera[];
+}
+
 
 const initialState = {
   message: '',
@@ -149,25 +159,23 @@ export function PaymentAddForm({
       setIsFetchingFinanceData(true);
       setFinanceApiError(null);
       try {
-        const response = await fetch('/api/finance-proxy');
+        const response = await fetch('/api/finance-proxy'); // Calling our own simple proxy
+        
+        const data = await response.json();
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.error ||
-              'No se pudo conectar con la API de finanzas. Los campos de imputación no estarán disponibles.'
-          );
+          throw new Error(data.error || 'Respuesta no válida de la API de finanzas.');
         }
-        const data: DatosImputacion = await response.json();
+
         setDatosImputacion(data);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Error desconocido.';
         console.error('Error fetching finance data:', errorMessage);
-        setFinanceApiError(errorMessage);
+        setFinanceApiError(`No se pudo conectar a la API de finanzas. Causa: ${errorMessage}`);
         toast({
           title: 'Error de API de Finanzas',
-          description: `No se pudieron cargar los datos de imputación: ${errorMessage}`,
+          description: `No se pudieron cargar los datos de imputación.`,
           variant: 'destructive',
         });
       } finally {
@@ -182,10 +190,12 @@ export function PaymentAddForm({
         setCurrency(preloadData.currency);
         setExchangeRate(preloadData.exchangeRate?.toString() || '');
       } else {
-        // Reset only if not preloading data
+        // Only reset if not preloading data
         resetForm();
+        fetchFinanceData(); // Fetch again after reset
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, preloadData, toast]);
 
   const handleCurrencyChange = (value: string) => {

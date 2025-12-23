@@ -50,18 +50,34 @@ import {
 } from './data';
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { RegistrarCobroPayload } from './finance-api';
+
+// Define the payload for the finance API registration
+export interface RegistrarCobroPayload {
+    fecha: string;                   // ISO 8601
+    monto: number;
+    moneda: 'ARS' | 'USD';
+    monto_usd?: number;              // Optional for ARS payments
+    tasa_cambio?: number;            // Optional for ARS payments
+    categoria_id: string;
+    cuenta_id: string;
+    billetera_id: string;
+    descripcion: string;
+    id_externo?: string;
+}
+
 
 export async function registrarCobro(payload: RegistrarCobroPayload) {
-  // Use the NEXT_PUBLIC_APP_URL to construct the absolute URL for the API route
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const apiUrl = `${appUrl}/api/registrar-cobro`;
+  // This is the API Key for the external finance app
+  const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW'; 
+  const API_BASE_URL = 'https://gestionomiscuentas.netlify.app';
+  const apiUrl = `${API_BASE_URL}/api/registrar-cobro`;
 
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${FINANCE_API_KEY}`,
       },
       body: JSON.stringify(payload),
       cache: 'no-store',
