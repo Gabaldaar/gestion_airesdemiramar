@@ -156,7 +156,7 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
     const handleCopy = () => {
         if (!booking) return;
 
-        const textToCopy = `Reserva para ${booking.tenant?.name || 'N/A'} en ${booking.property?.name || 'N/A'}\n\nMonto a pagar en USD: ${formatCurrency(resultUSD, 'USD')}\nMonto a pagar en Pesos: ${formatCurrency(resultARS, 'ARS')}`;
+        const textToCopy = `*Reserva para ${booking.tenant?.name || 'N/A'} en ${booking.property?.name || 'N/A'}*\n\nMonto a pagar en USD: ${formatCurrency(resultUSD, 'USD')}\nMonto a pagar en Pesos: ${formatCurrency(resultARS, 'ARS')}`;
         
         navigator.clipboard.writeText(textToCopy);
         toast({
@@ -335,38 +335,22 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
                             <div className="border rounded-lg p-4 space-y-2 flex flex-col">
                                 <Label className="text-muted-foreground">Monto a Pagar (USD)</Label>
                                 <p className="text-2xl font-bold flex-grow">{formatCurrency(resultUSD, 'USD')}</p>
-                                <div className='flex gap-2 self-end'>
-                                    {onRegisterPayment && (
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button variant="default" size="icon" onClick={() => handleRegister('USD')}><FileText className="h-4 w-4" /></Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Registrar Pago en USD</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    )}
-                                </div>
+                                {onRegisterPayment && (
+                                    <Button onClick={() => handleRegister('USD')} className="self-start">
+                                        <FileText className="mr-2 h-4 w-4"/>
+                                        Registrar Pago
+                                    </Button>
+                                )}
                             </div>
                             <div className="border rounded-lg p-4 space-y-2 flex flex-col">
                                 <Label className="text-muted-foreground">Monto a Pagar (ARS)</Label>
                                 <p className="text-2xl font-bold flex-grow">{formatCurrency(resultARS, 'ARS')}</p>
-                                <div className='flex gap-2 self-end'>
-                                     {onRegisterPayment && (
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button variant="default" size="icon" onClick={() => handleRegister('ARS')}><FileText className="h-4 w-4" /></Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Registrar Pago en ARS</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    )}
-                                </div>
+                                {onRegisterPayment && (
+                                    <Button onClick={() => handleRegister('ARS')} className="self-start">
+                                        <FileText className="mr-2 h-4 w-4"/>
+                                        Registrar Pago
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>
