@@ -23,7 +23,7 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { DatosImputacion } from '@/lib/finance-api';
+import { DatosImputacion, API_BASE_URL, FINANCE_API_KEY } from '@/lib/finance-api';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
@@ -122,23 +122,25 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
         setIsFetchingFinanceData(true);
         setFinanceApiError(null);
         try {
-            const apiKey = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW'; // Hardcoded API Key
-            const response = await fetch('/api/finance-proxy/datos-imputacion', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey: apiKey }),
+            // Direct API call from the client with Authorization header
+            const response = await fetch(`${API_BASE_URL}/api/datos-imputacion`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${FINANCE_API_KEY}`,
+                  'Content-Type': 'application/json'
+                },
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `Failed to fetch from proxy`);
+                const errorData = await response.json().catch(() => ({ error: "Error de conexión." }));
+                throw new Error(errorData.error || `Error ${response.status}`);
             }
             const data: DatosImputacion = await response.json();
             setDatosImputacion(data);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Error desconocido."
             console.error("Error fetching finance data:", errorMessage);
-            setFinanceApiError(`Failed to connect to the finance API via proxy: ${errorMessage}`);
+            setFinanceApiError(`No se pudo conectar a la API de finanzas. Causa: ${errorMessage}`);
         } finally {
             setIsFetchingFinanceData(false);
         }
@@ -151,10 +153,7 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
             setCurrency(preloadData.currency);
             setExchangeRate(preloadData.exchangeRate?.toString() || '');
         } else {
-            setAmount('');
-            setCurrency('USD');
-            setExchangeRate('');
-            setDate(new Date());
+            resetForm();
         }
     } else {
         resetForm();

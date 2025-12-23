@@ -50,7 +50,7 @@ import {
 } from "./data";
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { RegistrarCobroPayload, API_BASE_URL, apiHeaders } from './finance-api';
+import { RegistrarCobroPayload, API_BASE_URL, FINANCE_API_KEY } from './finance-api';
 
 
 /**
@@ -62,7 +62,10 @@ export async function registrarCobro(payload: RegistrarCobroPayload) {
      try {
         const response = await fetch(`${API_BASE_URL}/api/registrar-cobro`, {
             method: 'POST',
-            headers: apiHeaders,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${FINANCE_API_KEY}`
+            },
             body: JSON.stringify(payload),
             cache: 'no-store',
         });
