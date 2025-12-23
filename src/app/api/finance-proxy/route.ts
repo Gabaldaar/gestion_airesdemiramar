@@ -2,7 +2,6 @@
 import { NextResponse } from 'next/server';
 
 // --- Configuration ---
-// THIS IS THE CORRECT, CENTRALIZED PLACE FOR THE KEY
 const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW'; 
 const API_BASE_URL = 'https://gestionomiscuentas.netlify.app';
 
@@ -13,7 +12,7 @@ export async function GET(request: Request) {
 
     if (!FINANCE_API_KEY) {
         // This check is for our own server's configuration, just in case.
-        throw new Error("Internal Server Error: API Key not configured.");
+        throw new Error("Internal Server Error: API Key not configured on this server.");
     }
 
     const headersForExternalApi = {
@@ -27,12 +26,24 @@ export async function GET(request: Request) {
       cache: 'no-store', // Prevent caching of the API response
     });
 
-    const data = await response.json();
-
+    // Try to get a more detailed error message from the external API
     if (!response.ok) {
-      // Forward the error from the external API
-      throw new Error(data.error || `La API de finanzas devolvió un error ${response.status}.`);
+      let errorBody = 'La API de finanzas devolvió un error sin detalles.';
+      try {
+        const errorJson = await response.json();
+        errorBody = errorJson.error || errorJson.message || JSON.stringify(errorJson);
+      } catch (e) {
+        // Could not parse JSON, maybe it's plain text
+        try {
+            errorBody = await response.text();
+        } catch (e2) {
+             // Ignore if we can't read the body
+        }
+      }
+      throw new Error(`Error ${response.status}: ${errorBody}`);
     }
+    
+    const data = await response.json();
     
     // Return the successful response from the external API to our client
     return NextResponse.json(data);
