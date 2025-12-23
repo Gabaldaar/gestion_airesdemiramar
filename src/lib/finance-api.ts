@@ -36,10 +36,5 @@ export interface RegistrarCobroPayload {
 
 // --- Configuration ---
 export const API_BASE_URL = 'https://gestionomiscuentas.netlify.app';
-// THIS IS THE CORRECT, CENTRALIZED PLACE FOR THE KEY
-export const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW'; 
+export const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW';
 
-export const apiHeaders = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${FINANCE_API_KEY}`
-};

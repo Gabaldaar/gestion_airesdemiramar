@@ -23,7 +23,7 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { DatosImputacion, API_BASE_URL, FINANCE_API_KEY } from '@/lib/finance-api';
+import { DatosImputacion } from '@/lib/finance-api';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
@@ -122,14 +122,8 @@ export function PaymentAddForm({ bookingId, onPaymentAdded, isOpen, onOpenChange
         setIsFetchingFinanceData(true);
         setFinanceApiError(null);
         try {
-            // Direct API call from the client with Authorization header
-            const response = await fetch(`${API_BASE_URL}/api/datos-imputacion`, {
-                method: 'GET',
-                headers: {
-                  'Authorization': `Bearer ${FINANCE_API_KEY}`,
-                  'Content-Type': 'application/json'
-                },
-            });
+            // Call our own proxy API route
+            const response = await fetch('/api/finance-proxy');
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: "Error de conexión." }));
