@@ -134,7 +134,8 @@ export function PaymentAddForm({
         onPaymentAdded();
       }
     }
-  }, [state, onPaymentAdded, onOpenChange, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
 
   const resetForm = () => {

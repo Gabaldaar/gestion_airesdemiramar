@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { deletePayment } from '@/lib/actions';
 import { Trash2, Loader2 } from 'lucide-react';
+import { useToast } from './ui/use-toast';
 
 const initialState = {
   message: '',
@@ -40,6 +41,7 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
   const [isOpen, setIsOpen] = useState(false);
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -49,10 +51,18 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
   }
 
   useEffect(() => {
-    if (state.success) {
-      setIsOpen(false);
-      onPaymentDeleted();
+    if (state.message) {
+      toast({
+        title: state.success ? 'Éxito' : 'Error',
+        description: state.message,
+        variant: state.success ? 'default' : 'destructive',
+      });
+      if (state.success) {
+        setIsOpen(false);
+        onPaymentDeleted();
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, onPaymentDeleted]);
   
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -92,5 +102,3 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
     </Dialog>
   );
 }
-
-    

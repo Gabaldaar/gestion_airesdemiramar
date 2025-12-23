@@ -555,8 +555,9 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   }
 
   const handleUpdate = () => {
-    // A simple page refresh is enough when server actions handle revalidation
-    window.location.reload();
+    // This function will be called from child components.
+    // The parent component that fetches data will handle re-fetching.
+    // For now, it can be empty as revalidation is handled by server actions.
   };
   
   const CardView = () => (
@@ -676,5 +677,3 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
-
-    
