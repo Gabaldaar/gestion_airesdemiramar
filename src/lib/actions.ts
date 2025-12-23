@@ -798,6 +798,7 @@ export async function addPayment(previousState: any, formData: FormData) {
     const newPayment = await addPaymentDb(paymentPayload as Omit<Payment, 'id'>);
     const booking = await getBookingById(bookingId);
 
+    let financeApiResult;
     if (booking && hasFinanceFields) {
       const tenant = await getTenantById(booking.tenantId);
       const property = await getPropertyById(booking.propertyId);
@@ -818,30 +819,31 @@ export async function addPayment(previousState: any, formData: FormData) {
         }`,
         id_externo: newPayment.id,
       };
-      const financeApiResult = await registrarCobro(cobroPayload);
-
-      if (!financeApiResult.success) {
-        // Optional: Rollback payment creation or just warn the user
-        console.warn('Finance API registration failed:', financeApiResult.error);
-        // For simplicity, we'll just revalidate and let the user know.
-        revalidatePathsAfterBooking(booking.propertyId);
-        return {
-          success: true,
-          message: `Pago guardado en esta app, pero falló la sincronización con Finanzas: ${financeApiResult.error}`,
-        };
-      }
+      financeApiResult = await registrarCobro(cobroPayload);
     }
 
     if (booking) {
       revalidatePathsAfterBooking(booking.propertyId);
     }
     
-    let successMessage = 'Pago añadido correctamente.';
-    if(hasFinanceFields) successMessage += ' y sincronizado con Finanzas.';
-    else successMessage += ' No se sincronizó con Finanzas por falta de datos.'
+    if (hasFinanceFields && financeApiResult) {
+        if (!financeApiResult.success) {
+             return {
+                success: true, // The payment was saved locally
+                message: `Pago guardado, pero falló la sincronización: ${financeApiResult.error || 'Error desconocido'}.`,
+             };
+        }
+        return {
+            success: true,
+            message: `Pago guardado y sincronizado. Respuesta API: ${JSON.stringify(financeApiResult)}`,
+        };
+    }
 
+    return { 
+        success: true, 
+        message: 'Pago guardado localmente. No se sincronizó con finanzas por falta de datos.' 
+    };
 
-    return { success: true, message: successMessage };
   } catch (error: any) {
     console.error(error);
     return { success: false, message: `Error de base de datos: ${error.message}` };

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -52,9 +51,9 @@ export interface PaymentPreloadData {
   exchangeRate?: number;
 }
 
-function SubmitButton({ isPending }: { isPending: boolean }) {
+function SubmitButton({ isPending, disabled }: { isPending: boolean; disabled?: boolean }) {
   return (
-    <Button type="submit" disabled={isPending}>
+    <Button type="submit" disabled={isPending || disabled}>
       {isPending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -157,11 +156,14 @@ export function PaymentAddForm({
       resetForm();
     }
   }, [isOpen]);
+  
+  const areFinanceFieldsRequired = !!datosImputacion;
 
   useEffect(() => {
     const fetchFinanceData = async () => {
       setIsFetchingFinanceData(true);
       setFinanceApiError(null);
+      setDatosImputacion(null);
       try {
         const response = await fetch('/api/finance-proxy');
         const data = await response.json();
@@ -170,6 +172,11 @@ export function PaymentAddForm({
           throw new Error(data.error || 'Respuesta no válida del proxy de finanzas.');
         }
 
+        // Validate that the returned data has the expected structure
+        if (!data.categorias || !data.cuentas || !data.billeteras) {
+            throw new Error('La API de finanzas devolvió datos con formato incorrecto.');
+        }
+        
         setDatosImputacion(data);
       } catch (error) {
         const errorMessage =
@@ -336,7 +343,7 @@ export function PaymentAddForm({
               {financeApiError && !isFetchingFinanceData && (
                  <Alert variant="destructive" className="col-span-4">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Error de API de Finanzas</AlertTitle>
+                    <AlertTitle>No se sincronizará con Finanzas</AlertTitle>
                     <AlertDescription>{financeApiError}</AlertDescription>
                 </Alert>
               )}
@@ -346,7 +353,7 @@ export function PaymentAddForm({
                     <Label htmlFor="categoria_id" className="text-right">
                       Categoría
                     </Label>
-                    <Select name="categoria_id" required>
+                    <Select name="categoria_id" required={areFinanceFieldsRequired}>
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Selecciona una categoría" />
                       </SelectTrigger>
@@ -363,7 +370,7 @@ export function PaymentAddForm({
                     <Label htmlFor="cuenta_id" className="text-right">
                       Cuenta
                     </Label>
-                    <Select name="cuenta_id" required>
+                    <Select name="cuenta_id" required={areFinanceFieldsRequired}>
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Selecciona una cuenta" />
                       </SelectTrigger>
@@ -380,7 +387,7 @@ export function PaymentAddForm({
                     <Label htmlFor="billetera_id" className="text-right">
                       Billetera
                     </Label>
-                    <Select name="billetera_id" required>
+                    <Select name="billetera_id" required={areFinanceFieldsRequired}>
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Selecciona una billetera" />
                       </SelectTrigger>
