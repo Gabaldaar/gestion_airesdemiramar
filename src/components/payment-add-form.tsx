@@ -98,6 +98,10 @@ export function PaymentAddForm({
     useState<DatosImputacion | null>(null);
   const [isFetchingFinanceData, setIsFetchingFinanceData] = useState(false);
   const [financeApiError, setFinanceApiError] = useState<string | null>(null);
+  
+  const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW';
+  const API_BASE_URL = 'https://gestionomiscuentas.netlify.app';
+
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -159,7 +163,18 @@ export function PaymentAddForm({
       setIsFetchingFinanceData(true);
       setFinanceApiError(null);
       try {
-        const response = await fetch('/api/finance-proxy'); // Calling our own simple proxy
+        const externalApiUrl = `${API_BASE_URL}/api/datos-imputacion`;
+
+        const headersForExternalApi = {
+          'Authorization': `Bearer ${FINANCE_API_KEY}`,
+          'Content-Type': 'application/json',
+        };
+
+        const response = await fetch(externalApiUrl, {
+          method: 'GET',
+          headers: headersForExternalApi,
+          cache: 'no-store', // Prevent caching of the API response
+        });
         
         const data = await response.json();
 
