@@ -151,6 +151,12 @@ export function PaymentAddForm({
     setDatosImputacion(null);
     setFinanceApiError(null);
   };
+  
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const fetchFinanceData = async () => {
@@ -158,9 +164,8 @@ export function PaymentAddForm({
       setFinanceApiError(null);
       try {
         const response = await fetch('/api/finance-proxy');
-        
         const data = await response.json();
-
+        
         if (!response.ok) {
           throw new Error(data.error || 'Respuesta no válida del proxy de finanzas.');
         }
@@ -182,13 +187,9 @@ export function PaymentAddForm({
         setAmount(preloadData.amount.toString());
         setCurrency(preloadData.currency);
         setExchangeRate(preloadData.exchangeRate?.toString() || '');
-      } else {
-        resetForm();
-        fetchFinanceData();
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, preloadData, toast]);
+  }, [isOpen, preloadData]);
 
   const handleCurrencyChange = (value: string) => {
     const newCurrency = value as 'ARS' | 'USD';

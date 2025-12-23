@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     const externalApiUrl = `${API_BASE_URL}/api/datos-imputacion`;
 
     if (!FINANCE_API_KEY) {
+        // This check is for our own server's configuration, just in case.
         throw new Error("Internal Server Error: API Key not configured.");
     }
 
@@ -26,13 +27,12 @@ export async function GET(request: Request) {
       cache: 'no-store', // Prevent caching of the API response
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      // Throw an error with a clear message, which will be caught below
-      throw new Error(errorData.error || `La API de finanzas devolvió un error ${response.status}.`);
-    }
-
     const data = await response.json();
+
+    if (!response.ok) {
+      // Forward the error from the external API
+      throw new Error(data.error || `La API de finanzas devolvió un error ${response.status}.`);
+    }
     
     // Return the successful response from the external API to our client
     return NextResponse.json(data);
@@ -40,6 +40,7 @@ export async function GET(request: Request) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido en el servidor proxy.';
     console.error('[FINANCE PROXY ERROR]', errorMessage);
+    // Return a structured error response to the client
     return NextResponse.json(
       { error: `Error en el proxy interno: ${errorMessage}` },
       { 
