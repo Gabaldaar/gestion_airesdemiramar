@@ -14,7 +14,8 @@ import {
   Timestamp,
   writeBatch,
   collectionGroup,
-  setDoc
+  setDoc,
+  FieldPath
 } from 'firebase/firestore';
 
 
