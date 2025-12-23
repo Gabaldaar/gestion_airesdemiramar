@@ -454,15 +454,18 @@ export async function deleteBooking(previousState: any, formData: FormData) {
   }
 }
 
-const revalidatePathsAfterBooking = (propertyId: string) => {
+const revalidatePathsAfterAction = (propertyId: string) => {
   revalidatePath(`/properties/${propertyId}`);
-  revalidatePath(`/api/ical/${propertyId}`);
   revalidatePath('/bookings');
   revalidatePath('/'); // Revalidate dashboard
   revalidatePath('/reports');
   revalidatePath('/payments');
   revalidatePath('/expenses');
+  if (propertyId) {
+      revalidatePath(`/api/ical/${propertyId}`);
+  }
 };
+
 
 const handleExpenseData = (formData: FormData) => {
   const originalAmount = parseFloat(formData.get('amount') as string);
@@ -632,7 +635,7 @@ export async function addBookingExpense(previousState: any, formData: FormData) 
     await addBookingExpenseDb(newExpense as Omit<BookingExpense, 'id'>);
     const booking = await getBookingById(bookingId);
     if (booking) {
-      revalidatePathsAfterBooking(booking.propertyId);
+      revalidatePathsAfterAction(booking.propertyId);
     }
     return { success: true, message: 'Gasto de reserva añadido correctamente.' };
   } catch (error: any) {
@@ -668,7 +671,7 @@ export async function updateBookingExpense(
     await updateBookingExpenseDb(updatedExpense);
     const booking = await getBookingById(bookingId);
     if (booking) {
-      revalidatePathsAfterBooking(booking.propertyId);
+      revalidatePathsAfterAction(booking.propertyId);
     }
     return { success: true, message: 'Gasto de reserva actualizado correctamente.' };
   } catch (error: any) {
@@ -702,7 +705,7 @@ export async function deleteBookingExpense(
     if (bookingId) {
       const booking = await getBookingById(bookingId);
       if (booking) {
-        revalidatePathsAfterBooking(booking.propertyId);
+        revalidatePathsAfterAction(booking.propertyId);
       }
     }
     return { success: true, message: 'Gasto de reserva eliminado correctamente.' };
@@ -817,13 +820,12 @@ export async function addPayment(previousState: any, formData: FormData) {
         descripcion: `Pago reserva ${property?.name || ''} - ${
           tenant?.name || ''
         }`,
-        id_externo: newPayment.id,
       };
       financeApiResult = await registrarCobro(cobroPayload);
     }
 
     if (booking) {
-      revalidatePathsAfterBooking(booking.propertyId);
+      revalidatePathsAfterAction(booking.propertyId);
     }
     
     if (hasFinanceFields && financeApiResult) {
@@ -916,7 +918,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
     await updatePaymentDb(paymentPayload as Payment);
     const booking = await getBookingById(bookingId);
     if (booking) {
-      revalidatePathsAfterBooking(booking.propertyId);
+      revalidatePathsAfterAction(booking.propertyId);
     }
     return { success: true, message: 'Pago actualizado correctamente.' };
   } catch (error: any) {
@@ -944,14 +946,10 @@ export async function deletePayment(previousState: any, formData: FormData) {
     if (bookingId) {
       const booking = await getBookingById(bookingId);
       if (booking) {
-        revalidatePathsAfterBooking(booking.propertyId);
+        revalidatePathsAfterAction(booking.propertyId);
       }
     }
 
-    // Fallback revalidation in case booking was already deleted
-    revalidatePath('/payments');
-    revalidatePath('/bookings');
-    revalidatePath('/reports');
     return { success: true, message: 'Pago eliminado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -1188,3 +1186,5 @@ export async function savePushSubscription(subscription: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
+
+    
