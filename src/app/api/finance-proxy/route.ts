@@ -1,7 +1,6 @@
 
 import { NextResponse } from 'next/server';
 
-// Configuration is now self-contained within the proxy
 const API_BASE_URL = 'https://gestionomiscuentas.netlify.app';
 const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW';
 
@@ -19,7 +18,7 @@ async function handler(request: Request) {
     // These headers are for the browser's response from OUR proxy
     const headersForBrowser = {
       'Access-Control-Allow-Origin': '*',
-      'Access-control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
 
