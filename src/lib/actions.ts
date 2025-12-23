@@ -49,7 +49,7 @@ import {
   BookingStatus,
 } from './data';
 import { db } from './firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, FieldPath } from 'firebase/firestore';
 
 // Define the payload for the finance API registration
 export interface RegistrarCobroPayload {
