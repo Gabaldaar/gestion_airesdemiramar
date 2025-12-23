@@ -53,12 +53,8 @@ async function checkAndSendNotifications() {
     const alertSettings = alertSettingsSnap.data();
 
     // Usar valores dinámicos o por defecto si no existen
-    const CHECKIN_NOTIFICATION_DAYS = alertSettings?.checkInDays ? [alertSettings.checkInDays] : [7, 4, 2, 1];
-    const CHECKOUT_NOTIFICATION_DAYS = alertSettings?.checkOutDays ? [alertSettings.checkOutDays] : [3, 2, 1];
-    
-    // Si los días de aviso son valores únicos, los convertimos en arrays para que la lógica funcione
-    const checkInDaysArray = Array.isArray(CHECKIN_NOTIFICATION_DAYS) ? CHECKIN_NOTIFICATION_DAYS : [CHECKIN_NOTIFICATION_DAYS];
-    const checkOutDaysArray = Array.isArray(CHECKOUT_NOTIFICATION_DAYS) ? CHECKOUT_NOTIFICATION_DAYS : [CHECKOUT_NOTIFICATION_DAYS];
+    const MAX_CHECKIN_DAYS = alertSettings?.checkInDays ?? 7;
+    const MAX_CHECKOUT_DAYS = alertSettings?.checkOutDays ?? 3;
 
 
     const notificationTriggers: NotificationTriggerData[] = [];
@@ -100,36 +96,36 @@ async function checkAndSendNotifications() {
         const daysUntilCheckout = differenceInDays(rentalEndDate, today);
 
         // --- Lógica de Notificación para Check-in ---
-        if (daysUntilCheckin >= 0) {
-            for (const day of checkInDaysArray) {
-                const flagField = `checkin_notification_sent_${day}_days`;
-                if (daysUntilCheckin === day && !rental[flagField]) {
-                    notificationTriggers.push({
-                        id: `${doc.id}-checkin-${day}d`,
-                        title: `Próximo Check-in en ${day} ${day > 1 ? 'días' : 'día'}`,
-                        body: `El check-in de ${rental.tenantName} en "${rental.propertyName}" es en ${day} ${day > 1 ? 'días' : 'día'}.`,
-                        icon: '/icons/icon-192x192.png',
-                        docPath: doc.ref.path,
-                        fieldToUpdate: flagField
-                    });
-                }
+        // Notifica para cada día desde el máximo configurado hasta 1 día antes.
+        if (daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS) {
+            const day = daysUntilCheckin;
+            const flagField = `checkin_notification_sent_${day}_days`;
+            if (day > 0 && !rental[flagField]) { // No notificar el día 0 (hoy)
+                notificationTriggers.push({
+                    id: `${doc.id}-checkin-${day}d`,
+                    title: `Próximo Check-in en ${day} ${day > 1 ? 'días' : 'día'}`,
+                    body: `El check-in de ${rental.tenantName} en "${rental.propertyName}" es en ${day} ${day > 1 ? 'días' : 'día'}.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: flagField
+                });
             }
         }
         
         // --- Lógica de Notificación para Check-out ---
-        if (daysUntilCheckout >= 0) {
-            for (const day of checkOutDaysArray) {
-                const flagField = `checkout_notification_sent_${day}_days`;
-                if (daysUntilCheckout === day && !rental[flagField]) {
-                    notificationTriggers.push({
-                        id: `${doc.id}-checkout-${day}d`,
-                        title: `Próximo Check-out en ${day} ${day > 1 ? 'días' : 'día'}`,
-                        body: `El check-out de ${rental.tenantName} en "${rental.propertyName}" es en ${day} ${day > 1 ? 'días' : 'día'}.`,
-                        icon: '/icons/icon-192x192.png',
-                        docPath: doc.ref.path,
-                        fieldToUpdate: flagField
-                    });
-                }
+        // Notifica para cada día desde el máximo configurado hasta 1 día antes.
+        if (daysUntilCheckout >= 0 && daysUntilCheckout <= MAX_CHECKOUT_DAYS) {
+            const day = daysUntilCheckout;
+            const flagField = `checkout_notification_sent_${day}_days`;
+            if (day > 0 && !rental[flagField]) { // No notificar el día 0 (hoy)
+                notificationTriggers.push({
+                    id: `${doc.id}-checkout-${day}d`,
+                    title: `Próximo Check-out en ${day} ${day > 1 ? 'días' : 'día'}`,
+                    body: `El check-out de ${rental.tenantName} en "${rental.propertyName}" es en ${day} ${day > 1 ? 'días' : 'día'}.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: flagField
+                });
             }
         }
     }
@@ -233,5 +229,3 @@ export const handler: Handler = async () => {
     return { statusCode: 500, body: `Error interno del servidor: ${error.message}` };
   }
 }
-
-    
