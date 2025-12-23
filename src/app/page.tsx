@@ -77,13 +77,21 @@ export default function DashboardPage() {
     const handleCopy = (type: 'check-ins' | 'check-outs') => {
         let textToCopy = '';
         if (type === 'check-ins') {
-            textToCopy = `*Próximos Check-ins:*\n` + upcomingCheckIns.map(b => 
-                `- ${b.property?.name}: *${b.tenant?.name}* llega el *${new Date(b.startDate).toLocaleDateString('es-AR')}*.`
-            ).join('\n');
+            textToCopy = `*Próximos Check-ins:*\n` + upcomingCheckIns.map(b => {
+                let line = `- ${b.property?.name}: *${b.tenant?.name}* llega el *${new Date(b.startDate).toLocaleDateString('es-AR')}*.`;
+                if (b.tenant?.phone) {
+                    line += ` Tel: ${b.tenant.phone}`;
+                }
+                return line;
+            }).join('\n');
         } else {
-            textToCopy = `*Próximos Check-outs:*\n` + upcomingCheckOuts.map(b => 
-                `- ${b.property?.name}: *${b.tenant?.name}* se retira el *${new Date(b.endDate).toLocaleDateString('es-AR')}*.`
-            ).join('\n');
+            textToCopy = `*Próximos Check-outs:*\n` + upcomingCheckOuts.map(b => {
+                let line = `- ${b.property?.name}: *${b.tenant?.name}* se retira el *${new Date(b.endDate).toLocaleDateString('es-AR')}*.`;
+                if (b.tenant?.phone) {
+                    line += ` Tel: ${b.tenant.phone}`;
+                }
+                return line;
+            }).join('\n');
         }
 
         navigator.clipboard.writeText(textToCopy);
