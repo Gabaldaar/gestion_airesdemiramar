@@ -48,9 +48,18 @@ interface NotificationTriggerData {
 async function checkAndSendNotifications() {
     let notificationsSent = 0;
     
-    // Arrays con los días específicos en los que se debe notificar
-    const CHECKIN_NOTIFICATION_DAYS = [7, 4, 2, 1];
-    const CHECKOUT_NOTIFICATION_DAYS = [3, 2, 1];
+    // --- OBTENER CONFIGURACIÓN DE ALERTAS DINÁMICAMENTE ---
+    const alertSettingsSnap = await db.collection('settings').doc('alerts').get();
+    const alertSettings = alertSettingsSnap.data();
+
+    // Usar valores dinámicos o por defecto si no existen
+    const CHECKIN_NOTIFICATION_DAYS = alertSettings?.checkInDays ? [alertSettings.checkInDays] : [7, 4, 2, 1];
+    const CHECKOUT_NOTIFICATION_DAYS = alertSettings?.checkOutDays ? [alertSettings.checkOutDays] : [3, 2, 1];
+    
+    // Si los días de aviso son valores únicos, los convertimos en arrays para que la lógica funcione
+    const checkInDaysArray = Array.isArray(CHECKIN_NOTIFICATION_DAYS) ? CHECKIN_NOTIFICATION_DAYS : [CHECKIN_NOTIFICATION_DAYS];
+    const checkOutDaysArray = Array.isArray(CHECKOUT_NOTIFICATION_DAYS) ? CHECKOUT_NOTIFICATION_DAYS : [CHECKOUT_NOTIFICATION_DAYS];
+
 
     const notificationTriggers: NotificationTriggerData[] = [];
     const today = startOfToday();
@@ -92,7 +101,7 @@ async function checkAndSendNotifications() {
 
         // --- Lógica de Notificación para Check-in ---
         if (daysUntilCheckin >= 0) {
-            for (const day of CHECKIN_NOTIFICATION_DAYS) {
+            for (const day of checkInDaysArray) {
                 const flagField = `checkin_notification_sent_${day}_days`;
                 if (daysUntilCheckin === day && !rental[flagField]) {
                     notificationTriggers.push({
@@ -109,7 +118,7 @@ async function checkAndSendNotifications() {
         
         // --- Lógica de Notificación para Check-out ---
         if (daysUntilCheckout >= 0) {
-            for (const day of CHECKOUT_NOTIFICATION_DAYS) {
+            for (const day of checkOutDaysArray) {
                 const flagField = `checkout_notification_sent_${day}_days`;
                 if (daysUntilCheckout === day && !rental[flagField]) {
                     notificationTriggers.push({
@@ -224,3 +233,5 @@ export const handler: Handler = async () => {
     return { statusCode: 500, body: `Error interno del servidor: ${error.message}` };
   }
 }
+
+    
