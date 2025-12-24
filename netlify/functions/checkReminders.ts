@@ -57,11 +57,19 @@ async function checkAndSendNotifications() {
     const MAX_CHECKOUT_DAYS = alertSettings?.checkOutDays ?? 3;
 
 
+    // --- OBTENER DATOS DE CONTEXTO (OPTIMIZACIÓN) ---
+    const [propertiesSnap, tenantsSnap] = await Promise.all([
+        db.collection('properties').get(),
+        db.collection('tenants').get()
+    ]);
+    const propertiesMap = new Map(propertiesSnap.docs.map(doc => [doc.id, doc.data()]));
+    const tenantsMap = new Map(tenantsSnap.docs.map(doc => [doc.id, doc.data()]));
+
+
     const notificationTriggers: NotificationTriggerData[] = [];
     const today = startOfToday();
 
     // Consulta corregida: Obtener todas las reservas que NO estén canceladas.
-    // Esto es más robusto y permite que el código filtre por fechas.
     const bookingsSnap = await db.collection('bookings').where('status', '!=', 'cancelled').get();
 
 
@@ -72,6 +80,7 @@ async function checkAndSendNotifications() {
 
     for (const doc of bookingsSnap.docs) {
         const rental = doc.data();
+        
         // Ignorar si el estado es 'pending' (en espera), ya que no requiere notificación aún.
         if (rental.status === 'pending') {
             continue;
@@ -91,6 +100,10 @@ async function checkAndSendNotifications() {
         if (rentalEndDate < today) {
             continue;
         }
+        
+        const tenantName = tenantsMap.get(rental.tenantId)?.name || 'Inquilino Desconocido';
+        const propertyName = propertiesMap.get(rental.propertyId)?.name || 'Propiedad Desconocida';
+
 
         const daysUntilCheckin = differenceInDays(rentalStartDate, today);
         const daysUntilCheckout = differenceInDays(rentalEndDate, today);
@@ -104,7 +117,7 @@ async function checkAndSendNotifications() {
                 notificationTriggers.push({
                     id: `${doc.id}-checkin-${day}d`,
                     title: `Próximo Check-in en ${day} ${day > 1 ? 'días' : 'día'}`,
-                    body: `El check-in de ${rental.tenantName} en "${rental.propertyName}" es en ${day} ${day > 1 ? 'días' : 'día'}.`,
+                    body: `El check-in de ${tenantName} en "${propertyName}" es en ${day} ${day > 1 ? 'días' : 'día'}.`,
                     icon: '/icons/icon-192x192.png',
                     docPath: doc.ref.path,
                     fieldToUpdate: flagField
@@ -121,7 +134,7 @@ async function checkAndSendNotifications() {
                 notificationTriggers.push({
                     id: `${doc.id}-checkout-${day}d`,
                     title: `Próximo Check-out en ${day} ${day > 1 ? 'días' : 'día'}`,
-                    body: `El check-out de ${rental.tenantName} en "${rental.propertyName}" es en ${day} ${day > 1 ? 'días' : 'día'}.`,
+                    body: `El check-out de ${tenantName} en "${propertyName}" es en ${day} ${day > 1 ? 'días' : 'día'}.`,
                     icon: '/icons/icon-192x192.png',
                     docPath: doc.ref.path,
                     fieldToUpdate: flagField
