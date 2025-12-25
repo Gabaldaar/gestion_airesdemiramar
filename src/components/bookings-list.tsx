@@ -509,7 +509,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   const useCardView = width < 1280; 
 
   const sortedBookings = useMemo(() => {
-    return [...bookings].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    return bookings; // The parent component `bookings-client` is now responsible for sorting
   }, [bookings]);
 
   useEffect(() => {

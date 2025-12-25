@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 import { Download, Mail, ChevronDown } from 'lucide-react';
-import { format, isWithinInterval } from 'date-fns';
+import { format, isWithinInterval, isPast, startOfToday } from 'date-fns';
 import { useToast } from './ui/use-toast';
 import {
   DropdownMenu,
@@ -82,8 +82,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
 
   const filteredBookings = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfToday();
 
     const activeStatusFilters = Object.entries(statusFilters)
         .filter(([, isActive]) => isActive)
@@ -150,6 +149,21 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
     // Apply sorting
     return filtered.sort((a, b) => {
+        const getStatusPriority = (booking: BookingWithDetails): number => {
+            const bookingEndDate = new Date(booking.endDate);
+            if (booking.status === 'cancelled' || isPast(bookingEndDate)) return 2; // Cumplidas y canceladas al final
+            if (booking.status === 'pending') return 1; // Pendientes en el medio
+            return 0; // Activas y futuras primero
+        };
+
+        const priorityA = getStatusPriority(a);
+        const priorityB = getStatusPriority(b);
+
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+        }
+
+        // If priorities are the same, sort by date
         const dateA = new Date(a.startDate).getTime();
         const dateB = new Date(b.startDate).getTime();
         return sortOrder === 'upcoming' ? dateA - dateB : dateB - dateA;
