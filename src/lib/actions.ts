@@ -66,6 +66,20 @@ export interface RegistrarCobroPayload {
 }
 
 
+const revalidatePathsAfterAction = (propertyId: string) => {
+  revalidatePath(`/properties/${propertyId}`);
+  revalidatePath('/bookings');
+  revalidatePath('/'); // Revalidate dashboard
+  revalidatePath('/reports');
+  revalidatePath('/payments');
+  revalidatePath('/expenses');
+  revalidatePath('/informes');
+  if (propertyId) {
+      revalidatePath(`/api/ical/${propertyId}`);
+  }
+};
+
+
 export async function registrarCobro(payload: RegistrarCobroPayload) {
   // This is the API Key for the external finance app
   const FINANCE_API_KEY = 'x9TlCh8316O6lFtc2QAUstoszhMi5ngW'; 
@@ -182,6 +196,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
     revalidatePath('/expenses');
     revalidatePath('/payments');
     revalidatePath('/reports');
+    revalidatePath('/informes');
     return { success: true, message: 'Propiedad actualizada.' };
   } catch (error) {
     console.error('Error updating property:', error);
@@ -205,6 +220,7 @@ export async function deleteProperty(previousState: any, formData: FormData) {
     revalidatePath('/expenses');
     revalidatePath('/payments');
     revalidatePath('/reports');
+    revalidatePath('/informes');
     return { success: true, message: 'Propiedad eliminada correctamente.' };
   } catch (error) {
     console.error('Error deleting property:', error);
@@ -230,6 +246,7 @@ export async function addTenant(previousState: any, formData: FormData) {
     await addTenantDb(newTenant);
     revalidatePath('/tenants');
     revalidatePath('/reports');
+    revalidatePath('/informes');
     return { success: true, message: 'Inquilino añadido correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -257,6 +274,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
     revalidatePath('/bookings');
     revalidatePath('/');
     revalidatePath('/reports');
+    revalidatePath('/informes');
     return { success: true, message: 'Inquilino actualizado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -274,6 +292,7 @@ export async function deleteTenant(previousState: any, formData: FormData) {
     await deleteTenantDb(id);
     revalidatePath('/tenants');
     revalidatePath('/reports');
+    revalidatePath('/informes');
     return { success: true, message: 'Inquilino eliminado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -314,7 +333,7 @@ export async function addBooking(previousState: any, formData: FormData) {
 
   try {
     await addBookingDb(bookingData);
-    revalidatePathsAfterBooking(bookingData.propertyId);
+    revalidatePathsAfterAction(bookingData.propertyId);
     return { success: true, message: 'Reserva creada correctamente.' };
   } catch (dbError: any) {
     console.error('Error creating booking in DB:', dbError);
@@ -424,7 +443,7 @@ export async function updateBooking(
 
     const updatedBookingFromDb = await updateBookingDb(finalBookingState);
 
-    revalidatePathsAfterBooking(finalBookingState.propertyId);
+    revalidatePathsAfterAction(finalBookingState.propertyId);
     return {
       success: true,
       message: 'Reserva actualizada correctamente.',
@@ -446,26 +465,13 @@ export async function deleteBooking(previousState: any, formData: FormData) {
 
   try {
     await deleteBookingDb(id);
-    revalidatePathsAfterBooking(propertyId);
+    revalidatePathsAfterAction(propertyId);
     return { success: true, message: 'Reserva eliminada correctamente.' };
   } catch (dbError: any) {
     console.error('Error deleting booking from DB:', dbError);
     return { success: false, message: `Error de base de datos: ${dbError.message}` };
   }
 }
-
-const revalidatePathsAfterAction = (propertyId: string) => {
-  revalidatePath(`/properties/${propertyId}`);
-  revalidatePath('/bookings');
-  revalidatePath('/'); // Revalidate dashboard
-  revalidatePath('/reports');
-  revalidatePath('/payments');
-  revalidatePath('/expenses');
-  if (propertyId) {
-      revalidatePath(`/api/ical/${propertyId}`);
-  }
-};
-
 
 const handleExpenseData = (formData: FormData) => {
   const originalAmount = parseFloat(formData.get('amount') as string);
@@ -542,6 +548,7 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
     revalidatePath(`/properties/${propertyId}`);
     revalidatePath('/reports');
     revalidatePath('/expenses');
+    revalidatePath('/informes');
     return { success: true, message: 'Gasto añadido correctamente.' };
   } catch (error: any) {
     return { success: false, message: error.message || 'Error al añadir el gasto.' };
@@ -574,6 +581,7 @@ export async function updatePropertyExpense(
     revalidatePath(`/properties/${propertyId}`);
     revalidatePath('/reports');
     revalidatePath('/expenses');
+    revalidatePath('/informes');
     return { success: true, message: 'Gasto actualizado correctamente.' };
   } catch (error: any) {
     return {
@@ -607,6 +615,7 @@ export async function deletePropertyExpense(
     }
     revalidatePath('/reports');
     revalidatePath('/expenses');
+    revalidatePath('/informes');
     return { success: true, message: 'Gasto eliminado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -1131,6 +1140,7 @@ export async function addOrigin(previousState: any, formData: FormData) {
     revalidatePath('/tenants');
     revalidatePath('/bookings');
     revalidatePath('/reports');
+    revalidatePath('/informes');
     return { success: true, message: 'Origen añadido.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -1150,6 +1160,7 @@ export async function updateOrigin(previousState: any, formData: FormData) {
     revalidatePath('/tenants');
     revalidatePath('/bookings');
     revalidatePath('/reports');
+    revalidatePath('/informes');
     return { success: true, message: 'Origen actualizado.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -1167,6 +1178,7 @@ export async function deleteOrigin(previousState: any, formData: FormData) {
     revalidatePath('/tenants');
     revalidatePath('/bookings');
     revalidatePath('/reports');
+    revalidatePath('/informes');
     return { success: true, message: 'Origen eliminado.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -1186,5 +1198,3 @@ export async function savePushSubscription(subscription: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
-
-    
