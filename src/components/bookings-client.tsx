@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -92,7 +93,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
     const filtered = bookingsForTenant.filter(booking => {
         
-        const bookingStartDate = new Date(booking.startDate);
+        const bookingStartDate = new Date(booking.startDate.replace(/-/g, '/'));
         
       // Property Filter
       if (propertyIdFilter !== 'all' && booking.propertyId !== propertyIdFilter) {
@@ -119,7 +120,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
       // Status Filter
       if (hasActiveStatusFilter) {
-        const bookingEndDate = new Date(booking.endDate);
+        const bookingEndDate = new Date(booking.endDate.replace(/-/g, '/'));
         const bookingVisualStatuses = new Set<string>();
 
         if (booking.status === 'cancelled') {
@@ -150,7 +151,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     // Apply sorting
     return filtered.sort((a, b) => {
         const getStatusPriority = (booking: BookingWithDetails): number => {
-            const bookingEndDate = new Date(booking.endDate);
+            const bookingEndDate = new Date(booking.endDate.replace(/-/g, '/'));
             if (booking.status === 'cancelled' || isPast(bookingEndDate)) return 2; // Cumplidas y canceladas al final
             if (booking.status === 'pending') return 1; // Pendientes en el medio
             return 0; // Activas y futuras primero
@@ -164,8 +165,8 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
         }
 
         // If priorities are the same, sort by date
-        const dateA = new Date(a.startDate).getTime();
-        const dateB = new Date(b.startDate).getTime();
+        const dateA = new Date(a.startDate.replace(/-/g, '/')).getTime();
+        const dateB = new Date(b.startDate.replace(/-/g, '/')).getTime();
         return sortOrder === 'upcoming' ? dateA - dateB : dateB - dateA;
     });
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -21,7 +22,7 @@ export default function PaymentsClient({ initialPayments, properties }: Payments
 
   const filteredPayments = useMemo(() => {
     return initialPayments.filter(payment => {
-      const paymentDate = new Date(payment.date);
+      const paymentDate = new Date(payment.date.replace(/-/g, '/'));
 
       // Property Filter
       if (propertyIdFilter !== 'all' && payment.propertyId !== propertyIdFilter) {

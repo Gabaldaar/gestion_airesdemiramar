@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -50,13 +51,21 @@ interface PropertyDetailData {
 
 const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> = (dayProps) => {
     const { date, activeModifiers, data, ...rest } = dayProps;
+    
+    // Convert the 'date' prop to a string in 'yyyy-MM-dd' format for timezone-neutral comparison
+    const currentDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
     const bookingForDay = useMemo(() => {
         if (!data || !activeModifiers.booked) return undefined;
-        return data.bookings.find(b => 
-            (!b.status || b.status === 'active') && isWithinInterval(date, { start: new Date(b.startDate), end: new Date(b.endDate) })
-        );
-    }, [date, data, activeModifiers.booked]);
+        return data.bookings.find(b => {
+             if (!b.status || b.status === 'active') {
+                const bookingStartStr = b.startDate.substring(0, 10);
+                const bookingEndStr = b.endDate.substring(0, 10);
+                return currentDateStr >= bookingStartStr && currentDateStr <= bookingEndStr;
+            }
+            return false;
+        });
+    }, [currentDateStr, data, activeModifiers.booked]);
 
     const tenant = useMemo(() => {
         if (!bookingForDay || !data?.tenants) return undefined;
@@ -139,19 +148,21 @@ export default function PropertyDetailPage() {
     const dayModifiers = useMemo(() => {
         if (!data) return {};
         
+        const parseDate = (dateString: string) => new Date(dateString.replace(/-/g, '/'));
+        
         const activeBookings = data.bookings.filter(b => !b.status || b.status === 'active');
 
         const bookedDays = activeBookings.map(booking => ({
-            from: new Date(booking.startDate),
-            to: new Date(booking.endDate),
+            from: parseDate(booking.startDate),
+            to: parseDate(booking.endDate),
         }));
 
-        const checkinDays = activeBookings.map(b => new Date(b.startDate));
-        const checkoutDays = activeBookings.map(b => new Date(b.endDate));
+        const checkinDays = activeBookings.map(b => parseDate(b.startDate));
+        const checkoutDays = activeBookings.map(b => parseDate(b.endDate));
         
         const bookedMiddleDays = activeBookings.flatMap(booking => {
-            const startDate = new Date(booking.startDate);
-            const endDate = new Date(booking.endDate);
+            const startDate = parseDate(booking.startDate);
+            const endDate = parseDate(booking.endDate);
             if (endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
                  return []; // Don't mark middle days for short stays
             }

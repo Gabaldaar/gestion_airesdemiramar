@@ -1,4 +1,5 @@
 
+
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { DateRange } from "react-day-picker";
@@ -29,8 +30,8 @@ export function checkDateConflict(
   // A conflict exists if the selected range starts before an existing one ends,
   // AND the selected range ends after an existing one starts.
   for (const booking of activeBookings) {
-    const bookingStart = new Date(booking.startDate);
-    const bookingEnd = new Date(booking.endDate);
+    const bookingStart = new Date(booking.startDate.replace(/-/g, '/'));
+    const bookingEnd = new Date(booking.endDate.replace(/-/g, '/'));
     
     // Check for overlap: new booking starts before old one ends AND new booking ends after old one starts
     if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
