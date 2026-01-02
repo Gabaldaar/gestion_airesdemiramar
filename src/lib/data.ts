@@ -26,11 +26,15 @@ const processDoc = (doc: any) => {
     const data = doc.data();
     for (const key in data) {
         if (data[key] instanceof Timestamp) {
+            // Get the date as if it were in UTC
             const date = data[key].toDate();
-            // Timezone correction: Get UTC date parts and create a new Date object from them.
-            // This neutralizes the timezone offset from the user's browser.
-            const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-            data[key] = utcDate.toISOString();
+            const year = date.getUTCFullYear();
+            const month = date.getUTCMonth();
+            const day = date.getUTCDate();
+            
+            // Create a new Date object in UTC, then convert to ISO string.
+            // This effectively strips the timezone offset.
+            data[key] = new Date(Date.UTC(year, month, day)).toISOString();
         }
     }
     return { id: doc.id, ...data };
@@ -734,15 +738,15 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
     const startDate = options?.startDate;
     const endDate = options?.endDate;
 
-    const fromDate = startDate ? new Date(startDate) : null;
+    const fromDate = startDate ? new Date(startDate.replace(/-/g, '/')) : null;
     if (fromDate) fromDate.setUTCHours(0, 0, 0, 0); // Normalize to start of day
     
-    const toDate = endDate ? new Date(endDate) : null;
+    const toDate = endDate ? new Date(endDate.replace(/-/g, '/')) : null;
     if (toDate) toDate.setUTCHours(23, 59, 59, 999); // Normalize to end of day
 
     const isWithinDateRange = (dateStr: string) => {
         if (!dateStr || (!fromDate && !toDate)) return true;
-        const itemDate = new Date(dateStr);
+        const itemDate = new Date(dateStr.replace(/-/g, '/'));
         if (fromDate && itemDate < fromDate) return false;
         if (toDate && itemDate > toDate) return false;
         return true;
@@ -1042,14 +1046,14 @@ export async function getExpensesByCategorySummary(options?: { startDate?: strin
     
     const startDate = options?.startDate;
     const endDate = options?.endDate;
-    const fromDate = startDate ? new Date(startDate) : null;
+    const fromDate = startDate ? new Date(startDate.replace(/-/g, '/')) : null;
     if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
-    const toDate = endDate ? new Date(endDate) : null;
+    const toDate = endDate ? new Date(endDate.replace(/-/g, '/')) : null;
     if (toDate) toDate.setUTCHours(23, 59, 59, 999);
 
     const isWithinDateRange = (dateStr: string) => {
         if (!dateStr || (!fromDate && !toDate)) return true;
-        const itemDate = new Date(dateStr);
+        const itemDate = new Date(dateStr.replace(/-/g, '/'));
         if (fromDate && itemDate < fromDate) return false;
         if (toDate && itemDate > toDate) return false;
         return true;
@@ -1088,14 +1092,14 @@ export async function getExpensesByPropertySummary(options?: { startDate?: strin
     
     const startDate = options?.startDate;
     const endDate = options?.endDate;
-    const fromDate = startDate ? new Date(startDate) : null;
+    const fromDate = startDate ? new Date(startDate.replace(/-/g, '/')) : null;
     if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
-    const toDate = endDate ? new Date(endDate) : null;
+    const toDate = endDate ? new Date(endDate.replace(/-/g, '/')) : null;
     if (toDate) toDate.setUTCHours(23, 59, 59, 999);
 
     const isWithinDateRange = (dateStr: string) => {
         if (!dateStr || (!fromDate && !toDate)) return true;
-        const itemDate = new Date(dateStr);
+        const itemDate = new Date(dateStr.replace(/-/g, '/'));
         if (fromDate && itemDate < fromDate) return false;
         if (toDate && itemDate > toDate) return false;
         return true;

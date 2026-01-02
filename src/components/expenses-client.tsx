@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -33,7 +34,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
+      const expenseDate = new Date(expense.date.replace(/-/g, '/'));
 
       // Property Filter
       if (propertyIdFilter !== 'all' && ('propertyId' in expense && expense.propertyId !== propertyIdFilter)) {

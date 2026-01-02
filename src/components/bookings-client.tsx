@@ -207,8 +207,8 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     const rows = filteredBookings.map(booking => [
       escapeCSV(booking.property?.name),
       escapeCSV(booking.tenant?.name),
-      format(new Date(booking.startDate), 'yyyy-MM-dd'),
-      format(new Date(booking.endDate), 'yyyy-MM-dd'),
+      format(new Date(booking.startDate.replace(/-/g, '/')), 'yyyy-MM-dd'),
+      format(new Date(booking.endDate.replace(/-/g, '/')), 'yyyy-MM-dd'),
       escapeCSV(booking.tenant?.phone),
       escapeCSV(booking.notes)
     ].join(','));

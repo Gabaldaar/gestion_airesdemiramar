@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -70,8 +71,8 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
       const tenantIdsWithMatchingBookings = new Set<string>();
 
       allBookings.forEach(booking => {
-        const bookingStartDate = new Date(booking.startDate);
-        const bookingEndDate = new Date(booking.endDate);
+        const bookingStartDate = new Date(booking.startDate.replace(/-/g, '/'));
+        const bookingEndDate = new Date(booking.endDate.replace(/-/g, '/'));
         const isActive = !booking.status || booking.status === 'active';
         
         const isCurrent = isActive && isWithinInterval(today, { start: bookingStartDate, end: bookingEndDate });
