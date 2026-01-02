@@ -396,3 +396,5 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     </div>
   );
 }
+
+    

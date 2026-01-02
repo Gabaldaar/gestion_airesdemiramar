@@ -21,20 +21,12 @@ import {
 
 // --- TYPE DEFINITIONS ---
 
-// Helper to convert Firestore Timestamps to ISO strings, adjusted for timezone issues.
+// Helper to convert Firestore Timestamps to ISO strings.
 const processDoc = (doc: any) => {
     const data = doc.data();
     for (const key in data) {
         if (data[key] instanceof Timestamp) {
-            // Get the date as if it were in UTC
-            const date = data[key].toDate();
-            const year = date.getUTCFullYear();
-            const month = date.getUTCMonth();
-            const day = date.getUTCDate();
-            
-            // Create a new Date object in UTC, then convert to ISO string.
-            // This effectively strips the timezone offset.
-            data[key] = new Date(Date.UTC(year, month, day)).toISOString();
+            data[key] = data[key].toDate().toISOString();
         }
     }
     return { id: doc.id, ...data };
@@ -1249,5 +1241,7 @@ export async function deletePushSubscription(id: string): Promise<void> {
     const docRef = doc(db, 'pushSubscriptions', id);
     await deleteDoc(docRef);
 }
+
+    
 
     

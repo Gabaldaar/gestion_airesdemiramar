@@ -11,7 +11,7 @@ import TenantsList from './tenants-list';
 import { TenantEditForm } from './tenant-edit-form';
 import { Mail } from 'lucide-react';
 import { useToast } from './ui/use-toast';
-import { isWithinInterval } from 'date-fns';
+import { isWithinInterval, startOfToday } from 'date-fns';
 
 type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'cancelled' | 'pending';
 
@@ -65,8 +65,7 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
 
     // Filter by Booking Status
     if (statusFilter !== 'all') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = startOfToday();
 
       const tenantIdsWithMatchingBookings = new Set<string>();
 
@@ -195,3 +194,5 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
     </div>
   );
 }
+
+    
