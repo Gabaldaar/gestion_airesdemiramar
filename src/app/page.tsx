@@ -1,4 +1,3 @@
-
 'use client';
 
 import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings, BookingWithDetails, Property, Tenant, FinancialSummaryByCurrency, getAlertSettings, AlertSettings } from "@/lib/data";
@@ -90,13 +89,44 @@ export default function DashboardPage() {
         });
     }, [data, todayUTC]);
 
+    const upcomingBookings = useMemo(() => {
+        if (!data) return [];
+        return data.bookings
+        .filter(b => {
+            const startDate = parseDateSafely(b.startDate);
+            if (!startDate) return false;
+            const isActive = !b.status || b.status === 'active';
+            return startDate >= todayUTC && isActive;
+        })
+        .sort((a, b) => {
+            const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
+            const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
+            return dateA - dateB;
+        })
+        .slice(0, 5);
+    }, [data, todayUTC]);
+
+    const currentBookings = useMemo(() => {
+        if (!data) return [];
+        return data.bookings
+        .filter(b => {
+            const startDate = parseDateSafely(b.startDate);
+            const endDate = parseDateSafely(b.endDate);
+            if (!startDate || !endDate) return false;
+            const isActive = !b.status || b.status === 'active';
+            return todayUTC >= startDate && todayUTC <= endDate && isActive;
+        })
+        .sort((a, b) => {
+            const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
+            const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
+            return dateA - dateB;
+        });
+    }, [data, todayUTC]);
+
     const formatDateForDisplay = (date: Date | undefined): string => {
         if (!date) return 'Fecha inv.';
-        const year = date.getUTCFullYear();
-        const month = date.getUTCMonth();
-        const day = date.getUTCDate();
-        const localDate = new Date(year, month, day);
-        return format(localDate, "dd/MM/yyyy", { locale: es });
+        // We already have a UTC date from parseDateSafely, no need to create a new one.
+        return format(date, "dd/MM/yyyy", { locale: es });
     };
 
     const handleCopy = (type: 'check-ins' | 'check-outs') => {
@@ -142,41 +172,6 @@ export default function DashboardPage() {
 
     const totalProperties = properties.length;
     const totalTenants = tenants.length;
-
-    const upcomingBookings = useMemo(() => {
-        if (!data) return [];
-        return data.bookings
-        .filter(b => {
-            const startDate = parseDateSafely(b.startDate);
-            if (!startDate) return false;
-            const isActive = !b.status || b.status === 'active';
-            return startDate >= todayUTC && isActive;
-        })
-        .sort((a, b) => {
-            const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
-            const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
-            return dateA - dateB;
-        })
-        .slice(0, 5);
-    }, [data, todayUTC]);
-
-    const currentBookings = useMemo(() => {
-        if (!data) return [];
-        return data.bookings
-        .filter(b => {
-            const startDate = parseDateSafely(b.startDate);
-            const endDate = parseDateSafely(b.endDate);
-            if (!startDate || !endDate) return false;
-            const isActive = !b.status || b.status === 'active';
-            return todayUTC >= startDate && todayUTC <= endDate && isActive;
-        })
-        .sort((a, b) => {
-            const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
-            const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
-            return dateA - dateB;
-        });
-    }, [data, todayUTC]);
-
 
     return (
         <div className="flex-1 space-y-4">
