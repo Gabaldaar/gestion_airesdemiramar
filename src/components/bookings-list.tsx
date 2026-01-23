@@ -205,10 +205,12 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   const nights = startDate && endDate ? differenceInDays(endDate, startDate) : NaN;
   
   const formatDate = (date: Date | undefined) => {
-    if (!date) {
+    if (!date || isNaN(date.getTime())) {
       return "Fecha inv.";
     }
-    return format(date, "dd-LLL-yyyy", { locale: es });
+    // Adjust for timezone offset before formatting
+    const adjustedDate = new Date(date.valueOf() + date.getTimezoneOffset() * 60 * 1000);
+    return format(adjustedDate, "dd-LLL-yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
@@ -389,10 +391,12 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     const nights = startDate && endDate ? differenceInDays(endDate, startDate) : NaN;
 
     const formatDate = (date: Date | undefined) => {
-        if (!date) {
+        if (!date || isNaN(date.getTime())) {
             return "Fecha inv.";
         }
-        return format(date, "dd/MM/yy", { locale: es });
+        // Adjust for timezone offset before formatting
+        const adjustedDate = new Date(date.valueOf() + date.getTimezoneOffset() * 60 * 1000);
+        return format(adjustedDate, "dd/MM/yy", { locale: es });
     };
 
     const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {

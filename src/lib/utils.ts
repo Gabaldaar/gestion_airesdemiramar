@@ -13,12 +13,27 @@ export const parseDateSafely = (dateInput: string | null | undefined): Date | un
     if (!dateInput) {
         return undefined;
     }
-    // Handles 'YYYY-MM-DD' and avoids timezone issues on parsing
-    const date = new Date(dateInput.replace(/-/g, '/'));
-    if (isNaN(date.getTime())) {
-        return undefined; // Return undefined for invalid dates
+    // Tries to parse YYYY-MM-DD by constructing a UTC date to avoid timezone shifts.
+    const parts = dateInput.split('T')[0].split('-');
+    if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+        const day = parseInt(parts[2], 10);
+
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+            const date = new Date(Date.UTC(year, month, day));
+            if (!isNaN(date.getTime())) {
+                return date;
+            }
+        }
     }
-    return date;
+    
+    // Fallback for any other format, though risky
+    const fallbackDate = new Date(dateInput);
+    if (isNaN(fallbackDate.getTime())) {
+        return undefined;
+    }
+    return fallbackDate;
 };
 
 export function checkDateConflict(
