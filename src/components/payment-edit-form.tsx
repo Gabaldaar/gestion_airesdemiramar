@@ -66,7 +66,7 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children }: Payment
   const [isPending, startTransition] = useTransition();
   
   const [isOpen, setIsOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(new Date(payment.date));
+  const [date, setDate] = useState<Date | undefined>(new Date(payment.date.replace(/-/g, '/')));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(payment.originalArsAmount ? 'ARS' : 'USD');
   const [exchangeRate, setExchangeRate] = useState(payment.exchangeRate?.toString() || '');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
@@ -108,7 +108,7 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children }: Payment
   useEffect(() => {
     if (!isOpen) {
         setState(initialState);
-        setDate(new Date(payment.date));
+        setDate(new Date(payment.date.replace(/-/g, '/')));
         setCurrency(payment.originalArsAmount ? 'ARS' : 'USD');
         setExchangeRate(payment.exchangeRate?.toString() || '');
         setIsFetchingRate(false);
@@ -218,3 +218,5 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children }: Payment
     </Dialog>
   );
 }
+
+    

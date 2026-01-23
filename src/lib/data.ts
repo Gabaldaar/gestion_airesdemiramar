@@ -26,7 +26,13 @@ const processDoc = (doc: any) => {
     const data = doc.data();
     for (const key in data) {
         if (data[key] instanceof Timestamp) {
-            data[key] = data[key].toDate().toISOString();
+            // Convert timestamp to Date, then get YYYY-MM-DD in UTC,
+            // to avoid timezone shifts during conversion.
+            const d = data[key].toDate();
+            const year = d.getUTCFullYear();
+            const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(d.getUTCDate()).padStart(2, '0');
+            data[key] = `${year}-${month}-${day}`;
         }
     }
     return { id: doc.id, ...data };
@@ -1241,6 +1247,8 @@ export async function deletePushSubscription(id: string): Promise<void> {
     const docRef = doc(db, 'pushSubscriptions', id);
     await deleteDoc(docRef);
 }
+
+    
 
     
 

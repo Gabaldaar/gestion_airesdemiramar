@@ -88,3 +88,5 @@ export default function PaymentsClient({ initialPayments, properties }: Payments
 }
 
     
+
+    

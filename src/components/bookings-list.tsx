@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -192,8 +193,8 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   const isPending = booking.status === 'pending';
   
   const today = startOfToday();
-  const startDate = new Date(booking.startDate);
-  const endDate = new Date(booking.endDate);
+  const startDate = new Date(booking.startDate.replace(/-/g, '/'));
+  const endDate = new Date(booking.endDate.replace(/-/g, '/'));
   const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
   const isPastBooking = isPast(endDate) && !isCurrent;
   const isUpcoming = !isPastBooking && !isCurrent;
@@ -201,10 +202,10 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
 
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
-  const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
+  const nights = differenceInDays(endDate, startDate);
   
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd-LLL-yyyy", { locale: es });
+    return format(new Date(dateString.replace(/-/g, '/')), "dd-LLL-yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
@@ -224,7 +225,7 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
     }
   
   const getBookingStatusStyles = (booking: BookingWithDetails): { titleColor: string; bgColor: string } => {
-    const daysUntilStart = differenceInDays(new Date(booking.startDate), startOfToday());
+    const daysUntilStart = differenceInDays(new Date(booking.startDate.replace(/-/g, '/')), startOfToday());
     
     if (booking.status === 'cancelled') return { titleColor: "text-red-600 line-through", bgColor: "bg-red-500/10" };
     if (booking.status === 'pending') return { titleColor: "text-amber-600", bgColor: "bg-yellow-500/10" };
@@ -373,17 +374,17 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     const isPending = booking.status === 'pending';
 
     const today = startOfToday();
-    const startDate = new Date(booking.startDate);
-    const endDate = new Date(booking.endDate);
+    const startDate = new Date(booking.startDate.replace(/-/g, '/'));
+    const endDate = new Date(booking.endDate.replace(/-/g, '/'));
     const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
     const isPastBooking = isPast(endDate) && !isCurrent;
     const isInactive = isCancelled || isPending || isPastBooking;
     const isUpcoming = !isPastBooking && !isCurrent;
     
-    const nights = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
+    const nights = differenceInDays(endDate, startDate);
 
     const formatDate = (dateString: string) => {
-        return format(new Date(dateString), "dd/MM/yy", { locale: es });
+        return format(new Date(dateString.replace(/-/g, '/')), "dd/MM/yy", { locale: es });
     };
 
     const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
@@ -391,7 +392,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     }
 
     const getBookingStatusStyles = (booking: BookingWithDetails): { titleColor: string; cardClassName: string } => {
-        const daysUntilStart = differenceInDays(new Date(booking.startDate), startOfToday());
+        const daysUntilStart = differenceInDays(new Date(booking.startDate.replace(/-/g, '/')), startOfToday());
 
         if (booking.status === 'cancelled') return { titleColor: "text-red-600 line-through", cardClassName: "bg-red-500/10 border-red-500/20" };
         if (booking.status === 'pending') return { titleColor: "text-amber-600", cardClassName: "bg-yellow-500/10 border-yellow-500/20" };
@@ -672,3 +673,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
+
+
+    

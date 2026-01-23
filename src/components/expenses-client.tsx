@@ -147,3 +147,5 @@ export default function ExpensesClient({ initialExpenses, properties, categories
     </div>
   );
 }
+
+    

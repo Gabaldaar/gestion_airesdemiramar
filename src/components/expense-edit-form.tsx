@@ -51,7 +51,7 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(new Date(expense.date));
+  const [date, setDate] = useState<Date | undefined>(new Date(expense.date.replace(/-/g, '/')));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(expense.originalUsdAmount ? 'USD' : 'ARS');
   const [exchangeRate, setExchangeRate] = useState(expense.exchangeRate?.toString() || '');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
@@ -87,7 +87,7 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
   useEffect(() => {
     if (!isOpen) {
         setState(initialState);
-        setDate(new Date(expense.date));
+        setDate(new Date(expense.date.replace(/-/g, '/')));
         setCurrency(expense.originalUsdAmount ? 'USD' : 'ARS');
         setExchangeRate(expense.exchangeRate?.toString() || '');
         setIsFetchingRate(false);
@@ -212,3 +212,5 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
     </Dialog>
   );
 }
+
+    

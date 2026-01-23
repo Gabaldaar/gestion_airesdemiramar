@@ -181,7 +181,7 @@ function ContractPage({ bookingId }: { bookingId: string }) {
     
     useEffect(() => {
         if (booking && booking.tenant?.name && booking.property?.name) {
-            const checkInDate = format(new Date(booking.startDate), 'yyyy-MM-dd');
+            const checkInDate = format(new Date(booking.startDate.replace(/-/g, '/')), 'yyyy-MM-dd');
             const tenantName = booking.tenant.name.replace(/ /g, '_');
             const propertyName = booking.property.name.replace(/ /g, '_');
             document.title = `Contrato_${tenantName}-${propertyName}-${checkInDate}`;
@@ -245,8 +245,8 @@ function ContractPage({ bookingId }: { bookingId: string }) {
         '{{inquilino.direccion}}': `${tenant.address || ''}, ${tenant.city || ''}`.trim().replace(/^,|,$/g, ''),
         '{{propiedad.nombre}}': property.name,
         '{{propiedad.direccion}}': property.address,
-        '{{fechaCheckIn}}': format(new Date(booking.startDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
-        '{{fechaCheckOut}}': format(new Date(booking.endDate), "dd 'de' LLLL 'de' yyyy", { locale: es }),
+        '{{fechaCheckIn}}': format(new Date(booking.startDate.replace(/-/g, '/')), "dd 'de' LLLL 'de' yyyy", { locale: es }),
+        '{{fechaCheckOut}}': format(new Date(booking.endDate.replace(/-/g, '/')), "dd 'de' LLLL 'de' yyyy", { locale: es }),
         '{{monto}}': formatCurrency(booking.amount, booking.currency),
         '{{montoEnLetras}}': amountInWords,
         '{{montoGarantia}}': formatCurrency(booking.guaranteeAmount, booking.guaranteeCurrency),
@@ -301,3 +301,5 @@ function ContractPage({ bookingId }: { bookingId: string }) {
     );
 }
 
+
+    

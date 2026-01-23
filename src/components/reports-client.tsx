@@ -223,3 +223,5 @@ export default function ReportsClient({ financialSummary, tenantsByOrigin, expen
     </div>
   );
 }
+
+    
