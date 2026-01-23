@@ -204,7 +204,8 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
   const nights = differenceInDays(endDate, startDate);
   
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "Fecha inválida";
     return format(new Date(dateString.replace(/-/g, '/')), "dd-LLL-yyyy", { locale: es });
   };
 
@@ -383,7 +384,8 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     
     const nights = differenceInDays(endDate, startDate);
 
-    const formatDate = (dateString: string) => {
+    const formatDate = (dateString: string | undefined | null) => {
+        if (!dateString) return "Fecha inv.";
         return format(new Date(dateString.replace(/-/g, '/')), "dd/MM/yy", { locale: es });
     };
 
@@ -673,6 +675,3 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
-
-
-    
