@@ -1,3 +1,4 @@
+
 'use client';
 
 import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings, BookingWithDetails, Property, Tenant, FinancialSummaryByCurrency, getAlertSettings, AlertSettings } from "@/lib/data";
@@ -125,8 +126,13 @@ export default function DashboardPage() {
 
     const formatDateForDisplay = (date: Date | undefined): string => {
         if (!date) return 'Fecha inv.';
-        // We already have a UTC date from parseDateSafely, no need to create a new one.
-        return format(date, "dd/MM/yyyy", { locale: es });
+        // The 'date' object is a UTC date. To format it correctly in the local timezone
+        // without it shifting, we need to create a new Date object from its UTC components.
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth();
+        const day = date.getUTCDate();
+        const localDate = new Date(year, month, day);
+        return format(localDate, "dd/MM/yyyy", { locale: es });
     };
 
     const handleCopy = (type: 'check-ins' | 'check-outs') => {
