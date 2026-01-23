@@ -66,6 +66,26 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-700' }
 };
 
+/**
+ * Parses a date string safely, avoiding timezone shifts.
+ * It handles both 'YYYY-MM-DD' and full ISO strings.
+ */
+const parseDateSafely = (dateInput: string | null | undefined): Date => {
+    if (!dateInput) {
+        return new Date(NaN); // Return an invalid date
+    }
+
+    // If it's a 'YYYY-MM-DD' string, append time to parse it as local time.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+        return new Date(`${dateInput}T00:00:00`);
+    }
+    
+    // Otherwise, let new Date handle it (e.g., for full ISO strings)
+    const date = new Date(dateInput);
+    return date;
+};
+
+
 function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
@@ -193,8 +213,8 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   const isPending = booking.status === 'pending';
   
   const today = startOfToday();
-  const startDate = new Date(booking.startDate.replace(/-/g, '/'));
-  const endDate = new Date(booking.endDate.replace(/-/g, '/'));
+  const startDate = parseDateSafely(booking.startDate);
+  const endDate = parseDateSafely(booking.endDate);
   const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
   const isPastBooking = isPast(endDate) && !isCurrent;
   const isUpcoming = !isPastBooking && !isCurrent;
@@ -202,11 +222,9 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
 
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
-  const nights = differenceInDays(endDate, startDate);
+  const nights = isNaN(startDate.getTime()) || isNaN(endDate.getTime()) ? NaN : differenceInDays(endDate, startDate);
   
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "Fecha inválida";
-    const date = new Date(dateString.replace(/-/g, '/'));
+  const formatDate = (date: Date) => {
     if (isNaN(date.getTime())) {
       return "Fecha inválida";
     }
@@ -230,7 +248,7 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
     }
   
   const getBookingStatusStyles = (booking: BookingWithDetails): { titleColor: string; bgColor: string } => {
-    const daysUntilStart = differenceInDays(new Date(booking.startDate.replace(/-/g, '/')), startOfToday());
+    const daysUntilStart = differenceInDays(parseDateSafely(booking.startDate), startOfToday());
     
     if (booking.status === 'cancelled') return { titleColor: "text-red-600 line-through", bgColor: "bg-red-500/10" };
     if (booking.status === 'pending') return { titleColor: "text-amber-600", bgColor: "bg-yellow-500/10" };
@@ -291,8 +309,8 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
         </TableCell>
         <TableCell className={cn("whitespace-nowrap", (isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
           <div className="flex flex-col">
-              <span>{formatDate(booking.startDate)} → {formatDate(booking.endDate)}</span>
-              <span className="text-xs text-muted-foreground">{nights} noches</span>
+              <span>{formatDate(startDate)} → {formatDate(endDate)}</span>
+              <span className="text-xs text-muted-foreground">{isNaN(nights) ? '...' : nights} noches</span>
                {daysRemainingText && (
                   <span className={cn("text-xs font-semibold", daysRemainingColor)}>{daysRemainingText}</span>
                )}
@@ -379,18 +397,16 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     const isPending = booking.status === 'pending';
 
     const today = startOfToday();
-    const startDate = new Date(booking.startDate.replace(/-/g, '/'));
-    const endDate = new Date(booking.endDate.replace(/-/g, '/'));
+    const startDate = parseDateSafely(booking.startDate);
+    const endDate = parseDateSafely(booking.endDate);
     const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
     const isPastBooking = isPast(endDate) && !isCurrent;
     const isInactive = isCancelled || isPending || isPastBooking;
     const isUpcoming = !isPastBooking && !isCurrent;
     
-    const nights = differenceInDays(endDate, startDate);
+    const nights = isNaN(startDate.getTime()) || isNaN(endDate.getTime()) ? NaN : differenceInDays(endDate, startDate);
 
-    const formatDate = (dateString: string | undefined | null) => {
-        if (!dateString) return "Fecha inv.";
-        const date = new Date(dateString.replace(/-/g, '/'));
+    const formatDate = (date: Date) => {
         if (isNaN(date.getTime())) {
             return "Fecha inv.";
         }
@@ -402,7 +418,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     }
 
     const getBookingStatusStyles = (booking: BookingWithDetails): { titleColor: string; cardClassName: string } => {
-        const daysUntilStart = differenceInDays(new Date(booking.startDate.replace(/-/g, '/')), startOfToday());
+        const daysUntilStart = differenceInDays(parseDateSafely(booking.startDate), startOfToday());
 
         if (booking.status === 'cancelled') return { titleColor: "text-red-600 line-through", cardClassName: "bg-red-500/10 border-red-500/20" };
         if (booking.status === 'pending') return { titleColor: "text-amber-600", cardClassName: "bg-yellow-500/10 border-yellow-500/20" };
@@ -464,7 +480,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
                 <div className="flex justify-between col-span-2">
                     <span className="text-muted-foreground">Estadía</span>
                     <div className="flex flex-col items-end">
-                       <span className="font-medium">{formatDate(booking.startDate)} → {formatDate(booking.endDate)} ({nights}n)</span>
+                       <span className="font-medium">{formatDate(startDate)} → {formatDate(endDate)} ({isNaN(nights) ? '...' : nights}n)</span>
                        {daysRemainingText && (
                             <span className={cn("text-xs font-semibold", daysRemainingColor)}>{daysRemainingText}</span>
                        )}
