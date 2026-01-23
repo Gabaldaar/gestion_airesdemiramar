@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { updatePayment } from '@/lib/actions';
-import { Payment } from '@/lib/data';
+import { PaymentWithDetails } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn, parseDateSafely } from '@/lib/utils';
@@ -55,7 +55,7 @@ function SubmitButton() {
 }
 
 interface PaymentEditFormProps {
-    payment: Payment;
+    payment: PaymentWithDetails;
     onPaymentUpdated: () => void;
     children?: ReactNode;
 }
@@ -130,7 +130,7 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children }: Payment
         <DialogHeader>
           <DialogTitle>Editar Pago</DialogTitle>
           <DialogDescription>
-            Modifica los datos del pago.
+            Modifica los datos del pago para la reserva de <span className="font-semibold text-foreground">{payment.tenantName || 'N/A'}</span> en <span className="font-semibold text-foreground">{payment.propertyName || 'N/A'}</span>.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction}>
@@ -218,5 +218,3 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children }: Payment
     </Dialog>
   );
 }
-
-    
