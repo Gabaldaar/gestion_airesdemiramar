@@ -156,7 +156,9 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
     const handleCopy = () => {
         if (!booking) return;
 
-        const textToCopy = `*Reserva para ${booking.tenant?.name || 'N/A'} en ${booking.property?.name || 'N/A'}*\n\nMonto a pagar en USD: ${formatCurrency(resultUSD, 'USD')}\nMonto a pagar en Pesos: ${formatCurrency(resultARS, 'ARS')}`;
+        const dollarInfo = dollarRate ? `\n\n*Valor del Dólar (${dollarTypeMap[dollarType]}): ${formatCurrency(dollarRate as number, 'ARS')}*` : '';
+
+        const textToCopy = `*Reserva para ${booking.tenant?.name || 'N/A'} en ${booking.property?.name || 'N/A'}*\n\nMonto a pagar en USD: ${formatCurrency(resultUSD, 'USD')}\nMonto a pagar en Pesos: ${formatCurrency(resultARS, 'ARS')}${dollarInfo}`;
         
         navigator.clipboard.writeText(textToCopy);
         toast({
@@ -367,3 +369,4 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
         </Card>
     );
 }
+
