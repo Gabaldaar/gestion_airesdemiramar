@@ -174,9 +174,9 @@ export function EmailSender({ booking, payment, children, isOpen, onOpenChange }
         {children && <DialogTrigger asChild>{children}</DialogTrigger>}
         <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Preparar Email para {booking.tenant?.name}</DialogTitle>
+          <DialogTitle>Enviar Email a: {booking.tenant?.name}</DialogTitle>
           <DialogDescription>
-            Selecciona una plantilla y revisa el contenido. El email se abrirá en tu cliente de correo.
+            Para la reserva en '{booking.property?.name}'. Selecciona una plantilla y revisa el contenido. El email se abrirá en tu cliente de correo.
           </DialogDescription>
         </DialogHeader>
         

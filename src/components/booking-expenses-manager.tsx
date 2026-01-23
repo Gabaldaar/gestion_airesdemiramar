@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, ReactNode } from 'react';
@@ -12,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import { getBookingExpensesByBookingId, BookingExpense, getExpenseCategories, ExpenseCategory } from '@/lib/data';
+import { getBookingExpensesByBookingId, BookingExpense, getExpenseCategories, ExpenseCategory, getBookingWithDetails, BookingWithDetails } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -40,30 +39,33 @@ interface BookingExpensesManagerProps {
 export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChange, onAddExpenseClick }: BookingExpensesManagerProps) {
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
 
-  const fetchExpensesAndCategories = useCallback(async () => {
+  const fetchExpensesAndBooking = useCallback(async () => {
     if (!isOpen) return;
     setIsLoading(true);
-    const [fetchedExpenses, fetchedCategories] = await Promise.all([
+    const [fetchedExpenses, fetchedCategories, fetchedBooking] = await Promise.all([
         getBookingExpensesByBookingId(bookingId),
-        getExpenseCategories()
+        getExpenseCategories(),
+        getBookingWithDetails(bookingId)
     ]);
     setExpenses(fetchedExpenses);
     setCategories(fetchedCategories);
+    setBooking(fetchedBooking);
     setIsLoading(false);
   }, [bookingId, isOpen]);
 
   const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
 
   useEffect(() => {
-      fetchExpensesAndCategories();
-  }, [fetchExpensesAndCategories]);
+      fetchExpensesAndBooking();
+  }, [fetchExpensesAndBooking]);
 
   const handleExpenseAction = useCallback(() => {
-    fetchExpensesAndCategories();
-  }, [fetchExpensesAndCategories]);
+    fetchExpensesAndBooking();
+  }, [fetchExpensesAndBooking]);
 
   const handleAddNewExpense = () => {
       onOpenChange(false); // Close this manager dialog
@@ -92,9 +94,13 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Gastos de la Reserva</DialogTitle>
-            <DialogDescription>
-              Gestiona los gastos asociados a esta reserva.
-            </DialogDescription>
+            {booking && (
+              <DialogDescription>
+                Gestiona los gastos para la reserva de{' '}
+                <span className="font-semibold text-foreground">{booking.tenant?.name || 'N/A'}</span> en{' '}
+                <span className="font-semibold text-foreground">{booking.property?.name || 'N/A'}</span>.
+              </DialogDescription>
+            )}
           </DialogHeader>
           <div className="flex justify-end">
               <Button onClick={handleAddNewExpense}>+ Añadir Gasto</Button>
