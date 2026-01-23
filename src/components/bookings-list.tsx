@@ -206,7 +206,11 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "Fecha inválida";
-    return format(new Date(dateString.replace(/-/g, '/')), "dd-LLL-yyyy", { locale: es });
+    const date = new Date(dateString.replace(/-/g, '/'));
+    if (isNaN(date.getTime())) {
+      return "Fecha inválida";
+    }
+    return format(date, "dd-LLL-yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
@@ -386,7 +390,11 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
 
     const formatDate = (dateString: string | undefined | null) => {
         if (!dateString) return "Fecha inv.";
-        return format(new Date(dateString.replace(/-/g, '/')), "dd/MM/yy", { locale: es });
+        const date = new Date(dateString.replace(/-/g, '/'));
+        if (isNaN(date.getTime())) {
+            return "Fecha inv.";
+        }
+        return format(date, "dd/MM/yy", { locale: es });
     };
 
     const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
