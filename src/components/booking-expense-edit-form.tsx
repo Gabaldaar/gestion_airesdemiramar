@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -48,7 +49,12 @@ function SubmitButton() {
     )
 }
 
-export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated }: { expense: BookingExpense, categories: ExpenseCategory[], onExpenseUpdated: () => void; }) {
+export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated, context }: {
+    expense: BookingExpense,
+    categories: ExpenseCategory[],
+    onExpenseUpdated: () => void;
+    context?: { propertyName: string, tenantName: string }
+}) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
@@ -106,9 +112,17 @@ export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated }
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Editar Gasto de Reserva</DialogTitle>
-          <DialogDescription>
-            Modifica los datos del gasto.
-          </DialogDescription>
+            <DialogDescription>
+                {context ? (
+                    <>
+                    Modifica los datos del gasto para la reserva de{' '}
+                    <span className="font-semibold text-foreground">{context.tenantName}</span> en{' '}
+                    <span className="font-semibold text-foreground">{context.propertyName}</span>.
+                    </>
+                ) : (
+                    'Modifica los datos del gasto.'
+                )}
+            </DialogDescription>
         </DialogHeader>
         <form action={formAction}>
             <input type="hidden" name="id" value={expense.id} />

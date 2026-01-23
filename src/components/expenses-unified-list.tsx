@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -48,12 +49,20 @@ function ExpenseActions({ expense, categories, onDataChanged }: { expense: Unifi
         <div className="flex items-center justify-end gap-2">
             {expense.type === 'Propiedad' ? (
                 <>
-                    <ExpenseEditForm expense={expense as PropertyExpense} categories={categories} onExpenseUpdated={onDataChanged}/>
+                    <ExpenseEditForm
+                        expense={expense as PropertyExpense}
+                        categories={categories}
+                        onExpenseUpdated={onDataChanged}
+                        propertyName={expense.propertyName} />
                     <ExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={onDataChanged} />
                 </>
             ) : (
                 <>
-                    <BookingExpenseEditForm expense={expense as BookingExpense} categories={categories} onExpenseUpdated={onDataChanged}/>
+                    <BookingExpenseEditForm
+                        expense={expense as BookingExpense}
+                        categories={categories}
+                        onExpenseUpdated={onDataChanged}
+                        context={{ propertyName: expense.propertyName, tenantName: expense.tenantName || 'N/A' }} />
                     <BookingExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={onDataChanged} />
                 </>
             )}

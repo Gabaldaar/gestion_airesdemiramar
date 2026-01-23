@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -47,7 +48,12 @@ function SubmitButton() {
     )
 }
 
-export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { expense: PropertyExpense, categories: ExpenseCategory[], onExpenseUpdated: () => void; }) {
+export function ExpenseEditForm({ expense, categories, onExpenseUpdated, propertyName }: {
+    expense: PropertyExpense,
+    categories: ExpenseCategory[],
+    onExpenseUpdated: () => void;
+    propertyName?: string;
+}) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
@@ -105,9 +111,11 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated }: { exp
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Editar Gasto</DialogTitle>
-          <DialogDescription>
-            Modifica los datos del gasto.
-          </DialogDescription>
+            <DialogDescription>
+                Modifica los datos del gasto
+                {propertyName && <> para la propiedad <span className="font-semibold text-foreground">{propertyName}</span></>}
+                .
+            </DialogDescription>
         </DialogHeader>
         <form action={formAction}>
             <input type="hidden" name="id" value={expense.id} />

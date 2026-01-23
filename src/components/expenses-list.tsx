@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -10,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PropertyExpense, ExpenseCategory } from "@/lib/data";
+import { PropertyExpense, ExpenseCategory, Property } from "@/lib/data";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ExpenseEditForm } from "./expense-edit-form";
@@ -20,9 +21,10 @@ interface ExpensesListProps {
   expenses: PropertyExpense[];
   categories: ExpenseCategory[];
   onDataChanged: () => void;
+  property: Property;
 }
 
-export default function ExpensesList({ expenses, categories, onDataChanged }: ExpensesListProps) {
+export default function ExpensesList({ expenses, categories, onDataChanged, property }: ExpensesListProps) {
   if (expenses.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay gastos para mostrar.</p>;
   }
@@ -64,7 +66,7 @@ export default function ExpensesList({ expenses, categories, onDataChanged }: Ex
             <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                    <ExpenseEditForm expense={expense} categories={categories} onExpenseUpdated={onDataChanged} />
+                    <ExpenseEditForm expense={expense} categories={categories} onExpenseUpdated={onDataChanged} propertyName={property.name} />
                     <ExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={onDataChanged} />
                 </div>
             </TableCell>

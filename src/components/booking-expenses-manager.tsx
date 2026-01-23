@@ -129,7 +129,11 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
                     <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <BookingExpenseEditForm expense={expense} categories={categories} onExpenseUpdated={handleExpenseAction} />
+                        <BookingExpenseEditForm
+                          expense={expense}
+                          categories={categories}
+                          onExpenseUpdated={handleExpenseAction}
+                          context={booking ? { propertyName: booking.property?.name || 'N/A', tenantName: booking.tenant?.name || 'N/A'} : undefined} />
                         <BookingExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleExpenseAction} />
                       </div>
                     </TableCell>
