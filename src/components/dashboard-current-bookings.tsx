@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails } from "@/lib/data";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from "@/lib/utils";
+import { cn, parseDateSafely } from "@/lib/utils";
 
 export default function DashboardCurrentBookings({ bookings }: { bookings: BookingWithDetails[]}) {
   if (bookings.length === 0) {
@@ -21,7 +21,14 @@ export default function DashboardCurrentBookings({ bookings }: { bookings: Booki
   }
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
+    const date = parseDateSafely(dateString);
+    if (!date) return 'Fecha inv.';
+
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const day = date.getUTCDate();
+    const localDate = new Date(year, month, day);
+    return format(localDate, "dd 'de' LLL, yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {

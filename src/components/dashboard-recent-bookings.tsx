@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookingWithTenantAndProperty } from "@/lib/data";
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from "@/lib/utils";
+import { cn, parseDateSafely } from "@/lib/utils";
 
 export default function DashboardRecentBookings({ bookings }: { bookings: BookingWithTenantAndProperty[]}) {
   if (bookings.length === 0) {
@@ -21,7 +21,13 @@ export default function DashboardRecentBookings({ bookings }: { bookings: Bookin
   }
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
+    const date = parseDateSafely(dateString);
+    if (!date) return 'Fecha inv.';
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const day = date.getUTCDate();
+    const localDate = new Date(year, month, day);
+    return format(localDate, "dd 'de' LLL, yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
@@ -41,13 +47,13 @@ export default function DashboardRecentBookings({ bookings }: { bookings: Bookin
   }
 
   const getBookingColorClass = (booking: BookingWithTenantAndProperty): string => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
-    const startDate = new Date(booking.startDate);
-    startDate.setHours(0, 0, 0, 0);
+    const startDate = parseDateSafely(booking.startDate);
+    if (!startDate) return "";
     
-    const daysUntilStart = differenceInDays(startDate, today);
+    const daysUntilStart = differenceInDays(startDate, todayUTC);
 
     if (daysUntilStart < 7) return "border-red-500 bg-red-500/10";
     if (daysUntilStart < 15) return "border-orange-500 bg-orange-500/10";
@@ -56,11 +62,13 @@ export default function DashboardRecentBookings({ bookings }: { bookings: Bookin
   };
 
   const getBookingTextColorClass = (booking: BookingWithTenantAndProperty): string => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDate = new Date(booking.startDate);
-    startDate.setHours(0, 0, 0, 0);
-    const daysUntilStart = differenceInDays(startDate, today);
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    
+    const startDate = parseDateSafely(booking.startDate);
+    if (!startDate) return "text-primary";
+    
+    const daysUntilStart = differenceInDays(startDate, todayUTC);
     if (daysUntilStart < 7) return "text-red-700";
     if (daysUntilStart < 15) return "text-orange-700";
     if (daysUntilStart < 30) return "text-blue-700";

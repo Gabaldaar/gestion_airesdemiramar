@@ -8,13 +8,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import DashboardCurrentBookings from "@/components/dashboard-current-bookings";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { differenceInDays, startOfToday } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info, Copy } from "lucide-react";
 import AvailabilitySearcher from "@/components/availability-searcher";
 import PaymentCalculator from "@/components/payment-calculator";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { parseDateSafely } from "@/lib/utils";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface DashboardData {
     summaryByCurrency: FinancialSummaryByCurrency;
@@ -47,38 +50,60 @@ export default function DashboardPage() {
             fetchData();
         }
     }, [user]);
+    
+    const todayUTC = useMemo(() => {
+        const now = new Date();
+        return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    }, []);
 
     const upcomingCheckIns = useMemo(() => {
         if (!data) return [];
-        const today = startOfToday();
         const checkInDays = data.alertSettings?.checkInDays ?? 7;
         return data.bookings.filter(b => {
             const isActive = !b.status || b.status === 'active';
             if (!isActive) return false;
-            const checkInDate = new Date(b.startDate);
-            const daysUntil = differenceInDays(checkInDate, today);
+            const checkInDate = parseDateSafely(b.startDate);
+            if (!checkInDate) return false;
+            const daysUntil = differenceInDays(checkInDate, todayUTC);
             return daysUntil >= 0 && daysUntil <= checkInDays;
-        }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-    }, [data]);
+        }).sort((a, b) => {
+            const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
+            const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
+            return dateA - dateB;
+        });
+    }, [data, todayUTC]);
 
     const upcomingCheckOuts = useMemo(() => {
         if (!data) return [];
-        const today = startOfToday();
         const checkOutDays = data.alertSettings?.checkOutDays ?? 3;
         return data.bookings.filter(b => {
             const isActive = !b.status || b.status === 'active';
             if (!isActive) return false;
-            const checkOutDate = new Date(b.endDate);
-            const daysUntil = differenceInDays(checkOutDate, today);
+            const checkOutDate = parseDateSafely(b.endDate);
+            if (!checkOutDate) return false;
+            const daysUntil = differenceInDays(checkOutDate, todayUTC);
             return daysUntil >= 0 && daysUntil <= checkOutDays;
-        }).sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
-    }, [data]);
+        }).sort((a, b) => {
+            const dateA = parseDateSafely(a.endDate)?.getTime() || 0;
+            const dateB = parseDateSafely(b.endDate)?.getTime() || 0;
+            return dateA - dateB;
+        });
+    }, [data, todayUTC]);
+
+    const formatDateForDisplay = (date: Date | undefined): string => {
+        if (!date) return 'Fecha inv.';
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth();
+        const day = date.getUTCDate();
+        const localDate = new Date(year, month, day);
+        return format(localDate, "dd/MM/yyyy", { locale: es });
+    };
 
     const handleCopy = (type: 'check-ins' | 'check-outs') => {
         let textToCopy = '';
         if (type === 'check-ins') {
             textToCopy = `*Próximos Check-ins:*\n` + upcomingCheckIns.map(b => {
-                let line = `- ${b.property?.name}: *${b.tenant?.name}* llega el *${new Date(b.startDate).toLocaleDateString('es-AR')}*.`;
+                let line = `- ${b.property?.name}: *${b.tenant?.name}* llega el *${formatDateForDisplay(parseDateSafely(b.startDate))}*.`;
                 if (b.tenant?.phone) {
                     line += ` Tel: ${b.tenant.phone}`;
                 }
@@ -86,7 +111,7 @@ export default function DashboardPage() {
             }).join('\n');
         } else {
             textToCopy = `*Próximos Check-outs:*\n` + upcomingCheckOuts.map(b => {
-                let line = `- ${b.property?.name}: *${b.tenant?.name}* se retira el *${new Date(b.endDate).toLocaleDateString('es-AR')}*.`;
+                let line = `- ${b.property?.name}: *${b.tenant?.name}* se retira el *${formatDateForDisplay(parseDateSafely(b.endDate))}*.`;
                 if (b.tenant?.phone) {
                     line += ` Tel: ${b.tenant.phone}`;
                 }
@@ -118,25 +143,39 @@ export default function DashboardPage() {
     const totalProperties = properties.length;
     const totalTenants = tenants.length;
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    const upcomingBookings = bookings
+    const upcomingBookings = useMemo(() => {
+        if (!data) return [];
+        return data.bookings
         .filter(b => {
+            const startDate = parseDateSafely(b.startDate);
+            if (!startDate) return false;
             const isActive = !b.status || b.status === 'active';
-            return new Date(b.startDate) >= today && isActive;
+            return startDate >= todayUTC && isActive;
         })
-        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+        .sort((a, b) => {
+            const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
+            const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
+            return dateA - dateB;
+        })
         .slice(0, 5);
+    }, [data, todayUTC]);
 
-    const currentBookings = bookings
+    const currentBookings = useMemo(() => {
+        if (!data) return [];
+        return data.bookings
         .filter(b => {
-            const startDate = new Date(b.startDate);
-            const endDate = new Date(b.endDate);
+            const startDate = parseDateSafely(b.startDate);
+            const endDate = parseDateSafely(b.endDate);
+            if (!startDate || !endDate) return false;
             const isActive = !b.status || b.status === 'active';
-            return today >= startDate && today <= endDate && isActive;
+            return todayUTC >= startDate && todayUTC <= endDate && isActive;
         })
-        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+        .sort((a, b) => {
+            const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
+            const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
+            return dateA - dateB;
+        });
+    }, [data, todayUTC]);
 
 
     return (
@@ -158,7 +197,7 @@ export default function DashboardPage() {
                             Tienes {upcomingCheckIns.length} check-in(s) en los próximos {data.alertSettings?.checkInDays ?? 7} días.
                             <ul className="list-disc pl-5 mt-2">
                             {upcomingCheckIns.map(b => (
-                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> llega el <strong>{new Date(b.startDate).toLocaleDateString('es-AR')}</strong>.</li>
+                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> llega el <strong>{formatDateForDisplay(parseDateSafely(b.startDate))}</strong>.</li>
                             ))}
                             </ul>
                         </AlertDescription>
@@ -180,7 +219,7 @@ export default function DashboardPage() {
                             Tienes {upcomingCheckOuts.length} check-out(s) en los próximos {data.alertSettings?.checkOutDays ?? 3} días.
                              <ul className="list-disc pl-5 mt-2">
                             {upcomingCheckOuts.map(b => (
-                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> se retira el <strong>{new Date(b.endDate).toLocaleDateString('es-AR')}</strong>.</li>
+                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> se retira el <strong>{formatDateForDisplay(parseDateSafely(b.endDate))}</strong>.</li>
                             ))}
                             </ul>
                         </AlertDescription>
