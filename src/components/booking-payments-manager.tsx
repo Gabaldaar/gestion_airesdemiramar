@@ -117,9 +117,13 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Pagos de la Reserva</DialogTitle>
-            <DialogDescription>
-              Gestiona los pagos recibidos para esta reserva.
-            </DialogDescription>
+            {booking && (
+              <DialogDescription>
+                Gestiona los pagos recibidos para la reserva de{' '}
+                <span className="font-semibold text-foreground">{booking.tenant?.name || 'N/A'}</span> en{' '}
+                <span className="font-semibold text-foreground">{booking.property?.name || 'N/A'}</span>.
+              </DialogDescription>
+            )}
           </DialogHeader>
           
            <div className="flex justify-end">
