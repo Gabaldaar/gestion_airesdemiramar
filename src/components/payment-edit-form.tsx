@@ -26,7 +26,7 @@ import { updatePayment } from '@/lib/actions';
 import { Payment } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { cn } from '@/lib/utils';
+import { cn, parseDateSafely } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
@@ -66,7 +66,7 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children }: Payment
   const [isPending, startTransition] = useTransition();
   
   const [isOpen, setIsOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(new Date(payment.date.replace(/-/g, '/')));
+  const [date, setDate] = useState<Date | undefined>(parseDateSafely(payment.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(payment.originalArsAmount ? 'ARS' : 'USD');
   const [exchangeRate, setExchangeRate] = useState(payment.exchangeRate?.toString() || '');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
@@ -108,7 +108,7 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children }: Payment
   useEffect(() => {
     if (!isOpen) {
         setState(initialState);
-        setDate(new Date(payment.date.replace(/-/g, '/')));
+        setDate(parseDateSafely(payment.date));
         setCurrency(payment.originalArsAmount ? 'ARS' : 'USD');
         setExchangeRate(payment.exchangeRate?.toString() || '');
         setIsFetchingRate(false);

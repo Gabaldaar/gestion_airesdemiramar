@@ -19,7 +19,7 @@ import { updateBookingExpense } from '@/lib/actions';
 import { BookingExpense, ExpenseCategory } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { cn } from '@/lib/utils';
+import { cn, parseDateSafely } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
@@ -52,7 +52,7 @@ export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated }
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(new Date(expense.date.replace(/-/g, '/')));
+  const [date, setDate] = useState<Date | undefined>(parseDateSafely(expense.date));
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(expense.originalUsdAmount ? 'USD' : 'ARS');
   const [exchangeRate, setExchangeRate] = useState(expense.exchangeRate?.toString() || '');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
@@ -88,7 +88,7 @@ export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated }
   useEffect(() => {
       if (!isOpen) {
           setState(initialState);
-          setDate(new Date(expense.date.replace(/-/g, '/')));
+          setDate(parseDateSafely(expense.date));
           setCurrency(expense.originalUsdAmount ? 'USD' : 'ARS');
           setExchangeRate(expense.exchangeRate?.toString() || '');
           setIsFetchingRate(false);

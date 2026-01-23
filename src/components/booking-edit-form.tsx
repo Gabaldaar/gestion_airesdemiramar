@@ -27,7 +27,7 @@ import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, get
 import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
-import { cn, checkDateConflict } from "@/lib/utils"
+import { cn, checkDateConflict, parseDateSafely } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
@@ -86,8 +86,8 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   const [isPending, startTransition] = useTransition();
   const [origins, setOrigins] = useState<Origin[]>([]);
   const [date, setDate] = useState<DateRange | undefined>({
-      from: new Date(booking.startDate),
-      to: new Date(booking.endDate)
+      from: parseDateSafely(booking.startDate),
+      to: parseDateSafely(booking.endDate)
   });
   const [conflict, setConflict] = useState<Booking | null>(null);
 
@@ -106,10 +106,10 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   const [guaranteeStatus, setGuaranteeStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
   const [guaranteeAmount, setGuaranteeAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
   const [guaranteeReceivedDate, setGuaranteeReceivedDate] = useState<Date | undefined>(
-    booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined
+    parseDateSafely(booking.guaranteeReceivedDate)
   );
   const [guaranteeReturnedDate, setGuaranteeReturnedDate] = useState<Date | undefined>(
-    booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined
+    parseDateSafely(booking.guaranteeReturnedDate)
   );
 
     // This effect runs when the dialog is opened or the booking prop changes.
@@ -118,24 +118,24 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
         if (booking) {
             setSelectedTenantId(booking.tenantId);
             setDate({
-                from: new Date(booking.startDate),
-                to: new Date(booking.endDate)
+                from: parseDateSafely(booking.startDate),
+                to: parseDateSafely(booking.endDate)
             });
             setGuaranteeStatus(booking.guaranteeStatus || 'not_solicited');
             setGuaranteeAmount(booking.guaranteeAmount || undefined);
-            setGuaranteeReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
-            setGuaranteeReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
+            setGuaranteeReceivedDate(parseDateSafely(booking.guaranteeReceivedDate));
+            setGuaranteeReturnedDate(parseDateSafely(booking.guaranteeReturnedDate));
         }
     }, [booking]);
 
 
   const resetForm = () => {
-    setDate({ from: new Date(booking.startDate), to: new Date(booking.endDate) });
+    setDate({ from: parseDateSafely(booking.startDate), to: parseDateSafely(booking.endDate) });
     setConflict(null);
     setGuaranteeStatus(booking.guaranteeStatus || 'not_solicited');
     setGuaranteeAmount(booking.guaranteeAmount || undefined);
-    setGuaranteeReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
-    setGuaranteeReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
+    setGuaranteeReceivedDate(parseDateSafely(booking.guaranteeReceivedDate));
+    setGuaranteeReturnedDate(parseDateSafely(booking.guaranteeReturnedDate));
   };
 
   useEffect(() => {
@@ -167,9 +167,11 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId && (!b.status || b.status === 'active'));
     
     return otherBookings.flatMap(otherBooking => {
-        const startDate = new Date(otherBooking.startDate);
-        const endDate = new Date(otherBooking.endDate);
+        const startDate = parseDateSafely(otherBooking.startDate);
+        const endDate = parseDateSafely(otherBooking.endDate);
         
+        if (!startDate || !endDate) return [];
+
         const firstDayToBlock = addDays(startDate, 1);
         const lastDayToBlock = addDays(endDate, -1);
         
@@ -184,11 +186,13 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
   const { message: conflictMessage, isOverlap: isDateOverlap } = useMemo(() => {
     if (!conflict || !date?.from || !date?.to) return { message: "", isOverlap: false };
     
-    const conflictStart = new Date(conflict.startDate);
-    const conflictEnd = new Date(conflict.endDate);
-    const selectedStart = new Date(date.from);
-    const selectedEnd = new Date(date.to);
+    const conflictStart = parseDateSafely(conflict.startDate);
+    const conflictEnd = parseDateSafely(conflict.endDate);
+    const selectedStart = date.from;
+    const selectedEnd = date.to;
     
+    if (!conflictStart || !conflictEnd) return { message: "", isOverlap: false };
+
     if (isSameDay(selectedEnd, conflictStart)) {
         return { message: "Atención: El check-out coincide con el check-in de otra reserva.", isOverlap: false };
     }

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -22,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin, ExpenseCategory, getExpenseCategories } from "@/lib/data";
 import { format, differenceInDays, isWithinInterval, isPast, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from "@/lib/utils";
+import { cn, parseDateSafely } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import Link from "next/link";
 import { Button } from "./ui/button";
@@ -65,26 +64,6 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     returned: { text: 'Devuelta', className: 'bg-purple-500 hover:bg-purple-600' },
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-700' }
 };
-
-/**
- * Parses a date string safely, avoiding timezone shifts.
- * It handles both 'YYYY-MM-DD' and full ISO strings.
- */
-const parseDateSafely = (dateInput: string | null | undefined): Date => {
-    if (!dateInput) {
-        return new Date(NaN); // Return an invalid date
-    }
-
-    // If it's a 'YYYY-MM-DD' string, append time to parse it as local time.
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
-        return new Date(`${dateInput}T00:00:00`);
-    }
-    
-    // Otherwise, let new Date handle it (e.g., for full ISO strings)
-    const date = new Date(dateInput);
-    return date;
-};
-
 
 function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
@@ -215,18 +194,19 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   const today = startOfToday();
   const startDate = parseDateSafely(booking.startDate);
   const endDate = parseDateSafely(booking.endDate);
-  const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
-  const isPastBooking = isPast(endDate) && !isCurrent;
+  
+  const isCurrent = startDate && endDate ? isWithinInterval(today, { start: startDate, end: endDate }) : false;
+  const isPastBooking = endDate ? isPast(endDate) && !isCurrent : false;
   const isUpcoming = !isPastBooking && !isCurrent;
 
 
   const contractInfo = contractStatusMap[booking.contractStatus || 'not_sent'];
   const guaranteeInfo = guaranteeStatusMap[booking.guaranteeStatus || 'not_solicited'];
-  const nights = isNaN(startDate.getTime()) || isNaN(endDate.getTime()) ? NaN : differenceInDays(endDate, startDate);
+  const nights = startDate && endDate ? differenceInDays(endDate, startDate) : NaN;
   
-  const formatDate = (date: Date) => {
-    if (isNaN(date.getTime())) {
-      return "Fecha inválida";
+  const formatDate = (date: Date | undefined) => {
+    if (!date) {
+      return "Fecha inv.";
     }
     return format(date, "dd-LLL-yyyy", { locale: es });
   };
@@ -248,7 +228,8 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
     }
   
   const getBookingStatusStyles = (booking: BookingWithDetails): { titleColor: string; bgColor: string } => {
-    const daysUntilStart = differenceInDays(parseDateSafely(booking.startDate), startOfToday());
+    if (!startDate) return { titleColor: "text-red-600", bgColor: "bg-red-500/10" };
+    const daysUntilStart = differenceInDays(startDate, startOfToday());
     
     if (booking.status === 'cancelled') return { titleColor: "text-red-600 line-through", bgColor: "bg-red-500/10" };
     if (booking.status === 'pending') return { titleColor: "text-amber-600", bgColor: "bg-yellow-500/10" };
@@ -273,16 +254,16 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
     return 'bg-orange-500 hover:bg-orange-600';
   };
   
-  const daysUntilStart = differenceInDays(startDate, today);
-  const daysUntilEnd = differenceInDays(endDate, today);
+  const daysUntilStart = startDate ? differenceInDays(startDate, today) : null;
+  const daysUntilEnd = endDate ? differenceInDays(endDate, today) : null;
   
   let daysRemainingText: string | null = null;
   let daysRemainingColor: string = titleColor;
 
   if (!isCancelled && !isPending) {
-    if (isUpcoming && daysUntilStart >= 0) {
+    if (isUpcoming && daysUntilStart !== null && daysUntilStart >= 0) {
       daysRemainingText = `Faltan ${daysUntilStart} ${daysUntilStart === 1 ? 'día' : 'días'} para el check-in`;
-    } else if (isCurrent && daysUntilEnd >= 0) {
+    } else if (isCurrent && daysUntilEnd !== null && daysUntilEnd >= 0) {
       daysRemainingText = `Faltan ${daysUntilEnd} ${daysUntilEnd === 1 ? 'día' : 'días'} para el check-out`;
       daysRemainingColor = 'text-green-600';
     }
@@ -399,15 +380,16 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     const today = startOfToday();
     const startDate = parseDateSafely(booking.startDate);
     const endDate = parseDateSafely(booking.endDate);
-    const isCurrent = isWithinInterval(today, { start: startDate, end: endDate });
-    const isPastBooking = isPast(endDate) && !isCurrent;
+    
+    const isCurrent = startDate && endDate ? isWithinInterval(today, { start: startDate, end: endDate }) : false;
+    const isPastBooking = endDate ? isPast(endDate) && !isCurrent : false;
     const isInactive = isCancelled || isPending || isPastBooking;
     const isUpcoming = !isPastBooking && !isCurrent;
     
-    const nights = isNaN(startDate.getTime()) || isNaN(endDate.getTime()) ? NaN : differenceInDays(endDate, startDate);
+    const nights = startDate && endDate ? differenceInDays(endDate, startDate) : NaN;
 
-    const formatDate = (date: Date) => {
-        if (isNaN(date.getTime())) {
+    const formatDate = (date: Date | undefined) => {
+        if (!date) {
             return "Fecha inv.";
         }
         return format(date, "dd/MM/yy", { locale: es });
@@ -418,7 +400,8 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
     }
 
     const getBookingStatusStyles = (booking: BookingWithDetails): { titleColor: string; cardClassName: string } => {
-        const daysUntilStart = differenceInDays(parseDateSafely(booking.startDate), startOfToday());
+        if (!startDate) return { titleColor: "text-red-600", cardClassName: "bg-red-500/10 border-red-500/20" };
+        const daysUntilStart = differenceInDays(startDate, startOfToday());
 
         if (booking.status === 'cancelled') return { titleColor: "text-red-600 line-through", cardClassName: "bg-red-500/10 border-red-500/20" };
         if (booking.status === 'pending') return { titleColor: "text-amber-600", cardClassName: "bg-yellow-500/10 border-yellow-500/20" };
@@ -443,16 +426,16 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
         return 'text-orange-600';
     };
 
-    const daysUntilStart = differenceInDays(startDate, today);
-    const daysUntilEnd = differenceInDays(endDate, today);
+    const daysUntilStart = startDate ? differenceInDays(startDate, today) : null;
+    const daysUntilEnd = endDate ? differenceInDays(endDate, today) : null;
     
     let daysRemainingText: string | null = null;
     let daysRemainingColor: string = titleColor;
 
     if (!isCancelled && !isPending) {
-        if (isUpcoming && daysUntilStart >= 0) {
+        if (isUpcoming && daysUntilStart !== null && daysUntilStart >= 0) {
             daysRemainingText = `Faltan ${daysUntilStart} ${daysUntilStart === 1 ? 'día' : 'días'} para el check-in`;
-        } else if (isCurrent && daysUntilEnd >= 0) {
+        } else if (isCurrent && daysUntilEnd !== null && daysUntilEnd >= 0) {
             daysRemainingText = `Faltan ${daysUntilEnd} ${daysUntilEnd === 1 ? 'día' : 'días'} para el check-out`;
             daysRemainingColor = 'text-green-600';
         }
