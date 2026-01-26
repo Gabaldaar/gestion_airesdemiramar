@@ -20,6 +20,7 @@ import { PlusCircle, Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Origin, getOrigins } from '@/lib/data';
+import { countries } from '@/lib/countries';
 
 const initialState = {
   message: '',
@@ -108,7 +109,21 @@ export function TenantAddForm() {
                     <Label htmlFor="phone" className="text-right">
                     Teléfono
                     </Label>
-                    <Input id="phone" name="phone" className="col-span-3" />
+                    <div className="col-span-3 flex items-center gap-2">
+                        <Select name="countryCode" defaultValue="+54">
+                            <SelectTrigger className="w-[120px]">
+                                <SelectValue placeholder="+54" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {countries.map(country => (
+                                    <SelectItem key={country.code} value={country.dial_code}>
+                                        {country.name} ({country.dial_code})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Input id="phone" name="phone" className="flex-grow" />
+                    </div>
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="address" className="text-right">

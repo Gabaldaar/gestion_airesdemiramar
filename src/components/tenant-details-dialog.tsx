@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -18,16 +19,18 @@ interface TenantDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const formatWhatsAppLink = (phone: string | null | undefined) => {
+const formatWhatsAppLink = (phone: string | null | undefined, countryCode: string | null | undefined) => {
     if (!phone) return null;
-    const cleanedPhone = phone.replace(/[^0-9]/g, '');
-    return `https://wa.me/${cleanedPhone}`;
+    const code = (countryCode || '54').replace(/[^0-9]/g, '');
+    const phoneNum = phone.replace(/[^0-9]/g, '');
+    return `https://wa.me/${code}${phoneNum}`;
 };
 
 export function TenantDetailsDialog({ tenant, origin, isOpen, onOpenChange }: TenantDetailsDialogProps) {
   if (!tenant) return null;
 
-  const waLink = formatWhatsAppLink(tenant.phone);
+  const waLink = formatWhatsAppLink(tenant.phone, tenant.countryCode);
+  const telLink = `tel:${(tenant.countryCode || '+54').replace('+', '')}${tenant.phone?.replace(/[^0-9]/g, '')}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -65,7 +68,7 @@ export function TenantDetailsDialog({ tenant, origin, isOpen, onOpenChange }: Te
                 {tenant.phone && (
                      <div className="flex items-center gap-3">
                         <Phone className="h-4 w-4 text-muted-foreground" />
-                        <a href={`tel:${tenant.phone}`} className="text-primary hover:underline">{tenant.phone}</a>
+                        <a href={telLink} className="text-primary hover:underline">{tenant.countryCode || '+54'} {tenant.phone}</a>
                     </div>
                 )}
                  {(tenant.address || tenant.city) && (
@@ -105,7 +108,7 @@ export function TenantDetailsDialog({ tenant, origin, isOpen, onOpenChange }: Te
             )}
              {tenant.phone && (
                  <Button asChild variant="outline">
-                    <a href={`tel:${tenant.phone}`}>
+                    <a href={telLink}>
                         <Phone className="mr-2 h-4 w-4" /> Llamar
                     </a>
                 </Button>

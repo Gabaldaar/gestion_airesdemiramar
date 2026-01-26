@@ -77,6 +77,7 @@ export type Tenant = {
   address: string;
   city: string;
   country: string;
+  countryCode?: string;
   email: string;
   phone: string;
   notes?: string;

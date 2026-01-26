@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from "next/link";
@@ -29,10 +28,11 @@ interface TenantsListProps {
     onEditTenant: (tenant: Tenant) => void;
 }
 
-const formatWhatsAppLink = (phone: string | null | undefined) => {
+const formatWhatsAppLink = (phone: string | null | undefined, countryCode: string | null | undefined) => {
     if (!phone) return null;
-    const cleanedPhone = phone.replace(/[^0-9]/g, '');
-    return `https://wa.me/${cleanedPhone}`;
+    const code = (countryCode || '54').replace(/[^0-9]/g, '');
+    const phoneNum = phone.replace(/[^0-9]/g, '');
+    return `https://wa.me/${code}${phoneNum}`;
 };
 
 function TenantActions({ tenant, onDataChanged, onEditTenant }: { tenant: Tenant, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
@@ -68,7 +68,7 @@ function TenantActions({ tenant, onDataChanged, onEditTenant }: { tenant: Tenant
 
 
 function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
-    const waLink = formatWhatsAppLink(tenant.phone);
+    const waLink = formatWhatsAppLink(tenant.phone, tenant.countryCode);
     return (
         <TableRow key={tenant.id}>
             <TableCell className="font-medium">
@@ -94,9 +94,9 @@ function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Te
             <TableCell>
                 {waLink ? (
                     <a href={waLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                        {tenant.phone}
+                        {tenant.countryCode || '+54'} {tenant.phone}
                     </a>
-                ) : (tenant.phone || null)}
+                ) : (tenant.phone ? `${tenant.countryCode || '+54'} ${tenant.phone}`: null)}
             </TableCell>
             <TableCell className="hidden md:table-cell">{`${tenant.address || ''}, ${tenant.city || ''}`.replace(/^, |, $/g, '')}</TableCell>
             <TableCell className="text-right">
@@ -107,7 +107,7 @@ function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Te
 }
 
 function TenantCard({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
-    const waLink = formatWhatsAppLink(tenant.phone);
+    const waLink = formatWhatsAppLink(tenant.phone, tenant.countryCode);
     return (
         <Card>
             <CardHeader className="p-4">
@@ -144,10 +144,10 @@ function TenantCard({ tenant, origin, onDataChanged, onEditTenant }: { tenant: T
                         <span className="text-muted-foreground">Teléfono</span>
                          {waLink ? (
                             <a href={waLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium flex items-center gap-1">
-                                <Phone className="h-3 w-3"/> {tenant.phone}
+                                <Phone className="h-3 w-3"/> {tenant.countryCode || '+54'} {tenant.phone}
                             </a>
                         ) : (
-                            <span className="font-medium">{tenant.phone}</span>
+                            <span className="font-medium">{tenant.countryCode || '+54'} {tenant.phone}</span>
                         )}
                     </div>
                 )}
@@ -207,4 +207,3 @@ export default function TenantsList({ tenants, origins, onDataChanged, onEditTen
     
     return useCardView ? <CardView /> : <TableView />;
 }
-
