@@ -11,7 +11,8 @@ import TenantsList from './tenants-list';
 import { TenantEditForm } from './tenant-edit-form';
 import { Mail } from 'lucide-react';
 import { useToast } from './ui/use-toast';
-import { isWithinInterval, startOfToday } from 'date-fns';
+import { isWithinInterval } from 'date-fns';
+import { parseDateSafely } from '@/lib/utils';
 
 type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'cancelled' | 'pending';
 
@@ -65,18 +66,21 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
 
     // Filter by Booking Status
     if (statusFilter !== 'all') {
-      const today = startOfToday();
+      const now = new Date();
+      const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
       const tenantIdsWithMatchingBookings = new Set<string>();
 
       allBookings.forEach(booking => {
-        const bookingStartDate = new Date(booking.startDate.replace(/-/g, '/'));
-        const bookingEndDate = new Date(booking.endDate.replace(/-/g, '/'));
+        const bookingStartDate = parseDateSafely(booking.startDate);
+        const bookingEndDate = parseDateSafely(booking.endDate);
+        if (!bookingStartDate || !bookingEndDate) return;
+
         const isActive = !booking.status || booking.status === 'active';
         
-        const isCurrent = isActive && isWithinInterval(today, { start: bookingStartDate, end: bookingEndDate });
-        const isUpcoming = isActive && bookingStartDate > today;
-        const isClosed = isActive && bookingEndDate < today;
+        const isCurrent = isActive && isWithinInterval(todayUTC, { start: bookingStartDate, end: bookingEndDate });
+        const isUpcoming = isActive && bookingStartDate > todayUTC;
+        const isClosed = isActive && bookingEndDate < todayUTC;
         const isCancelled = booking.status === 'cancelled';
         const isPending = booking.status === 'pending';
 

@@ -9,6 +9,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
+import { parseDateSafely } from '@/lib/utils';
 
 interface PaymentsClientProps {
   initialPayments: PaymentWithDetails[];
@@ -22,7 +23,8 @@ export default function PaymentsClient({ initialPayments, properties }: Payments
 
   const filteredPayments = useMemo(() => {
     return initialPayments.filter(payment => {
-      const paymentDate = new Date(payment.date.replace(/-/g, '/'));
+      const paymentDate = parseDateSafely(payment.date);
+      if (!paymentDate) return false;
 
       // Property Filter
       if (propertyIdFilter !== 'all' && payment.propertyId !== propertyIdFilter) {
@@ -30,15 +32,13 @@ export default function PaymentsClient({ initialPayments, properties }: Payments
       }
       
       // Date Range Filter
-      if (fromDate && paymentDate < fromDate) {
-        return false;
+      if (fromDate) {
+        const fromDateUTC = new Date(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate()));
+        if (paymentDate < fromDateUTC) return false;
       }
       if (toDate) {
-        const normalizedToDate = new Date(toDate);
-        normalizedToDate.setHours(23, 59, 59, 999);
-        if (paymentDate > normalizedToDate) {
-            return false;
-        }
+        const toDateUTC = new Date(Date.UTC(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999));
+        if (paymentDate > toDateUTC) return false;
       }
       
       return true;

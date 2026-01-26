@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 import { Download, Mail, ChevronDown } from 'lucide-react';
-import { format, isWithinInterval, isPast, startOfToday } from 'date-fns';
+import { format, isWithinInterval, isPast } from 'date-fns';
 import { useToast } from './ui/use-toast';
 import {
   DropdownMenu,
@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { parseDateSafely } from '@/lib/utils';
 
 
 type ContractStatusFilter = 'all' | ContractStatus;
@@ -83,7 +84,8 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
 
 
   const filteredBookings = useMemo(() => {
-    const today = startOfToday();
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
     const activeStatusFilters = Object.entries(statusFilters)
         .filter(([, isActive]) => isActive)
@@ -92,8 +94,8 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     const hasActiveStatusFilter = activeStatusFilters.length > 0;
 
     const filtered = bookingsForTenant.filter(booking => {
-        
-        const bookingStartDate = new Date(booking.startDate.replace(/-/g, '/'));
+        const bookingStartDate = parseDateSafely(booking.startDate);
+        if (!bookingStartDate) return false;
         
       // Property Filter
       if (propertyIdFilter !== 'all' && booking.propertyId !== propertyIdFilter) {
@@ -111,16 +113,19 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
       }
 
       // Date Range Filter
-      if (fromDate && bookingStartDate < fromDate) {
-        return false;
+      if (fromDate) {
+        const fromDateUTC = new Date(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate()));
+        if (bookingStartDate < fromDateUTC) return false;
       }
-      if (toDate && bookingStartDate > toDate) {
-        return false;
+      if (toDate) {
+        const toDateUTC = new Date(Date.UTC(toDate.getFullYear(), toDate.getMonth(), toDate.getDate()));
+        if (bookingStartDate > toDateUTC) return false;
       }
 
       // Status Filter
       if (hasActiveStatusFilter) {
-        const bookingEndDate = new Date(booking.endDate.replace(/-/g, '/'));
+        const bookingEndDate = parseDateSafely(booking.endDate);
+        if (!bookingEndDate) return false;
         const bookingVisualStatuses = new Set<string>();
 
         if (booking.status === 'cancelled') {
@@ -128,9 +133,9 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
         } else if (booking.status === 'pending') {
             bookingVisualStatuses.add('pending');
         } else { // status is 'active' or undefined
-            if (isWithinInterval(today, { start: bookingStartDate, end: bookingEndDate })) {
+            if (isWithinInterval(todayUTC, { start: bookingStartDate, end: bookingEndDate })) {
                 bookingVisualStatuses.add('current');
-            } else if (bookingStartDate > today) {
+            } else if (bookingStartDate > todayUTC) {
                 bookingVisualStatuses.add('upcoming');
             } else {
                 bookingVisualStatuses.add('closed');
@@ -151,8 +156,9 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     // Apply sorting
     return filtered.sort((a, b) => {
         const getStatusPriority = (booking: BookingWithDetails): number => {
-            const bookingEndDate = new Date(booking.endDate.replace(/-/g, '/'));
-            if (booking.status === 'cancelled' || isPast(bookingEndDate)) return 2; // Cumplidas y canceladas al final
+            const bookingEndDate = parseDateSafely(booking.endDate);
+            if (!bookingEndDate) return 2;
+            if (booking.status === 'cancelled' || bookingEndDate < todayUTC) return 2; // Cumplidas y canceladas al final
             if (booking.status === 'pending') return 1; // Pendientes en el medio
             return 0; // Activas y futuras primero
         };
@@ -165,9 +171,9 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
         }
 
         // If priorities are the same, sort by date
-        const dateA = new Date(a.startDate.replace(/-/g, '/')).getTime();
-        const dateB = new Date(b.startDate.replace(/-/g, '/')).getTime();
-        return sortOrder === 'upcoming' ? dateA - dateB : dateB - dateA;
+        const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
+        const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
+        return sortOrder === 'upcoming' ? dateA - dateB : dateB - a;
     });
 
   }, [bookingsForTenant, fromDate, toDate, statusFilters, propertyIdFilter, contractStatusFilter, originIdFilter, sortOrder]);
@@ -204,14 +210,19 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
         return `"${newStr}"`; // Enclose in double quotes
     };
 
-    const rows = filteredBookings.map(booking => [
-      escapeCSV(booking.property?.name),
-      escapeCSV(booking.tenant?.name),
-      format(new Date(booking.startDate.replace(/-/g, '/')), 'yyyy-MM-dd'),
-      format(new Date(booking.endDate.replace(/-/g, '/')), 'yyyy-MM-dd'),
-      escapeCSV(booking.tenant?.phone),
-      escapeCSV(booking.notes)
-    ].join(','));
+    const rows = filteredBookings.map(booking => {
+        const checkInDate = parseDateSafely(booking.startDate);
+        const checkOutDate = parseDateSafely(booking.endDate);
+        
+        return [
+          escapeCSV(booking.property?.name),
+          escapeCSV(booking.tenant?.name),
+          checkInDate ? format(checkInDate, 'yyyy-MM-dd') : '',
+          checkOutDate ? format(checkOutDate, 'yyyy-MM-dd') : '',
+          escapeCSV(booking.tenant?.phone),
+          escapeCSV(booking.notes)
+        ].join(',');
+    });
 
     const csvContent = "data:text/csv;charset=utf-8," 
       + headers.join(',') + "\n" 

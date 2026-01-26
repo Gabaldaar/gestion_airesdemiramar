@@ -9,6 +9,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
+import { parseDateSafely } from '@/lib/utils';
 
 type ExpenseTypeFilter = 'all' | 'Propiedad' | 'Reserva';
 
@@ -34,7 +35,8 @@ export default function ExpensesClient({ initialExpenses, properties, categories
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter(expense => {
-      const expenseDate = new Date(expense.date.replace(/-/g, '/'));
+      const expenseDate = parseDateSafely(expense.date);
+      if (!expenseDate) return false;
 
       // Property Filter
       if (propertyIdFilter !== 'all' && ('propertyId' in expense && expense.propertyId !== propertyIdFilter)) {
@@ -58,15 +60,13 @@ export default function ExpensesClient({ initialExpenses, properties, categories
 
 
       // Date Range Filter
-      if (fromDate && expenseDate < fromDate) {
-        return false;
+      if (fromDate) {
+        const fromDateUTC = new Date(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate()));
+        if (expenseDate < fromDateUTC) return false;
       }
       if (toDate) {
-        const normalizedToDate = new Date(toDate);
-        normalizedToDate.setHours(23, 59, 59, 999);
-        if (expenseDate > normalizedToDate) {
-            return false;
-        }
+        const toDateUTC = new Date(Date.UTC(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999));
+        if (expenseDate > toDateUTC) return false;
       }
       
       return true;
