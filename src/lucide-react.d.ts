@@ -10,6 +10,7 @@ declare module 'lucide-react' {
     export const Home: LucideIcon;
     export const Building2: LucideIcon;
     export const Users: LucideIcon;
+    export const User: LucideIcon;
     export const Calendar: LucideIcon;
     export const Settings: LucideIcon;
     export const Menu: LucideIcon;
@@ -29,6 +30,7 @@ declare module 'lucide-react' {
     export const Calendar as CalendarIcon: LucideIcon;
     export const ExternalLink: LucideIcon;
     export const NotebookPen: LucideIcon;
+    export const Notebook: LucideIcon;
     export const Landmark: LucideIcon;
     export const Wallet: LucideIcon;
     export const Pencil: LucideIcon;
@@ -52,4 +54,5 @@ declare module 'lucide-react' {
     export const Tag: LucideIcon;
     export const ChevronsUpDown: LucideIcon;
     export const Check: LucideIcon;
+    export const Globe: LucideIcon;
 }

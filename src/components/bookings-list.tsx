@@ -39,6 +39,7 @@ import { PaymentAddForm, PaymentPreloadData } from "./payment-add-form";
 import { BookingExpenseAddForm } from "./booking-expense-add-form";
 import PaymentCalculator from "./payment-calculator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
+import { TenantDetailsDialog } from "./tenant-details-dialog";
 
 
 interface BookingsListProps {
@@ -186,7 +187,7 @@ function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalcula
     )
 }
 
-function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
+function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen, onTenantClick }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void }) {
 
   const isCancelled = booking.status === 'cancelled';
   const isPending = booking.status === 'pending';
@@ -283,11 +284,13 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
         </TableCell>}
         <TableCell className={cn((isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
             <div className='flex items-center h-full'>
-                <span
-                    className="line-clamp-2 max-w-[150px]"
+                 <button
+                    onClick={() => onTenantClick(booking.tenantId)}
+                    className="line-clamp-2 max-w-[150px] text-left text-primary hover:underline disabled:no-underline disabled:text-muted-foreground disabled:cursor-default"
+                    disabled={!booking.tenant}
                 >
                     {booking.tenant?.name || 'N/A'}
-                </span>
+                </button>
             </div>
         </TableCell>
         <TableCell className={cn("whitespace-nowrap", (isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
@@ -375,7 +378,7 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
   );
 }
 
-function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
+function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen, onTenantClick }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void }) {
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
 
@@ -457,10 +460,28 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
                         <span className={cn(titleColor)}>
                             {booking.property?.name || 'N/A'}
                         </span>
-                    ) : (booking.tenant?.name || 'N/A')}
+                    ) : (
+                        <button 
+                            onClick={() => onTenantClick(booking.tenantId)} 
+                            disabled={!booking.tenant} 
+                            className="text-left text-primary hover:underline disabled:no-underline disabled:text-inherit disabled:cursor-default"
+                        >
+                            {booking.tenant?.name || 'N/A'}
+                        </button>
+                    )}
                 </CardTitle>
                 <CardDescription className={cn(cardClassName.includes('bg-') && "text-foreground/80")}>
-                    {showProperty ? (booking.tenant?.name || 'N/A') : booking.property?.name}
+                    {showProperty ? (
+                        <button 
+                            onClick={() => onTenantClick(booking.tenantId)} 
+                            disabled={!booking.tenant} 
+                            className="text-left text-primary hover:underline disabled:no-underline disabled:text-inherit disabled:cursor-default"
+                        >
+                            {booking.tenant?.name || 'N/A'}
+                        </button>
+                    ) : (
+                        <span>{booking.property?.name}</span>
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent className="p-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -518,6 +539,8 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [emailBooking, setEmailBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | undefined>(undefined);
+  const [isTenantDetailOpen, setIsTenantDetailOpen] = useState(false);
 
   const { width } = useWindowSize();
   const useCardView = width < 1280; 
@@ -562,6 +585,14 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     setIsEmailOpen(true);
   }
 
+  const handleTenantClick = (tenantId: string) => {
+    const tenant = tenants.find(t => t.id === tenantId);
+    if (tenant) {
+      setSelectedTenant(tenant);
+      setIsTenantDetailOpen(true);
+    }
+  };
+
   const handleRegisterPayment = (bookingId: string, data: PaymentPreloadData) => {
     setIsCalculatorOpen(false); // Close calculator
     setAddingPaymentForBookingId(bookingId);
@@ -582,6 +613,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
             onAddExpense={handleAddExpenseClick}
             onCalculatorOpen={handleCalculatorOpen}
             onEmailOpen={handleEmailOpen}
+            onTenantClick={handleTenantClick}
         />
         ))}
     </div>
@@ -614,6 +646,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                     onAddExpense={handleAddExpenseClick}
                     onCalculatorOpen={handleCalculatorOpen}
                     onEmailOpen={handleEmailOpen}
+                    onTenantClick={handleTenantClick}
                 />
             ))}
         </TableBody>
@@ -682,6 +715,14 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                 isOpen={isEmailOpen}
                 onOpenChange={setIsEmailOpen}
              />
+        )}
+        {selectedTenant && (
+            <TenantDetailsDialog
+                tenant={selectedTenant}
+                origin={selectedTenant.originId ? originsMap.get(selectedTenant.originId) : undefined}
+                isOpen={isTenantDetailOpen}
+                onOpenChange={setIsTenantDetailOpen}
+            />
         )}
     </div>
   );
