@@ -12,6 +12,7 @@ import LogoCont from "@/assets/logocont.png";
 import Firma from "@/assets/firma.png";
 import '../globals.css';
 import { BookingWithDetails } from "@/lib/data";
+import { parseDateSafely } from "@/lib/utils";
 
 
 // --- Number to Words Conversion Logic ---
@@ -181,10 +182,10 @@ function ContractPage({ bookingId }: { bookingId: string }) {
     
     useEffect(() => {
         if (booking && booking.tenant?.name && booking.property?.name) {
-            const checkInDate = format(new Date(booking.startDate.replace(/-/g, '/')), 'yyyy-MM-dd');
+            const checkInDate = parseDateSafely(booking.startDate);
             const tenantName = booking.tenant.name.replace(/ /g, '_');
             const propertyName = booking.property.name.replace(/ /g, '_');
-            document.title = `Contrato_${tenantName}-${propertyName}-${checkInDate}`;
+            document.title = `Contrato_${tenantName}-${propertyName}-${checkInDate ? format(checkInDate, 'yyyy-MM-dd') : 'fecha-invalida'}`;
         }
     }, [booking]);
     
@@ -237,6 +238,9 @@ function ContractPage({ bookingId }: { bookingId: string }) {
       centSingular: 'CENTAVO',
     };
     const guaranteeAmountInWords = numeroALetras(booking.guaranteeAmount ?? 0, guaranteeCurrencyConfig);
+    
+    const checkInDate = parseDateSafely(booking.startDate);
+    const checkOutDate = parseDateSafely(booking.endDate);
 
 
     const replacements: { [key: string]: string } = {
@@ -245,8 +249,8 @@ function ContractPage({ bookingId }: { bookingId: string }) {
         '{{inquilino.direccion}}': `${tenant.address || ''}, ${tenant.city || ''}`.trim().replace(/^,|,$/g, ''),
         '{{propiedad.nombre}}': property.name,
         '{{propiedad.direccion}}': property.address,
-        '{{fechaCheckIn}}': format(new Date(booking.startDate.replace(/-/g, '/')), "dd 'de' LLLL 'de' yyyy", { locale: es }),
-        '{{fechaCheckOut}}': format(new Date(booking.endDate.replace(/-/g, '/')), "dd 'de' LLLL 'de' yyyy", { locale: es }),
+        '{{fechaCheckIn}}': checkInDate ? format(checkInDate, "dd 'de' LLLL 'de' yyyy", { locale: es }) : 'Fecha inválida',
+        '{{fechaCheckOut}}': checkOutDate ? format(checkOutDate, "dd 'de' LLLL 'de' yyyy", { locale: es }) : 'Fecha inválida',
         '{{monto}}': formatCurrency(booking.amount, booking.currency),
         '{{montoEnLetras}}': amountInWords,
         '{{montoGarantia}}': formatCurrency(booking.guaranteeAmount, booking.guaranteeCurrency),
@@ -300,6 +304,3 @@ function ContractPage({ bookingId }: { bookingId: string }) {
         </div>
     );
 }
-
-
-    
