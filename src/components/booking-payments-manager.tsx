@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, ReactNode } from 'react';
+import { useEffect, useState, useCallback, ReactNode, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -47,9 +47,9 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
   const { toast } = useToast();
   const [isEmailSenderOpen, setIsEmailSenderOpen] = useState(false);
   const [selectedPaymentForEmail, setSelectedPaymentForEmail] = useState<Payment | undefined>(undefined);
+  const [dollarRate, setDollarRate] = useState<number | null>(null);
   
   const fetchPaymentsAndBooking = useCallback(async () => {
-    if (!isOpen) return;
     setIsLoading(true);
     try {
         const [fetchedPayments, fetchedBooking] = await Promise.all([
@@ -68,12 +68,31 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
     } finally {
         setIsLoading(false);
     }
-  }, [bookingId, isOpen, toast]);
+  }, [bookingId, toast]);
+
+  const fetchDollarRate = useCallback(async () => {
+    try {
+      const response = await fetch('/api/dollar-rate?type=blue');
+      if (response.ok) {
+        const data = await response.json();
+        setDollarRate(data.venta);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo obtener el valor del dólar.' });
+      }
+    } catch (error) {
+      console.error('Failed to fetch dollar rate', error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar para obtener el valor del dólar.' });
+    }
+  }, [toast]);
 
 
   useEffect(() => {
+    if (isOpen) {
       fetchPaymentsAndBooking();
-  }, [fetchPaymentsAndBooking]);
+      fetchDollarRate();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const handlePaymentAction = useCallback(() => {
     fetchPaymentsAndBooking(); // Re-fetch payments after an action
@@ -111,6 +130,21 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
 
   const totalAmount = payments.reduce((acc, payment) => acc + payment.amount, 0);
 
+  const balanceUSD = useMemo(() => {
+    if (!booking) return 0;
+    if (booking.currency === 'USD') return booking.balance;
+    if (!dollarRate) return 0;
+    return booking.balance / dollarRate;
+  }, [booking, dollarRate]);
+
+  const balanceARS = useMemo(() => {
+    if (!booking) return 0;
+    if (booking.currency === 'ARS') return booking.balance;
+    if (!dollarRate) return 0;
+    return booking.balance * dollarRate;
+  }, [booking, dollarRate]);
+
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -133,8 +167,6 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
 
           {isLoading ? (
             <p>Cargando pagos...</p>
-          ) : payments.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No hay pagos para mostrar.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -146,23 +178,31 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell>{formatDate(payment.date)}</TableCell>
-                    <TableCell className="font-medium">{payment.description}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(payment.amount, 'USD')}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => openEmailSender(payment)} disabled={!booking?.tenant?.email}>
-                            <Mail className="h-4 w-4" />
-                            <span className="sr-only">Enviar confirmación de pago</span>
-                        </Button>
-                        <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
-                        <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handlePaymentAction} />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {payments.length > 0 ? (
+                    payments.map((payment) => (
+                    <TableRow key={payment.id}>
+                        <TableCell>{formatDate(payment.date)}</TableCell>
+                        <TableCell className="font-medium">{payment.description}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(payment.amount, 'USD')}</TableCell>
+                        <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => openEmailSender(payment)} disabled={!booking?.tenant?.email}>
+                                <Mail className="h-4 w-4" />
+                                <span className="sr-only">Enviar confirmación de pago</span>
+                            </Button>
+                            <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
+                            <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handlePaymentAction} />
+                        </div>
+                        </TableCell>
+                    </TableRow>
+                    ))
+                ) : (
+                    <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                            No hay pagos registrados.
+                        </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
               <TableFooter>
                   <TableRow>
@@ -173,7 +213,17 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
                   {booking && (
                     <TableRow>
                         <TableCell colSpan={2} className="font-bold text-right">Saldo Pendiente</TableCell>
-                        <TableCell className={cn("text-right font-bold", booking.balance > 0 ? 'text-orange-600' : 'text-green-600')}>{formatCurrency(booking.balance, booking.currency)}</TableCell>
+                        <TableCell className={cn("text-right font-bold", booking.balance > 0 ? 'text-orange-600' : 'text-green-600')}>
+                             {dollarRate ? (
+                                <>
+                                    <div>{formatCurrency(balanceUSD, 'USD')}</div>
+                                    <div className="text-xs font-normal text-muted-foreground">{formatCurrency(balanceARS, 'ARS')}</div>
+                                    <div className="text-xs font-normal text-muted-foreground">(1 USD = {formatCurrency(dollarRate, 'ARS')})</div>
+                                </>
+                             ) : (
+                                formatCurrency(booking.balance, booking.currency)
+                             )}
+                        </TableCell>
                         <TableCell></TableCell>
                     </TableRow>
                   )}
