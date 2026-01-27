@@ -29,6 +29,7 @@ import { PaymentDeleteForm } from './payment-delete-form';
 import { useToast } from '@/components/ui/use-toast';
 import { EmailSender } from './email-sender';
 import { BookingWithDetails } from '@/lib/data';
+import { cn } from '@/lib/utils';
 
 interface BookingPaymentsManagerProps {
     bookingId: string;
@@ -169,6 +170,13 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
                       <TableCell className="text-right font-bold">{formatCurrency(totalAmount, 'USD')}</TableCell>
                       <TableCell></TableCell>
                   </TableRow>
+                  {booking && (
+                    <TableRow>
+                        <TableCell colSpan={2} className="font-bold text-right">Saldo Pendiente</TableCell>
+                        <TableCell className={cn("text-right font-bold", booking.balance > 0 ? 'text-orange-600' : 'text-green-600')}>{formatCurrency(booking.balance, booking.currency)}</TableCell>
+                        <TableCell></TableCell>
+                    </TableRow>
+                  )}
               </TableFooter>
             </Table>
           )}
