@@ -13,7 +13,7 @@ export const parseDateSafely = (dateInput: string | null | undefined): Date | un
     if (!dateInput) {
         return undefined;
     }
-    // Tries to parse YYYY-MM-DD by constructing a UTC date to avoid timezone shifts.
+    // Tries to parse YYYY-MM-DD by constructing a local date to avoid timezone shifts during display.
     const parts = dateInput.split('T')[0].split('-');
     if (parts.length === 3) {
         const year = parseInt(parts[0], 10);
@@ -21,14 +21,17 @@ export const parseDateSafely = (dateInput: string | null | undefined): Date | un
         const day = parseInt(parts[2], 10);
 
         if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-            const date = new Date(Date.UTC(year, month, day));
+            // IMPORTANT: Create a date that is interpreted as local midnight.
+            // new Date(year, month, day) does this.
+            // This prevents the date from shifting when displayed in the user's timezone.
+            const date = new Date(year, month, day);
             if (!isNaN(date.getTime())) {
                 return date;
             }
         }
     }
     
-    // Fallback for any other format, though risky
+    // Fallback for other formats, though risky. This might be timezone-sensitive.
     const fallbackDate = new Date(dateInput);
     if (isNaN(fallbackDate.getTime())) {
         return undefined;
