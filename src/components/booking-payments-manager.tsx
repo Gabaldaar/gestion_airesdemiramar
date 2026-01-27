@@ -72,7 +72,7 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
 
   const fetchDollarRate = useCallback(async () => {
     try {
-      const response = await fetch('/api/dollar-rate?type=blue');
+      const response = await fetch('/api/dollar-rate?type=oficial');
       if (response.ok) {
         const data = await response.json();
         setDollarRate(data.venta);
