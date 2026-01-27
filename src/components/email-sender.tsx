@@ -24,11 +24,12 @@ import { Textarea } from './ui/textarea';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { parseDateSafely } from '@/lib/utils';
 
 const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
-    // Ensure we parse the string as UTC to avoid timezone shifts
-    const date = new Date(dateString);
+    const date = parseDateSafely(dateString);
+    if (!date) return 'Fecha inválida';
     return format(date, "dd 'de' LLLL 'de' yyyy", { locale: es });
 };
 
