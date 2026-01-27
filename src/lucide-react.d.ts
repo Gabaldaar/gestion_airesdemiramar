@@ -55,4 +55,6 @@ declare module 'lucide-react' {
     export const ChevronsUpDown: LucideIcon;
     export const Check: LucideIcon;
     export const Globe: LucideIcon;
+    export const Printer: LucideIcon;
+    export const FileDown: LucideIcon;
 }

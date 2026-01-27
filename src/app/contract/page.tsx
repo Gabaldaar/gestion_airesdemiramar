@@ -13,6 +13,7 @@ import Firma from "@/assets/firma.png";
 import '../globals.css';
 import { BookingWithDetails } from "@/lib/data";
 import { parseDateSafely } from "@/lib/utils";
+import { EmailSender } from "@/components/email-sender";
 
 
 // --- Number to Words Conversion Logic ---
@@ -158,6 +159,7 @@ function ContractPage({ bookingId }: { bookingId: string }) {
     const [booking, setBooking] = useState<BookingWithDetails | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isEmailSenderOpen, setIsEmailSenderOpen] = useState(false);
     
     useEffect(() => {
         const fetchBooking = async () => {
@@ -268,39 +270,49 @@ function ContractPage({ bookingId }: { bookingId: string }) {
     const paragraphs = processedTemplate.split('\n').filter(p => p.trim() !== '');
 
     return (
-        <div className="bg-white text-black p-4 sm:p-8 md:p-12 print:p-0">
-             <div className="max-w-4xl mx-auto bg-white p-8 print:p-0">
-                <header className="flex justify-between items-center pb-8 border-b">
-                    <div>
-                        <Image src={LogoCont} alt="Logo" width={225} height={60} placeholder="blur" />
-                    </div>
-                    <div className="print:hidden">
-                        <h1 className="text-2xl font-bold text-right">Vista Previa del Contrato</h1>
-                        <ContractActions />
-                    </div>
-                </header>
-                
-                <main className="mt-8">
-                    <div className="prose prose-sm sm:prose-base max-w-none text-justify space-y-4">
-                        {paragraphs.map((p, index) => (
-                            <p key={index}>{p}</p>
-                        ))}
-                    </div>
-                </main>
-
-                <footer className="mt-40 flex justify-between items-end">
-                    <div className="text-center">
-                        <div className="h-20"></div>
-                        <p className="pt-2 border-t border-black w-48 text-center">Firma Locatario</p>
-                    </div>
-                    <div className="text-center">
-                        <div className="h-20 flex items-center justify-center">
-                            <Image src={Firma} alt="Firma" width={109} height={99} placeholder="blur" />
+        <>
+            <div className="bg-white text-black p-4 sm:p-8 md:p-12 print:p-0">
+                <div className="max-w-4xl mx-auto bg-white p-8 print:p-0">
+                    <header className="flex justify-between items-center pb-8 border-b">
+                        <div>
+                            <Image src={LogoCont} alt="Logo" width={225} height={60} placeholder="blur" />
                         </div>
-                        <p className="pt-2 border-t border-black w-48 text-center">Firma Locador</p>
-                    </div>
-                </footer>
+                        <div className="print:hidden">
+                            <h1 className="text-2xl font-bold text-right">Vista Previa del Contrato</h1>
+                            <ContractActions onEmailOpen={() => setIsEmailSenderOpen(true)} />
+                        </div>
+                    </header>
+                    
+                    <main className="mt-8">
+                        <div className="prose prose-sm sm:prose-base max-w-none text-justify space-y-4">
+                            {paragraphs.map((p, index) => (
+                                <p key={index}>{p}</p>
+                            ))}
+                        </div>
+                    </main>
+
+                    <footer className="mt-40 flex justify-between items-end">
+                        <div className="text-center">
+                            <div className="h-20"></div>
+                            <p className="pt-2 border-t border-black w-48 text-center">Firma Locatario</p>
+                        </div>
+                        <div className="text-center">
+                            <div className="h-20 flex items-center justify-center">
+                                <Image src={Firma} alt="Firma" width={109} height={99} placeholder="blur" />
+                            </div>
+                            <p className="pt-2 border-t border-black w-48 text-center">Firma Locador</p>
+                        </div>
+                    </footer>
+                </div>
             </div>
-        </div>
+
+            {booking && (
+                <EmailSender
+                    booking={booking}
+                    isOpen={isEmailSenderOpen}
+                    onOpenChange={setIsEmailSenderOpen}
+                />
+            )}
+        </>
     );
 }
