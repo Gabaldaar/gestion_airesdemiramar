@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useRef, useTransition, ReactNode } from 'react';
@@ -25,6 +26,7 @@ import { Booking, GuaranteeStatus } from '@/lib/data';
 import { Shield, Loader2 } from 'lucide-react';
 import { DatePicker } from './ui/date-picker';
 import { Alert, AlertDescription } from './ui/alert';
+import { parseDateSafely } from '@/lib/utils';
 
 const initialState: { message: string; success: boolean, error?: string } = {
   message: '',
@@ -61,10 +63,10 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
   const [status, setStatus] = useState<GuaranteeStatus>(booking.guaranteeStatus || 'not_solicited');
   const [amount, setAmount] = useState<number | undefined>(booking.guaranteeAmount || undefined);
   const [receivedDate, setReceivedDate] = useState<Date | undefined>(
-    booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined
+    parseDateSafely(booking.guaranteeReceivedDate)
   );
   const [returnedDate, setReturnedDate] = useState<Date | undefined>(
-    booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined
+    parseDateSafely(booking.guaranteeReturnedDate)
   );
   const [clientError, setClientError] = useState<string | null>(null);
 
@@ -90,8 +92,8 @@ export function GuaranteeManager({ booking, children, isOpen, onOpenChange }: Gu
     if (isOpen) {
       setStatus(booking.guaranteeStatus || 'not_solicited');
       setAmount(booking.guaranteeAmount || undefined);
-      setReceivedDate(booking.guaranteeReceivedDate ? new Date(booking.guaranteeReceivedDate) : undefined);
-      setReturnedDate(booking.guaranteeReturnedDate ? new Date(booking.guaranteeReturnedDate) : undefined);
+      setReceivedDate(parseDateSafely(booking.guaranteeReceivedDate));
+      setReturnedDate(parseDateSafely(booking.guaranteeReturnedDate));
       setClientError(null);
     }
   }, [isOpen, booking]);
