@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -31,7 +32,7 @@ export default function ContractActions({ onEmailOpen }: ContractActionsProps) {
                         Enviar por Email
                     </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="print:hidden">
                     <DialogHeader>
                         <DialogTitle>Enviar Contrato por Email</DialogTitle>
                         <DialogDescription>
