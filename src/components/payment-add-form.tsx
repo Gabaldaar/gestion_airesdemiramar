@@ -161,7 +161,7 @@ export function PaymentAddForm({
   }, [state]);
 
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     formRef.current?.reset();
     setDate(new Date());
     setCurrency('USD');
@@ -174,13 +174,13 @@ export function PaymentAddForm({
     setBooking(null);
     setDollarRateForBalance(null);
     setIsFetchingBooking(false);
-  };
+  }, []);
   
   useEffect(() => {
     if (!isOpen) {
       resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
   
   const areFinanceFieldsRequired = !!datosImputacion;
 
@@ -235,14 +235,30 @@ export function PaymentAddForm({
     if (isOpen) {
       fetchFinanceData();
       fetchBookingAndRate();
-      if (preloadData) {
-        setAmount(preloadData.amount.toString());
-        setCurrency(preloadData.currency);
-        setExchangeRate(preloadData.exchangeRate?.toString() || '');
-      }
     }
-  }, [isOpen, bookingId, preloadData]);
+  }, [isOpen, bookingId]);
   
+  // This effect handles data pre-filling
+  useEffect(() => {
+    if (isOpen) {
+        if (preloadData) {
+            setAmount(preloadData.amount.toFixed(2));
+            setCurrency(preloadData.currency);
+            if (preloadData.exchangeRate) {
+                setExchangeRate(preloadData.exchangeRate.toString());
+            }
+        } else if (booking && booking.balance > 0) {
+            setCurrency(booking.currency);
+            setAmount(booking.balance.toFixed(2));
+        } else if (booking) {
+            // Balance is 0 or less, so don't prefill amount
+            setCurrency(booking.currency);
+            setAmount('');
+        }
+    }
+  }, [isOpen, preloadData, booking]);
+
+
   const balanceUSD = useMemo(() => {
     if (!booking) return 0;
     if (booking.currency === 'USD') return booking.balance;
