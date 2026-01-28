@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, useMemo, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ import { Textarea } from './ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { useToast } from './ui/use-toast';
+import { BookingWithDetails, getBookingWithDetails } from '@/lib/data';
 
 export interface Categoria { id: string; nombre: string; }
 export interface Cuenta { id: string; nombre: string; }
@@ -75,6 +76,23 @@ interface PaymentAddFormProps {
   preloadData?: PaymentPreloadData;
 }
 
+const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
+    if (currency === 'USD') {
+         return `USD ${new Intl.NumberFormat('es-AR', {
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(amount)}`;
+    }
+    return new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(amount);
+};
+
+
 export function PaymentAddForm({
   bookingId,
   onPaymentAdded,
@@ -96,6 +114,10 @@ export function PaymentAddForm({
     useState<DatosImputacion | null>(null);
   const [isFetchingFinanceData, setIsFetchingFinanceData] = useState(false);
   const [financeApiError, setFinanceApiError] = useState<string | null>(null);
+
+  const [booking, setBooking] = useState<BookingWithDetails | null>(null);
+  const [dollarRateForBalance, setDollarRateForBalance] = useState<number | null>(null);
+  const [isFetchingBooking, setIsFetchingBooking] = useState(false);
   
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -149,6 +171,9 @@ export function PaymentAddForm({
     setIsFetchingRate(false);
     setDatosImputacion(null);
     setFinanceApiError(null);
+    setBooking(null);
+    setDollarRateForBalance(null);
+    setIsFetchingBooking(false);
   };
   
   useEffect(() => {
@@ -172,7 +197,6 @@ export function PaymentAddForm({
           throw new Error(data.error || 'Respuesta no válida del proxy de finanzas.');
         }
 
-        // Validate that the returned data has the expected structure
         if (!data.categorias || !data.cuentas || !data.billeteras) {
             throw new Error('La API de finanzas devolvió datos con formato incorrecto.');
         }
@@ -187,16 +211,52 @@ export function PaymentAddForm({
         setIsFetchingFinanceData(false);
       }
     };
+    
+    const fetchBookingAndRate = async () => {
+        if (!bookingId) return;
+        setIsFetchingBooking(true);
+        try {
+            const [fetchedBooking, rateResponse] = await Promise.all([
+                getBookingWithDetails(bookingId),
+                fetch('/api/dollar-rate?type=oficial')
+            ]);
+            setBooking(fetchedBooking || null);
+            if (rateResponse.ok) {
+                const data = await rateResponse.json();
+                setDollarRateForBalance(data.venta);
+            }
+        } catch (e) {
+            console.error("Failed to fetch booking details or rate", e);
+        } finally {
+            setIsFetchingBooking(false);
+        }
+    };
 
     if (isOpen) {
       fetchFinanceData();
+      fetchBookingAndRate();
       if (preloadData) {
         setAmount(preloadData.amount.toString());
         setCurrency(preloadData.currency);
         setExchangeRate(preloadData.exchangeRate?.toString() || '');
       }
     }
-  }, [isOpen, preloadData]);
+  }, [isOpen, bookingId, preloadData]);
+  
+  const balanceUSD = useMemo(() => {
+    if (!booking) return 0;
+    if (booking.currency === 'USD') return booking.balance;
+    if (!dollarRateForBalance) return 0;
+    return booking.balance / dollarRateForBalance;
+  }, [booking, dollarRateForBalance]);
+
+  const balanceARS = useMemo(() => {
+    if (!booking) return 0;
+    if (booking.currency === 'ARS') return booking.balance;
+    if (!dollarRateForBalance) return 0;
+    return booking.balance * dollarRateForBalance;
+  }, [booking, dollarRateForBalance]);
+
 
   const handleCurrencyChange = (value: string) => {
     const newCurrency = value as 'ARS' | 'USD';
@@ -208,9 +268,35 @@ export function PaymentAddForm({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Añadir Pago</DialogTitle>
-          <DialogDescription>
-            Completa los datos del pago. Se registrará en esta app y se intentará sincronizar con el sistema de finanzas.
-          </DialogDescription>
+           {isFetchingBooking ? (
+                <DialogDescription>Cargando detalles de la reserva...</DialogDescription>
+            ) : booking ? (
+                <>
+                    <DialogDescription>
+                        Registra un pago para la reserva de{' '}
+                        <span className="font-semibold text-foreground">{booking.tenant?.name || 'N/A'}</span> en{' '}
+                        <span className="font-semibold text-foreground">{booking.property?.name || 'N/A'}</span>.
+                    </DialogDescription>
+                    <div className="border rounded-lg p-3 text-center mt-2">
+                        <Label>Saldo Pendiente</Label>
+                        <div className={cn("text-lg font-bold", (booking.balance || 0) > 0 ? 'text-orange-600' : 'text-green-600')}>
+                             {dollarRateForBalance ? (
+                                <>
+                                    <div>{formatCurrency(balanceUSD, 'USD')}</div>
+                                    <div className="text-xs font-normal text-muted-foreground">{formatCurrency(balanceARS, 'ARS')}</div>
+                                    <div className="text-xs font-normal text-muted-foreground">(1 USD = {formatCurrency(dollarRateForBalance, 'ARS')})</div>
+                                </>
+                             ) : (
+                                formatCurrency(booking.balance, booking.currency)
+                             )}
+                        </div>
+                    </div>
+                </>
+            ) : (
+                 <DialogDescription>
+                    Completa los datos del pago. Se registrará en esta app y se intentará sincronizar con el sistema de finanzas.
+                 </DialogDescription>
+            )}
         </DialogHeader>
         <form action={formAction} ref={formRef}>
           <input type="hidden" name="bookingId" value={bookingId} />
