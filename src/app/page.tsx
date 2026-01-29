@@ -51,9 +51,9 @@ export default function DashboardPage() {
         }
     }, [user]);
     
-    const todayUTC = useMemo(() => {
+    const today = useMemo(() => {
         const now = new Date();
-        return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate());
     }, []);
 
     const upcomingCheckIns = useMemo(() => {
@@ -64,14 +64,14 @@ export default function DashboardPage() {
             if (!isActive) return false;
             const checkInDate = parseDateSafely(b.startDate);
             if (!checkInDate) return false;
-            const daysUntil = differenceInDays(checkInDate, todayUTC);
+            const daysUntil = differenceInDays(checkInDate, today);
             return daysUntil >= 0 && daysUntil <= checkInDays;
         }).sort((a, b) => {
             const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
             const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
             return dateA - dateB;
         });
-    }, [data, todayUTC]);
+    }, [data, today]);
 
     const upcomingCheckOuts = useMemo(() => {
         if (!data) return [];
@@ -81,14 +81,14 @@ export default function DashboardPage() {
             if (!isActive) return false;
             const checkOutDate = parseDateSafely(b.endDate);
             if (!checkOutDate) return false;
-            const daysUntil = differenceInDays(checkOutDate, todayUTC);
+            const daysUntil = differenceInDays(checkOutDate, today);
             return daysUntil >= 0 && daysUntil <= checkOutDays;
         }).sort((a, b) => {
             const dateA = parseDateSafely(a.endDate)?.getTime() || 0;
             const dateB = parseDateSafely(b.endDate)?.getTime() || 0;
             return dateA - dateB;
         });
-    }, [data, todayUTC]);
+    }, [data, today]);
 
     const upcomingBookingsWithBalance = useMemo(() => {
         if (!data) return [];
@@ -99,14 +99,14 @@ export default function DashboardPage() {
             if (b.balance < 1) return false;
             const checkInDate = parseDateSafely(b.startDate);
             if (!checkInDate) return false;
-            const daysUntil = differenceInDays(checkInDate, todayUTC);
+            const daysUntil = differenceInDays(checkInDate, today);
             return daysUntil >= 0 && daysUntil <= checkInDays;
         }).sort((a, b) => {
             const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
             const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
             return dateA - dateB;
         });
-    }, [data, todayUTC]);
+    }, [data, today]);
 
     const upcomingBookings = useMemo(() => {
         if (!data) return [];
@@ -115,7 +115,7 @@ export default function DashboardPage() {
             const startDate = parseDateSafely(b.startDate);
             if (!startDate) return false;
             const isActive = !b.status || b.status === 'active';
-            return startDate >= todayUTC && isActive;
+            return startDate >= today && isActive;
         })
         .sort((a, b) => {
             const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
@@ -123,7 +123,7 @@ export default function DashboardPage() {
             return dateA - dateB;
         })
         .slice(0, 5);
-    }, [data, todayUTC]);
+    }, [data, today]);
 
     const currentBookings = useMemo(() => {
         if (!data) return [];
@@ -133,14 +133,14 @@ export default function DashboardPage() {
             const endDate = parseDateSafely(b.endDate);
             if (!startDate || !endDate) return false;
             const isActive = !b.status || b.status === 'active';
-            return todayUTC >= startDate && todayUTC <= endDate && isActive;
+            return today >= startDate && today <= endDate && isActive;
         })
         .sort((a, b) => {
             const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
             const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
             return dateA - dateB;
         });
-    }, [data, todayUTC]);
+    }, [data, today]);
 
     const formatDateForDisplay = (date: Date | undefined): string => {
         if (!date) return 'Fecha inv.';
