@@ -57,4 +57,5 @@ declare module 'lucide-react' {
     export const Globe: LucideIcon;
     export const Printer: LucideIcon;
     export const FileDown: LucideIcon;
+    export const Banknote: LucideIcon;
 }

@@ -10,7 +10,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { differenceInDays } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Info, Copy } from "lucide-react";
+import { AlertTriangle, Info, Copy, Banknote } from "lucide-react";
 import AvailabilitySearcher from "@/components/availability-searcher";
 import PaymentCalculator from "@/components/payment-calculator";
 import { Button } from "@/components/ui/button";
@@ -90,6 +90,24 @@ export default function DashboardPage() {
         });
     }, [data, todayUTC]);
 
+    const upcomingBookingsWithBalance = useMemo(() => {
+        if (!data) return [];
+        const checkInDays = data.alertSettings?.checkInDays ?? 7;
+        return data.bookings.filter(b => {
+            const isActive = !b.status || b.status === 'active';
+            if (!isActive) return false;
+            if (b.balance <= 0) return false;
+            const checkInDate = parseDateSafely(b.startDate);
+            if (!checkInDate) return false;
+            const daysUntil = differenceInDays(checkInDate, todayUTC);
+            return daysUntil >= 0 && daysUntil <= checkInDays;
+        }).sort((a, b) => {
+            const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
+            const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
+            return dateA - dateB;
+        });
+    }, [data, todayUTC]);
+
     const upcomingBookings = useMemo(() => {
         if (!data) return [];
         return data.bookings
@@ -134,8 +152,24 @@ export default function DashboardPage() {
         const localDate = new Date(year, month, day);
         return format(localDate, "dd/MM/yyyy", { locale: es });
     };
+    
+    const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
+        if (currency === 'USD') {
+            return `USD ${new Intl.NumberFormat('es-AR', {
+                style: 'decimal',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(amount)}`;
+        }
+        return new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(amount);
+    };
 
-    const handleCopy = (type: 'check-ins' | 'check-outs') => {
+    const handleCopy = (type: 'check-ins' | 'check-outs' | 'balance') => {
         let textToCopy = '';
         if (type === 'check-ins') {
             textToCopy = `*Próximos Check-ins:*\n` + upcomingCheckIns.map(b => {
@@ -145,13 +179,17 @@ export default function DashboardPage() {
                 }
                 return line;
             }).join('\n');
-        } else {
+        } else if (type === 'check-outs') {
             textToCopy = `*Próximos Check-outs:*\n` + upcomingCheckOuts.map(b => {
                 let line = `- ${b.property?.name}: *${b.tenant?.name}* se retira el *${formatDateForDisplay(parseDateSafely(b.endDate))}*.`;
                 if (b.tenant?.phone) {
                     line += ` Tel: ${b.tenant.phone}`;
                 }
                 return line;
+            }).join('\n');
+        } else if (type === 'balance') {
+             textToCopy = `*Reservas con Saldo Pendiente:*\n` + upcomingBookingsWithBalance.map(b => {
+                return `- ${b.property?.name}: *${b.tenant?.name}* (Check-in: ${formatDateForDisplay(parseDateSafely(b.startDate))}) tiene un saldo de *${formatCurrency(b.balance, b.currency)}*.`;
             }).join('\n');
         }
 
@@ -226,6 +264,28 @@ export default function DashboardPage() {
                         </AlertDescription>
                     </div>
                      <Button variant="ghost" size="icon" onClick={() => handleCopy('check-outs')}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </div>
+            </Alert>
+        )}
+
+        {upcomingBookingsWithBalance.length > 0 && (
+            <Alert variant="default" className="border-orange-500 text-orange-800 dark:border-orange-400 dark:text-orange-300 [&>svg]:text-orange-500">
+                <Banknote className="h-4 w-4" />
+                <div className="flex justify-between items-start w-full">
+                    <div>
+                        <AlertTitle className="text-orange-800 dark:text-orange-300">Reservas Próximas con Saldo Pendiente</AlertTitle>
+                        <AlertDescription>
+                            Tienes {upcomingBookingsWithBalance.length} reserva(s) próxima(s) con saldo a cobrar.
+                            <ul className="list-disc pl-5 mt-2">
+                            {upcomingBookingsWithBalance.map(b => (
+                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> debe <strong>{formatCurrency(b.balance, b.currency)}</strong>.</li>
+                            ))}
+                            </ul>
+                        </AlertDescription>
+                    </div>
+                     <Button variant="ghost" size="icon" onClick={() => handleCopy('balance')}>
                         <Copy className="h-4 w-4" />
                     </Button>
                 </div>

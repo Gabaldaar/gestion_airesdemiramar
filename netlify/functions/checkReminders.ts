@@ -45,6 +45,21 @@ interface NotificationTriggerData {
   fieldToUpdate: string; // Campo dinámico para la bandera de notificación
 }
 
+function formatCurrency(amount: number, currency: 'ARS' | 'USD') {
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  }
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
 async function checkAndSendNotifications() {
     let notificationsSent = 0;
     
@@ -58,12 +73,37 @@ async function checkAndSendNotifications() {
 
 
     // --- OBTENER DATOS DE CONTEXTO (OPTIMIZACIÓN) ---
-    const [propertiesSnap, tenantsSnap] = await Promise.all([
+    const [propertiesSnap, tenantsSnap, paymentsSnap] = await Promise.all([
         db.collection('properties').get(),
-        db.collection('tenants').get()
+        db.collection('tenants').get(),
+        db.collection('payments').get()
     ]);
     const propertiesMap = new Map(propertiesSnap.docs.map(doc => [doc.id, doc.data()]));
     const tenantsMap = new Map(tenantsSnap.docs.map(doc => [doc.id, doc.data()]));
+
+    // Group payments by bookingId
+    const paymentsByBooking = new Map<string, any[]>();
+    paymentsSnap.forEach(doc => {
+        const payment = doc.data();
+        if (!paymentsByBooking.has(payment.bookingId)) {
+            paymentsByBooking.set(payment.bookingId, []);
+        }
+        paymentsByBooking.get(payment.bookingId)!.push(payment);
+    });
+
+    // Fetch dollar rate for balance calculation
+    let dollarRate = 0;
+    try {
+        const rateResponse = await fetch(`https://dolarapi.com/v1/dolares/oficial`);
+        if (rateResponse.ok) {
+            const data = await rateResponse.json();
+            dollarRate = data.venta;
+        } else {
+            console.warn('[CRON] Could not fetch dollar rate, ARS balance calculations may be incorrect.');
+        }
+    } catch(e) {
+        console.warn('[CRON] Error fetching dollar rate:', e);
+    }
 
 
     const notificationTriggers: NotificationTriggerData[] = [];
@@ -141,6 +181,33 @@ async function checkAndSendNotifications() {
                 });
             }
         }
+
+        // --- Lógica de Notificación para Saldo Pendiente ---
+        const bookingPayments = paymentsByBooking.get(doc.id) || [];
+        const totalPaidInUSD = bookingPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+        
+        let balance = 0;
+        if (rental.currency === 'USD') {
+            balance = rental.amount - totalPaidInUSD;
+        } else if (rental.currency === 'ARS' && dollarRate > 0) {
+            const totalPaidInARS = totalPaidInUSD * dollarRate;
+            balance = rental.amount - totalPaidInARS;
+        }
+
+        if (balance > 0 && daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS) {
+             const day = daysUntilCheckin;
+             const flagField = `balance_notification_sent_${day}_days`;
+             if (day > 0 && !rental[flagField]) {
+                 notificationTriggers.push({
+                    id: `${doc.id}-balance-${day}d`,
+                    title: `Saldo pendiente - Check-in en ${day} ${day > 1 ? 'días' : 'día'}`,
+                    body: `La reserva de ${tenantName} en "${propertyName}" tiene un saldo de ${formatCurrency(balance, rental.currency)}.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: flagField
+                });
+             }
+        }
     }
 
     if (notificationTriggers.length === 0) {
@@ -168,7 +235,7 @@ async function checkAndSendNotifications() {
         await db.doc(trigger.docPath).update({
             [trigger.fieldToUpdate]: true // Usamos un booleano
         });
-        console.log(`[CRON] Notificación para ${trigger.id} enviada y marcada.`)
+        console.log(`[CRON] Notificación para ${trigger.id} enviada y marcada.`);
     }
 
     return notificationsSent;
