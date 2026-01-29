@@ -35,8 +35,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
 import { DayPicker, DayProps } from 'react-day-picker';
-import { isWithinInterval } from 'date-fns';
+import { addDays, isWithinInterval } from 'date-fns';
 import useWindowSize from '@/hooks/use-window-size';
+import { parseDateSafely } from '@/lib/utils';
 
 
 interface PropertyDetailData {
@@ -148,25 +149,25 @@ export default function PropertyDetailPage() {
     const dayModifiers = useMemo(() => {
         if (!data) return {};
         
-        const parseDate = (dateString: string) => new Date(dateString.replace(/-/g, '/'));
-        
         const activeBookings = data.bookings.filter(b => !b.status || b.status === 'active');
 
-        const bookedDays = activeBookings.map(booking => ({
-            from: parseDate(booking.startDate),
-            to: parseDate(booking.endDate),
-        }));
+        const bookedDays = activeBookings.map(booking => {
+            const from = parseDateSafely(booking.startDate);
+            const to = parseDateSafely(booking.endDate);
+            if (!from || !to) return null;
+            return { from, to };
+        }).filter(d => d !== null) as { from: Date, to: Date }[];
 
-        const checkinDays = activeBookings.map(b => parseDate(b.startDate));
-        const checkoutDays = activeBookings.map(b => parseDate(b.endDate));
+        const checkinDays = activeBookings.map(b => parseDateSafely(b.startDate)).filter(d => d !== null) as Date[];
+        const checkoutDays = activeBookings.map(b => parseDateSafely(b.endDate)).filter(d => d !== null) as Date[];
         
         const bookedMiddleDays = activeBookings.flatMap(booking => {
-            const startDate = parseDate(booking.startDate);
-            const endDate = parseDate(booking.endDate);
-            if (endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
+            const startDate = parseDateSafely(booking.startDate);
+            const endDate = parseDateSafely(booking.endDate);
+            if (!startDate || !endDate || endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
                  return []; // Don't mark middle days for short stays
             }
-            return { from: new Date(startDate.getTime() + 86400000), to: new Date(endDate.getTime() - 86400000) };
+            return { from: addDays(startDate, 1), to: addDays(endDate, -1) };
         });
 
         return {
@@ -363,3 +364,4 @@ export default function PropertyDetailPage() {
     
 
     
+
