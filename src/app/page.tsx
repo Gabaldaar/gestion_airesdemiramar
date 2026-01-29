@@ -96,7 +96,7 @@ export default function DashboardPage() {
         return data.bookings.filter(b => {
             const isActive = !b.status || b.status === 'active';
             if (!isActive) return false;
-            if (b.balance <= 0) return false;
+            if (b.balance < 1) return false;
             const checkInDate = parseDateSafely(b.startDate);
             if (!checkInDate) return false;
             const daysUntil = differenceInDays(checkInDate, todayUTC);

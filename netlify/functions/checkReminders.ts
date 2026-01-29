@@ -194,7 +194,7 @@ async function checkAndSendNotifications() {
             balance = rental.amount - totalPaidInARS;
         }
 
-        if (balance > 0 && daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS) {
+        if (balance >= 1 && daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS) {
              const day = daysUntilCheckin;
              const flagField = `balance_notification_sent_${day}_days`;
              if (day > 0 && !rental[flagField]) {
