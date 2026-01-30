@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import DashboardCurrentBookings from "@/components/dashboard-current-bookings";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, startOfToday } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info, Copy, Banknote } from "lucide-react";
 import AvailabilitySearcher from "@/components/availability-searcher";
@@ -52,10 +52,7 @@ export default function DashboardPage() {
         }
     }, [user]);
     
-    const today = useMemo(() => {
-        const now = new Date();
-        return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    }, []);
+    const today = useMemo(() => startOfToday(), []);
 
     const upcomingCheckIns = useMemo(() => {
         if (!data) return [];
