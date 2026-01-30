@@ -136,11 +136,6 @@ async function checkAndSendNotifications() {
             continue;
         }
         
-        // Solo procesar reservas que no hayan terminado ya
-        if (rentalEndDate < today) {
-            continue;
-        }
-        
         const tenantName = tenantsMap.get(rental.tenantId)?.name || 'Inquilino Desconocido';
         const propertyName = propertiesMap.get(rental.propertyId)?.name || 'Propiedad Desconocida';
 
@@ -196,16 +191,19 @@ async function checkAndSendNotifications() {
 
         const isUpcoming = daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS;
         const isCurrent = today >= rentalStartDate && today <= rentalEndDate;
+        const isPast = today > rentalEndDate;
 
-        if (balance >= 1 && (isUpcoming || isCurrent)) {
-            const dayIdentifier = daysUntilCheckin; // Positive for upcoming, negative/zero for current
+        if (balance >= 1 && (isUpcoming || isCurrent || isPast)) {
+            const dayIdentifier = daysUntilCheckin; // Positive for upcoming, negative for past
             const flagField = `balance_notification_sent_${dayIdentifier}_days`;
 
             if (!rental[flagField]) {
                 let title: string;
-                if (isCurrent) {
-                    title = "¡Reserva en curso con saldo pendiente!";
-                } else {
+                if (isPast) {
+                    title = "¡Reserva FINALIZADA con saldo pendiente!";
+                } else if (isCurrent) {
+                    title = "¡Reserva EN CURSO con saldo pendiente!";
+                } else { // isUpcoming
                     title = `Saldo pendiente - Check-in en ${daysUntilCheckin} ${daysUntilCheckin > 1 ? 'días' : 'día'}`;
                 }
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings, BookingWithDetails, Property, Tenant, FinancialSummaryByCurrency, getAlertSettings, AlertSettings } from "@/lib/data";
@@ -53,7 +54,7 @@ export default function DashboardPage() {
     
     const today = useMemo(() => {
         const now = new Date();
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     }, []);
 
     const upcomingCheckIns = useMemo(() => {
@@ -90,7 +91,7 @@ export default function DashboardPage() {
         });
     }, [data, today]);
 
-    const upcomingBookingsWithBalance = useMemo(() => {
+    const bookingsWithPendingBalance = useMemo(() => {
         if (!data) return [];
         const checkInDays = data.alertSettings?.checkInDays ?? 7;
         return data.bookings.filter(b => {
@@ -105,8 +106,9 @@ export default function DashboardPage() {
             const daysUntilCheckIn = differenceInDays(startDate, today);
             const isUpcoming = daysUntilCheckIn >= 0 && daysUntilCheckIn <= checkInDays;
             const isCurrent = today >= startDate && today <= endDate;
+            const isPast = today > endDate;
 
-            return isCurrent || isUpcoming;
+            return isCurrent || isUpcoming || isPast;
         }).sort((a, b) => {
             const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
             const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
@@ -194,12 +196,21 @@ export default function DashboardPage() {
                 return line;
             }).join('\n');
         } else if (type === 'balance') {
-             textToCopy = `*Reservas con Saldo Pendiente:*\n` + upcomingBookingsWithBalance.map(b => {
+             textToCopy = `*Reservas con Saldo Pendiente:*\n` + bookingsWithPendingBalance.map(b => {
                 const startDate = parseDateSafely(b.startDate);
-                const isCurrent = startDate && today >= startDate;
-                const dateText = isCurrent
-                  ? `Check-out: ${formatDateForDisplay(parseDateSafely(b.endDate))}`
-                  : `Check-in: ${formatDateForDisplay(startDate)}`;
+                const endDate = parseDateSafely(b.endDate);
+                const isCurrent = startDate && endDate && today >= startDate && today <= endDate;
+                const isPast = endDate && today > endDate;
+
+                let dateText: string;
+                if (isCurrent) {
+                    dateText = `En curso - Check-out: ${formatDateForDisplay(endDate)}`;
+                } else if (isPast) {
+                    dateText = `Finalizada - Check-out: ${formatDateForDisplay(endDate)}`;
+                } else {
+                    dateText = `Próxima - Check-in: ${formatDateForDisplay(startDate)}`;
+                }
+
                 return `- ${b.property?.name}: *${b.tenant?.name}* (${dateText}) tiene un saldo de *${formatCurrency(b.balance, b.currency)}*.`;
             }).join('\n');
         }
@@ -281,27 +292,31 @@ export default function DashboardPage() {
             </Alert>
         )}
 
-        {upcomingBookingsWithBalance.length > 0 && (
+        {bookingsWithPendingBalance.length > 0 && (
             <Alert variant="default" className="border-orange-500 text-orange-800 dark:border-orange-400 dark:text-orange-300 [&>svg]:text-orange-500">
                 <Banknote className="h-4 w-4" />
                 <div className="flex justify-between items-start w-full">
                     <div>
                         <AlertTitle className="text-orange-800 dark:text-orange-300">Reservas con Saldo Pendiente</AlertTitle>
                         <AlertDescription>
-                            Tienes {upcomingBookingsWithBalance.length} reserva(s) con saldo a cobrar.
+                            Tienes {bookingsWithPendingBalance.length} reserva(s) con saldo a cobrar.
                             <ul className="list-disc pl-5 mt-2 space-y-1">
-                            {upcomingBookingsWithBalance.map(b => {
+                            {bookingsWithPendingBalance.map(b => {
                                 const startDate = parseDateSafely(b.startDate);
                                 const endDate = parseDateSafely(b.endDate);
                                 const isCurrent = startDate && endDate && today >= startDate && today <= endDate;
+                                const isPast = endDate && today > endDate;
+                                const isCritical = isCurrent || isPast;
 
                                 return (
-                                    <li key={b.id} className={isCurrent ? "font-semibold text-destructive" : ""}>
-                                        {isCurrent && <AlertTriangle className="inline-block h-4 w-4 mr-2" />}
+                                    <li key={b.id} className={isCritical ? "font-semibold text-destructive" : ""}>
+                                        {isCritical && <AlertTriangle className="inline-block h-4 w-4 mr-2" />}
                                         {b.property?.name}: <strong>{b.tenant?.name}</strong> debe <strong>{formatCurrency(b.balance, b.currency)}</strong>.
                                         {isCurrent
-                                            ? ` (Check-out: ${formatDateForDisplay(endDate)})`
-                                            : ` (Check-in: ${formatDateForDisplay(startDate)})`
+                                            ? ` (En curso - Check-out: ${formatDateForDisplay(endDate)})`
+                                            : isPast
+                                            ? ` (Finalizada - Check-out: ${formatDateForDisplay(endDate)})`
+                                            : ` (Próxima - Check-in: ${formatDateForDisplay(startDate)})`
                                         }
                                     </li>
                                 );
