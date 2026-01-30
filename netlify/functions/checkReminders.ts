@@ -194,19 +194,30 @@ async function checkAndSendNotifications() {
             balance = rental.amount - totalPaidInARS;
         }
 
-        if (balance >= 1 && daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS) {
-             const day = daysUntilCheckin;
-             const flagField = `balance_notification_sent_${day}_days`;
-             if (day > 0 && !rental[flagField]) {
-                 notificationTriggers.push({
-                    id: `${doc.id}-balance-${day}d`,
-                    title: `Saldo pendiente - Check-in en ${day} ${day > 1 ? 'días' : 'día'}`,
+        const isUpcoming = daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS;
+        const isCurrent = today >= rentalStartDate && today <= rentalEndDate;
+
+        if (balance >= 1 && (isUpcoming || isCurrent)) {
+            const dayIdentifier = daysUntilCheckin; // Positive for upcoming, negative/zero for current
+            const flagField = `balance_notification_sent_${dayIdentifier}_days`;
+
+            if (!rental[flagField]) {
+                let title: string;
+                if (isCurrent) {
+                    title = "¡Reserva en curso con saldo pendiente!";
+                } else {
+                    title = `Saldo pendiente - Check-in en ${daysUntilCheckin} ${daysUntilCheckin > 1 ? 'días' : 'día'}`;
+                }
+
+                notificationTriggers.push({
+                    id: `${doc.id}-balance-${dayIdentifier}d`,
+                    title: title,
                     body: `La reserva de ${tenantName} en "${propertyName}" tiene un saldo de ${formatCurrency(balance, rental.currency)}.`,
                     icon: '/icons/icon-192x192.png',
                     docPath: doc.ref.path,
                     fieldToUpdate: flagField
                 });
-             }
+            }
         }
     }
 
