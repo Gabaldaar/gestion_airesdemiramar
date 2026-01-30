@@ -97,10 +97,16 @@ export default function DashboardPage() {
             const isActive = !b.status || b.status === 'active';
             if (!isActive) return false;
             if (b.balance < 1) return false;
-            const checkInDate = parseDateSafely(b.startDate);
-            if (!checkInDate) return false;
-            const daysUntil = differenceInDays(checkInDate, today);
-            return daysUntil >= 0 && daysUntil <= checkInDays;
+            
+            const startDate = parseDateSafely(b.startDate);
+            const endDate = parseDateSafely(b.endDate);
+            if (!startDate || !endDate) return false;
+
+            const daysUntilCheckIn = differenceInDays(startDate, today);
+            const isUpcoming = daysUntilCheckIn >= 0 && daysUntilCheckIn <= checkInDays;
+            const isCurrent = today >= startDate && today <= endDate;
+
+            return isCurrent || isUpcoming;
         }).sort((a, b) => {
             const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
             const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
@@ -189,7 +195,12 @@ export default function DashboardPage() {
             }).join('\n');
         } else if (type === 'balance') {
              textToCopy = `*Reservas con Saldo Pendiente:*\n` + upcomingBookingsWithBalance.map(b => {
-                return `- ${b.property?.name}: *${b.tenant?.name}* (Check-in: ${formatDateForDisplay(parseDateSafely(b.startDate))}) tiene un saldo de *${formatCurrency(b.balance, b.currency)}*.`;
+                const startDate = parseDateSafely(b.startDate);
+                const isCurrent = startDate && today >= startDate;
+                const dateText = isCurrent
+                  ? `Check-out: ${formatDateForDisplay(parseDateSafely(b.endDate))}`
+                  : `Check-in: ${formatDateForDisplay(startDate)}`;
+                return `- ${b.property?.name}: *${b.tenant?.name}* (${dateText}) tiene un saldo de *${formatCurrency(b.balance, b.currency)}*.`;
             }).join('\n');
         }
 
@@ -275,13 +286,23 @@ export default function DashboardPage() {
                 <Banknote className="h-4 w-4" />
                 <div className="flex justify-between items-start w-full">
                     <div>
-                        <AlertTitle className="text-orange-800 dark:text-orange-300">Reservas Próximas con Saldo Pendiente</AlertTitle>
+                        <AlertTitle className="text-orange-800 dark:text-orange-300">Reservas con Saldo Pendiente</AlertTitle>
                         <AlertDescription>
-                            Tienes {upcomingBookingsWithBalance.length} reserva(s) próxima(s) con saldo a cobrar.
+                            Tienes {upcomingBookingsWithBalance.length} reserva(s) con saldo a cobrar.
                             <ul className="list-disc pl-5 mt-2">
-                            {upcomingBookingsWithBalance.map(b => (
-                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> debe <strong>{formatCurrency(b.balance, b.currency)}</strong>.</li>
-                            ))}
+                            {upcomingBookingsWithBalance.map(b => {
+                                const startDate = parseDateSafely(b.startDate);
+                                const isCurrent = startDate && today >= startDate;
+                                return (
+                                    <li key={b.id}>
+                                        {b.property?.name}: <strong>{b.tenant?.name}</strong> debe <strong>{formatCurrency(b.balance, b.currency)}</strong>.
+                                        {isCurrent
+                                            ? ` (Check-out: ${formatDateForDisplay(parseDateSafely(b.endDate))})`
+                                            : ` (Check-in: ${formatDateForDisplay(startDate)})`
+                                        }
+                                    </li>
+                                );
+                            })}
                             </ul>
                         </AlertDescription>
                     </div>
