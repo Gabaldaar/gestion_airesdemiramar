@@ -289,15 +289,18 @@ export default function DashboardPage() {
                         <AlertTitle className="text-orange-800 dark:text-orange-300">Reservas con Saldo Pendiente</AlertTitle>
                         <AlertDescription>
                             Tienes {upcomingBookingsWithBalance.length} reserva(s) con saldo a cobrar.
-                            <ul className="list-disc pl-5 mt-2">
+                            <ul className="list-disc pl-5 mt-2 space-y-1">
                             {upcomingBookingsWithBalance.map(b => {
                                 const startDate = parseDateSafely(b.startDate);
-                                const isCurrent = startDate && today >= startDate;
+                                const endDate = parseDateSafely(b.endDate);
+                                const isCurrent = startDate && endDate && today >= startDate && today <= endDate;
+
                                 return (
-                                    <li key={b.id}>
+                                    <li key={b.id} className={isCurrent ? "font-semibold text-destructive" : ""}>
+                                        {isCurrent && <AlertTriangle className="inline-block h-4 w-4 mr-2" />}
                                         {b.property?.name}: <strong>{b.tenant?.name}</strong> debe <strong>{formatCurrency(b.balance, b.currency)}</strong>.
                                         {isCurrent
-                                            ? ` (Check-out: ${formatDateForDisplay(parseDateSafely(b.endDate))})`
+                                            ? ` (Check-out: ${formatDateForDisplay(endDate)})`
                                             : ` (Check-in: ${formatDateForDisplay(startDate)})`
                                         }
                                     </li>
