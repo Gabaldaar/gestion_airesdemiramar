@@ -141,7 +141,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
                 bookingVisualStatuses.add('closed');
             }
 
-            if (booking.balance > 0) {
+            if (booking.balance >= 1) {
                  bookingVisualStatuses.add('with-debt');
             }
         }
