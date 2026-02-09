@@ -1,9 +1,7 @@
-
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { BookingWithDetails, ContractStatus, Property, Tenant, getEmailSettings, Origin } from '@/lib/data';
+import { BookingWithDetails, ContractStatus, Property, Tenant, getEmailSettings, Origin, GuaranteeStatus } from '@/lib/data';
 import BookingsList from '@/components/bookings-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -24,6 +22,7 @@ import { parseDateSafely } from '@/lib/utils';
 
 
 type ContractStatusFilter = 'all' | ContractStatus;
+type GuaranteeStatusFilter = 'all' | GuaranteeStatus;
 type SortOrder = 'upcoming' | 'distant';
 
 interface StatusFilters {
@@ -61,6 +60,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
   const [statusFilters, setStatusFilters] = useState<StatusFilters>(initialStatusFilters);
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
   const [contractStatusFilter, setContractStatusFilter] = useState<ContractStatusFilter>('all');
+  const [guaranteeStatusFilter, setGuaranteeStatusFilter] = useState<GuaranteeStatusFilter>('all');
   const [originIdFilter, setOriginIdFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('upcoming');
   const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
@@ -105,6 +105,11 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
       // Contract Status Filter
       if (contractStatusFilter !== 'all' && (booking.contractStatus || 'not_sent') !== contractStatusFilter) {
           return false;
+      }
+
+      // Guarantee Status Filter
+      if (guaranteeStatusFilter !== 'all' && (booking.guaranteeStatus || 'not_solicited') !== guaranteeStatusFilter) {
+        return false;
       }
 
       // Origin Filter
@@ -176,7 +181,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
         return sortOrder === 'upcoming' ? dateA - dateB : dateB - a;
     });
 
-  }, [bookingsForTenant, fromDate, toDate, statusFilters, propertyIdFilter, contractStatusFilter, originIdFilter, sortOrder]);
+  }, [bookingsForTenant, fromDate, toDate, statusFilters, propertyIdFilter, contractStatusFilter, guaranteeStatusFilter, originIdFilter, sortOrder]);
   
   // Effect to update the count in the parent component
   useEffect(() => {
@@ -190,6 +195,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
     setStatusFilters(initialStatusFilters);
     setPropertyIdFilter('all');
     setContractStatusFilter('all');
+    setGuaranteeStatusFilter('all');
     setOriginIdFilter('all');
     setSortOrder('upcoming');
   };
@@ -362,6 +368,22 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
                       <SelectItem value="not_required">N/A</SelectItem>
                   </SelectContent>
               </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label>Garantía</Label>
+            <Select value={guaranteeStatusFilter} onValueChange={(value) => setGuaranteeStatusFilter(value as GuaranteeStatusFilter)}>
+                <SelectTrigger>
+                    <SelectValue placeholder="Garantía" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="not_solicited">S/Solicitar</SelectItem>
+                    <SelectItem value="solicited">Solicitada</SelectItem>
+                    <SelectItem value="received">Recibida</SelectItem>
+                    <SelectItem value="returned">Devuelta</SelectItem>
+                    <SelectItem value="not_applicable">N/A</SelectItem>
+                </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-2">
               <Label>Origen</Label>
