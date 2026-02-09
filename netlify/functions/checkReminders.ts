@@ -91,20 +91,6 @@ async function checkAndSendNotifications() {
         paymentsByBooking.get(payment.bookingId)!.push(payment);
     });
 
-    // Fetch dollar rate for balance calculation
-    let dollarRate = 0;
-    try {
-        const rateResponse = await fetch(`https://dolarapi.com/v1/dolares/oficial`);
-        if (rateResponse.ok) {
-            const data = await rateResponse.json();
-            dollarRate = data.venta;
-        } else {
-            console.warn('[CRON] Could not fetch dollar rate, ARS balance calculations may be incorrect.');
-        }
-    } catch(e) {
-        console.warn('[CRON] Error fetching dollar rate:', e);
-    }
-
 
     const notificationTriggers: NotificationTriggerData[] = [];
     const today = startOfToday();
@@ -179,16 +165,22 @@ async function checkAndSendNotifications() {
 
         // --- Lógica de Notificación para Saldo Pendiente ---
         const bookingPayments = paymentsByBooking.get(doc.id) || [];
-        const totalPaidInUSD = bookingPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
-        
         let balance = 0;
+        
         if (rental.currency === 'USD') {
+            const totalPaidInUSD = bookingPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
             balance = rental.amount - totalPaidInUSD;
-        } else if (rental.currency === 'ARS' && dollarRate > 0) {
-            const totalPaidInARS = totalPaidInUSD * dollarRate;
+        } else { // currency is ARS
+            const totalPaidInARS = bookingPayments.reduce((acc, p) => {
+                if (p.originalArsAmount) {
+                    return acc + p.originalArsAmount;
+                }
+                // Fallback for older payments if originalArsAmount is not present
+                return p.exchangeRate ? acc + (p.amount * p.exchangeRate) : acc;
+            }, 0);
             balance = rental.amount - totalPaidInARS;
         }
-
+        
         const isUpcoming = daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS;
         const isCurrent = today >= rentalStartDate && today <= rentalEndDate;
         const isPast = today > rentalEndDate;
