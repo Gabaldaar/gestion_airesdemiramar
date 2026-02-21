@@ -11,7 +11,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { differenceInDays, startOfToday } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Info, Copy, Banknote } from "lucide-react";
+import { AlertTriangle, Info, Copy, Banknote, ShieldCheck, ShieldAlert } from "lucide-react";
 import AvailabilitySearcher from "@/components/availability-searcher";
 import PaymentCalculator from "@/components/payment-calculator";
 import { Button } from "@/components/ui/button";
@@ -112,6 +112,45 @@ export default function DashboardPage() {
             return dateA - dateB;
         });
     }, [data, today]);
+    
+    const upcomingOrCurrentWithGuaranteeSolicited = useMemo(() => {
+        if (!data) return [];
+        return data.bookings.filter(b => {
+            const isActive = !b.status || b.status === 'active';
+            if (!isActive || b.guaranteeStatus !== 'solicited') return false;
+
+            const startDate = parseDateSafely(b.startDate);
+            const endDate = parseDateSafely(b.endDate);
+            if (!startDate || !endDate) return false;
+
+            const isUpcoming = startDate >= today;
+            const isCurrent = today >= startDate && today <= endDate;
+            
+            return isUpcoming || isCurrent;
+        }).sort((a, b) => {
+            const dateA = parseDateSafely(a.startDate)?.getTime() || 0;
+            const dateB = parseDateSafely(b.startDate)?.getTime() || 0;
+            return dateA - dateB;
+        });
+    }, [data, today]);
+
+    const completedWithGuaranteeReceived = useMemo(() => {
+        if (!data) return [];
+        return data.bookings.filter(b => {
+            const isActive = !b.status || b.status === 'active';
+            if (!isActive || b.guaranteeStatus !== 'received') return false;
+            
+            const endDate = parseDateSafely(b.endDate);
+            if (!endDate) return false;
+
+            const isPast = today > endDate;
+            return isPast;
+        }).sort((a, b) => {
+            const dateA = parseDateSafely(a.endDate)?.getTime() || 0;
+            const dateB = parseDateSafely(b.endDate)?.getTime() || 0;
+            return dateA - dateB;
+        });
+    }, [data, today]);
 
     const upcomingBookings = useMemo(() => {
         if (!data) return [];
@@ -174,7 +213,7 @@ export default function DashboardPage() {
         }).format(amount);
     };
 
-    const handleCopy = (type: 'check-ins' | 'check-outs' | 'balance') => {
+    const handleCopy = (type: 'check-ins' | 'check-outs' | 'balance' | 'guarantee-solicited' | 'guarantee-received') => {
         let textToCopy = '';
         if (type === 'check-ins') {
             textToCopy = `*Próximos Check-ins:*\n` + upcomingCheckIns.map(b => {
@@ -209,6 +248,16 @@ export default function DashboardPage() {
                 }
 
                 return `- ${b.property?.name}: *${b.tenant?.name}* (${dateText}) tiene un saldo de *${formatCurrency(b.balance, b.currency)}*.`;
+            }).join('\n');
+        } else if (type === 'guarantee-solicited') {
+            textToCopy = `*Reservas con Garantía Solicitada:*\n` + upcomingOrCurrentWithGuaranteeSolicited.map(b => {
+                const date = parseDateSafely(b.startDate);
+                return `- ${b.property?.name}: *${b.tenant?.name}* (Check-in: ${formatDateForDisplay(date)}).`;
+            }).join('\n');
+        } else if (type === 'guarantee-received') {
+            textToCopy = `*Reservas Cumplidas con Garantía sin Devolver:*\n` + completedWithGuaranteeReceived.map(b => {
+                 const date = parseDateSafely(b.endDate);
+                return `- ${b.property?.name}: *${b.tenant?.name}* (Check-out: ${formatDateForDisplay(date)}).`;
             }).join('\n');
         }
 
@@ -322,6 +371,50 @@ export default function DashboardPage() {
                         </AlertDescription>
                     </div>
                      <Button variant="ghost" size="icon" onClick={() => handleCopy('balance')}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </div>
+            </Alert>
+        )}
+
+        {upcomingOrCurrentWithGuaranteeSolicited.length > 0 && (
+            <Alert variant="default" className="border-cyan-500 text-cyan-800 dark:border-cyan-400 dark:text-cyan-300 [&>svg]:text-cyan-500">
+                <ShieldAlert className="h-4 w-4" />
+                <div className="flex justify-between items-start w-full">
+                    <div>
+                        <AlertTitle className="text-cyan-800 dark:text-cyan-300">Garantías Solicitadas</AlertTitle>
+                        <AlertDescription>
+                            Hay {upcomingOrCurrentWithGuaranteeSolicited.length} reserva(s) próxima(s) o en curso con garantía solicitada y pendiente de recepción.
+                            <ul className="list-disc pl-5 mt-2">
+                            {upcomingOrCurrentWithGuaranteeSolicited.map(b => (
+                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> (Check-in: <strong>{formatDateForDisplay(parseDateSafely(b.startDate))}</strong>).</li>
+                            ))}
+                            </ul>
+                        </AlertDescription>
+                    </div>
+                     <Button variant="ghost" size="icon" onClick={() => handleCopy('guarantee-solicited')}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </div>
+            </Alert>
+        )}
+        
+        {completedWithGuaranteeReceived.length > 0 && (
+            <Alert variant="destructive">
+                <ShieldCheck className="h-4 w-4" />
+                <div className="flex justify-between items-start w-full">
+                    <div>
+                        <AlertTitle>¡Atención! Garantías por Devolver</AlertTitle>
+                        <AlertDescription>
+                            Tienes {completedWithGuaranteeReceived.length} reserva(s) cumplida(s) con garantía pendiente de devolución.
+                            <ul className="list-disc pl-5 mt-2">
+                            {completedWithGuaranteeReceived.map(b => (
+                                <li key={b.id}>{b.property?.name}: <strong>{b.tenant?.name}</strong> se retiró el <strong>{formatDateForDisplay(parseDateSafely(b.endDate))}</strong>.</li>
+                            ))}
+                            </ul>
+                        </AlertDescription>
+                    </div>
+                     <Button variant="ghost" size="icon" onClick={() => handleCopy('guarantee-received')}>
                         <Copy className="h-4 w-4" />
                     </Button>
                 </div>

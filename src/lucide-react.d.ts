@@ -58,4 +58,6 @@ declare module 'lucide-react' {
     export const Printer: LucideIcon;
     export const FileDown: LucideIcon;
     export const Banknote: LucideIcon;
+    export const ShieldCheck: LucideIcon;
+    export const ShieldAlert: LucideIcon;
 }

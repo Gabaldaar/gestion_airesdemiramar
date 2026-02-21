@@ -125,9 +125,13 @@ async function checkAndSendNotifications() {
         const tenantName = tenantsMap.get(rental.tenantId)?.name || 'Inquilino Desconocido';
         const propertyName = propertiesMap.get(rental.propertyId)?.name || 'Propiedad Desconocida';
 
-
         const daysUntilCheckin = differenceInDays(rentalStartDate, today);
         const daysUntilCheckout = differenceInDays(rentalEndDate, today);
+        
+        const isUpcomingBooking = rentalStartDate >= today;
+        const isCurrentBooking = today >= rentalStartDate && today <= rentalEndDate;
+        const isPastBooking = today > rentalEndDate;
+
 
         // --- Lógica de Notificación para Check-in ---
         // Notifica para cada día desde el máximo configurado hasta 1 día antes.
@@ -181,19 +185,17 @@ async function checkAndSendNotifications() {
             balance = rental.amount - totalPaidInARS;
         }
         
-        const isUpcoming = daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS;
-        const isCurrent = today >= rentalStartDate && today <= rentalEndDate;
-        const isPast = today > rentalEndDate;
-
-        if (balance >= 1 && (isUpcoming || isCurrent || isPast)) {
+        const isUpcomingForBalanceAlert = daysUntilCheckin >= 0 && daysUntilCheckin <= MAX_CHECKIN_DAYS;
+        
+        if (balance >= 1 && (isUpcomingForBalanceAlert || isCurrentBooking || isPastBooking)) {
             const dayIdentifier = daysUntilCheckin; // Positive for upcoming, negative for past
             const flagField = `balance_notification_sent_${dayIdentifier}_days`;
 
             if (!rental[flagField]) {
                 let title: string;
-                if (isPast) {
+                if (isPastBooking) {
                     title = "¡Reserva FINALIZADA con saldo pendiente!";
-                } else if (isCurrent) {
+                } else if (isCurrentBooking) {
                     title = "¡Reserva EN CURSO con saldo pendiente!";
                 } else { // isUpcoming
                     title = `Saldo pendiente - Check-in en ${daysUntilCheckin} ${daysUntilCheckin > 1 ? 'días' : 'día'}`;
@@ -208,6 +210,36 @@ async function checkAndSendNotifications() {
                     fieldToUpdate: flagField
                 });
             }
+        }
+
+        // --- Lógica de Notificación para Garantía Solicitada ---
+        if (rental.guaranteeStatus === 'solicited' && (isUpcomingBooking || isCurrentBooking)) {
+            const flagField = 'guarantee_solicited_notification_sent';
+            if (!rental[flagField]) {
+                notificationTriggers.push({
+                    id: `${doc.id}-guarantee-solicited`,
+                    title: `Garantía Pendiente - ${propertyName}`,
+                    body: `La garantía para la reserva de ${tenantName} (Check-in ${rentalStartDate.toLocaleDateString('es-AR')}) aún no se ha recibido.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: flagField
+                });
+            }
+        }
+        
+        // --- Lógica de Notificación para Garantía Recibida y no Devuelta ---
+        if (rental.guaranteeStatus === 'received' && isPastBooking) {
+             const flagField = 'guarantee_received_notification_sent';
+             if (!rental[flagField]) {
+                notificationTriggers.push({
+                    id: `${doc.id}-guarantee-received`,
+                    title: `¡Garantía por Devolver! - ${propertyName}`,
+                    body: `La reserva de ${tenantName} ha finalizado. Recuerda devolver el depósito de garantía.`,
+                    icon: '/icons/icon-192x192.png',
+                    docPath: doc.ref.path,
+                    fieldToUpdate: flagField
+                });
+             }
         }
     }
 
