@@ -217,13 +217,13 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
                     {totalCostsSummary.ARS > 0 && (
                          <div>
                             <p className="text-sm text-muted-foreground">Costo Estimado (ARS)</p>
-                            <p className="text-lg font-bold">{formatCurrency(totalCostsSummary.ARS, 'ARS')}</p>
+                            <p className="text-lg font-bold text-blue-600">{formatCurrency(totalCostsSummary.ARS, 'ARS')}</p>
                         </div>
                     )}
                      {totalCostsSummary.USD > 0 && (
                         <div>
                             <p className="text-sm text-muted-foreground">Costo Estimado (USD)</p>
-                            <p className="text-lg font-bold">{formatCurrency(totalCostsSummary.USD, 'USD')}</p>
+                            <p className="text-lg font-bold text-green-600">{formatCurrency(totalCostsSummary.USD, 'USD')}</p>
                         </div>
                     )}
                 </CardContent>
