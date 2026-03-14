@@ -180,16 +180,15 @@ function CategoryDeleteAction({ categoryId, onDeleted }: { categoryId: string, o
 }
 
 
-export default function ExpenseCategoryManager({ initialCategories }: { initialCategories: ExpenseCategory[] }) {
+export default function ExpenseCategoryManager({ initialCategories, onCategoriesChanged }: { initialCategories: ExpenseCategory[], onCategoriesChanged: () => void }) {
   const [categories, setCategories] = useState(initialCategories);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const { width } = useWindowSize();
   const isMobile = width < 768;
   
-  const refreshCategories = async () => {
+  const refreshCategories = () => {
       setEditingCategoryId(null);
-      const updatedCategories = await getExpenseCategories();
-      setCategories(updatedCategories);
+      onCategoriesChanged();
   };
   
   useEffect(() => {

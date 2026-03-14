@@ -127,7 +127,7 @@ export default function SettingsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ExpenseCategoryManager initialCategories={expenseCategories} />
+                    <ExpenseCategoryManager initialCategories={expenseCategories} onCategoriesChanged={fetchData} />
                 </CardContent>
             </Card>
         </TabsContent>
@@ -140,7 +140,7 @@ export default function SettingsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <TaskCategoryManager initialCategories={taskCategories} />
+                    <TaskCategoryManager initialCategories={taskCategories} onCategoriesChanged={fetchData} />
                 </CardContent>
             </Card>
         </TabsContent>

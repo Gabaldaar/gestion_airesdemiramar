@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, useEffect, useTransition } from 'react';
@@ -181,16 +180,15 @@ function CategoryDeleteAction({ categoryId, onDeleted }: { categoryId: string, o
 }
 
 
-export default function TaskCategoryManager({ initialCategories }: { initialCategories: TaskCategory[] }) {
+export default function TaskCategoryManager({ initialCategories, onCategoriesChanged }: { initialCategories: TaskCategory[], onCategoriesChanged: () => void }) {
   const [categories, setCategories] = useState(initialCategories);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const { width } = useWindowSize();
   const isMobile = width < 768;
   
-  const refreshCategories = async () => {
+  const refreshCategories = () => {
       setEditingCategoryId(null);
-      const updatedCategories = await getTaskCategories();
-      setCategories(updatedCategories);
+      onCategoriesChanged();
   };
   
   useEffect(() => {
