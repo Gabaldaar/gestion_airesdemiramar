@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -1269,7 +1270,7 @@ export async function addTask(previousState: any, formData: FormData) {
   const estimatedCostValue = formData.get('estimatedCost') as string;
   const costCurrencyValue = formData.get('costCurrency') as ('ARS' | 'USD') | null;
 
-  const taskData: Omit<Task, 'id'> = {
+  const taskData: Partial<Task> = {
     propertyId: formData.get('propertyId') as string,
     description: formData.get('description') as string,
     status: (formData.get('status') as TaskStatus) || 'pending',
@@ -1277,18 +1278,21 @@ export async function addTask(previousState: any, formData: FormData) {
     notes: (formData.get('notes') as string) || '',
     categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
     dueDate: dueDateValue || null,
-    estimatedCost: estimatedCostValue ? parseFloat(estimatedCostValue) : undefined,
-    actualCost: undefined, // Always empty on creation
     costCurrency: costCurrencyValue || 'ARS',
   };
+
+  const estimatedCost = estimatedCostValue ? parseFloat(estimatedCostValue) : NaN;
+  if (!isNaN(estimatedCost)) {
+    taskData.estimatedCost = estimatedCost;
+  }
 
   if (!taskData.propertyId || !taskData.description) {
     return { success: false, message: 'La propiedad y la descripción son obligatorias.' };
   }
 
   try {
-    await addTaskDb(taskData);
-    revalidatePathsAfterAction(taskData.propertyId);
+    await addTaskDb(taskData as Omit<Task, 'id'>);
+    revalidatePathsAfterAction(taskData.propertyId!);
     return { success: true, message: 'Tarea añadida correctamente.' };
   } catch (dbError: any) {
     return { success: false, message: `Error de base de datos: ${dbError.message}` };
@@ -1316,10 +1320,18 @@ export async function updateTask(previousState: any, formData: FormData) {
     notes: formData.get('notes') as string,
     categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
     dueDate: dueDateValue || null,
-    estimatedCost: estimatedCostValue ? parseFloat(estimatedCostValue) : undefined,
-    actualCost: actualCostValue ? parseFloat(actualCostValue) : undefined,
     costCurrency: costCurrencyValue || 'ARS',
   };
+
+  const estimatedCost = estimatedCostValue ? parseFloat(estimatedCostValue) : NaN;
+  if (!isNaN(estimatedCost)) {
+    taskData.estimatedCost = estimatedCost;
+  }
+
+  const actualCost = actualCostValue ? parseFloat(actualCostValue) : NaN;
+  if (!isNaN(actualCost)) {
+    taskData.actualCost = actualCost;
+  }
   
   try {
     await updateTaskDb(taskData);
