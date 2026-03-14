@@ -166,6 +166,73 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete }: { task: TaskW
     );
 }
 
+function TaskCard({ task, showProperty = false, onEdit, onDelete }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void }) {
+    const statusInfo = statusMap[task.status];
+    const priorityInfo = priorityMap[task.priority];
+
+    const formatDate = (date: string | undefined | null) => {
+        if (!date) return 'N/A';
+        const parsedDate = parseDateSafely(date);
+        if (!parsedDate) return 'Fecha inv.';
+        return format(parsedDate, "dd-LLL-yy", { locale: es });
+    };
+
+    const formatCurrency = (amount: number | undefined, currency: 'ARS' | 'USD' = 'ARS') => {
+        if (typeof amount === 'undefined') return '-';
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency }).format(amount);
+    }
+
+    const dueDate = parseDateSafely(task.dueDate);
+    const isOverdue = dueDate && task.status !== 'completed' && dueDate < startOfToday();
+
+    return (
+        <Card className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground')}>
+            <CardHeader className="p-4">
+                <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{showProperty ? task.propertyName : task.description}</CardTitle>
+                    <Badge className={priorityInfo.className}>
+                        <priorityInfo.Icon className="mr-1 h-3 w-3" />
+                        {priorityInfo.text}
+                    </Badge>
+                </div>
+                {showProperty && <CardDescription>{task.description}</CardDescription>}
+            </CardHeader>
+            <CardContent className="p-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div className="flex justify-between items-center col-span-2">
+                    <span className="text-muted-foreground">Estado</span>
+                    <Badge className={statusInfo.className}>
+                        <statusInfo.Icon className="mr-1 h-3 w-3" />
+                        {statusInfo.text}
+                    </Badge>
+                </div>
+                {task.categoryName && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Categoría</span>
+                        <span className="font-medium text-right">{task.categoryName}</span>
+                    </div>
+                )}
+                <div className={cn("flex justify-between items-center", !task.categoryName && "col-span-2")}>
+                    <span className="text-muted-foreground">Fecha Límite</span>
+                    <span className={cn("font-medium", isOverdue && "text-destructive flex items-center")}>
+                        {isOverdue && <AlertTriangle className="inline mr-1 h-4 w-4" />}
+                        {formatDate(task.dueDate)}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Costo Est.</span>
+                    <span className="font-medium">{formatCurrency(task.estimatedCost, task.costCurrency)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Costo Real</span>
+                    <span className="font-medium">{formatCurrency(task.actualCost, task.costCurrency)}</span>
+                </div>
+            </CardContent>
+            <CardFooter className="p-2 justify-end">
+                <TaskActions task={task} onEdit={onEdit} onDelete={onDelete} />
+            </CardFooter>
+        </Card>
+    );
+}
 
 export default function TasksList({ tasks, properties, categories, showProperty = false, propertyId, onDataChanged, onRegisterExpense }: TasksListProps) {
   const [editingTask, setEditingTask] = useState<TaskWithDetails | undefined>(undefined);
@@ -231,9 +298,23 @@ export default function TasksList({ tasks, properties, categories, showProperty 
     </Table>
   );
 
+  const CardView = () => (
+    <div className="space-y-4">
+        {tasks.map((task) => (
+            <TaskCard 
+                key={task.id}
+                task={task} 
+                showProperty={showProperty} 
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+            />
+        ))}
+    </div>
+);
+
   return (
     <div>
-        {useCardView ? <p>Card view not implemented yet</p> : <TableView />}
+        {useCardView ? <CardView /> : <TableView />}
 
         {editingTask && (
             <TaskEditForm
