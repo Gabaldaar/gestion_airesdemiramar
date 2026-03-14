@@ -1267,6 +1267,7 @@ export async function addTask(previousState: any, formData: FormData) {
   const categoryIdValue = formData.get('categoryId') as string;
   const dueDateValue = formData.get('dueDate') as string;
   const estimatedCostValue = formData.get('estimatedCost') as string;
+  const costCurrencyValue = formData.get('costCurrency') as ('ARS' | 'USD') | null;
 
   const taskData: Omit<Task, 'id'> = {
     propertyId: formData.get('propertyId') as string,
@@ -1278,6 +1279,7 @@ export async function addTask(previousState: any, formData: FormData) {
     dueDate: dueDateValue || null,
     estimatedCost: estimatedCostValue ? parseFloat(estimatedCostValue) : undefined,
     actualCost: undefined, // Always empty on creation
+    costCurrency: costCurrencyValue || 'ARS',
   };
 
   if (!taskData.propertyId || !taskData.description) {
@@ -1303,6 +1305,7 @@ export async function updateTask(previousState: any, formData: FormData) {
   const dueDateValue = formData.get('dueDate') as string;
   const estimatedCostValue = formData.get('estimatedCost') as string;
   const actualCostValue = formData.get('actualCost') as string;
+  const costCurrencyValue = formData.get('costCurrency') as ('ARS' | 'USD') | null;
 
   const taskData: Partial<Task> = {
     id,
@@ -1315,6 +1318,7 @@ export async function updateTask(previousState: any, formData: FormData) {
     dueDate: dueDateValue || null,
     estimatedCost: estimatedCostValue ? parseFloat(estimatedCostValue) : undefined,
     actualCost: actualCostValue ? parseFloat(actualCostValue) : undefined,
+    costCurrency: costCurrencyValue || 'ARS',
   };
   
   try {

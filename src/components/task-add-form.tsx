@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -172,8 +171,18 @@ export function TaskAddForm({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="estimatedCost">Costo Estimado (ARS)</Label>
+                        <Label htmlFor="estimatedCost">Costo Estimado</Label>
                         <Input id="estimatedCost" name="estimatedCost" type="number" step="0.01" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="costCurrency">Moneda</Label>
+                        <Select name="costCurrency" defaultValue="ARS">
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ARS">ARS</SelectItem>
+                                <SelectItem value="USD">USD</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 

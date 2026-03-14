@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -81,6 +80,7 @@ export function TaskEditForm({
   const [dueDate, setDueDate] = useState<Date | undefined>(parseDateSafely(task.dueDate));
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [actualCost, setActualCost] = useState<string>(task.actualCost?.toString() || '');
+  const [costCurrency, setCostCurrency] = useState<'ARS' | 'USD'>(task.costCurrency || 'ARS');
   const [showConfirmExpenseDialog, setShowConfirmExpenseDialog] = useState(false);
   const [formDataForExpense, setFormDataForExpense] = useState<FormData | null>(null);
 
@@ -125,6 +125,7 @@ export function TaskEditForm({
                     ...task,
                     status: 'completed',
                     actualCost: parseFloat(formDataForExpense.get('actualCost') as string),
+                    costCurrency: (formDataForExpense.get('costCurrency') as 'ARS' | 'USD') || 'ARS',
                 };
                 onTaskCompletedWithExpense(updatedTask);
             }
@@ -209,14 +210,24 @@ export function TaskEditForm({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="estimatedCost">Costo Estimado (ARS)</Label>
+                        <Label htmlFor="estimatedCost">Costo Estimado</Label>
                         <Input id="estimatedCost" name="estimatedCost" type="number" step="0.01" defaultValue={task.estimatedCost} />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="actualCost">Costo Real (ARS)</Label>
+                        <Label htmlFor="actualCost">Costo Real</Label>
                         <Input id="actualCost" name="actualCost" type="number" step="0.01" value={actualCost} onChange={(e) => setActualCost(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="costCurrency">Moneda Costos</Label>
+                        <Select name="costCurrency" value={costCurrency} onValueChange={(v) => setCostCurrency(v as 'ARS' | 'USD')}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ARS">ARS</SelectItem>
+                                <SelectItem value="USD">USD</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 
@@ -241,7 +252,7 @@ export function TaskEditForm({
             <AlertDialogHeader>
                 <AlertDialogTitle>Registrar Gasto</AlertDialogTitle>
                 <AlertDialogDescription>
-                    La tarea se marcó como "Cumplida" con un costo real de ${actualCost}. ¿Deseas registrar un gasto de propiedad por este monto?
+                    La tarea se marcó como "Cumplida" con un costo real de {costCurrency} {actualCost}. ¿Deseas registrar un gasto de propiedad por este monto?
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

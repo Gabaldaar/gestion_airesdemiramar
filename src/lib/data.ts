@@ -301,6 +301,7 @@ export type Task = {
     priority: TaskPriority;
     estimatedCost?: number;
     actualCost?: number;
+    costCurrency?: 'ARS' | 'USD';
     dueDate?: string | null;
     categoryId?: string | null;
     notes?: string;

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -120,9 +119,9 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete }: { task: TaskW
         return format(parsedDate, "dd-LLL-yy", { locale: es });
     };
 
-    const formatCurrency = (amount: number | undefined) => {
+    const formatCurrency = (amount: number | undefined, currency: 'ARS' | 'USD' = 'ARS') => {
         if (typeof amount === 'undefined') return '-';
-        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency }).format(amount);
     }
   
     const dueDate = parseDateSafely(task.dueDate);
@@ -134,7 +133,9 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete }: { task: TaskW
             <TableCell className="max-w-[250px] truncate cursor-default">
                  <TooltipProvider>
                     <Tooltip>
-                        <TooltipTrigger asChild><span className="truncate">{task.description}</span></TooltipTrigger>
+                        <TooltipTrigger asChild>
+                            <p className="truncate">{task.description}</p>
+                        </TooltipTrigger>
                         <TooltipContent><p>{task.description}</p></TooltipContent>
                     </Tooltip>
                  </TooltipProvider>
@@ -156,8 +157,8 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete }: { task: TaskW
                 {formatDate(task.dueDate)}
                 {isOverdue && <AlertTriangle className="inline ml-2 h-4 w-4" />}
             </TableCell>
-            <TableCell className="hidden lg:table-cell text-right">{formatCurrency(task.estimatedCost)}</TableCell>
-            <TableCell className="hidden lg:table-cell text-right">{formatCurrency(task.actualCost)}</TableCell>
+            <TableCell className="hidden lg:table-cell text-right">{formatCurrency(task.estimatedCost, task.costCurrency)}</TableCell>
+            <TableCell className="hidden lg:table-cell text-right">{formatCurrency(task.actualCost, task.costCurrency)}</TableCell>
             <TableCell className="text-right">
                 <TaskActions task={task} onEdit={onEdit} onDelete={onDelete} />
             </TableCell>
@@ -193,7 +194,8 @@ export default function TasksList({ tasks, properties, categories, showProperty 
     if (task.actualCost && task.actualCost > 0) {
         onRegisterExpense({
             amount: task.actualCost,
-            description: `Gasto de tarea: ${task.description}`
+            description: `Gasto de tarea: ${task.description}`,
+            currency: task.costCurrency || 'ARS'
         }, task.propertyId);
     }
     onDataChanged();

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -35,6 +34,7 @@ const initialState = {
 export interface ExpensePreloadData {
   amount: number;
   description: string;
+  currency?: 'ARS' | 'USD';
 }
 
 
@@ -126,11 +126,15 @@ export function ExpenseAddForm({
         if (preloadData) {
             setAmount(preloadData.amount.toString());
             setDescription(preloadData.description);
+            if (preloadData.currency) {
+                setCurrency(preloadData.currency);
+            }
         }
     } else {
         // Clear form when dialog closes
         setAmount('');
         setDescription('');
+        setCurrency('ARS');
     }
   }, [isOpen, preloadData]);
 
