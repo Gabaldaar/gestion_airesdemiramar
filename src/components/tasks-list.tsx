@@ -168,8 +168,8 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onS
                 {formatDate(task.dueDate)}
                 {isOverdue && <AlertTriangle className="inline ml-2 h-4 w-4" />}
             </TableCell>
-            <TableCell className="hidden lg:table-cell text-right">{formatCurrency(task.estimatedCost, task.costCurrency)}</TableCell>
-            <TableCell className="hidden lg:table-cell text-right">{formatCurrency(task.actualCost, task.costCurrency)}</TableCell>
+            <TableCell className={cn("hidden lg:table-cell text-right", task.costCurrency === 'ARS' && "text-blue-600", task.costCurrency === 'USD' && "text-green-600")}>{formatCurrency(task.estimatedCost, task.costCurrency)}</TableCell>
+            <TableCell className={cn("hidden lg:table-cell text-right", task.costCurrency === 'ARS' && "text-blue-600", task.costCurrency === 'USD' && "text-green-600")}>{formatCurrency(task.actualCost, task.costCurrency)}</TableCell>
             <TableCell className="text-right">
                 <TaskActions task={task} onEdit={onEdit} onDelete={onDelete} />
             </TableCell>
@@ -241,11 +241,11 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                 </div>
                 <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Costo Est.</span>
-                    <span className="font-medium">{formatCurrency(task.estimatedCost, task.costCurrency)}</span>
+                    <span className={cn("font-medium", task.costCurrency === 'ARS' && "text-blue-600", task.costCurrency === 'USD' && "text-green-600")}>{formatCurrency(task.estimatedCost, task.costCurrency)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Costo Real</span>
-                    <span className="font-medium">{formatCurrency(task.actualCost, task.costCurrency)}</span>
+                    <span className={cn("font-medium", task.costCurrency === 'ARS' && "text-blue-600", task.costCurrency === 'USD' && "text-green-600")}>{formatCurrency(task.actualCost, task.costCurrency)}</span>
                 </div>
             </CardContent>
             <CardFooter className="p-2 justify-end">
