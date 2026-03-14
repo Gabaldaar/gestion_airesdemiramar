@@ -42,9 +42,9 @@ interface TasksListProps {
   propertyId?: string;
   onDataChanged: () => void;
   onRegisterExpense: (data: ExpensePreloadData, propertyId: string) => void;
-  selectedTaskIds: string[];
-  onSelectionChange: (taskId: string, isSelected: boolean) => void;
-  onSelectAll: (isSelected: boolean) => void;
+  selectedTaskIds?: string[];
+  onSelectionChange?: (taskId: string, isSelected: boolean) => void;
+  onSelectAll?: (isSelected: boolean) => void;
 }
 
 const statusMap: Record<TaskStatus, { text: string, className: string, Icon: React.ElementType }> = {
@@ -111,7 +111,7 @@ function TaskActions({ task, onEdit, onDelete }: { task: TaskWithDetails, onEdit
     )
 }
 
-function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void, isSelected: boolean, onSelectionChange: (checked: boolean) => void; }) {
+function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void, isSelected?: boolean, onSelectionChange?: (checked: boolean) => void; }) {
   
     const statusInfo = statusMap[task.status];
     const priorityInfo = priorityMap[task.priority];
@@ -133,13 +133,15 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onS
 
     return (
         <TableRow key={task.id} className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground', isSelected && 'bg-blue-500/10')}>
-            <TableCell className="p-2">
-                <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={onSelectionChange}
-                    aria-label="Seleccionar tarea"
-                />
-            </TableCell>
+            {onSelectionChange && (
+                <TableCell className="p-2">
+                    <Checkbox
+                        checked={!!isSelected}
+                        onCheckedChange={onSelectionChange}
+                        aria-label="Seleccionar tarea"
+                    />
+                </TableCell>
+            )}
             {showProperty && <TableCell className="font-bold">{task.propertyName}</TableCell>}
             <TableCell className="max-w-[250px] truncate cursor-default">
                  <TooltipProvider>
@@ -177,7 +179,7 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onS
     );
 }
 
-function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void, isSelected: boolean, onSelectionChange: (checked: boolean) => void; }) {
+function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void, isSelected?: boolean, onSelectionChange?: (checked: boolean) => void; }) {
     const statusInfo = statusMap[task.status];
     const priorityInfo = priorityMap[task.priority];
 
@@ -201,12 +203,14 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
             <CardHeader className="p-4">
                 <div className="flex justify-between items-start">
                     <div className="flex items-start gap-2">
-                        <Checkbox
-                            className="mt-1"
-                            checked={isSelected}
-                            onCheckedChange={onSelectionChange}
-                            aria-label="Seleccionar tarea"
-                        />
+                        {onSelectionChange && (
+                            <Checkbox
+                                className="mt-1"
+                                checked={!!isSelected}
+                                onCheckedChange={onSelectionChange}
+                                aria-label="Seleccionar tarea"
+                            />
+                        )}
                          <div>
                             <CardTitle className="text-lg">{showProperty ? task.propertyName : task.description}</CardTitle>
                             {showProperty && <CardDescription>{task.description}</CardDescription>}
@@ -294,13 +298,15 @@ export default function TasksList({ tasks, properties, categories, showProperty 
     <Table>
         <TableHeader>
             <TableRow>
-                <TableHead className="p-2 w-[40px]">
-                     <Checkbox
-                        checked={tasks.length > 0 && selectedTaskIds.length === tasks.length}
-                        onCheckedChange={(checked) => onSelectAll(!!checked)}
-                        aria-label="Seleccionar todo"
-                    />
-                </TableHead>
+                {onSelectAll && selectedTaskIds && (
+                    <TableHead className="p-2 w-[40px]">
+                         <Checkbox
+                            checked={tasks.length > 0 && selectedTaskIds.length === tasks.length}
+                            onCheckedChange={(checked) => onSelectAll(!!checked)}
+                            aria-label="Seleccionar todo"
+                        />
+                    </TableHead>
+                )}
                 {showProperty && <TableHead>Propiedad</TableHead>}
                 <TableHead>Descripción</TableHead>
                 <TableHead>Estado</TableHead>
@@ -320,8 +326,8 @@ export default function TasksList({ tasks, properties, categories, showProperty 
                     showProperty={showProperty} 
                     onEdit={handleEditClick}
                     onDelete={handleDeleteClick}
-                    isSelected={selectedTaskIds.includes(task.id)}
-                    onSelectionChange={(checked) => onSelectionChange(task.id, checked)}
+                    isSelected={selectedTaskIds?.includes(task.id)}
+                    onSelectionChange={onSelectionChange ? (checked) => onSelectionChange(task.id, checked) : undefined}
                 />
             ))}
         </TableBody>
@@ -337,8 +343,8 @@ export default function TasksList({ tasks, properties, categories, showProperty 
                 showProperty={showProperty} 
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
-                isSelected={selectedTaskIds.includes(task.id)}
-                onSelectionChange={(checked) => onSelectionChange(task.id, checked)}
+                isSelected={selectedTaskIds?.includes(task.id)}
+                onSelectionChange={onSelectionChange ? (checked) => onSelectionChange(task.id, checked) : undefined}
             />
         ))}
     </div>
