@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import {
@@ -125,7 +123,8 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete }: { task: TaskW
         return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
     }
   
-    const isOverdue = task.dueDate && task.status !== 'completed' && new Date(task.dueDate) < new Date();
+    const dueDate = parseDateSafely(task.dueDate);
+    const isOverdue = dueDate && task.status !== 'completed' && dueDate < new Date();
 
     return (
         <TableRow key={task.id} className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground')}>

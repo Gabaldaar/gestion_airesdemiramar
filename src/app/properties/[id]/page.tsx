@@ -36,7 +36,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
 import { DayPicker, DayProps } from 'react-day-picker';
-import { addDays, isWithinInterval } from 'date-fns';
+import { addDays, isWithinInterval, isSameDay } from 'date-fns';
 import useWindowSize from '@/hooks/use-window-size';
 import { parseDateSafely } from '@/lib/utils';
 import { TaskAddForm } from '@/components/task-add-form';
@@ -345,7 +345,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <TasksList tasks={tasks} categories={taskCategories} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
+                    <TasksList tasks={tasks} properties={properties} categories={taskCategories} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
                 </CardContent>
             </Card>
             </TabsContent>
