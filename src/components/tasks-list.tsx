@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -28,10 +29,10 @@ import { NotesViewer } from './notes-viewer';
 import { Landmark, Wallet, Pencil, Trash2, FileText, Calculator, Mail, AlertTriangle, ArrowUp, ArrowDown, ChevronsRight } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import useWindowSize from '@/hooks/use-window-size';
-import { TaskAddForm } from "./task-add-form";
 import { TaskEditForm } from "./task-edit-form";
 import { TaskDeleteForm } from "./task-delete-form";
 import { ExpensePreloadData } from "./expense-add-form";
+import { Checkbox } from "./ui/checkbox";
 
 interface TasksListProps {
   tasks: TaskWithDetails[];
@@ -41,6 +42,9 @@ interface TasksListProps {
   propertyId?: string;
   onDataChanged: () => void;
   onRegisterExpense: (data: ExpensePreloadData, propertyId: string) => void;
+  selectedTaskIds: string[];
+  onSelectionChange: (taskId: string, isSelected: boolean) => void;
+  onSelectAll: (isSelected: boolean) => void;
 }
 
 const statusMap: Record<TaskStatus, { text: string, className: string, Icon: React.ElementType }> = {
@@ -107,7 +111,7 @@ function TaskActions({ task, onEdit, onDelete }: { task: TaskWithDetails, onEdit
     )
 }
 
-function TaskRow({ task, showProperty = false, onEdit, onDelete }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void }) {
+function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void, isSelected: boolean, onSelectionChange: (checked: boolean) => void; }) {
   
     const statusInfo = statusMap[task.status];
     const priorityInfo = priorityMap[task.priority];
@@ -121,14 +125,21 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete }: { task: TaskW
 
     const formatCurrency = (amount: number | undefined, currency: 'ARS' | 'USD' = 'ARS') => {
         if (typeof amount === 'undefined') return '-';
-        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency }).format(amount);
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency, minimumFractionDigits: 0 }).format(amount);
     }
   
     const dueDate = parseDateSafely(task.dueDate);
     const isOverdue = dueDate && task.status !== 'completed' && dueDate < startOfToday();
 
     return (
-        <TableRow key={task.id} className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground')}>
+        <TableRow key={task.id} className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground', isSelected && 'bg-blue-500/10')}>
+            <TableCell className="p-2">
+                <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={onSelectionChange}
+                    aria-label="Seleccionar tarea"
+                />
+            </TableCell>
             {showProperty && <TableCell className="font-bold">{task.propertyName}</TableCell>}
             <TableCell className="max-w-[250px] truncate cursor-default">
                  <TooltipProvider>
@@ -166,7 +177,7 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete }: { task: TaskW
     );
 }
 
-function TaskCard({ task, showProperty = false, onEdit, onDelete }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void }) {
+function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void, isSelected: boolean, onSelectionChange: (checked: boolean) => void; }) {
     const statusInfo = statusMap[task.status];
     const priorityInfo = priorityMap[task.priority];
 
@@ -179,23 +190,33 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete }: { task: Task
 
     const formatCurrency = (amount: number | undefined, currency: 'ARS' | 'USD' = 'ARS') => {
         if (typeof amount === 'undefined') return '-';
-        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency }).format(amount);
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency, minimumFractionDigits: 0 }).format(amount);
     }
 
     const dueDate = parseDateSafely(task.dueDate);
     const isOverdue = dueDate && task.status !== 'completed' && dueDate < startOfToday();
 
     return (
-        <Card className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground')}>
+        <Card className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground', isSelected && 'border-primary ring-2 ring-primary')}>
             <CardHeader className="p-4">
                 <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{showProperty ? task.propertyName : task.description}</CardTitle>
+                    <div className="flex items-start gap-2">
+                        <Checkbox
+                            className="mt-1"
+                            checked={isSelected}
+                            onCheckedChange={onSelectionChange}
+                            aria-label="Seleccionar tarea"
+                        />
+                         <div>
+                            <CardTitle className="text-lg">{showProperty ? task.propertyName : task.description}</CardTitle>
+                            {showProperty && <CardDescription>{task.description}</CardDescription>}
+                        </div>
+                    </div>
                     <Badge className={priorityInfo.className}>
                         <priorityInfo.Icon className="mr-1 h-3 w-3" />
                         {priorityInfo.text}
                     </Badge>
                 </div>
-                {showProperty && <CardDescription>{task.description}</CardDescription>}
             </CardHeader>
             <CardContent className="p-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <div className="flex justify-between items-center col-span-2">
@@ -234,7 +255,7 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete }: { task: Task
     );
 }
 
-export default function TasksList({ tasks, properties, categories, showProperty = false, propertyId, onDataChanged, onRegisterExpense }: TasksListProps) {
+export default function TasksList({ tasks, properties, categories, showProperty = false, propertyId, onDataChanged, onRegisterExpense, selectedTaskIds, onSelectionChange, onSelectAll }: TasksListProps) {
   const [editingTask, setEditingTask] = useState<TaskWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deletingTask, setDeletingTask] = useState<TaskWithDetails | undefined>(undefined);
@@ -273,6 +294,13 @@ export default function TasksList({ tasks, properties, categories, showProperty 
     <Table>
         <TableHeader>
             <TableRow>
+                <TableHead className="p-2 w-[40px]">
+                     <Checkbox
+                        checked={tasks.length > 0 && selectedTaskIds.length === tasks.length}
+                        onCheckedChange={(checked) => onSelectAll(!!checked)}
+                        aria-label="Seleccionar todo"
+                    />
+                </TableHead>
                 {showProperty && <TableHead>Propiedad</TableHead>}
                 <TableHead>Descripción</TableHead>
                 <TableHead>Estado</TableHead>
@@ -292,6 +320,8 @@ export default function TasksList({ tasks, properties, categories, showProperty 
                     showProperty={showProperty} 
                     onEdit={handleEditClick}
                     onDelete={handleDeleteClick}
+                    isSelected={selectedTaskIds.includes(task.id)}
+                    onSelectionChange={(checked) => onSelectionChange(task.id, checked)}
                 />
             ))}
         </TableBody>
@@ -307,6 +337,8 @@ export default function TasksList({ tasks, properties, categories, showProperty 
                 showProperty={showProperty} 
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
+                isSelected={selectedTaskIds.includes(task.id)}
+                onSelectionChange={(checked) => onSelectionChange(task.id, checked)}
             />
         ))}
     </div>

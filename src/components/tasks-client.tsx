@@ -2,16 +2,15 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { TaskWithDetails, Property, TaskCategory, TaskStatus, TaskPriority } from '@/lib/data';
 import TasksList from '@/components/tasks-list';
 import { ExpensePreloadData } from '@/components/expense-add-form';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
-import { parseDateSafely } from '@/lib/utils';
 import { ExpenseAddForm } from './expense-add-form';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 
 interface TasksClientProps {
   initialTasks: TaskWithDetails[];
@@ -26,6 +25,8 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all');
   const [categoryIdFilter, setCategoryIdFilter] = useState<string>('all');
+  const [costCurrencyFilter, setCostCurrencyFilter] = useState<'all' | 'ARS' | 'USD'>('all');
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   
   const [isExpenseAddOpen, setIsExpenseAddOpen] = useState(false);
   const [expensePreloadData, setExpensePreloadData] = useState<ExpensePreloadData | undefined>(undefined);
@@ -64,6 +65,11 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
           return false;
         }
       }
+
+      // Currency Filter
+      if (costCurrencyFilter !== 'all' && (task.costCurrency || 'ARS') !== costCurrencyFilter) {
+        return false;
+      }
       
       return true;
     });
@@ -79,19 +85,52 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
         return priorityOrder[a.priority] - priorityOrder[b.priority];
     });
 
-  }, [tasks, propertyIdFilter, statusFilter, priorityFilter, categoryIdFilter]);
+  }, [tasks, propertyIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
+
+  // Reset selection when filters change
+  useEffect(() => {
+    setSelectedTaskIds([]);
+  }, [propertyIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
 
   const handleClearFilters = () => {
     setPropertyIdFilter('all');
     setStatusFilter('all');
     setPriorityFilter('all');
     setCategoryIdFilter('all');
+    setCostCurrencyFilter('all');
+    setSelectedTaskIds([]);
   };
+  
+  const handleSelectionChange = (taskId: string, isSelected: boolean) => {
+    setSelectedTaskIds(prev =>
+      isSelected ? [...prev, taskId] : prev.filter(id => id !== taskId)
+    );
+  };
+
+  const handleSelectAll = (isSelected: boolean) => {
+    setSelectedTaskIds(isSelected ? filteredTasks.map(t => t.id) : []);
+  };
+
+  const totalCostsSummary = useMemo(() => {
+    const totals: { ARS: number; USD: number } = { ARS: 0, USD: 0 };
+    selectedTaskIds.forEach(id => {
+        const task = tasks.find(t => t.id === id);
+        if (task && task.estimatedCost) {
+            const currency = task.costCurrency || 'ARS';
+            totals[currency] += task.estimatedCost;
+        }
+    });
+    return totals;
+  }, [selectedTaskIds, tasks]);
+
+  const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency }).format(amount);
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
           <div className="grid gap-2">
               <Label>Propiedad</Label>
               <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
@@ -149,16 +188,57 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
                   </SelectContent>
               </Select>
           </div>
+          <div className="grid gap-2">
+            <Label>Moneda Costos</Label>
+            <Select value={costCurrencyFilter} onValueChange={(v) => setCostCurrencyFilter(v as 'all' | 'ARS' | 'USD')}>
+                <SelectTrigger>
+                    <SelectValue placeholder="Moneda"/>
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="ARS">ARS</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                </SelectContent>
+            </Select>
+          </div>
         
           <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
         </div>
       </div>
+
+       {selectedTaskIds.length > 0 && (
+            <Card>
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-md">
+                        Resumen de {selectedTaskIds.length} Tarea(s) Seleccionada(s)
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col sm:flex-row sm:items-center sm:gap-6">
+                    {totalCostsSummary.ARS > 0 && (
+                         <div>
+                            <p className="text-sm text-muted-foreground">Costo Estimado (ARS)</p>
+                            <p className="text-lg font-bold">{formatCurrency(totalCostsSummary.ARS, 'ARS')}</p>
+                        </div>
+                    )}
+                     {totalCostsSummary.USD > 0 && (
+                        <div>
+                            <p className="text-sm text-muted-foreground">Costo Estimado (USD)</p>
+                            <p className="text-lg font-bold">{formatCurrency(totalCostsSummary.USD, 'USD')}</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        )}
+
       <TasksList 
         tasks={filteredTasks} 
         categories={categories} 
         properties={properties}
         onDataChanged={onDataChanged}
         onRegisterExpense={handleRegisterExpense}
+        selectedTaskIds={selectedTaskIds}
+        onSelectionChange={handleSelectionChange}
+        onSelectAll={handleSelectAll}
       />
       {expensePropertyId && (
         <ExpenseAddForm
@@ -173,4 +253,3 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
     </div>
   );
 }
-
