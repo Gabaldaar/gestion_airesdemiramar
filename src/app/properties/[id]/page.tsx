@@ -18,16 +18,17 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins } from "@/lib/data";
+import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import ExpensesList from '@/components/expenses-list';
-import { ExpenseAddForm } from '@/components/expense-add-form';
+import TasksList from '@/components/tasks-list';
+import { ExpenseAddForm, ExpensePreloadData } from '@/components/expense-add-form';
 import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, useMemo, FC, useCallback } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Copy, Calendar as CalendarIcon, ExternalLink } from 'lucide-react';
+import { Copy, Calendar as CalendarIcon, ExternalLink, PlusCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +39,7 @@ import { DayPicker, DayProps } from 'react-day-picker';
 import { addDays, isWithinInterval } from 'date-fns';
 import useWindowSize from '@/hooks/use-window-size';
 import { parseDateSafely } from '@/lib/utils';
+import { TaskAddForm } from '@/components/task-add-form';
 
 
 interface PropertyDetailData {
@@ -46,7 +48,9 @@ interface PropertyDetailData {
     tenants: Tenant[];
     bookings: BookingWithDetails[];
     expenses: PropertyExpense[];
-    categories: ExpenseCategory[];
+    expenseCategories: ExpenseCategory[];
+    tasks: TaskWithDetails[];
+    taskCategories: TaskCategory[];
     origins: Origin[];
 }
 
@@ -104,24 +108,30 @@ export default function PropertyDetailPage() {
   const isMobile = width < 768;
   const [key, setKey] = useState(0); // State to force re-render
 
+  const [isTaskAddOpen, setIsTaskAddOpen] = useState(false);
+  const [isExpenseAddOpen, setIsExpenseAddOpen] = useState(false);
+  const [expensePreloadData, setExpensePreloadData] = useState<ExpensePreloadData | undefined>(undefined);
+
   const fetchData = useCallback(async () => {
     if (user && propertyId) {
         setLoading(true);
         try {
-            const [property, properties, tenants, bookings, expenses, categories, origins] = await Promise.all([
+            const [property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, origins] = await Promise.all([
                 getPropertyById(propertyId),
                 getProperties(),
                 getTenants(),
                 getBookingsByPropertyId(propertyId),
                 getPropertyExpensesByPropertyId(propertyId),
                 getExpenseCategories(),
+                getTasksByPropertyId(propertyId),
+                getTaskCategories(),
                 getOrigins(),
             ]);
 
             if (!property) {
                 setData(null);
             } else {
-                setData({ property, properties, tenants, bookings, expenses, categories, origins });
+                setData({ property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, origins });
             }
         } catch (error) {
             console.error("Error fetching property details:", error);
@@ -139,6 +149,11 @@ export default function PropertyDetailPage() {
   const handleDataChanged = () => {
     setKey(prevKey => prevKey + 1);
   };
+
+  const handleOpenExpenseFormWithData = useCallback((data: ExpensePreloadData) => {
+    setExpensePreloadData(data);
+    setIsExpenseAddOpen(true);
+  }, []);
 
 
   useEffect(() => {
@@ -164,7 +179,7 @@ export default function PropertyDetailPage() {
         const bookedMiddleDays = activeBookings.flatMap(booking => {
             const startDate = parseDateSafely(booking.startDate);
             const endDate = parseDateSafely(booking.endDate);
-            if (!startDate || !endDate || endDate.getTime() - startDate.getTime() <= 2 * 24 * 60 * 60 * 1000) {
+            if (!startDate || !endDate || isSameDay(addDays(startDate, 1), endDate) || isSameDay(startDate, endDate)) {
                  return []; // Don't mark middle days for short stays
             }
             return { from: addDays(startDate, 1), to: addDays(endDate, -1) };
@@ -194,7 +209,7 @@ export default function PropertyDetailPage() {
     return <p>Propiedad no encontrada o error al cargar los datos.</p>;
   }
   
-  const { property, properties, tenants, bookings, expenses, categories, origins } = data;
+  const { property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, origins } = data;
   
   const icalUrl = `${baseUrl}/api/ical/${property.id}`;
   
@@ -284,8 +299,9 @@ export default function PropertyDetailPage() {
         <div className="lg:col-span-1">
         <Tabs defaultValue="bookings" className="space-y-4">
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <TabsList className="grid w-full sm:w-auto grid-cols-3">
+                <TabsList className="grid w-full sm:w-auto grid-cols-4">
                     <TabsTrigger value="bookings">Reservas</TabsTrigger>
+                    <TabsTrigger value="tasks">Tareas</TabsTrigger>
                     <TabsTrigger value="expenses">Gastos</TabsTrigger>
                     <TabsTrigger value="calendar">Calendario</TabsTrigger>
                 </TabsList>
@@ -299,7 +315,12 @@ export default function PropertyDetailPage() {
                       </Button>
                     )}
                     <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
-                    <ExpenseAddForm propertyId={property.id} categories={categories} />
+                    <TaskAddForm propertyId={property.id} categories={taskCategories} isOpen={isTaskAddOpen} onOpenChange={setIsTaskAddOpen} onTaskAdded={handleDataChanged}>
+                        <Button variant="outline" onClick={() => setIsTaskAddOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Añadir Tarea
+                        </Button>
+                    </TaskAddForm>
                 </div>
             </div>
             <TabsContent value="bookings" className="space-y-4">
@@ -315,16 +336,44 @@ export default function PropertyDetailPage() {
                 </CardContent>
             </Card>
             </TabsContent>
-            <TabsContent value="expenses" className="space-y-4">
+            <TabsContent value="tasks" className="space-y-4">
             <Card>
                 <CardHeader>
-                <CardTitle>Gastos de la Propiedad</CardTitle>
+                <CardTitle>Tareas de la Propiedad</CardTitle>
                 <CardDescription>
-                    Registra y consulta los gastos asociados a la propiedad.
+                    Gestiona el mantenimiento y las tareas pendientes para esta propiedad.
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <ExpensesList expenses={expenses} categories={categories} property={property} onDataChanged={handleDataChanged} />
+                    <TasksList tasks={tasks} categories={taskCategories} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
+                </CardContent>
+            </Card>
+            </TabsContent>
+            <TabsContent value="expenses" className="space-y-4">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Gastos de la Propiedad</CardTitle>
+                        <CardDescription>
+                            Registra y consulta los gastos asociados a la propiedad.
+                        </CardDescription>
+                    </div>
+                     <ExpenseAddForm
+                        propertyId={property.id}
+                        categories={expenseCategories}
+                        onExpenseAdded={handleDataChanged}
+                        isOpen={isExpenseAddOpen}
+                        onOpenChange={setIsExpenseAddOpen}
+                        preloadData={expensePreloadData}
+                    >
+                         <Button variant="outline">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Añadir Gasto
+                        </Button>
+                    </ExpenseAddForm>
+                </CardHeader>
+                <CardContent>
+                    <ExpensesList expenses={expenses} categories={expenseCategories} property={property} onDataChanged={handleDataChanged} />
                 </CardContent>
             </Card>
             </TabsContent>
@@ -360,8 +409,3 @@ export default function PropertyDetailPage() {
     </div>
   );
 }
-
-    
-
-    
-

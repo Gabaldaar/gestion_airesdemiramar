@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -9,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings, Origin, getOrigins, getAlertSettings, AlertSettings } from "@/lib/data";
+import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings, Origin, getOrigins, getAlertSettings, AlertSettings, getTaskCategories, TaskCategory } from "@/lib/data";
 import { PropertyEditForm } from "@/components/property-edit-form";
 import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
@@ -18,10 +19,12 @@ import { AlertSettingsManager } from "@/components/alert-settings-manager";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import OriginManager from "@/components/origin-manager";
+import TaskCategoryManager from "@/components/task-category-manager";
 
 interface SettingsData {
     properties: Property[];
     expenseCategories: ExpenseCategory[];
+    taskCategories: TaskCategory[];
     emailSettings: EmailSettings | null;
     alertSettings: AlertSettings | null;
     origins: Origin[];
@@ -35,14 +38,15 @@ export default function SettingsPage() {
     const fetchData = useCallback(async () => {
         if (user) {
             setLoading(true);
-            const [properties, expenseCategories, emailSettings, alertSettings, origins] = await Promise.all([
+            const [properties, expenseCategories, taskCategories, emailSettings, alertSettings, origins] = await Promise.all([
                 getProperties(),
                 getExpenseCategories(),
+                getTaskCategories(),
                 getEmailSettings(),
                 getAlertSettings(),
                 getOrigins(),
             ]);
-            setData({ properties, expenseCategories, emailSettings, alertSettings, origins });
+            setData({ properties, expenseCategories, taskCategories, emailSettings, alertSettings, origins });
             setLoading(false);
         }
     }, [user]);
@@ -55,7 +59,7 @@ export default function SettingsPage() {
         return <p>Cargando configuración...</p>
     }
     
-    const { properties, expenseCategories, emailSettings, alertSettings, origins } = data;
+    const { properties, expenseCategories, taskCategories, emailSettings, alertSettings, origins } = data;
 
   return (
     <Tabs defaultValue="properties" className="space-y-4">
@@ -64,10 +68,11 @@ export default function SettingsPage() {
                 <h2 className="text-3xl font-bold tracking-tight text-primary">Configuración</h2>
                 <p className="text-muted-foreground">Administra los datos de tu aplicación.</p>
             </div>
-            <TabsList className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-5 mb-4 sm:mb-0">
+            <TabsList className="grid w-full sm:w-auto grid-cols-3 sm:grid-cols-6 mb-4 sm:mb-0">
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 <TabsTrigger value="origins">Orígenes</TabsTrigger>
                 <TabsTrigger value="expense-categories">Cat. Gastos</TabsTrigger>
+                <TabsTrigger value="task-categories">Cat. Tareas</TabsTrigger>
                 <TabsTrigger value="email">Email</TabsTrigger>
                 <TabsTrigger value="alerts">Alertas</TabsTrigger>
             </TabsList>
@@ -123,6 +128,19 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                     <ExpenseCategoryManager initialCategories={expenseCategories} />
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="task-categories">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Categorías de Tareas</CardTitle>
+                    <CardDescription>
+                        Crea, edita y elimina las categorías para organizar tus tareas de mantenimiento.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <TaskCategoryManager initialCategories={taskCategories} />
                 </CardContent>
             </Card>
         </TabsContent>

@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, ChevronLeft, WifiOff } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, ChevronLeft, WifiOff, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -36,6 +36,7 @@ const mainNavItems = [
   { href: '/properties', label: 'Propiedades', icon: Building2 },
   { href: '/tenants', label: 'Inquilinos', icon: Users },
   { href: '/bookings', label: 'Reservas', icon: Calendar },
+  { href: '/tasks', label: 'Tareas', icon: ClipboardList },
   { href: '/payments', label: 'Pagos', icon: CreditCard },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
   { href: '/informes', label: 'Informes', icon: BarChart3 },

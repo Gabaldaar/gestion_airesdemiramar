@@ -285,6 +285,32 @@ export type PriceConfig = {
   propiedad: string;
 };
 
+export type TaskStatus = 'pending' | 'in_progress' | 'completed';
+export type TaskPriority = 'low' | 'medium' | 'high';
+
+export type TaskCategory = {
+    id: string;
+    name: string;
+};
+
+export type Task = {
+    id: string;
+    propertyId: string;
+    description: string;
+    status: TaskStatus;
+    priority: TaskPriority;
+    estimatedCost?: number;
+    actualCost?: number;
+    dueDate?: string | null;
+    categoryId?: string | null;
+    notes?: string;
+};
+
+export type TaskWithDetails = Task & {
+    propertyName: string;
+    categoryName?: string;
+}
+
 
 // --- DATA ACCESS FUNCTIONS ---
 
@@ -299,7 +325,8 @@ const emailTemplatesCollection = collection(db, 'emailTemplates');
 const settingsCollection = collection(db, 'settings');
 const originsCollection = collection(db, 'origins');
 const pushSubscriptionsCollection = collection(db, 'pushSubscriptions');
-
+const tasksCollection = collection(db, 'tasks');
+const taskCategoriesCollection = collection(db, 'taskCategories');
 
 
 // Helper function to add default data only if the collection is empty
@@ -403,6 +430,11 @@ export async function deleteProperty(propertyId: string): Promise<void> {
     const propertyExpensesQuery = query(propertyExpensesCollection, where('propertyId', '==', propertyId));
     const propertyExpensesSnapshot = await getDocs(propertyExpensesQuery);
     propertyExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
+    
+    // 6. Find and delete all tasks for the property
+    const tasksQuery = query(tasksCollection, where('propertyId', '==', propertyId));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    tasksSnapshot.forEach(doc => batch.delete(doc.ref));
 
     // Commit the batch
     await batch.commit();
@@ -1249,8 +1281,88 @@ export async function deletePushSubscription(id: string): Promise<void> {
     await deleteDoc(docRef);
 }
 
-    
+// --- TASK MANAGEMENT ---
 
-    
+export async function getTaskCategories(): Promise<TaskCategory[]> {
+    const q = query(taskCategoriesCollection, orderBy("name"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as TaskCategory[];
+}
 
+export async function addTaskCategory(category: Omit<TaskCategory, 'id'>): Promise<TaskCategory> {
+    const docRef = await addDoc(taskCategoriesCollection, category);
+    return { id: docRef.id, ...category };
+}
+
+export async function updateTaskCategory(updatedCategory: TaskCategory): Promise<TaskCategory> {
+    const { id, ...data } = updatedCategory;
+    const docRef = doc(db, 'taskCategories', id);
+    await updateDoc(docRef, data);
+    return updatedCategory;
+}
+
+export async function deleteTaskCategory(id: string): Promise<void> {
+    const docRef = doc(db, 'taskCategories', id);
+    await deleteDoc(docRef);
+}
+
+
+async function getTaskDetails(task: Task, propertiesMap: Map<string, string>, categoriesMap: Map<string, string>): Promise<TaskWithDetails> {
+    return {
+        ...task,
+        propertyName: propertiesMap.get(task.propertyId) || 'Propiedad Desconocida',
+        categoryName: task.categoryId ? categoriesMap.get(task.categoryId) : undefined,
+    };
+}
+
+export async function getTasks(): Promise<TaskWithDetails[]> {
+    const [tasksSnap, properties, categories] = await Promise.all([
+        getDocs(tasksCollection),
+        getProperties(),
+        getTaskCategories(),
+    ]);
+
+    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
     
+    const allTasks = tasksSnap.docs.map(processDoc) as Task[];
+    const detailedTasks = await Promise.all(allTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap)));
+
+    return detailedTasks;
+}
+
+export async function getTasksByPropertyId(propertyId: string): Promise<TaskWithDetails[]> {
+    const [properties, categories] = await Promise.all([
+        getProperties(),
+        getTaskCategories(),
+    ]);
+    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
+
+    const q = query(tasksCollection, where('propertyId', '==', propertyId));
+    const snapshot = await getDocs(q);
+    const propertyTasks = snapshot.docs.map(processDoc) as Task[];
+    
+    const detailedTasks = await Promise.all(propertyTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap)));
+    return detailedTasks;
+}
+
+
+export async function addTask(task: Omit<Task, 'id'>): Promise<Task> {
+    const docRef = await addDoc(tasksCollection, task);
+    return { id: docRef.id, ...task };
+}
+
+export async function updateTask(updatedTask: Partial<Task>): Promise<Task | null> {
+    const { id, ...data } = updatedTask;
+    if (!id) throw new Error("Update task requires an ID.");
+    const docRef = doc(db, 'tasks', id);
+    await updateDoc(docRef, data);
+    const newDoc = await getDoc(docRef);
+    return newDoc.exists() ? processDoc(newDoc) as Task : null;
+}
+
+export async function deleteTask(id: string): Promise<void> {
+    const docRef = doc(db, 'tasks', id);
+    await deleteDoc(docRef);
+}

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -16,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addPropertyExpense } from '@/lib/actions';
-import { PlusCircle, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -30,6 +31,12 @@ const initialState = {
   message: '',
   success: false,
 };
+
+export interface ExpensePreloadData {
+  amount: number;
+  description: string;
+}
+
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -47,15 +54,32 @@ function SubmitButton() {
     )
 }
 
-export function ExpenseAddForm({ propertyId, categories }: { propertyId: string, categories: ExpenseCategory[] }) {
+export function ExpenseAddForm({
+    propertyId,
+    categories,
+    children,
+    isOpen,
+    onOpenChange,
+    onExpenseAdded,
+    preloadData
+}: {
+    propertyId: string,
+    categories: ExpenseCategory[],
+    children?: React.ReactNode,
+    isOpen: boolean,
+    onOpenChange: (isOpen: boolean) => void;
+    onExpenseAdded: () => void;
+    preloadData?: ExpensePreloadData;
+}) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
-  const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [exchangeRate, setExchangeRate] = useState('');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const [amount, setAmount] = useState<string>('');
+  const [description, setDescription] = useState('');
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -77,32 +101,43 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
         setIsFetchingRate(false);
     }
   };
-
-  useEffect(() => {
-    if (state.success) {
-      setIsOpen(false);
-      resetForm();
-    }
-  }, [state]);
   
   const resetForm = () => {
     formRef.current?.reset();
     setDate(new Date());
     setCurrency('ARS');
     setExchangeRate('');
-    setIsOpen(false);
+    setAmount('');
+    setDescription('');
+    onOpenChange(false);
     setState(initialState);
     setIsFetchingRate(false);
   }
 
+  useEffect(() => {
+    if (state.success) {
+      onExpenseAdded();
+      resetForm();
+    }
+  }, [state, onExpenseAdded]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  useEffect(() => {
+    if (isOpen) {
+        if (preloadData) {
+            setAmount(preloadData.amount.toString());
+            setDescription(preloadData.description);
+        }
+    } else {
+        // Clear form when dialog closes
+        setAmount('');
+        setDescription('');
+    }
+  }, [isOpen, preloadData]);
+
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); else setIsOpen(true);}}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Gasto
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Añadir Gasto a la Propiedad</DialogTitle>
@@ -178,7 +213,7 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
                     <Label htmlFor="amount" className="text-right">
                     Monto
                     </Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
+                    <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required value={amount} onChange={e => setAmount(e.target.value)} />
                 </div>
                  {currency === 'USD' && (
                      <div className="grid grid-cols-4 items-center gap-4">
@@ -197,7 +232,7 @@ export function ExpenseAddForm({ propertyId, categories }: { propertyId: string,
                     <Label htmlFor="description" className="text-right pt-2">
                     Descripción
                     </Label>
-                    <Textarea id="description" name="description" className="col-span-3" />
+                    <Textarea id="description" name="description" className="col-span-3" value={description} onChange={e => setDescription(e.target.value)} />
                 </div>
             </div>
             <DialogFooter>

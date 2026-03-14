@@ -33,6 +33,12 @@ import {
   updateOrigin as updateOriginDb,
   deleteOrigin as deleteOriginDb,
   savePushSubscription as savePushSubscriptionDb,
+  addTask as addTaskDb,
+  updateTask as updateTaskDb,
+  deleteTask as deleteTaskDb,
+  addTaskCategory as addTaskCategoryDb,
+  updateTaskCategory as updateTaskCategoryDb,
+  deleteTaskCategory as deleteTaskCategoryDb,
   getBookingById,
   getPropertyById,
   getTenantById,
@@ -47,6 +53,10 @@ import {
   GuaranteeStatus,
   EmailTemplate,
   BookingStatus,
+  Task,
+  TaskCategory,
+  TaskStatus,
+  TaskPriority,
 } from './data';
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -74,6 +84,7 @@ const revalidatePathsAfterAction = (propertyId: string) => {
   revalidatePath('/payments');
   revalidatePath('/expenses');
   revalidatePath('/informes');
+  revalidatePath('/tasks');
   if (propertyId) {
       revalidatePath(`/api/ical/${propertyId}`);
   }
@@ -1205,4 +1216,128 @@ export async function savePushSubscription(subscription: any) {
     console.error('Error saving push subscription:', error);
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
+}
+
+// --- Task Management Actions ---
+
+export async function addTaskCategory(previousState: any, formData: FormData) {
+  const name = formData.get('name') as string;
+  if (!name) {
+    return { success: false, message: 'El nombre de la categoría es obligatorio.' };
+  }
+  try {
+    await addTaskCategoryDb({ name });
+    revalidatePath('/settings');
+    return { success: true, message: 'Categoría de tarea añadida.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function updateTaskCategory(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const name = formData.get('name') as string;
+  if (!id || !name) {
+    return { success: false, message: 'Faltan datos para actualizar la categoría.' };
+  }
+  try {
+    await updateTaskCategoryDb({ id, name });
+    revalidatePath('/settings');
+    return { success: true, message: 'Categoría de tarea actualizada.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function deleteTaskCategory(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    return { success: false, message: 'ID de categoría no válido.' };
+  }
+  try {
+    await deleteTaskCategoryDb(id);
+    revalidatePath('/settings');
+    return { success: true, message: 'Categoría de tarea eliminada.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function addTask(previousState: any, formData: FormData) {
+  const categoryIdValue = formData.get('categoryId') as string;
+  const dueDateValue = formData.get('dueDate') as string;
+  const estimatedCostValue = formData.get('estimatedCost') as string;
+
+  const taskData: Omit<Task, 'id'> = {
+    propertyId: formData.get('propertyId') as string,
+    description: formData.get('description') as string,
+    status: (formData.get('status') as TaskStatus) || 'pending',
+    priority: (formData.get('priority') as TaskPriority) || 'medium',
+    notes: (formData.get('notes') as string) || '',
+    categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
+    dueDate: dueDateValue || null,
+    estimatedCost: estimatedCostValue ? parseFloat(estimatedCostValue) : undefined,
+    actualCost: undefined, // Always empty on creation
+  };
+
+  if (!taskData.propertyId || !taskData.description) {
+    return { success: false, message: 'La propiedad y la descripción son obligatorias.' };
+  }
+
+  try {
+    await addTaskDb(taskData);
+    revalidatePathsAfterAction(taskData.propertyId);
+    return { success: true, message: 'Tarea añadida correctamente.' };
+  } catch (dbError: any) {
+    return { success: false, message: `Error de base de datos: ${dbError.message}` };
+  }
+}
+
+export async function updateTask(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    return { success: false, message: 'ID de tarea no proporcionado.' };
+  }
+  
+  const categoryIdValue = formData.get('categoryId') as string;
+  const dueDateValue = formData.get('dueDate') as string;
+  const estimatedCostValue = formData.get('estimatedCost') as string;
+  const actualCostValue = formData.get('actualCost') as string;
+
+  const taskData: Partial<Task> = {
+    id,
+    propertyId: formData.get('propertyId') as string,
+    description: formData.get('description') as string,
+    status: formData.get('status') as TaskStatus,
+    priority: formData.get('priority') as TaskPriority,
+    notes: formData.get('notes') as string,
+    categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
+    dueDate: dueDateValue || null,
+    estimatedCost: estimatedCostValue ? parseFloat(estimatedCostValue) : undefined,
+    actualCost: actualCostValue ? parseFloat(actualCostValue) : undefined,
+  };
+  
+  try {
+    await updateTaskDb(taskData);
+    revalidatePathsAfterAction(taskData.propertyId!);
+    return { success: true, message: 'Tarea actualizada.' };
+  } catch (dbError: any) {
+    return { success: false, message: `Error de base de datos: ${dbError.message}` };
+  }
+}
+
+export async function deleteTask(previousState: any, formData: FormData) {
+    const id = formData.get('id') as string;
+    const propertyId = formData.get('propertyId') as string;
+    if (!id || !propertyId) {
+        return { success: false, message: 'ID de tarea o propiedad no válido.' };
+    }
+
+    try {
+        await deleteTaskDb(id);
+        revalidatePathsAfterAction(propertyId);
+        return { success: true, message: 'Tarea eliminada.' };
+    } catch (error: any) {
+        return { success: false, message: `Error de base de datos: ${error.message}` };
+    }
 }
