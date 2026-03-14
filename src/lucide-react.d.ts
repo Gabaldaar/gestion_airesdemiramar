@@ -27,7 +27,6 @@ declare module 'lucide-react' {
     export const AlertTriangle: LucideIcon;
     export const Info: LucideIcon;
     export const Copy: LucideIcon;
-    export const Calendar as CalendarIcon: LucideIcon;
     export const ExternalLink: LucideIcon;
     export const NotebookPen: LucideIcon;
     export const Notebook: LucideIcon;
@@ -61,4 +60,7 @@ declare module 'lucide-react' {
     export const ShieldCheck: LucideIcon;
     export const ShieldAlert: LucideIcon;
     export const ClipboardList: LucideIcon;
+    export const ArrowUp: LucideIcon;
+    export const ArrowDown: LucideIcon;
+    export const ChevronsRight: LucideIcon;
 }
