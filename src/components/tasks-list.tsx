@@ -202,7 +202,7 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
         <Card className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground', isSelected && 'border-primary ring-2 ring-primary')}>
             <CardHeader className="p-4">
                 <div className="flex justify-between items-start">
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
                         {onSelectionChange && (
                             <Checkbox
                                 className="mt-1"
@@ -211,19 +211,19 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                                 aria-label="Seleccionar tarea"
                             />
                         )}
-                         <div>
-                            <CardTitle className="text-lg">{showProperty ? task.propertyName : task.description}</CardTitle>
-                            {showProperty && <CardDescription>{task.description}</CardDescription>}
+                         <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg truncate">{showProperty ? task.propertyName : task.description}</CardTitle>
+                            {showProperty && <CardDescription className="truncate">{task.description}</CardDescription>}
                         </div>
                     </div>
-                    <Badge className={priorityInfo.className}>
+                    <Badge className={cn("flex-shrink-0", priorityInfo.className)}>
                         <priorityInfo.Icon className="mr-1 h-3 w-3" />
                         {priorityInfo.text}
                     </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="p-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <div className="flex justify-between items-center col-span-2">
+            <CardContent className="p-4 grid grid-cols-1 gap-2 text-sm">
+                <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Estado</span>
                     <Badge className={statusInfo.className}>
                         <statusInfo.Icon className="mr-1 h-3 w-3" />
@@ -236,7 +236,7 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                         <span className="font-medium text-right">{task.categoryName}</span>
                     </div>
                 )}
-                <div className={cn("flex justify-between items-center", !task.categoryName && "col-span-2")}>
+                <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Fecha Límite</span>
                     <span className={cn("font-medium", isOverdue && "text-destructive flex items-center")}>
                         {isOverdue && <AlertTriangle className="inline mr-1 h-4 w-4" />}
@@ -245,11 +245,11 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                 </div>
                 <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Costo Est.</span>
-                    <span className={cn("font-medium", task.costCurrency === 'ARS' && "text-blue-600", task.costCurrency === 'USD' && "text-green-600")}>{formatCurrency(task.estimatedCost, task.costCurrency)}</span>
+                    <span className={cn("font-medium", task.costCurrency === 'ARS' ? "text-blue-600" : "text-green-600")}>{formatCurrency(task.estimatedCost, task.costCurrency)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Costo Real</span>
-                    <span className={cn("font-medium", task.costCurrency === 'ARS' && "text-blue-600", task.costCurrency === 'USD' && "text-green-600")}>{formatCurrency(task.actualCost, task.costCurrency)}</span>
+                    <span className={cn("font-medium", task.costCurrency === 'ARS' ? "text-blue-600" : "text-green-600")}>{formatCurrency(task.actualCost, task.costCurrency)}</span>
                 </div>
             </CardContent>
             <CardFooter className="p-2 justify-end">

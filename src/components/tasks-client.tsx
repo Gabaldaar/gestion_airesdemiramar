@@ -234,6 +234,7 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
         tasks={filteredTasks} 
         categories={categories} 
         properties={properties}
+        showProperty={true}
         onDataChanged={onDataChanged}
         onRegisterExpense={handleRegisterExpense}
         selectedTaskIds={selectedTaskIds}
