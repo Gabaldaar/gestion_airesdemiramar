@@ -33,6 +33,7 @@ import { TaskEditForm } from "./task-edit-form";
 import { TaskDeleteForm } from "./task-delete-form";
 import { ExpensePreloadData } from "./expense-add-form";
 import { Checkbox } from "./ui/checkbox";
+import { Label } from "./ui/label";
 
 interface TasksListProps {
   tasks: TaskWithDetails[];
@@ -212,7 +213,7 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                             />
                         )}
                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg truncate">{showProperty ? task.propertyName : task.description}</CardTitle>
+                            <CardTitle className="text-base truncate">{showProperty ? task.propertyName : task.description}</CardTitle>
                             {showProperty && <CardDescription className="truncate">{task.description}</CardDescription>}
                         </div>
                     </div>
@@ -336,6 +337,19 @@ export default function TasksList({ tasks, properties, categories, showProperty 
 
   const CardView = () => (
     <div className="space-y-4">
+        {onSelectAll && selectedTaskIds && (
+            <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
+                <Checkbox
+                    id="select-all-cards"
+                    checked={tasks.length > 0 && selectedTaskIds.length === tasks.length}
+                    onCheckedChange={(checked) => onSelectAll(!!checked)}
+                    aria-label="Seleccionar todas las tareas"
+                />
+                <Label htmlFor="select-all-cards" className="font-medium">
+                    Seleccionar Todas ({selectedTaskIds.length} / {tasks.length})
+                </Label>
+            </div>
+        )}
         {tasks.map((task) => (
             <TaskCard 
                 key={task.id}
