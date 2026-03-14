@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -16,11 +16,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addTask } from '@/lib/actions';
-import { Property, TaskCategory, TaskPriority, TaskStatus } from '@/lib/data';
+import { Property, TaskCategory } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { DatePicker } from './ui/date-picker';
+import { useToast } from './ui/use-toast';
 
 const initialState = {
   message: '',
@@ -64,6 +65,7 @@ export function TaskAddForm({
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>();
+  const { toast } = useToast();
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -72,19 +74,33 @@ export function TaskAddForm({
     });
   };
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     formRef.current?.reset();
     setDueDate(undefined);
-    onOpenChange(false);
     setState(initialState);
-  };
+  }, []);
 
+  // When the dialog is closed from outside (e.g., clicking cancel, overlay, or X button)
   useEffect(() => {
-    if (state.success) {
-      onTaskAdded();
+    if (!isOpen) {
       resetForm();
     }
-  }, [state, onTaskAdded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, resetForm]);
+
+  // After form submission
+  useEffect(() => {
+    if (state.message) {
+      toast({
+        title: state.success ? 'Éxito' : 'Error',
+        description: state.message,
+        variant: state.success ? 'default' : 'destructive',
+      });
+    }
+    if (state.success) {
+      onTaskAdded();
+      onOpenChange(false); // Close the dialog
+    }
+  }, [state, onTaskAdded, onOpenChange, toast]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -192,7 +208,7 @@ export function TaskAddForm({
                 </div>
             </div>
             <DialogFooter>
-                <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <SubmitButton />
             </DialogFooter>
         </form>
