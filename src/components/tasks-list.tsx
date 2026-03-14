@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import {
@@ -18,7 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TaskWithDetails, Property, TaskCategory, Task, TaskStatus, TaskPriority } from "@/lib/data";
-import { format } from 'date-fns';
+import { format, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, parseDateSafely } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
@@ -124,13 +126,18 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete }: { task: TaskW
     }
   
     const dueDate = parseDateSafely(task.dueDate);
-    const isOverdue = dueDate && task.status !== 'completed' && dueDate < new Date();
+    const isOverdue = dueDate && task.status !== 'completed' && dueDate < startOfToday();
 
     return (
         <TableRow key={task.id} className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground')}>
             {showProperty && <TableCell className="font-bold">{task.propertyName}</TableCell>}
-            <TableCell className="max-w-[250px] truncate">
-                 <TooltipProvider><Tooltip><TooltipTrigger>{task.description}</TooltipTrigger><TooltipContent>{task.description}</TooltipContent></TooltipProvider>
+            <TableCell className="max-w-[250px] truncate cursor-default">
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild><span className="truncate">{task.description}</span></TooltipTrigger>
+                        <TooltipContent><p>{task.description}</p></TooltipContent>
+                    </Tooltip>
+                 </TooltipProvider>
             </TableCell>
             <TableCell>
                 <Badge className={statusInfo.className}>
