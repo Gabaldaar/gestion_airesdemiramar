@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { getProperties, getTasks, TaskWithDetails, Property, getTaskCategories, TaskCategory, getProviders, Provider } from "@/lib/data";
+import { getProperties, getTasks, TaskWithDetails, Property, getTaskCategories, TaskCategory, getProviders, Provider, getExpenseCategories, ExpenseCategory } from "@/lib/data";
 import TasksClient from "@/components/tasks-client";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState, useCallback } from "react";
@@ -20,6 +20,7 @@ interface TasksData {
     properties: Property[];
     providers: Provider[];
     categories: TaskCategory[];
+    expenseCategories: ExpenseCategory[];
 }
 
 export default function TasksPage() {
@@ -36,8 +37,9 @@ export default function TasksPage() {
                 getProperties(),
                 getProviders(),
                 getTaskCategories(),
-            ]).then(([tasks, properties, providers, categories]) => {
-                setData({ tasks, properties, providers, categories });
+                getExpenseCategories(),
+            ]).then(([tasks, properties, providers, categories, expenseCategories]) => {
+                setData({ tasks, properties, providers, categories, expenseCategories });
                 setLoading(false);
             });
         }
@@ -78,6 +80,7 @@ export default function TasksPage() {
                 properties={data.properties} 
                 providers={data.providers}
                 categories={data.categories}
+                expenseCategories={data.expenseCategories}
                 onDataChanged={fetchData}
             />
         </CardContent>
