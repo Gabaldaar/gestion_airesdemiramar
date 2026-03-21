@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -35,6 +36,8 @@ export interface ExpensePreloadData {
   amount: number;
   description: string;
   currency?: 'ARS' | 'USD';
+  taskId?: string;
+  providerId?: string;
 }
 
 
@@ -152,6 +155,8 @@ export function ExpenseAddForm({
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="propertyId" value={propertyId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
+            {preloadData?.taskId && <input type="hidden" name="taskId" value={preloadData.taskId} />}
+            {preloadData?.providerId && <input type="hidden" name="providerId" value={preloadData.providerId} />}
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="date" className="text-right">

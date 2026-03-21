@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, ChevronLeft, WifiOff, ClipboardList } from 'lucide-react';
+import { Home, Building2, Users, Calendar, Settings, Menu, BarChart3, ShoppingCart, CreditCard, Mail, LogOut, CircleHelp, ChevronLeft, WifiOff, ClipboardList, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -35,6 +35,7 @@ const mainNavItems = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/properties', label: 'Propiedades', icon: Building2 },
   { href: '/tenants', label: 'Inquilinos', icon: Users },
+  { href: '/providers', label: 'Proveedores', icon: Wrench },
   { href: '/bookings', label: 'Reservas', icon: Calendar },
   { href: '/tasks', label: 'Tareas', icon: ClipboardList },
   { href: '/payments', label: 'Pagos', icon: CreditCard },
@@ -255,5 +256,3 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
-
-    

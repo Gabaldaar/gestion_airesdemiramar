@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -15,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateTask } from '@/lib/actions';
-import { Property, TaskCategory, TaskPriority, TaskStatus, TaskWithDetails, Task } from '@/lib/data';
+import { Property, TaskCategory, TaskPriority, TaskStatus, TaskWithDetails, Task, Provider } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -59,6 +60,7 @@ export function TaskEditForm({
     task,
     properties,
     categories,
+    providers,
     isOpen,
     onOpenChange,
     onTaskUpdated,
@@ -67,6 +69,7 @@ export function TaskEditForm({
     task: TaskWithDetails;
     properties: Property[];
     categories: TaskCategory[];
+    providers: Provider[];
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     onTaskUpdated: () => void;
@@ -79,7 +82,7 @@ export function TaskEditForm({
   
   const [dueDate, setDueDate] = useState<Date | undefined>(parseDateSafely(task.dueDate));
   const [status, setStatus] = useState<TaskStatus>(task.status);
-  const [actualCost, setActualCost] = useState<string>(task.actualCost?.toString() || '');
+  const [actualCost, setActualCost] = useState<string>(''); // Actual cost is now registered via expenses
   const [costCurrency, setCostCurrency] = useState<'ARS' | 'USD'>(task.costCurrency || 'ARS');
   const [showConfirmExpenseDialog, setShowConfirmExpenseDialog] = useState(false);
   const [formDataForExpense, setFormDataForExpense] = useState<FormData | null>(null);
@@ -87,9 +90,11 @@ export function TaskEditForm({
   const formAction = (formData: FormData) => {
     // Check if status is changing to 'completed' and there's a cost
     const newStatus = formData.get('status') as TaskStatus;
-    const cost = parseFloat(formData.get('actualCost') as string);
+    const estimatedCost = parseFloat(formData.get('estimatedCost') as string);
     
-    if (task.status !== 'completed' && newStatus === 'completed' && cost > 0) {
+    // We base the confirmation on estimatedCost, as actualCost is not entered manually anymore.
+    // The dialog will then be used to create the expense.
+    if (task.status !== 'completed' && newStatus === 'completed' && estimatedCost > 0) {
         setFormDataForExpense(formData);
         setShowConfirmExpenseDialog(true);
     } else {
@@ -114,23 +119,18 @@ export function TaskEditForm({
       toast({ title: "Error", description: state.message, variant: "destructive" });
     }
   }, [state, onOpenChange, onTaskUpdated, toast]);
-
+  
   const handleConfirmExpense = () => {
     if (formDataForExpense) {
-        startTransition(async () => {
-            const result = await updateTask(initialState, formDataForExpense);
-            if (result.success) {
-                // Manually construct task object as server action doesn't return it
-                const updatedTask: Task = {
-                    ...task,
-                    status: 'completed',
-                    actualCost: parseFloat(formDataForExpense.get('actualCost') as string),
-                    costCurrency: (formDataForExpense.get('costCurrency') as 'ARS' | 'USD') || 'ARS',
-                };
-                onTaskCompletedWithExpense(updatedTask);
-            }
-            setState(result);
-        });
+        // Create an object from the form data to pass to the expense registration function
+        const taskDataForExpense = {
+            ...task,
+            estimatedCost: parseFloat(formDataForExpense.get('estimatedCost') as string) || 0,
+            costCurrency: (formDataForExpense.get('costCurrency') as 'ARS' | 'USD') || 'ARS',
+            providerId: formDataForExpense.get('providerId') as string,
+        };
+        onTaskCompletedWithExpense(taskDataForExpense); // This will open the expense form
+        submitUpdate(formDataForExpense); // We still save the task changes
     }
     setShowConfirmExpenseDialog(false);
     setFormDataForExpense(null);
@@ -162,6 +162,19 @@ export function TaskEditForm({
                 <div className="space-y-2">
                     <Label htmlFor="description">Descripción</Label>
                     <Input id="description" name="description" defaultValue={task.description} required />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="providerId">Proveedor Asignado</Label>
+                    <Select name="providerId" defaultValue={task.providerId || 'none'}>
+                        <SelectTrigger><SelectValue placeholder="Selecciona un proveedor" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Sin Asignar</SelectItem>
+                            {providers.map(p => (
+                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -210,14 +223,10 @@ export function TaskEditForm({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="estimatedCost">Costo Estimado</Label>
                         <Input id="estimatedCost" name="estimatedCost" type="number" step="0.01" defaultValue={task.estimatedCost} />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="actualCost">Costo Real</Label>
-                        <Input id="actualCost" name="actualCost" type="number" step="0.01" value={actualCost} onChange={(e) => setActualCost(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="costCurrency">Moneda Costos</Label>
@@ -230,6 +239,11 @@ export function TaskEditForm({
                         </Select>
                     </div>
                 </div>
+                 <div className="space-y-2">
+                    <Label>Costo Real (Calculado)</Label>
+                    <Input value={task.actualCost?.toFixed(2) || '0.00'} readOnly disabled className="bg-muted/50" />
+                </div>
+
 
                 <div className="space-y-2">
                     <Label htmlFor="notes">Notas Adicionales</Label>
@@ -252,7 +266,7 @@ export function TaskEditForm({
             <AlertDialogHeader>
                 <AlertDialogTitle>Registrar Gasto</AlertDialogTitle>
                 <AlertDialogDescription>
-                    La tarea se marcó como "Cumplida" con un costo real de {costCurrency} {actualCost}. ¿Deseas registrar un gasto de propiedad por este monto?
+                    La tarea se marcó como "Cumplida" y tiene un costo estimado. ¿Deseas registrar un gasto de propiedad asociado a esta tarea?
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

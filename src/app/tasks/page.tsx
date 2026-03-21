@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { getProperties, getTasks, TaskWithDetails, Property, getTaskCategories, TaskCategory } from "@/lib/data";
+import { getProperties, getTasks, TaskWithDetails, Property, getTaskCategories, TaskCategory, getProviders, Provider } from "@/lib/data";
 import TasksClient from "@/components/tasks-client";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState, useCallback } from "react";
@@ -18,6 +18,7 @@ import { PlusCircle } from "lucide-react";
 interface TasksData {
     tasks: TaskWithDetails[];
     properties: Property[];
+    providers: Provider[];
     categories: TaskCategory[];
 }
 
@@ -33,9 +34,10 @@ export default function TasksPage() {
             Promise.all([
                 getTasks(),
                 getProperties(),
+                getProviders(),
                 getTaskCategories(),
-            ]).then(([tasks, properties, categories]) => {
-                setData({ tasks, properties, categories });
+            ]).then(([tasks, properties, providers, categories]) => {
+                setData({ tasks, properties, providers, categories });
                 setLoading(false);
             });
         }
@@ -58,6 +60,7 @@ export default function TasksPage() {
             </div>
             <TaskAddForm
                 properties={data.properties}
+                providers={data.providers}
                 categories={data.categories}
                 isOpen={isAddOpen}
                 onOpenChange={setIsAddOpen}
@@ -73,6 +76,7 @@ export default function TasksPage() {
             <TasksClient 
                 initialTasks={data.tasks} 
                 properties={data.properties} 
+                providers={data.providers}
                 categories={data.categories}
                 onDataChanged={fetchData}
             />

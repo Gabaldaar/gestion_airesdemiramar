@@ -18,7 +18,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories } from "@/lib/data";
+import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories, getProviders, Provider } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import ExpensesList from '@/components/expenses-list';
@@ -51,6 +51,7 @@ interface PropertyDetailData {
     expenseCategories: ExpenseCategory[];
     tasks: TaskWithDetails[];
     taskCategories: TaskCategory[];
+    providers: Provider[];
     origins: Origin[];
 }
 
@@ -116,7 +117,7 @@ export default function PropertyDetailPage() {
     if (user && propertyId) {
         setLoading(true);
         try {
-            const [property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, origins] = await Promise.all([
+            const [property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, providers, origins] = await Promise.all([
                 getPropertyById(propertyId),
                 getProperties(),
                 getTenants(),
@@ -125,13 +126,14 @@ export default function PropertyDetailPage() {
                 getExpenseCategories(),
                 getTasksByPropertyId(propertyId),
                 getTaskCategories(),
+                getProviders(),
                 getOrigins(),
             ]);
 
             if (!property) {
                 setData(null);
             } else {
-                setData({ property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, origins });
+                setData({ property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, providers, origins });
             }
         } catch (error) {
             console.error("Error fetching property details:", error);
@@ -209,7 +211,7 @@ export default function PropertyDetailPage() {
     return <p>Propiedad no encontrada o error al cargar los datos.</p>;
   }
   
-  const { property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, origins } = data;
+  const { property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, providers, origins } = data;
   
   const icalUrl = `${baseUrl}/api/ical/${property.id}`;
   
@@ -315,7 +317,7 @@ export default function PropertyDetailPage() {
                       </Button>
                     )}
                     <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
-                    <TaskAddForm propertyId={property.id} categories={taskCategories} isOpen={isTaskAddOpen} onOpenChange={setIsTaskAddOpen} onTaskAdded={handleDataChanged}>
+                    <TaskAddForm propertyId={property.id} providers={providers} categories={taskCategories} isOpen={isTaskAddOpen} onOpenChange={setIsTaskAddOpen} onTaskAdded={handleDataChanged}>
                         <Button variant="outline" onClick={() => setIsTaskAddOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Añadir Tarea
@@ -345,7 +347,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <TasksList tasks={tasks} properties={properties} categories={taskCategories} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
+                    <TasksList tasks={tasks} properties={properties} providers={providers} categories={taskCategories} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
                 </CardContent>
             </Card>
             </TabsContent>

@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { TaskWithDetails, Property, TaskCategory, TaskStatus, TaskPriority } from '@/lib/data';
+import { TaskWithDetails, Property, Provider, TaskCategory, TaskStatus, TaskPriority } from '@/lib/data';
 import TasksList from '@/components/tasks-list';
 import { ExpensePreloadData } from '@/components/expense-add-form';
 import { Button } from '@/components/ui/button';
@@ -15,13 +15,15 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 interface TasksClientProps {
   initialTasks: TaskWithDetails[];
   properties: Property[];
+  providers: Provider[];
   categories: TaskCategory[];
   onDataChanged: () => void;
 }
 
-export default function TasksClient({ initialTasks, properties, categories, onDataChanged }: TasksClientProps) {
+export default function TasksClient({ initialTasks, properties, providers, categories, onDataChanged }: TasksClientProps) {
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
+  const [providerIdFilter, setProviderIdFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all');
   const [categoryIdFilter, setCategoryIdFilter] = useState<string>('all');
@@ -46,6 +48,11 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
         return false;
       }
       
+      // Provider Filter
+      if (providerIdFilter !== 'all' && task.providerId !== providerIdFilter) {
+        return false;
+      }
+
       // Status Filter
       if (statusFilter !== 'all' && task.status !== statusFilter) {
           return false;
@@ -85,15 +92,16 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
         return priorityOrder[a.priority] - priorityOrder[b.priority];
     });
 
-  }, [tasks, propertyIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
+  }, [tasks, propertyIdFilter, providerIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
 
   // Reset selection when filters change
   useEffect(() => {
     setSelectedTaskIds([]);
-  }, [propertyIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
+  }, [propertyIdFilter, providerIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
 
   const handleClearFilters = () => {
     setPropertyIdFilter('all');
+    setProviderIdFilter('all');
     setStatusFilter('all');
     setPriorityFilter('all');
     setCategoryIdFilter('all');
@@ -130,7 +138,7 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 items-end">
           <div className="grid gap-2">
               <Label>Propiedad</Label>
               <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
@@ -140,6 +148,20 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
                   <SelectContent>
                       <SelectItem value="all">Todas</SelectItem>
                       {properties.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+          </div>
+          <div className="grid gap-2">
+              <Label>Proveedor</Label>
+              <Select value={providerIdFilter} onValueChange={setProviderIdFilter}>
+                  <SelectTrigger>
+                      <SelectValue placeholder="Proveedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {providers.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                       ))}
                   </SelectContent>
@@ -234,6 +256,7 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
         tasks={filteredTasks} 
         categories={categories} 
         properties={properties}
+        providers={providers}
         showProperty={true}
         onDataChanged={onDataChanged}
         onRegisterExpense={handleRegisterExpense}
@@ -244,7 +267,7 @@ export default function TasksClient({ initialTasks, properties, categories, onDa
       {expensePropertyId && (
         <ExpenseAddForm
             propertyId={expensePropertyId}
-            categories={[]} // Categories will be fetched inside, but we need an empty array here
+            categories={[]} // Expense Categories are different from Task Categories
             onExpenseAdded={onDataChanged}
             isOpen={isExpenseAddOpen}
             onOpenChange={setIsExpenseAddOpen}

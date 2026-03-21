@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
@@ -16,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addTask } from '@/lib/actions';
-import { Property, TaskCategory } from '@/lib/data';
+import { Property, Provider, TaskCategory } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -47,6 +48,7 @@ function SubmitButton() {
 export function TaskAddForm({
     propertyId,
     properties,
+    providers,
     categories,
     children,
     isOpen,
@@ -55,6 +57,7 @@ export function TaskAddForm({
 }: {
     propertyId?: string,
     properties?: Property[],
+    providers?: Provider[],
     categories: TaskCategory[],
     children?: React.ReactNode,
     isOpen: boolean,
@@ -137,6 +140,18 @@ export function TaskAddForm({
                 <div className="space-y-2">
                     <Label htmlFor="description">Descripción</Label>
                     <Input id="description" name="description" required />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="providerId">Proveedor Asignado</Label>
+                    <Select name="providerId">
+                        <SelectTrigger><SelectValue placeholder="Selecciona un proveedor" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Sin Asignar</SelectItem>
+                            {providers?.map(p => (
+                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
