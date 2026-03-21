@@ -68,7 +68,7 @@ import {
   ProviderCategory,
 } from './data';
 import { db } from './firebase';
-import { collection, doc, getDoc, getDocs, query, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, writeBatch, setDoc } from 'firebase/firestore';
 
 // Define the payload for the finance API registration
 export interface RegistrarCobroPayload {
@@ -94,6 +94,7 @@ const revalidatePathsAfterAction = (propertyId: string) => {
   revalidatePath('/expenses');
   revalidatePath('/informes');
   revalidatePath('/tasks');
+  revalidatePath('/providers');
   if (propertyId) {
       revalidatePath(`/api/ical/${propertyId}`);
   }
@@ -581,7 +582,7 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
       date,
       ...expenseData,
       taskId: taskId || null,
-      providerId: providerId || null,
+      providerId: (providerId && providerId.trim() !== '') ? providerId : null,
     };
 
     await addPropertyExpenseDb(newExpense);

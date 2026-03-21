@@ -170,8 +170,8 @@ export function ExpenseAddForm({
             <input type="hidden" name="propertyId" value={propertyId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             {preloadData?.taskId && <input type="hidden" name="taskId" value={preloadData.taskId} />}
-            {preloadData && typeof preloadData.providerId !== 'undefined' && (
-              <input type="hidden" name="providerId" value={preloadData.providerId ?? ''} />
+            {preloadData?.providerId && (
+              <input type="hidden" name="providerId" value={preloadData.providerId} />
             )}
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
