@@ -62,11 +62,28 @@ const priorityMap: Record<TaskPriority, { text: string, className: string, Icon:
 };
 
 
-function TaskActions({ task, onEdit, onDelete }: { task: TaskWithDetails, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void }) {
+function TaskActions({ task, onEdit, onDelete, onRegisterExpense }: { 
+    task: TaskWithDetails, 
+    onEdit: (task: TaskWithDetails) => void, 
+    onDelete: (task: TaskWithDetails) => void,
+    onRegisterExpense: () => void 
+}) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
 
     return (
         <div className="flex flex-nowrap items-center justify-end gap-1">
+             <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRegisterExpense}>
+                            <Wallet className="h-4 w-4" />
+                            <span className="sr-only">Registrar Gasto de Tarea</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Registrar Gasto</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+
              <NotesViewer 
                 notes={task.notes} 
                 title={`Notas sobre la tarea`} 
@@ -113,7 +130,15 @@ function TaskActions({ task, onEdit, onDelete }: { task: TaskWithDetails, onEdit
     )
 }
 
-function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void, isSelected?: boolean, onSelectionChange?: (checked: boolean) => void; }) {
+function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange, onRegisterExpense }: { 
+    task: TaskWithDetails, 
+    showProperty?: boolean, 
+    onEdit: (task: TaskWithDetails) => void, 
+    onDelete: (task: TaskWithDetails) => void, 
+    isSelected?: boolean, 
+    onSelectionChange?: (checked: boolean) => void;
+    onRegisterExpense: () => void;
+}) {
   
     const statusInfo = statusMap[task.status];
     const priorityInfo = priorityMap[task.priority];
@@ -175,13 +200,21 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onS
             <TableCell className={cn("hidden lg:table-cell text-right", task.costCurrency === 'ARS' && "text-blue-600", task.costCurrency === 'USD' && "text-green-600")}>{formatCurrency(task.estimatedCost, task.costCurrency)}</TableCell>
             <TableCell className={cn("hidden lg:table-cell text-right", task.costCurrency === 'ARS' && "text-blue-600", task.costCurrency === 'USD' && "text-green-600")}>{formatCurrency(task.actualCost, task.costCurrency)}</TableCell>
             <TableCell className="text-right">
-                <TaskActions task={task} onEdit={onEdit} onDelete={onDelete} />
+                <TaskActions task={task} onEdit={onEdit} onDelete={onDelete} onRegisterExpense={onRegisterExpense} />
             </TableCell>
         </TableRow>
     );
 }
 
-function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange }: { task: TaskWithDetails, showProperty?: boolean, onEdit: (task: TaskWithDetails) => void, onDelete: (task: TaskWithDetails) => void, isSelected?: boolean, onSelectionChange?: (checked: boolean) => void; }) {
+function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange, onRegisterExpense }: { 
+    task: TaskWithDetails, 
+    showProperty?: boolean, 
+    onEdit: (task: TaskWithDetails) => void, 
+    onDelete: (task: TaskWithDetails) => void, 
+    isSelected?: boolean, 
+    onSelectionChange?: (checked: boolean) => void;
+    onRegisterExpense: () => void;
+}) {
     const statusInfo = statusMap[task.status];
     const priorityInfo = priorityMap[task.priority];
 
@@ -255,7 +288,7 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                 </div>
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <TaskActions task={task} onEdit={onEdit} onDelete={onDelete} />
+                <TaskActions task={task} onEdit={onEdit} onDelete={onDelete} onRegisterExpense={onRegisterExpense} />
             </CardFooter>
         </Card>
     );
@@ -297,6 +330,16 @@ export default function TasksList({ tasks, properties, categories, providers, sh
     onDataChanged();
   };
 
+  const handleRegisterExpenseClick = (task: TaskWithDetails) => {
+    onRegisterExpense({
+        amount: task.estimatedCost || 0,
+        description: `Gasto por tarea: ${task.description}`,
+        currency: task.costCurrency || 'ARS',
+        taskId: task.id,
+        providerId: task.providerId || undefined
+    }, task.propertyId);
+  };
+
 
   const TableView = () => (
     <Table>
@@ -330,6 +373,7 @@ export default function TasksList({ tasks, properties, categories, providers, sh
                     showProperty={showProperty} 
                     onEdit={handleEditClick}
                     onDelete={handleDeleteClick}
+                    onRegisterExpense={() => handleRegisterExpenseClick(task)}
                     isSelected={selectedTaskIds?.includes(task.id)}
                     onSelectionChange={onSelectionChange ? (checked) => onSelectionChange(task.id, checked) : undefined}
                 />
@@ -360,6 +404,7 @@ export default function TasksList({ tasks, properties, categories, providers, sh
                 showProperty={showProperty} 
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
+                onRegisterExpense={() => handleRegisterExpenseClick(task)}
                 isSelected={selectedTaskIds?.includes(task.id)}
                 onSelectionChange={onSelectionChange ? (checked) => onSelectionChange(task.id, checked) : undefined}
             />
