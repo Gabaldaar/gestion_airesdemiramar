@@ -677,9 +677,12 @@ export async function getPropertyExpensesByPropertyId(propertyId: string): Promi
 }
 
 export async function getPropertyExpensesByProviderId(providerId: string): Promise<PropertyExpense[]> {
-    const q = query(propertyExpensesCollection, where('providerId', '==', providerId), orderBy('date', 'desc'));
+    const q = query(propertyExpensesCollection, where('providerId', '==', providerId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as PropertyExpense[];
+    const expenses = snapshot.docs.map(processDoc) as PropertyExpense[];
+    // Sort manually to avoid needing a composite index
+    expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return expenses;
 }
 
 export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
@@ -1413,11 +1416,19 @@ export async function getTasksByProviderId(providerId: string): Promise<TaskWith
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
     const providersMap = new Map(providers.map(p => [p.id, p.name]));
 
-    const q = query(tasksCollection, where('providerId', '==', providerId), orderBy('dueDate', 'desc'));
+    const q = query(tasksCollection, where('providerId', '==', providerId));
     const snapshot = await getDocs(q);
     const providerTasks = snapshot.docs.map(processDoc) as Task[];
     
     const detailedTasks = await Promise.all(providerTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap, providersMap)));
+    
+    // Sort manually to avoid needing a composite index
+    detailedTasks.sort((a, b) => {
+        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+        return dateB - dateA;
+    });
+
     return detailedTasks;
 }
 
@@ -1503,3 +1514,4 @@ export async function deleteProvider(id: string): Promise<void> {
     const docRef = doc(db, 'providers', id);
     await deleteDoc(docRef);
 }
+
