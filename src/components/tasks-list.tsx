@@ -26,7 +26,7 @@ import { cn, parseDateSafely } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { Button } from "./ui/button";
 import { NotesViewer } from './notes-viewer';
-import { Landmark, Wallet, Pencil, Trash2, FileText, Calculator, Mail, AlertTriangle, ArrowUp, ArrowDown, ChevronsRight } from 'lucide-react';
+import { Landmark, Wallet, Pencil, Trash2, FileText, Calculator, Mail, AlertTriangle, ArrowUp, ArrowDown, ChevronsRight, Wrench } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import useWindowSize from '@/hooks/use-window-size';
 import { TaskEditForm } from "./task-edit-form";
@@ -271,6 +271,12 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                         <span className="font-medium text-right">{task.categoryName}</span>
                     </div>
                 )}
+                 {task.providerName && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-1"><Wrench className="h-3 w-3"/> Proveedor</span>
+                        <span className="font-medium text-right">{task.providerName}</span>
+                    </div>
+                )}
                 <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Fecha Límite</span>
                     <span className={cn("font-medium", isOverdue && "text-destructive flex items-center")}>
@@ -336,7 +342,10 @@ export default function TasksList({ tasks, properties, categories, providers, sh
         description: `Gasto por tarea: ${task.description}`,
         currency: task.costCurrency || 'ARS',
         taskId: task.id,
-        providerId: task.providerId || undefined
+        providerId: task.providerId || undefined,
+        propertyName: task.propertyName,
+        providerName: task.providerName,
+        amountPaidSoFar: task.actualCost,
     }, task.propertyId);
   };
 

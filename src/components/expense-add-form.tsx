@@ -38,6 +38,9 @@ export interface ExpensePreloadData {
   currency?: 'ARS' | 'USD';
   taskId?: string;
   providerId?: string;
+  propertyName?: string;
+  providerName?: string;
+  amountPaidSoFar?: number;
 }
 
 
@@ -55,6 +58,10 @@ function SubmitButton() {
             )}
         </Button>
     )
+}
+
+const formatCurrency = (amount: number, currency: 'USD' | 'ARS' = 'ARS') => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency, minimumFractionDigits: 0 }).format(amount);
 }
 
 export function ExpenseAddForm({
@@ -147,10 +154,17 @@ export function ExpenseAddForm({
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Añadir Gasto a la Propiedad</DialogTitle>
-          <DialogDescription>
-            Completa los datos del gasto.
-          </DialogDescription>
+          <DialogTitle>Añadir Gasto a la Tarea</DialogTitle>
+           <DialogDescription>
+                Completa los datos del gasto.
+                {preloadData?.propertyName && <> para la propiedad <span className="font-semibold text-foreground">{preloadData.propertyName}</span></>}
+            </DialogDescription>
+            {(preloadData?.providerName || (preloadData?.amountPaidSoFar && preloadData.amountPaidSoFar > 0)) && (
+                <div className="text-sm text-muted-foreground border-t pt-2 mt-2 space-y-1">
+                    {preloadData.providerName && <p>Proveedor: <span className="font-medium text-foreground">{preloadData.providerName}</span></p>}
+                    {(preloadData.amountPaidSoFar && preloadData.amountPaidSoFar > 0) && <p>Pagado hasta ahora: <span className="font-medium text-foreground">{formatCurrency(preloadData.amountPaidSoFar, preloadData.currency)}</span></p>}
+                </div>
+            )}
         </DialogHeader>
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="propertyId" value={propertyId} />

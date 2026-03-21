@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -19,6 +20,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription }
 import useWindowSize from "@/hooks/use-window-size";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { ProviderHistoryDialog } from "./provider-history-dialog";
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -73,7 +75,7 @@ const DisplayRating = ({ rating }: { rating: number | undefined }) => {
     );
 };
 
-function ProviderActions({ provider, onDataChanged, onEditProvider }: { provider: Provider, onDataChanged: () => void, onEditProvider: (provider: Provider) => void }) {
+function ProviderActions({ provider, onDataChanged, onEditProvider, onHistoryClick }: { provider: Provider, onDataChanged: () => void, onEditProvider: (provider: Provider) => void, onHistoryClick: (provider: Provider) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const waLink = formatWhatsAppLink(provider.phone, provider.countryCode);
     const telLink = `tel:${(provider.countryCode || '+54').replace('+', '')}${provider.phone?.replace(/[^0-9]/g, '')}`;
@@ -142,12 +144,24 @@ function ProviderActions({ provider, onDataChanged, onEditProvider }: { provider
             </TooltipProvider>
 
             <ProviderDeleteForm providerId={provider.id} onProviderDeleted={onDataChanged} />
+            
+             <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={() => onHistoryClick(provider)}>
+                            <History className="h-4 w-4" />
+                            <span className="sr-only">Ver Historial</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Ver Historial de Trabajos</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
         </div>
     );
 }
 
 
-function ProviderRow({ provider, category, onDataChanged, onEditProvider }: { provider: Provider, category?: ProviderCategory, onDataChanged: () => void, onEditProvider: (provider: Provider) => void }) {
+function ProviderRow({ provider, category, onDataChanged, onEditProvider, onHistoryClick }: { provider: Provider, category?: ProviderCategory, onDataChanged: () => void, onEditProvider: (provider: Provider) => void, onHistoryClick: (provider: Provider) => void }) {
     const waLink = formatWhatsAppLink(provider.phone, provider.countryCode);
     return (
         <TableRow key={provider.id}>
@@ -175,13 +189,13 @@ function ProviderRow({ provider, category, onDataChanged, onEditProvider }: { pr
             </TableCell>
             <TableCell className="hidden md:table-cell">{provider.address || ''}</TableCell>
             <TableCell className="text-right">
-                <ProviderActions provider={provider} onDataChanged={onDataChanged} onEditProvider={onEditProvider} />
+                <ProviderActions provider={provider} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={onHistoryClick} />
             </TableCell>
         </TableRow>
     );
 }
 
-function ProviderCard({ provider, category, onDataChanged, onEditProvider }: { provider: Provider, category?: ProviderCategory, onDataChanged: () => void, onEditProvider: (provider: Provider) => void }) {
+function ProviderCard({ provider, category, onDataChanged, onEditProvider, onHistoryClick }: { provider: Provider, category?: ProviderCategory, onDataChanged: () => void, onEditProvider: (provider: Provider) => void, onHistoryClick: (provider: Provider) => void }) {
     const waLink = formatWhatsAppLink(provider.phone, provider.countryCode);
     return (
         <Card>
@@ -226,7 +240,7 @@ function ProviderCard({ provider, category, onDataChanged, onEditProvider }: { p
                 )}
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <ProviderActions provider={provider} onDataChanged={onDataChanged} onEditProvider={onEditProvider} />
+                <ProviderActions provider={provider} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={onHistoryClick} />
             </CardFooter>
         </Card>
     );
@@ -236,6 +250,13 @@ function ProviderCard({ provider, category, onDataChanged, onEditProvider }: { p
 export default function ProvidersList({ providers, categories, onDataChanged, onEditProvider }: ProvidersListProps) {
     const { width } = useWindowSize();
     const useCardView = width < 1024;
+    const [historyProvider, setHistoryProvider] = useState<Provider | undefined>(undefined);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+    const handleHistoryClick = (provider: Provider) => {
+        setHistoryProvider(provider);
+        setIsHistoryOpen(true);
+    };
 
     if (providers.length === 0) {
         return <p className="text-sm text-center text-muted-foreground py-8">No hay proveedores para mostrar con los filtros seleccionados.</p>;
@@ -246,7 +267,7 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
     const CardView = () => (
          <div className="space-y-4">
             {providers.map((provider: Provider) => (
-                <ProviderCard key={provider.id} provider={provider} category={provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined} onDataChanged={onDataChanged} onEditProvider={onEditProvider} />
+                <ProviderCard key={provider.id} provider={provider} category={provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
             ))}
         </div>
     );
@@ -265,11 +286,23 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
             </TableHeader>
             <TableBody>
                 {providers.map((provider: Provider) => (
-                    <ProviderRow key={provider.id} provider={provider} category={provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined} onDataChanged={onDataChanged} onEditProvider={onEditProvider} />
+                    <ProviderRow key={provider.id} provider={provider} category={provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
                 ))}
             </TableBody>
         </Table>
     );
     
-    return useCardView ? <CardView /> : <TableView />;
+    return (
+        <div>
+            {useCardView ? <CardView /> : <TableView />}
+            {historyProvider && (
+                <ProviderHistoryDialog
+                    providerId={historyProvider.id}
+                    providerName={historyProvider.name}
+                    isOpen={isHistoryOpen}
+                    onOpenChange={setIsHistoryOpen}
+                />
+            )}
+        </div>
+    );
 }

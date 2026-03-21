@@ -675,6 +675,12 @@ export async function getPropertyExpensesByPropertyId(propertyId: string): Promi
     return snapshot.docs.map(processDoc) as PropertyExpense[];
 }
 
+export async function getPropertyExpensesByProviderId(providerId: string): Promise<PropertyExpense[]> {
+    const q = query(propertyExpensesCollection, where('providerId', '==', providerId), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as PropertyExpense[];
+}
+
 export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
     const docRef = await addDoc(propertyExpensesCollection, expense);
     return { id: docRef.id, ...expense, currency: 'ARS' };
@@ -1390,6 +1396,24 @@ export async function getTasksByPropertyId(propertyId: string): Promise<TaskWith
     const propertyTasks = snapshot.docs.map(processDoc) as Task[];
     
     const detailedTasks = await Promise.all(propertyTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap, providersMap)));
+    return detailedTasks;
+}
+
+export async function getTasksByProviderId(providerId: string): Promise<TaskWithDetails[]> {
+    const [properties, categories, providers] = await Promise.all([
+        getProperties(),
+        getTaskCategories(),
+        getProviders(),
+    ]);
+    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
+    const providersMap = new Map(providers.map(p => [p.id, p.name]));
+
+    const q = query(tasksCollection, where('providerId', '==', providerId), orderBy('dueDate', 'desc'));
+    const snapshot = await getDocs(q);
+    const providerTasks = snapshot.docs.map(processDoc) as Task[];
+    
+    const detailedTasks = await Promise.all(providerTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap, providersMap)));
     return detailedTasks;
 }
 
