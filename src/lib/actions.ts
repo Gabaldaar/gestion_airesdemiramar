@@ -40,6 +40,12 @@ import {
   addTaskCategory as addTaskCategoryDb,
   updateTaskCategory as updateTaskCategoryDb,
   deleteTaskCategory as deleteTaskCategoryDb,
+  addProvider as addProviderDb,
+  updateProvider as updateProviderDb,
+  deleteProvider as deleteProviderDb,
+  addProviderCategory as addProviderCategoryDb,
+  updateProviderCategory as updateProviderCategoryDb,
+  deleteProviderCategory as deleteProviderCategoryDb,
   getBookingById,
   getPropertyById,
   getTenantById,
@@ -58,9 +64,11 @@ import {
   TaskCategory,
   TaskStatus,
   TaskPriority,
+  Provider,
+  ProviderCategory,
 } from './data';
 import { db } from './firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, writeBatch } from 'firebase/firestore';
 
 // Define the payload for the finance API registration
 export interface RegistrarCobroPayload {
@@ -557,6 +565,8 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
   try {
     const propertyId = formData.get('propertyId') as string;
     const date = formData.get('date') as string;
+    const taskId = formData.get('taskId') as string | null;
+    const providerId = formData.get('providerId') as string | null;
 
     if (!propertyId || !date) {
       return {
@@ -566,17 +576,20 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
     }
 
     const expenseData = handleExpenseData(formData);
-    const newExpense = {
+    const newExpense: Omit<PropertyExpense, 'id'> = {
       propertyId,
       date,
       ...expenseData,
+      taskId: taskId || null,
+      providerId: providerId || null,
     };
 
-    await addPropertyExpenseDb(newExpense as Omit<PropertyExpense, 'id'>);
+    await addPropertyExpenseDb(newExpense);
     revalidatePath(`/properties/${propertyId}`);
     revalidatePath('/reports');
     revalidatePath('/expenses');
     revalidatePath('/informes');
+    revalidatePath('/tasks'); // Revalidate tasks to update actual cost
     return { success: true, message: 'Gasto añadido correctamente.' };
   } catch (error: any) {
     return { success: false, message: error.message || 'Error al añadir el gasto.' };
@@ -610,6 +623,7 @@ export async function updatePropertyExpense(
     revalidatePath('/reports');
     revalidatePath('/expenses');
     revalidatePath('/informes');
+    revalidatePath('/tasks');
     return { success: true, message: 'Gasto actualizado correctamente.' };
   } catch (error: any) {
     return {
@@ -644,6 +658,7 @@ export async function deletePropertyExpense(
     revalidatePath('/reports');
     revalidatePath('/expenses');
     revalidatePath('/informes');
+    revalidatePath('/tasks');
     return { success: true, message: 'Gasto eliminado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -1368,5 +1383,137 @@ export async function deleteTask(previousState: any, formData: FormData) {
         return { success: true, message: 'Tarea eliminada.' };
     } catch (error: any) {
         return { success: false, message: `Error de base de datos: ${error.message}` };
-    }
+  }
+}
+
+
+// --- Provider Actions ---
+
+export async function addProvider(previousState: any, formData: FormData) {
+  const ratingStr = formData.get('rating') as string;
+  const rating = ratingStr ? parseInt(ratingStr, 10) : 0;
+  const categoryIdValue = formData.get('categoryId') as string;
+
+  const newProvider: Omit<Provider, 'id'> = {
+    name: formData.get('name') as string,
+    categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
+    email: formData.get('email') as string,
+    phone: formData.get('phone') as string,
+    countryCode: formData.get('countryCode') as string,
+    address: formData.get('address') as string,
+    notes: (formData.get('notes') as string) || '',
+    rating: !isNaN(rating) ? rating : 0,
+  };
+
+  try {
+    await addProviderDb(newProvider);
+    revalidatePath('/providers');
+    return { success: true, message: 'Proveedor añadido correctamente.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function updateProvider(previousState: any, formData: FormData) {
+  const ratingStr = formData.get('rating') as string;
+  const rating = ratingStr ? parseInt(ratingStr, 10) : 0;
+  const categoryIdValue = formData.get('categoryId') as string;
+  
+  const updatedProvider: Provider = {
+    id: formData.get('id') as string,
+    name: formData.get('name') as string,
+    categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
+    email: formData.get('email') as string,
+    phone: formData.get('phone') as string,
+    countryCode: formData.get('countryCode') as string,
+    address: formData.get('address') as string,
+    notes: formData.get('notes') as string,
+    rating: !isNaN(rating) ? rating : 0,
+  };
+
+  try {
+    await updateProviderDb(updatedProvider);
+    revalidatePath('/providers');
+    revalidatePath('/tasks');
+    return { success: true, message: 'Proveedor actualizado correctamente.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function deleteProvider(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    return { success: false, message: 'ID de proveedor no válido.' };
+  }
+  try {
+    await deleteProviderDb(id);
+    revalidatePath('/providers');
+    revalidatePath('/tasks');
+    return { success: true, message: 'Proveedor eliminado correctamente.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+
+export async function addProviderCategory(previousState: any, formData: FormData) {
+  const name = formData.get('name') as string;
+  if (!name) {
+    return { success: false, message: 'El nombre de la categoría es obligatorio.' };
+  }
+  try {
+    await addProviderCategoryDb({ name });
+    revalidatePath('/settings');
+    revalidatePath('/providers');
+    return { success: true, message: 'Categoría de proveedor añadida.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function updateProviderCategory(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const name = formData.get('name') as string;
+  if (!id || !name) {
+    return { success: false, message: 'Faltan datos para actualizar la categoría.' };
+  }
+  try {
+    await updateProviderCategoryDb({ id, name });
+    revalidatePath('/settings');
+    revalidatePath('/providers');
+    return { success: true, message: 'Categoría de proveedor actualizada.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function deleteProviderCategory(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    return { success: false, message: 'ID de categoría no válido.' };
+  }
+  try {
+    // Unlink providers from this category
+    const providersToUpdateQuery = query(collection(db, 'providers'), where('categoryId', '==', id));
+    const providersSnapshot = await getDocs(providersToUpdateQuery);
+    
+    const batch = writeBatch(db);
+    providersSnapshot.forEach(providerDoc => {
+        const providerRef = doc(db, 'providers', providerDoc.id);
+        batch.update(providerRef, { categoryId: null });
+    });
+
+    // Delete the category itself
+    const categoryRef = doc(db, 'providerCategories', id);
+    batch.delete(categoryRef);
+
+    await batch.commit();
+
+    revalidatePath('/settings');
+    revalidatePath('/providers');
+    return { success: true, message: 'Categoría de proveedor eliminada.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
 }

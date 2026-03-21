@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import {
   collection,
@@ -155,6 +156,8 @@ export type PropertyExpense = {
     exchangeRate?: number; // Stores the USD to ARS rate if original expense was in USD
     originalUsdAmount?: number; // Stores the original amount if paid in USD
     categoryId?: string | null;
+    taskId?: string | null;
+    providerId?: string | null;
 }
 
 export type BookingExpense = {
@@ -294,6 +297,24 @@ export type TaskCategory = {
     name: string;
 };
 
+export type ProviderCategory = {
+    id: string;
+    name: string;
+};
+
+export type Provider = {
+    id: string;
+    name: string;
+    categoryId?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    countryCode?: string | null;
+    address?: string | null;
+    notes?: string;
+    rating?: number;
+};
+
+
 export type Task = {
     id: string;
     propertyId: string;
@@ -306,11 +327,13 @@ export type Task = {
     dueDate?: string | null;
     categoryId?: string | null;
     notes?: string;
+    providerId?: string | null;
 };
 
 export type TaskWithDetails = Task & {
     propertyName: string;
     categoryName?: string;
+    providerName?: string;
 }
 
 
@@ -329,6 +352,8 @@ const originsCollection = collection(db, 'origins');
 const pushSubscriptionsCollection = collection(db, 'pushSubscriptions');
 const tasksCollection = collection(db, 'tasks');
 const taskCategoriesCollection = collection(db, 'taskCategories');
+const providersCollection = collection(db, 'providers');
+const providerCategoriesCollection = collection(db, 'providerCategories');
 
 
 // Helper function to add default data only if the collection is empty
@@ -1309,43 +1334,62 @@ export async function deleteTaskCategory(id: string): Promise<void> {
 }
 
 
-async function getTaskDetails(task: Task, propertiesMap: Map<string, string>, categoriesMap: Map<string, string>): Promise<TaskWithDetails> {
+async function getTaskDetails(task: Task, propertiesMap: Map<string, string>, categoriesMap: Map<string, string>, providersMap: Map<string, string>): Promise<TaskWithDetails> {
+    // Re-calculate actualCost on the fly by summing related expenses
+    const expensesQuery = query(propertyExpensesCollection, where('taskId', '==', task.id));
+    const expensesSnapshot = await getDocs(expensesQuery);
+    const actualCost = expensesSnapshot.docs.reduce((sum, doc) => {
+        const expense = doc.data() as PropertyExpense;
+        // Sum based on the task's currency
+        if (task.costCurrency === 'USD') {
+            return sum + (expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0));
+        }
+        return sum + expense.amount; // Default to ARS
+    }, 0);
+
+
     return {
         ...task,
+        actualCost: actualCost, // Use the newly calculated cost
         propertyName: propertiesMap.get(task.propertyId) || 'Propiedad Desconocida',
         categoryName: task.categoryId ? categoriesMap.get(task.categoryId) : undefined,
+        providerName: task.providerId ? providersMap.get(task.providerId) : undefined,
     };
 }
 
 export async function getTasks(): Promise<TaskWithDetails[]> {
-    const [tasksSnap, properties, categories] = await Promise.all([
+    const [tasksSnap, properties, categories, providers] = await Promise.all([
         getDocs(tasksCollection),
         getProperties(),
         getTaskCategories(),
+        getProviders(),
     ]);
 
     const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
+    const providersMap = new Map(providers.map(p => [p.id, p.name]));
     
     const allTasks = tasksSnap.docs.map(processDoc) as Task[];
-    const detailedTasks = await Promise.all(allTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap)));
+    const detailedTasks = await Promise.all(allTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap, providersMap)));
 
     return detailedTasks;
 }
 
 export async function getTasksByPropertyId(propertyId: string): Promise<TaskWithDetails[]> {
-    const [properties, categories] = await Promise.all([
+    const [properties, categories, providers] = await Promise.all([
         getProperties(),
         getTaskCategories(),
+        getProviders(),
     ]);
     const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
+    const providersMap = new Map(providers.map(p => [p.id, p.name]));
 
     const q = query(tasksCollection, where('propertyId', '==', propertyId));
     const snapshot = await getDocs(q);
     const propertyTasks = snapshot.docs.map(processDoc) as Task[];
     
-    const detailedTasks = await Promise.all(propertyTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap)));
+    const detailedTasks = await Promise.all(propertyTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap, providersMap)));
     return detailedTasks;
 }
 
@@ -1366,5 +1410,68 @@ export async function updateTask(updatedTask: Partial<Task>): Promise<Task | nul
 
 export async function deleteTask(id: string): Promise<void> {
     const docRef = doc(db, 'tasks', id);
+    await deleteDoc(docRef);
+}
+
+
+// --- PROVIDER CATEGORIES ---
+export async function getProviderCategories(): Promise<ProviderCategory[]> {
+    const q = query(providerCategoriesCollection, orderBy("name"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as ProviderCategory[];
+}
+
+export async function addProviderCategory(category: Omit<ProviderCategory, 'id'>): Promise<ProviderCategory> {
+    const docRef = await addDoc(providerCategoriesCollection, category);
+    return { id: docRef.id, ...category };
+}
+
+export async function updateProviderCategory(updatedCategory: ProviderCategory): Promise<ProviderCategory> {
+    const { id, ...data } = updatedCategory;
+    const docRef = doc(db, 'providerCategories', id);
+    await updateDoc(docRef, data);
+    return updatedCategory;
+}
+
+export async function deleteProviderCategory(id: string): Promise<void> {
+    const docRef = doc(db, 'providerCategories', id);
+    await deleteDoc(docRef);
+}
+
+
+// --- PROVIDER FUNCTIONS ---
+
+export async function getProviders(): Promise<Provider[]> {
+    const q = query(providersCollection, orderBy("name"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as Provider[];
+}
+
+export async function getProviderById(id: string): Promise<Provider | undefined> {
+    if (!id) return undefined;
+    const docRef = doc(db, 'providers', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? processDoc(docSnap) as Provider : undefined;
+}
+
+
+export async function addProvider(provider: Omit<Provider, 'id'>): Promise<Provider> {
+    const docRef = await addDoc(providersCollection, provider);
+    return { id: docRef.id, ...provider };
+}
+
+export async function updateProvider(updatedProvider: Partial<Provider>): Promise<Provider | null> {
+    const { id, ...data } = updatedProvider;
+    if (!id) throw new Error("Update provider requires an ID.");
+    const docRef = doc(db, 'providers', id);
+    await updateDoc(docRef, data);
+    const newDoc = await getDoc(docRef);
+    return newDoc.exists() ? processDoc(newDoc) as Provider : null;
+}
+
+export async function deleteProvider(id: string): Promise<void> {
+    // Note: This does not handle unlinking from tasks.
+    // That logic should be in the server action if needed.
+    const docRef = doc(db, 'providers', id);
     await deleteDoc(docRef);
 }
