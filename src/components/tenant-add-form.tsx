@@ -16,11 +16,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addTenant } from '@/lib/actions';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, Star } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Origin, getOrigins } from '@/lib/data';
 import { countries } from '@/lib/countries';
+import { cn } from '@/lib/utils';
 
 const initialState = {
   message: '',
@@ -48,6 +49,7 @@ export function TenantAddForm() {
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [origins, setOrigins] = useState<Origin[]>([]);
+  const [rating, setRating] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
 
   const formAction = (formData: FormData) => {
@@ -60,6 +62,7 @@ export function TenantAddForm() {
   useEffect(() => {
     if (state.success) {
       setIsOpen(false);
+      setRating(0);
       formRef.current?.reset();
     }
   }, [state]);
@@ -86,6 +89,7 @@ export function TenantAddForm() {
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} ref={formRef}>
+            <input type="hidden" name="rating" value={rating} />
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">
@@ -160,6 +164,28 @@ export function TenantAddForm() {
                             ))}
                         </SelectContent>
                     </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="rating" className="text-right">
+                        Calificación
+                    </Label>
+                    <div className="col-span-3 flex items-center gap-1">
+                        {[...Array(5)].map((_, index) => {
+                            const ratingValue = index + 1;
+                            return (
+                            <Star
+                                key={ratingValue}
+                                className={cn(
+                                "h-6 w-6 cursor-pointer",
+                                ratingValue <= rating
+                                    ? "text-yellow-400 fill-yellow-400"
+                                    : "text-gray-300"
+                                )}
+                                onClick={() => setRating(ratingValue === rating ? 0 : ratingValue)}
+                            />
+                            );
+                        })}
+                    </div>
                 </div>
                 <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="notes" className="text-right pt-2">

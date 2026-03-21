@@ -13,7 +13,7 @@ import {
 import { Tenant, Origin } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { TenantDeleteForm } from "@/components/tenant-delete-form";
-import { History, FileText, Mail, Phone, Pencil } from "lucide-react";
+import { History, FileText, Mail, Phone, Pencil, Star } from "lucide-react";
 import { NotesViewer } from "@/components/notes-viewer";
 import { useState } from "react";
 import { Badge } from "./ui/badge";
@@ -33,6 +33,25 @@ const formatWhatsAppLink = (phone: string | null | undefined, countryCode: strin
     const code = (countryCode || '54').replace(/[^0-9]/g, '');
     const phoneNum = phone.replace(/[^0-9]/g, '');
     return `https://wa.me/${code}${phoneNum}`;
+};
+
+const DisplayRating = ({ rating }: { rating: number | undefined }) => {
+    const effectiveRating = rating || 0;
+    if (effectiveRating === 0) return <span className="text-xs text-muted-foreground">Sin calificar</span>;
+
+    return (
+        <div className="flex items-center gap-0.5">
+            {[...Array(5)].map((_, index) => (
+                <Star
+                    key={index}
+                    className={cn(
+                        "h-4 w-4",
+                        index < effectiveRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                    )}
+                />
+            ))}
+        </div>
+    );
 };
 
 function TenantActions({ tenant, onDataChanged, onEditTenant }: { tenant: Tenant, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
@@ -72,9 +91,12 @@ function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Te
     return (
         <TableRow key={tenant.id}>
             <TableCell className="font-medium">
-                <a href={`mailto:${tenant.email}`} className="text-primary hover:underline">
-                    {tenant.name}
-                </a>
+                <div className="flex flex-col gap-1">
+                    <a href={`mailto:${tenant.email}`} className="text-primary hover:underline">
+                        {tenant.name}
+                    </a>
+                    <DisplayRating rating={tenant.rating} />
+                </div>
             </TableCell>
             <TableCell>
                 {origin ? (
@@ -125,6 +147,10 @@ function TenantCard({ tenant, origin, onDataChanged, onEditTenant }: { tenant: T
                 </div>
             </CardHeader>
             <CardContent className="p-4 grid gap-2 text-sm">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Calificación</span>
+                    <DisplayRating rating={tenant.rating} />
+                </div>
                 {tenant.dni && (
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">DNI</span>

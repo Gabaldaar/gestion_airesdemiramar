@@ -82,6 +82,7 @@ export type Tenant = {
   phone: string;
   notes?: string;
   originId?: string | null;
+  rating?: number;
 };
 
 export type ContractStatus = 'not_sent' | 'sent' | 'signed' | 'not_required';

@@ -16,10 +16,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateTenant } from '@/lib/actions';
 import { Tenant, Origin, getOrigins } from '@/lib/data';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Star } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { countries } from '@/lib/countries';
+import { cn } from '@/lib/utils';
 
 const initialState = {
   message: '',
@@ -53,6 +54,7 @@ export function TenantEditForm({ tenant, onTenantUpdated, isOpen, onOpenChange }
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [origins, setOrigins] = useState<Origin[]>([]);
+  const [rating, setRating] = useState(tenant.rating || 0);
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -70,9 +72,10 @@ export function TenantEditForm({ tenant, onTenantUpdated, isOpen, onOpenChange }
 
   useEffect(() => {
     if (isOpen) {
+      setRating(tenant.rating || 0);
       getOrigins().then(setOrigins);
     }
-  }, [isOpen]);
+  }, [isOpen, tenant]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -85,6 +88,7 @@ export function TenantEditForm({ tenant, onTenantUpdated, isOpen, onOpenChange }
           </DialogHeader>
           <form action={formAction}>
               <input type="hidden" name="id" value={tenant.id} />
+              <input type="hidden" name="rating" value={rating} />
               <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="name" className="text-right">
@@ -160,6 +164,28 @@ export function TenantEditForm({ tenant, onTenantUpdated, isOpen, onOpenChange }
                           </SelectContent>
                       </Select>
                   </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="rating" className="text-right">
+                            Calificación
+                        </Label>
+                        <div className="col-span-3 flex items-center gap-1">
+                            {[...Array(5)].map((_, index) => {
+                                const ratingValue = index + 1;
+                                return (
+                                <Star
+                                    key={ratingValue}
+                                    className={cn(
+                                    "h-6 w-6 cursor-pointer",
+                                    ratingValue <= rating
+                                        ? "text-yellow-400 fill-yellow-400"
+                                        : "text-gray-300"
+                                    )}
+                                    onClick={() => setRating(ratingValue === rating ? 0 : ratingValue)}
+                                />
+                                );
+                            })}
+                        </div>
+                    </div>
                   <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="notes" className="text-right pt-2">
                         Notas

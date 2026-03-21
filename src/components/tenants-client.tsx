@@ -15,6 +15,7 @@ import { isWithinInterval } from 'date-fns';
 import { parseDateSafely } from '@/lib/utils';
 
 type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'cancelled' | 'pending';
+type RatingFilter = 'all' | 'none' | '1' | '2' | '3' | '4' | '5';
 
 interface TenantsClientProps {
   initialTenants: Tenant[];
@@ -27,6 +28,7 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
   const [tenants, setTenants] = useState(initialTenants);
   const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
   const [originFilter, setOriginFilter] = useState<string>('all');
+  const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all');
   const [replyToEmail, setReplyToEmail] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const [editingTenant, setEditingTenant] = useState<Tenant | undefined>(undefined);
@@ -62,6 +64,16 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
     // Filter by Origin
     if (originFilter !== 'all') {
       currentTenants = currentTenants.filter(tenant => tenant.originId === originFilter);
+    }
+
+    // Filter by Rating
+    if (ratingFilter !== 'all') {
+      if (ratingFilter === 'none') {
+        currentTenants = currentTenants.filter(tenant => !tenant.rating || tenant.rating === 0);
+      } else {
+        const rating = parseInt(ratingFilter, 10);
+        currentTenants = currentTenants.filter(tenant => tenant.rating === rating);
+      }
     }
 
     // Filter by Booking Status
@@ -100,7 +112,7 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
     }
     
     return currentTenants;
-  }, [tenants, allBookings, statusFilter, originFilter]);
+  }, [tenants, allBookings, statusFilter, originFilter, ratingFilter]);
 
   // Effect to update the count in the parent component
   useEffect(() => {
@@ -111,6 +123,7 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
   const handleClearFilters = () => {
     setStatusFilter('all');
     setOriginFilter('all');
+    setRatingFilter('all');
   };
   
   const handleEmailAll = () => {
@@ -142,7 +155,7 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50 sm:flex-row sm:items-end flex-wrap">
         <div className="grid gap-2">
             <Label>Estado de la Reserva</Label>
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as BookingStatusFilter)}>
@@ -173,7 +186,24 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
                 </SelectContent>
             </Select>
         </div>
-        <div className="flex gap-2">
+        <div className="grid gap-2">
+            <Label>Calificación</Label>
+            <Select value={ratingFilter} onValueChange={(value) => setRatingFilter(value as RatingFilter)}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filtrar por calificación" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="none">Sin Calificar</SelectItem>
+                    <SelectItem value="5">5 Estrellas</SelectItem>
+                    <SelectItem value="4">4 Estrellas</SelectItem>
+                    <SelectItem value="3">3 Estrellas</SelectItem>
+                    <SelectItem value="2">2 Estrellas</SelectItem>
+                    <SelectItem value="1">1 Estrella</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+        <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
             <Button onClick={handleEmailAll}>
                 <Mail className="mr-2 h-4 w-4"/>

@@ -248,6 +248,9 @@ export async function deleteProperty(previousState: any, formData: FormData) {
 
 export async function addTenant(previousState: any, formData: FormData) {
   const originIdValue = formData.get('originId') as string;
+  const ratingStr = formData.get('rating') as string;
+  const rating = ratingStr ? parseInt(ratingStr, 10) : 0;
+
   const newTenant: Omit<Tenant, 'id'> = {
     name: formData.get('name') as string,
     dni: formData.get('dni') as string,
@@ -259,6 +262,7 @@ export async function addTenant(previousState: any, formData: FormData) {
     country: (formData.get('country') as string) || 'Argentina',
     notes: (formData.get('notes') as string) || '',
     originId: originIdValue === 'none' ? undefined : originIdValue,
+    rating: !isNaN(rating) ? rating : 0,
   };
 
   try {
@@ -274,6 +278,9 @@ export async function addTenant(previousState: any, formData: FormData) {
 
 export async function updateTenant(previousState: any, formData: FormData) {
   const originIdValue = formData.get('originId') as string;
+  const ratingStr = formData.get('rating') as string;
+  const rating = ratingStr ? parseInt(ratingStr, 10) : 0;
+  
   const updatedTenant: Tenant = {
     id: formData.get('id') as string,
     name: formData.get('name') as string,
@@ -286,6 +293,7 @@ export async function updateTenant(previousState: any, formData: FormData) {
     country: formData.get('country') as string,
     notes: formData.get('notes') as string,
     originId: originIdValue === 'none' ? null : originIdValue,
+    rating: !isNaN(rating) ? rating : 0,
   };
 
   try {
@@ -1281,9 +1289,14 @@ export async function addTask(previousState: any, formData: FormData) {
     costCurrency: costCurrencyValue || 'ARS',
   };
 
-  const estimatedCost = estimatedCostValue ? parseFloat(estimatedCostValue) : NaN;
-  if (!isNaN(estimatedCost)) {
+  const estimatedCost = estimatedCostValue ? parseFloat(estimatedCostValue) : undefined;
+  if (estimatedCost !== undefined && !isNaN(estimatedCost)) {
     taskData.estimatedCost = estimatedCost;
+  }
+  
+  const actualCost = formData.has('actualCost') ? parseFloat(formData.get('actualCost') as string) : undefined;
+  if (actualCost !== undefined && !isNaN(actualCost)) {
+    taskData.actualCost = actualCost;
   }
 
   if (!taskData.propertyId || !taskData.description) {
@@ -1323,13 +1336,13 @@ export async function updateTask(previousState: any, formData: FormData) {
     costCurrency: costCurrencyValue || 'ARS',
   };
 
-  const estimatedCost = estimatedCostValue ? parseFloat(estimatedCostValue) : NaN;
-  if (!isNaN(estimatedCost)) {
+  const estimatedCost = estimatedCostValue ? parseFloat(estimatedCostValue) : undefined;
+  if (estimatedCost !== undefined && !isNaN(estimatedCost)) {
     taskData.estimatedCost = estimatedCost;
   }
 
-  const actualCost = actualCostValue ? parseFloat(actualCostValue) : NaN;
-  if (!isNaN(actualCost)) {
+  const actualCost = actualCostValue ? parseFloat(actualCostValue) : undefined;
+  if (actualCost !== undefined && !isNaN(actualCost)) {
     taskData.actualCost = actualCost;
   }
   
