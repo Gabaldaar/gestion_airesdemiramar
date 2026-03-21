@@ -77,6 +77,13 @@ export function TenantEditForm({ tenant, onTenantUpdated, isOpen, onOpenChange }
     }
   }, [isOpen, tenant]);
 
+  const getStarColorClass = (currentRating: number) => {
+    if (currentRating === 1) return "text-red-500 fill-red-500";
+    if (currentRating === 2) return "text-orange-400 fill-orange-400";
+    return "text-yellow-400 fill-yellow-400";
+  };
+
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -177,7 +184,7 @@ export function TenantEditForm({ tenant, onTenantUpdated, isOpen, onOpenChange }
                                     className={cn(
                                     "h-6 w-6 cursor-pointer",
                                     ratingValue <= rating
-                                        ? "text-yellow-400 fill-yellow-400"
+                                        ? getStarColorClass(rating)
                                         : "text-gray-300"
                                     )}
                                     onClick={() => setRating(ratingValue === rating ? 0 : ratingValue)}

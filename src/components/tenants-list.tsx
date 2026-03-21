@@ -39,6 +39,12 @@ const DisplayRating = ({ rating }: { rating: number | undefined }) => {
     const effectiveRating = rating || 0;
     if (effectiveRating === 0) return <span className="text-xs text-muted-foreground">Sin calificar</span>;
 
+    const getColorClass = () => {
+        if (effectiveRating === 1) return "text-red-500 fill-red-500";
+        if (effectiveRating === 2) return "text-orange-400 fill-orange-400";
+        return "text-yellow-400 fill-yellow-400";
+    };
+
     return (
         <div className="flex items-center gap-0.5">
             {[...Array(5)].map((_, index) => (
@@ -46,7 +52,7 @@ const DisplayRating = ({ rating }: { rating: number | undefined }) => {
                     key={index}
                     className={cn(
                         "h-4 w-4",
-                        index < effectiveRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                        index < effectiveRating ? getColorClass() : "text-gray-300"
                     )}
                 />
             ))}
