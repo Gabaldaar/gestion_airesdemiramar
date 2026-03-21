@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updatePropertyExpense } from '@/lib/actions';
-import { PropertyExpense, ExpenseCategory } from '@/lib/data';
+import { PropertyExpense, ExpenseCategory, Provider } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn, parseDateSafely } from '@/lib/utils';
@@ -48,9 +48,10 @@ function SubmitButton() {
     )
 }
 
-export function ExpenseEditForm({ expense, categories, onExpenseUpdated, propertyName }: {
+export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdated, propertyName }: {
     expense: PropertyExpense,
     categories: ExpenseCategory[],
+    providers: Provider[],
     onExpenseUpdated: () => void;
     propertyName?: string;
 }) {
@@ -159,10 +160,28 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated, propert
                             <SelectValue placeholder="Selecciona una categoría" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="none">Sin Categoría</SelectItem>
+                             <SelectItem value="none">Sin Categoría</SelectItem>
                             {categories.map(category => (
                                 <SelectItem key={category.id} value={category.id}>
                                     {category.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="providerId" className="text-right">
+                        Proveedor
+                    </Label>
+                    <Select name="providerId" defaultValue={expense.providerId || 'none'}>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Selecciona un proveedor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Sin Asignar</SelectItem>
+                            {providers.map(provider => (
+                                <SelectItem key={provider.id} value={provider.id}>
+                                    {provider.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -195,7 +214,7 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated, propert
                         </Label>
                         <div className="col-span-3 flex items-center gap-2">
                            <Input id="exchangeRate" name="exchangeRate" type="number" step="0.01" placeholder="Valor del USD en ARS" required value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} />
-                           <Button type="button" variant="outline" size="icon" onClick={fetchRate} disabled={isFetchingRate}>
+                            <Button type="button" variant="outline" size="icon" onClick={fetchRate} disabled={isFetchingRate}>
                                 {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                             </Button>
                         </div>
@@ -220,5 +239,3 @@ export function ExpenseEditForm({ expense, categories, onExpenseUpdated, propert
     </Dialog>
   );
 }
-
-    

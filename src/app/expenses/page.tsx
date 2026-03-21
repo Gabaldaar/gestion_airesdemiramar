@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { getProperties, getAllExpensesUnified, getExpenseCategories, UnifiedExpense, Property, ExpenseCategory } from "@/lib/data";
+import { getProperties, getAllExpensesUnified, getExpenseCategories, UnifiedExpense, Property, ExpenseCategory, Provider, getProviders } from "@/lib/data";
 import ExpensesClient from "@/components/expenses-client";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState } from "react";
@@ -17,6 +17,7 @@ interface ExpensesData {
     allExpenses: UnifiedExpense[];
     properties: Property[];
     categories: ExpenseCategory[];
+    providers: Provider[];
 }
 
 export default function ExpensesPage() {
@@ -31,8 +32,9 @@ export default function ExpensesPage() {
                 getAllExpensesUnified(),
                 getProperties(),
                 getExpenseCategories(),
-            ]).then(([allExpenses, properties, categories]) => {
-                setData({ allExpenses, properties, categories });
+                getProviders(),
+            ]).then(([allExpenses, properties, categories, providers]) => {
+                setData({ allExpenses, properties, categories, providers });
                 setLoading(false);
             });
         }
@@ -53,6 +55,7 @@ export default function ExpensesPage() {
         initialExpenses={data.allExpenses} 
         properties={data.properties} 
         categories={data.categories}
+        providers={data.providers}
         />
     </CardContent>
     </Card>

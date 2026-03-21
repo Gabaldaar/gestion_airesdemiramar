@@ -605,6 +605,7 @@ export async function updatePropertyExpense(
     const id = formData.get('id') as string;
     const propertyId = formData.get('propertyId') as string;
     const date = formData.get('date') as string;
+    const providerId = formData.get('providerId') as string | null;
 
     if (!id || !propertyId || !date) {
       return { success: false, message: 'Faltan datos para actualizar el gasto.' };
@@ -617,6 +618,7 @@ export async function updatePropertyExpense(
       date,
       ...expenseData,
       currency: 'ARS',
+      providerId: (providerId && providerId !== 'none') ? providerId : null,
     };
 
     await updatePropertyExpenseDb(updatedExpense);

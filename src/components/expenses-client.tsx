@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { UnifiedExpense, Property, ExpenseCategory, getAllExpensesUnified } from '@/lib/data';
+import { UnifiedExpense, Property, ExpenseCategory, getAllExpensesUnified, Provider } from '@/lib/data';
 import ExpensesUnifiedList from '@/components/expenses-unified-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -17,13 +17,15 @@ interface ExpensesClientProps {
   initialExpenses: UnifiedExpense[];
   properties: Property[];
   categories: ExpenseCategory[];
+  providers: Provider[];
 }
 
-export default function ExpensesClient({ initialExpenses, properties, categories }: ExpensesClientProps) {
+export default function ExpensesClient({ initialExpenses, properties, categories, providers }: ExpensesClientProps) {
   const [expenses, setExpenses] = useState<UnifiedExpense[]>(initialExpenses);
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
+  const [providerIdFilter, setProviderIdFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<ExpenseTypeFilter>('all');
   const [categoryIdFilter, setCategoryIdFilter] = useState<string>('all');
 
@@ -40,6 +42,11 @@ export default function ExpensesClient({ initialExpenses, properties, categories
 
       // Property Filter
       if (propertyIdFilter !== 'all' && ('propertyId' in expense && expense.propertyId !== propertyIdFilter)) {
+        return false;
+      }
+
+      // Provider Filter
+      if (providerIdFilter !== 'all' && ('providerId' in expense && expense.providerId !== providerIdFilter)) {
         return false;
       }
       
@@ -71,12 +78,13 @@ export default function ExpensesClient({ initialExpenses, properties, categories
       
       return true;
     });
-  }, [expenses, fromDate, toDate, propertyIdFilter, typeFilter, categoryIdFilter]);
+  }, [expenses, fromDate, toDate, propertyIdFilter, providerIdFilter, typeFilter, categoryIdFilter]);
 
   const handleClearFilters = () => {
     setFromDate(undefined);
     setToDate(undefined);
     setPropertyIdFilter('all');
+    setProviderIdFilter('all');
     setTypeFilter('all');
     setCategoryIdFilter('all');
   };
@@ -84,7 +92,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-end">
           <div className="grid gap-2">
               <Label>Desde</Label>
               <DatePicker date={fromDate} onDateSelect={setFromDate} placeholder="Desde" />
@@ -93,12 +101,10 @@ export default function ExpensesClient({ initialExpenses, properties, categories
               <Label>Hasta</Label>
               <DatePicker date={toDate} onDateSelect={setToDate} placeholder="Hasta" />
           </div>
-        </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
           <div className="grid gap-2">
               <Label>Propiedad</Label>
               <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger>
                       <SelectValue placeholder="Propiedad" />
                   </SelectTrigger>
                   <SelectContent>
@@ -109,10 +115,24 @@ export default function ExpensesClient({ initialExpenses, properties, categories
                   </SelectContent>
               </Select>
           </div>
+           <div className="grid gap-2">
+              <Label>Proveedor</Label>
+              <Select value={providerIdFilter} onValueChange={setProviderIdFilter}>
+                  <SelectTrigger>
+                      <SelectValue placeholder="Proveedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {providers.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+          </div>
           <div className="grid gap-2">
               <Label>Tipo de Gasto</Label>
               <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as ExpenseTypeFilter)}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger>
                       <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -125,7 +145,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
           <div className="grid gap-2">
               <Label>Categoría</Label>
               <Select value={categoryIdFilter} onValueChange={setCategoryIdFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger>
                       <SelectValue placeholder="Categoría" />
                   </SelectTrigger>
                   <SelectContent>
@@ -138,14 +158,10 @@ export default function ExpensesClient({ initialExpenses, properties, categories
               </Select>
           </div>
         
-          <div className="self-end">
-              <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
-          </div>
+          <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
         </div>
       </div>
-      <ExpensesUnifiedList expenses={filteredExpenses} categories={categories} onDataChanged={refreshExpenses} />
+      <ExpensesUnifiedList expenses={filteredExpenses} categories={categories} providers={providers} onDataChanged={refreshExpenses} />
     </div>
   );
 }
-
-    

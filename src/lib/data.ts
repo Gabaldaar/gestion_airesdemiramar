@@ -180,6 +180,7 @@ export type UnifiedExpense = (PropertyExpense | BookingExpense) & {
     propertyName: string;
     tenantName?: string;
     categoryName?: string;
+    providerName?: string;
 };
 
 
@@ -724,17 +725,19 @@ export async function deleteBookingExpense(id: string): Promise<void> {
 
 
 export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
-    const [propExpensesSnap, bookExpensesSnap, properties, tenants, categories] = await Promise.all([
+    const [propExpensesSnap, bookExpensesSnap, properties, tenants, categories, providers] = await Promise.all([
         getDocs(query(propertyExpensesCollection, orderBy('date', 'desc'))),
         getDocs(query(bookingExpensesCollection, orderBy('date', 'desc'))),
         getProperties(),
         getTenants(),
         getExpenseCategories(),
+        getProviders(),
     ]);
 
     const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
     const tenantsMap = new Map(tenants.map(t => [t.id, t.name]));
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
+    const providersMap = new Map(providers.map(p => [p.id, p.name]));
     const bookingsMap = new Map<string, { propertyName: string, tenantName: string }>();
 
     const allExpenses: UnifiedExpense[] = [];
@@ -748,6 +751,7 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
             amountUSD: expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0),
             propertyName: propertiesMap.get(expense.propertyId) || 'N/A',
             categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
+            providerName: expense.providerId ? providersMap.get(expense.providerId) : undefined,
         });
     }
 

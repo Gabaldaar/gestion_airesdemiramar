@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UnifiedExpense, ExpenseCategory, PropertyExpense, BookingExpense } from "@/lib/data";
+import { UnifiedExpense, ExpenseCategory, PropertyExpense, BookingExpense, Provider } from "@/lib/data";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ExpenseEditForm } from "./expense-edit-form";
@@ -21,10 +21,12 @@ import { BookingExpenseEditForm } from "./booking-expense-edit-form";
 import { ExpenseDeleteForm } from "./expense-delete-form";
 import { BookingExpenseDeleteForm } from "./booking-expense-delete-form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Wrench } from 'lucide-react';
 
 interface ExpensesUnifiedListProps {
   expenses: UnifiedExpense[];
   categories: ExpenseCategory[];
+  providers: Provider[];
   onDataChanged: () => void;
 }
 
@@ -44,7 +46,12 @@ const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
     return `USD ${new Intl.NumberFormat('es-AR', options).format(amount)}`;
 }
 
-function ExpenseActions({ expense, categories, onDataChanged }: { expense: UnifiedExpense; categories: ExpenseCategory[], onDataChanged: () => void; }) {
+function ExpenseActions({ expense, categories, providers, onDataChanged }: { 
+    expense: UnifiedExpense; 
+    categories: ExpenseCategory[]; 
+    providers: Provider[];
+    onDataChanged: () => void; 
+}) {
     return (
         <div className="flex items-center justify-end gap-2">
             {expense.type === 'Propiedad' ? (
@@ -52,6 +59,7 @@ function ExpenseActions({ expense, categories, onDataChanged }: { expense: Unifi
                     <ExpenseEditForm
                         expense={expense as PropertyExpense}
                         categories={categories}
+                        providers={providers}
                         onExpenseUpdated={onDataChanged}
                         propertyName={expense.propertyName} />
                     <ExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={onDataChanged} />
@@ -70,7 +78,12 @@ function ExpenseActions({ expense, categories, onDataChanged }: { expense: Unifi
     );
 }
 
-function ExpenseCard({ expense, categories, onDataChanged }: { expense: UnifiedExpense; categories: ExpenseCategory[], onDataChanged: () => void; }) {
+function ExpenseCard({ expense, categories, providers, onDataChanged }: { 
+    expense: UnifiedExpense; 
+    categories: ExpenseCategory[],
+    providers: Provider[],
+    onDataChanged: () => void; 
+}) {
     return (
         <Card className="flex flex-col w-full">
             <CardHeader className="p-4">
@@ -97,6 +110,12 @@ function ExpenseCard({ expense, categories, onDataChanged }: { expense: UnifiedE
                     <span className="text-muted-foreground">Inquilino</span>
                     <span className="font-medium text-right truncate min-w-0">{expense.tenantName || '-'}</span>
                 </div>
+                {expense.providerName && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-1"><Wrench className="h-3 w-3" /> Proveedor</span>
+                        <span className="font-medium text-right truncate min-w-0">{expense.providerName}</span>
+                    </div>
+                )}
                 
                 {expense.description && (
                     <div className="space-y-1 pt-2">
@@ -106,14 +125,14 @@ function ExpenseCard({ expense, categories, onDataChanged }: { expense: UnifiedE
                 )}
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <ExpenseActions expense={expense} categories={categories} onDataChanged={onDataChanged} />
+                <ExpenseActions expense={expense} categories={categories} providers={providers} onDataChanged={onDataChanged} />
             </CardFooter>
         </Card>
     );
 }
 
 
-export default function ExpensesUnifiedList({ expenses, categories, onDataChanged }: ExpensesUnifiedListProps) {
+export default function ExpensesUnifiedList({ expenses, categories, providers, onDataChanged }: ExpensesUnifiedListProps) {
   
   if (expenses.length === 0) {
     return <p className="text-sm text-center text-muted-foreground py-8">No hay gastos para mostrar con los filtros seleccionados.</p>;
@@ -133,7 +152,7 @@ export default function ExpensesUnifiedList({ expenses, categories, onDataChange
         </Card>
         <div className="space-y-4">
             {expenses.map(expense => (
-                <ExpenseCard key={expense.id} expense={expense} categories={categories} onDataChanged={onDataChanged} />
+                <ExpenseCard key={expense.id} expense={expense} categories={categories} providers={providers} onDataChanged={onDataChanged} />
             ))}
         </div>
     </div>
