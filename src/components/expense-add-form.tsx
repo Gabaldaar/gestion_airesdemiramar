@@ -145,6 +145,8 @@ export function ExpenseAddForm({
             }
             if (preloadData.providerId) {
                 setSelectedProviderId(preloadData.providerId);
+            } else {
+                setSelectedProviderId('none');
             }
         }
     } else {
@@ -178,6 +180,7 @@ export function ExpenseAddForm({
             <input type="hidden" name="propertyId" value={propertyId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             {preloadData?.taskId && <input type="hidden" name="taskId" value={preloadData.taskId} />}
+            <input type="hidden" name="providerId" value={selectedProviderId} />
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="date" className="text-right">
@@ -227,11 +230,11 @@ export function ExpenseAddForm({
                 </div>
                 {providers && (
                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="providerId" className="text-right">
+                        <Label htmlFor="providerId-select" className="text-right">
                             Proveedor
                         </Label>
-                        <Select name="providerId" value={selectedProviderId} onValueChange={setSelectedProviderId}>
-                            <SelectTrigger className="col-span-3">
+                        <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+                            <SelectTrigger id="providerId-select" className="col-span-3">
                                 <SelectValue placeholder="Selecciona un proveedor" />
                             </SelectTrigger>
                             <SelectContent>

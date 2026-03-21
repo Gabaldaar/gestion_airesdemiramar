@@ -62,6 +62,7 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
   const [currency, setCurrency] = useState<'ARS' | 'USD'>(expense.originalUsdAmount ? 'USD' : 'ARS');
   const [exchangeRate, setExchangeRate] = useState(expense.exchangeRate?.toString() || '');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const [selectedProviderId, setSelectedProviderId] = useState<string>(expense.providerId || 'none');
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -97,6 +98,7 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
         setDate(parseDateSafely(expense.date));
         setCurrency(expense.originalUsdAmount ? 'USD' : 'ARS');
         setExchangeRate(expense.exchangeRate?.toString() || '');
+        setSelectedProviderId(expense.providerId || 'none');
         setIsFetchingRate(false);
     }
   }, [isOpen, expense]);
@@ -122,6 +124,7 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
             <input type="hidden" name="id" value={expense.id} />
             <input type="hidden" name="propertyId" value={expense.propertyId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
+            <input type="hidden" name="providerId" value={selectedProviderId} />
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="date" className="text-right">
@@ -170,11 +173,11 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
                     </Select>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="providerId" className="text-right">
+                    <Label htmlFor="providerId-select" className="text-right">
                         Proveedor
                     </Label>
-                    <Select name="providerId" defaultValue={expense.providerId || 'none'}>
-                        <SelectTrigger className="col-span-3">
+                    <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+                        <SelectTrigger id="providerId-select" className="col-span-3">
                             <SelectValue placeholder="Selecciona un proveedor" />
                         </SelectTrigger>
                         <SelectContent>

@@ -46,8 +46,10 @@ export default function ExpensesClient({ initialExpenses, properties, categories
       }
 
       // Provider Filter
-      if (providerIdFilter !== 'all' && ('providerId' in expense && expense.providerId !== providerIdFilter)) {
-        return false;
+      if (providerIdFilter !== 'all') {
+        if (!('providerId' in expense) || expense.providerId !== providerIdFilter) {
+          return false;
+        }
       }
       
       // Type Filter
