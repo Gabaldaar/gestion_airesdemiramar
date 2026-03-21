@@ -20,6 +20,7 @@ import { Badge } from "./ui/badge";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
 import useWindowSize from "@/hooks/use-window-size";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface TenantsListProps {
     tenants: Tenant[];
@@ -62,6 +63,8 @@ const DisplayRating = ({ rating }: { rating: number | undefined }) => {
 
 function TenantActions({ tenant, onDataChanged, onEditTenant }: { tenant: Tenant, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
+    const waLink = formatWhatsAppLink(tenant.phone, tenant.countryCode);
+    const telLink = `tel:${(tenant.countryCode || '+54').replace('+', '')}${tenant.phone?.replace(/[^0-9]/g, '')}`;
 
     return (
         <div className="flex items-center justify-end gap-1">
@@ -71,22 +74,76 @@ function TenantActions({ tenant, onDataChanged, onEditTenant }: { tenant: Tenant
                 isOpen={isNotesOpen}
                 onOpenChange={setIsNotesOpen}
             >
-                 <Button variant="ghost" size="icon" onClick={() => setIsNotesOpen(true)} disabled={!tenant.notes}>
-                    <FileText className="h-4 w-4" />
-                    <span className="sr-only">Ver Notas</span>
-                </Button>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => setIsNotesOpen(true)} disabled={!tenant.notes}>
+                                <FileText className="h-4 w-4" />
+                                <span className="sr-only">Ver Notas</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Ver Notas</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </NotesViewer>
-             <Button variant="ghost" size="icon" onClick={() => onEditTenant(tenant)}>
-                <Pencil className="h-4 w-4" />
-                <span className="sr-only">Editar Inquilino</span>
-            </Button>
+            
+            {waLink && (
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button asChild variant="ghost" size="icon" className="text-green-600 hover:text-green-700">
+                                <a href={waLink} target="_blank" rel="noopener noreferrer">
+                                    <Phone className="h-4 w-4" />
+                                </a>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Enviar WhatsApp</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
+
+            {tenant.phone && (
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <Button asChild variant="ghost" size="icon">
+                                <a href={telLink}>
+                                    <Phone className="h-4 w-4" />
+                                </a>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Llamar</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
+
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={() => onEditTenant(tenant)}>
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Editar Inquilino</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Editar Inquilino</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+
             <TenantDeleteForm tenantId={tenant.id} onTenantDeleted={onDataChanged} />
-            <Button asChild variant="ghost" size="icon">
-              <Link href={`/bookings?tenantId=${tenant.id}`}>
-                <History className="h-4 w-4" />
-                <span className="sr-only">Ver Historial</span>
-              </Link>
-            </Button>
+            
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                         <Button asChild variant="ghost" size="icon">
+                            <Link href={`/bookings?tenantId=${tenant.id}`}>
+                                <History className="h-4 w-4" />
+                                <span className="sr-only">Ver Historial</span>
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Ver Historial de Reservas</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
         </div>
     );
 }
