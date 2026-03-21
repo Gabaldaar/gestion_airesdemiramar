@@ -69,7 +69,7 @@ export function TaskEditForm({
     task: TaskWithDetails;
     properties: Property[];
     categories: TaskCategory[];
-    providers: Provider[];
+    providers?: Provider[];
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     onTaskUpdated: () => void;
@@ -170,7 +170,7 @@ export function TaskEditForm({
                         <SelectTrigger><SelectValue placeholder="Selecciona un proveedor" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="none">Sin Asignar</SelectItem>
-                            {providers.map(p => (
+                            {providers?.map(p => (
                                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                             ))}
                         </SelectContent>

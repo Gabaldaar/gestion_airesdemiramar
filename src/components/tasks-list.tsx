@@ -19,7 +19,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TaskWithDetails, Property, TaskCategory, Task, TaskStatus, TaskPriority } from "@/lib/data";
+import { TaskWithDetails, Property, TaskCategory, Task, TaskStatus, TaskPriority, Provider } from "@/lib/data";
 import { format, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, parseDateSafely } from "@/lib/utils";
@@ -39,6 +39,7 @@ interface TasksListProps {
   tasks: TaskWithDetails[];
   properties: Property[];
   categories: TaskCategory[];
+  providers: Provider[];
   showProperty?: boolean;
   propertyId?: string;
   onDataChanged: () => void;
@@ -260,7 +261,7 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
     );
 }
 
-export default function TasksList({ tasks, properties, categories, showProperty = false, propertyId, onDataChanged, onRegisterExpense, selectedTaskIds, onSelectionChange, onSelectAll }: TasksListProps) {
+export default function TasksList({ tasks, properties, categories, providers, showProperty = false, propertyId, onDataChanged, onRegisterExpense, selectedTaskIds, onSelectionChange, onSelectAll }: TasksListProps) {
   const [editingTask, setEditingTask] = useState<TaskWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deletingTask, setDeletingTask] = useState<TaskWithDetails | undefined>(undefined);
@@ -284,11 +285,13 @@ export default function TasksList({ tasks, properties, categories, showProperty 
   };
   
   const handleTaskCompletedWithExpense = (task: Task) => {
-    if (task.actualCost && task.actualCost > 0) {
+    if (task.estimatedCost && task.estimatedCost > 0) {
         onRegisterExpense({
-            amount: task.actualCost,
+            amount: task.estimatedCost,
             description: `Gasto de tarea: ${task.description}`,
-            currency: task.costCurrency || 'ARS'
+            currency: task.costCurrency || 'ARS',
+            taskId: task.id,
+            providerId: task.providerId || undefined
         }, task.propertyId);
     }
     onDataChanged();
@@ -373,6 +376,7 @@ export default function TasksList({ tasks, properties, categories, showProperty 
                 task={editingTask}
                 properties={properties}
                 categories={categories}
+                providers={providers}
                 isOpen={isEditOpen}
                 onOpenChange={setIsEditOpen}
                 onTaskUpdated={onDataChanged}
