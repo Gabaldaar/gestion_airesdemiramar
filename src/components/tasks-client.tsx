@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -268,6 +269,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
         <ExpenseAddForm
             propertyId={expensePropertyId}
             categories={expenseCategories}
+            providers={providers}
             onExpenseAdded={onDataChanged}
             isOpen={isExpenseAddOpen}
             onOpenChange={setIsExpenseAddOpen}

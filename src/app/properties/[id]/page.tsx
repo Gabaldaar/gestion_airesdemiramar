@@ -363,12 +363,13 @@ export default function PropertyDetailPage() {
                      <ExpenseAddForm
                         propertyId={property.id}
                         categories={expenseCategories}
+                        providers={providers}
                         onExpenseAdded={handleDataChanged}
                         isOpen={isExpenseAddOpen}
                         onOpenChange={setIsExpenseAddOpen}
                         preloadData={expensePreloadData}
                     >
-                         <Button variant="outline">
+                         <Button variant="outline" onClick={() => setIsExpenseAddOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Añadir Gasto
                         </Button>

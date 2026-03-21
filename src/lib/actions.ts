@@ -582,7 +582,7 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
       date,
       ...expenseData,
       taskId: taskId || null,
-      providerId: (providerId && providerId.trim() !== '') ? providerId : null,
+      providerId: (providerId && providerId !== 'none') ? providerId : null,
     };
 
     await addPropertyExpenseDb(newExpense);

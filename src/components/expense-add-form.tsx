@@ -25,7 +25,7 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { ExpenseCategory } from '@/lib/data';
+import { ExpenseCategory, Provider } from '@/lib/data';
 
 const initialState = {
   message: '',
@@ -67,6 +67,7 @@ const formatCurrency = (amount: number, currency: 'USD' | 'ARS' = 'ARS') => {
 export function ExpenseAddForm({
     propertyId,
     categories,
+    providers,
     children,
     isOpen,
     onOpenChange,
@@ -75,6 +76,7 @@ export function ExpenseAddForm({
 }: {
     propertyId: string,
     categories: ExpenseCategory[],
+    providers?: Provider[],
     children?: React.ReactNode,
     isOpen: boolean,
     onOpenChange: (isOpen: boolean) => void;
@@ -90,6 +92,7 @@ export function ExpenseAddForm({
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [amount, setAmount] = useState<string>('');
   const [description, setDescription] = useState('');
+  const [selectedProviderId, setSelectedProviderId] = useState<string>('none');
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -119,6 +122,7 @@ export function ExpenseAddForm({
     setExchangeRate('');
     setAmount('');
     setDescription('');
+    setSelectedProviderId('none');
     onOpenChange(false);
     setState(initialState);
     setIsFetchingRate(false);
@@ -139,12 +143,16 @@ export function ExpenseAddForm({
             if (preloadData.currency) {
                 setCurrency(preloadData.currency);
             }
+            if (preloadData.providerId) {
+                setSelectedProviderId(preloadData.providerId);
+            }
         }
     } else {
         // Clear form when dialog closes
         setAmount('');
         setDescription('');
         setCurrency('ARS');
+        setSelectedProviderId('none');
     }
   }, [isOpen, preloadData]);
 
@@ -154,7 +162,7 @@ export function ExpenseAddForm({
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Añadir Gasto a la Tarea</DialogTitle>
+          <DialogTitle>Añadir Gasto</DialogTitle>
            <DialogDescription>
                 Completa los datos del gasto.
                 {preloadData?.propertyName && <> para la propiedad <span className="font-semibold text-foreground">{preloadData.propertyName}</span></>}
@@ -170,9 +178,6 @@ export function ExpenseAddForm({
             <input type="hidden" name="propertyId" value={propertyId} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             {preloadData?.taskId && <input type="hidden" name="taskId" value={preloadData.taskId} />}
-            {preloadData?.providerId && (
-              <input type="hidden" name="providerId" value={preloadData.providerId} />
-            )}
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="date" className="text-right">
@@ -220,6 +225,26 @@ export function ExpenseAddForm({
                         </SelectContent>
                     </Select>
                 </div>
+                {providers && (
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="providerId" className="text-right">
+                            Proveedor
+                        </Label>
+                        <Select name="providerId" value={selectedProviderId} onValueChange={setSelectedProviderId}>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Selecciona un proveedor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Sin Asignar</SelectItem>
+                                {providers.map(provider => (
+                                    <SelectItem key={provider.id} value={provider.id}>
+                                        {provider.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="currency" className="text-right">
                     Moneda
