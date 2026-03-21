@@ -330,7 +330,7 @@ export default function TasksList({ tasks, properties, categories, providers, sh
             description: `Gasto de tarea: ${task.description}`,
             currency: task.costCurrency || 'ARS',
             taskId: task.id,
-            providerId: task.providerId || undefined
+            providerId: task.providerId,
         }, task.propertyId);
     }
     onDataChanged();
@@ -342,7 +342,7 @@ export default function TasksList({ tasks, properties, categories, providers, sh
         description: `Gasto por tarea: ${task.description}`,
         currency: task.costCurrency || 'ARS',
         taskId: task.id,
-        providerId: task.providerId || undefined,
+        providerId: task.providerId,
         propertyName: task.propertyName,
         providerName: task.providerName,
         amountPaidSoFar: task.actualCost,
