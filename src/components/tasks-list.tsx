@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -321,25 +322,23 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
 
     return (
         <Card className={cn(task.status === 'completed' && 'bg-muted/50 text-muted-foreground', isSelected && 'border-primary ring-2 ring-primary')}>
-            <CardHeader className="p-4">
-                 <div className="flex justify-between items-start gap-2">
-                    <div className="flex items-start gap-2 flex-1 min-w-0">
-                        {onSelectionChange && (
-                            <Checkbox
-                                className="mt-1"
-                                checked={!!isSelected}
-                                onCheckedChange={onSelectionChange}
-                                aria-label="Seleccionar tarea"
-                            />
-                        )}
-                         <div className="flex-1 min-w-0">
-                            <CardTitle className="text-base truncate">{showProperty ? task.propertyName : task.description}</CardTitle>
-                            {showProperty && <CardDescription className="truncate">{task.description}</CardDescription>}
-                        </div>
+            <CardHeader className="p-4 flex flex-row justify-between items-start gap-2">
+                 <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {onSelectionChange && (
+                        <Checkbox
+                            className="mt-1"
+                            checked={!!isSelected}
+                            onCheckedChange={onSelectionChange}
+                            aria-label="Seleccionar tarea"
+                        />
+                    )}
+                     <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base truncate">{showProperty ? task.propertyName : task.description}</CardTitle>
+                        {showProperty && <CardDescription className="truncate">{task.description}</CardDescription>}
                     </div>
-                    <div className="flex-shrink-0">
-                        <PriorityBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
-                    </div>
+                </div>
+                <div className="flex-shrink-0">
+                    <PriorityBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
                 </div>
             </CardHeader>
             <CardContent className="p-4 grid gap-2 text-sm">
