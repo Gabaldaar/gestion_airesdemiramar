@@ -376,7 +376,7 @@ export default function PropertyDetailPage() {
                     </ExpenseAddForm>
                 </CardHeader>
                 <CardContent>
-                    <ExpensesList expenses={expenses} categories={expenseCategories} property={property} onDataChanged={handleDataChanged} />
+                    <ExpensesList expenses={expenses} categories={expenseCategories} providers={providers} property={property} onDataChanged={handleDataChanged} />
                 </CardContent>
             </Card>
             </TabsContent>

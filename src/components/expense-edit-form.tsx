@@ -51,7 +51,7 @@ function SubmitButton() {
 export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdated, propertyName }: {
     expense: PropertyExpense,
     categories: ExpenseCategory[],
-    providers: Provider[],
+    providers?: Provider[],
     onExpenseUpdated: () => void;
     propertyName?: string;
 }) {
@@ -172,24 +172,26 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="providerId-select" className="text-right">
-                        Proveedor
-                    </Label>
-                    <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
-                        <SelectTrigger id="providerId-select" className="col-span-3">
-                            <SelectValue placeholder="Selecciona un proveedor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">Sin Asignar</SelectItem>
-                            {providers.map(provider => (
-                                <SelectItem key={provider.id} value={provider.id}>
-                                    {provider.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                {providers && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="providerId-select" className="text-right">
+                            Proveedor
+                        </Label>
+                        <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+                            <SelectTrigger id="providerId-select" className="col-span-3">
+                                <SelectValue placeholder="Selecciona un proveedor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Sin Asignar</SelectItem>
+                                {providers.map(provider => (
+                                    <SelectItem key={provider.id} value={provider.id}>
+                                        {provider.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="currency" className="text-right">
                     Moneda
