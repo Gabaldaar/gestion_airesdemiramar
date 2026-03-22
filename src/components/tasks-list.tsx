@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -349,13 +348,13 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                 {task.categoryName && (
                     <div className="flex justify-between items-baseline gap-2">
                         <span className="text-muted-foreground shrink-0">Categoría</span>
-                        <span className="font-medium text-right truncate">{task.categoryName}</span>
+                        <span className="font-medium text-right truncate min-w-0">{task.categoryName || '-'}</span>
                     </div>
                 )}
                  {task.providerName && (
                     <div className="flex justify-between items-baseline gap-2">
                         <span className="text-muted-foreground flex items-center gap-1 shrink-0"><Wrench className="h-3 w-3"/> Proveedor</span>
-                        <span className="font-medium text-right truncate">{task.providerName}</span>
+                        <span className="font-medium text-right truncate min-w-0">{task.providerName}</span>
                     </div>
                 )}
                 <div className="flex justify-between items-baseline gap-2">
