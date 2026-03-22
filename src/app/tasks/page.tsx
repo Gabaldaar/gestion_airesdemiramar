@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -56,12 +55,12 @@ export default function TasksPage() {
 
   return (
     <Card>
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="min-w-0">
+        <CardHeader className="sm:flex sm:items-center sm:justify-between sm:gap-4">
+            <div>
                 <CardTitle>Gestión de Tareas</CardTitle>
                 <CardDescription>Consulta y filtra todas las tareas de mantenimiento y mejoras.</CardDescription>
             </div>
-            <div className="w-full sm:w-auto sm:ml-auto flex-shrink-0">
+            <div className="mt-4 sm:mt-0 sm:flex-shrink-0">
                 <TaskAddForm
                     properties={data.properties}
                     providers={data.providers}
