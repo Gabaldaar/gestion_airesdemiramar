@@ -56,12 +56,12 @@ export default function TasksPage() {
   return (
     <Card>
         <CardHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <CardTitle>Gestión de Tareas</CardTitle>
                     <CardDescription>Consulta y filtra las tareas.</CardDescription>
                 </div>
-                <div className="w-full sm:w-auto sm:justify-self-end">
+                <div className="w-full sm:w-auto">
                     <TaskAddForm
                         properties={data.properties}
                         providers={data.providers}
