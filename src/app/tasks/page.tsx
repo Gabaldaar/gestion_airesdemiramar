@@ -55,27 +55,25 @@ export default function TasksPage() {
 
   return (
     <Card>
-        <CardHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <CardTitle>Gestión de Tareas</CardTitle>
-                    <CardDescription>Consulta y filtra todas las tareas de mantenimiento y mejoras.</CardDescription>
-                </div>
-                <div className="sm:text-right">
-                    <TaskAddForm
-                        properties={data.properties}
-                        providers={data.providers}
-                        categories={data.categories}
-                        isOpen={isAddOpen}
-                        onOpenChange={setIsAddOpen}
-                        onTaskAdded={fetchData}
-                    >
-                        <Button className="w-full sm:w-auto" onClick={() => setIsAddOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Nueva Tarea
-                        </Button>
-                    </TaskAddForm>
-                </div>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <CardTitle>Gestión de Tareas</CardTitle>
+                <CardDescription>Consulta y filtra las tareas.</CardDescription>
+            </div>
+            <div className="w-full sm:w-auto">
+                <TaskAddForm
+                    properties={data.properties}
+                    providers={data.providers}
+                    categories={data.categories}
+                    isOpen={isAddOpen}
+                    onOpenChange={setIsAddOpen}
+                    onTaskAdded={fetchData}
+                >
+                    <Button className="w-full" onClick={() => setIsAddOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Nueva Tarea
+                    </Button>
+                </TaskAddForm>
             </div>
         </CardHeader>
         <CardContent>
