@@ -137,8 +137,8 @@ export default function TasksClient({ initialTasks, properties, providers, categ
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+      <div className="p-4 border rounded-lg bg-muted/50">
+        <div className="grid gap-4 items-end" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
           <div className="grid gap-2">
               <Label>Propiedad</Label>
               <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
