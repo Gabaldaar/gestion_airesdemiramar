@@ -139,8 +139,8 @@ export default function TasksClient({ initialTasks, properties, providers, categ
   return (
     <div className="space-y-4">
       <div className="p-4 border rounded-lg bg-muted/50">
-        <div className="flex flex-wrap items-end gap-4">
-            <div className="grid gap-2 flex-1 min-w-[180px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-end">
+            <div className="grid gap-2">
                 <Label>Propiedad</Label>
                 <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
                     <SelectTrigger>
@@ -154,7 +154,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
                     </SelectContent>
                 </Select>
             </div>
-            <div className="grid gap-2 flex-1 min-w-[180px]">
+            <div className="grid gap-2">
                 <Label>Proveedor</Label>
                 <Select value={providerIdFilter} onValueChange={setProviderIdFilter}>
                     <SelectTrigger>
@@ -168,7 +168,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
                     </SelectContent>
                 </Select>
             </div>
-            <div className="grid gap-2 flex-1 min-w-[180px]">
+            <div className="grid gap-2">
                 <Label>Estado</Label>
                 <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as TaskStatus | 'all')}>
                     <SelectTrigger>
@@ -182,7 +182,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
                     </SelectContent>
                 </Select>
             </div>
-            <div className="grid gap-2 flex-1 min-w-[180px]">
+            <div className="grid gap-2">
                 <Label>Prioridad</Label>
                 <Select value={priorityFilter} onValueChange={(val) => setPriorityFilter(val as TaskPriority | 'all')}>
                     <SelectTrigger>
@@ -196,7 +196,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
                     </SelectContent>
                 </Select>
             </div>
-            <div className="grid gap-2 flex-1 min-w-[180px]">
+            <div className="grid gap-2">
                 <Label>Categoría</Label>
                 <Select value={categoryIdFilter} onValueChange={setCategoryIdFilter}>
                     <SelectTrigger>
@@ -211,7 +211,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
                     </SelectContent>
                 </Select>
             </div>
-            <div className="grid gap-2 flex-1 min-w-[180px]">
+            <div className="grid gap-2">
                 <Label>Moneda Costos</Label>
                 <Select value={costCurrencyFilter} onValueChange={(v) => setCostCurrencyFilter(v as 'all' | 'ARS' | 'USD')}>
                     <SelectTrigger>
