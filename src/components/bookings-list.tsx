@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -18,7 +19,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin, ExpenseCategory, getExpenseCategories } from "@/lib/data";
+import { BookingWithDetails, Property, Tenant, ContractStatus, GuaranteeStatus, Origin, ExpenseCategory, getExpenseCategories, Provider } from "@/lib/data";
 import { format, differenceInDays, isWithinInterval, isPast, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, parseDateSafely } from "@/lib/utils";
@@ -47,6 +48,7 @@ interface BookingsListProps {
   properties: Property[];
   tenants: Tenant[];
   origins?: Origin[];
+  providers?: Provider[];
   showProperty?: boolean;
   onDataChanged: () => void;
 }
@@ -525,7 +527,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
 }
 
 
-export default function BookingsList({ bookings, properties, tenants, origins, showProperty = false, onDataChanged }: BookingsListProps) {
+export default function BookingsList({ bookings, properties, tenants, origins, providers, showProperty = false, onDataChanged }: BookingsListProps) {
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [addingPaymentForBookingId, setAddingPaymentForBookingId] = useState<string | undefined>(undefined);
@@ -690,6 +692,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
                 bookingId={addingExpenseForBookingId}
                 onExpenseAdded={onDataChanged}
                 categories={expenseCategories}
+                providers={providers}
                 isOpen={isAddExpenseOpen}
                 onOpenChange={setIsAddExpenseOpen}
             />
@@ -727,3 +730,4 @@ export default function BookingsList({ bookings, properties, tenants, origins, s
     </div>
   );
 }
+

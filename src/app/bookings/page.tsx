@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -8,7 +9,7 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { getBookings, getProperties, getTenants, BookingWithDetails, Property, Tenant, Origin, getOrigins } from "@/lib/data";
+import { getBookings, getProperties, getTenants, BookingWithDetails, Property, Tenant, Origin, getOrigins, getProviders, Provider } from "@/lib/data";
 import BookingsClient from "@/components/bookings-client";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState, useCallback } from "react";
@@ -19,6 +20,7 @@ interface BookingsData {
     properties: Property[];
     tenants: Tenant[];
     origins: Origin[];
+    providers: Provider[];
 }
 
 export default function BookingsPage() {
@@ -38,8 +40,9 @@ export default function BookingsPage() {
             getProperties(),
             getTenants(),
             getOrigins(),
-        ]).then(([allBookings, properties, tenants, origins]) => {
-            setData({ allBookings, properties, tenants, origins });
+            getProviders(),
+        ]).then(([allBookings, properties, tenants, origins, providers]) => {
+            setData({ allBookings, properties, tenants, origins, providers });
             if (filteredBookingCount === null) {
               setFilteredBookingCount(allBookings.length);
             }
@@ -60,7 +63,7 @@ export default function BookingsPage() {
       return <p>Cargando reservas...</p>;
   }
 
-  const { allBookings, properties, tenants, origins } = data;
+  const { allBookings, properties, tenants, origins, providers } = data;
 
   const tenant = tenantId ? tenants.find(t => t.id === tenantId) : null;
   const pageTitle = tenant ? `Reservas de ${tenant.name}` : 'Reservas';
@@ -92,6 +95,7 @@ export default function BookingsPage() {
         properties={properties} 
         tenants={tenants} 
         origins={origins}
+        providers={providers}
         initialTenantIdFilter={tenantId}
         onFilteredBookingsChange={setFilteredBookingCount}
         onDataChanged={handleDataChanged}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { BookingWithDetails, ContractStatus, Property, Tenant, getEmailSettings, Origin, GuaranteeStatus } from '@/lib/data';
+import { BookingWithDetails, ContractStatus, Property, Tenant, getEmailSettings, Origin, GuaranteeStatus, Provider } from '@/lib/data';
 import BookingsList from '@/components/bookings-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -49,12 +49,13 @@ interface BookingsClientProps {
   properties: Property[];
   tenants: Tenant[];
   origins: Origin[];
+  providers: Provider[];
   initialTenantIdFilter?: string;
   onFilteredBookingsChange: (count: number) => void;
   onDataChanged: () => void;
 }
 
-export default function BookingsClient({ initialBookings, properties, tenants, origins, initialTenantIdFilter, onFilteredBookingsChange, onDataChanged }: BookingsClientProps) {
+export default function BookingsClient({ initialBookings, properties, tenants, origins, providers, initialTenantIdFilter, onFilteredBookingsChange, onDataChanged }: BookingsClientProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [statusFilters, setStatusFilters] = useState<StatusFilters>(initialStatusFilters);
@@ -425,7 +426,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
               </Button>
           </div>
       </div>
-      <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} origins={origins} showProperty={true} onDataChanged={onDataChanged} />
+      <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} origins={origins} providers={providers} showProperty={true} onDataChanged={onDataChanged} />
     </div>
   );
 }

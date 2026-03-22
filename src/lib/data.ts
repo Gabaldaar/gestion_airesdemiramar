@@ -170,6 +170,7 @@ export type BookingExpense = {
     exchangeRate?: number; 
     originalUsdAmount?: number;
     categoryId?: string | null;
+    providerId?: string | null;
 }
 
 // Extend unified expense to include all original fields for editing
@@ -785,6 +786,7 @@ export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
             propertyName,
             tenantName,
             categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
+            providerName: expense.providerId ? providersMap.get(expense.providerId) : undefined,
         });
     }
     
@@ -1514,4 +1516,5 @@ export async function deleteProvider(id: string): Promise<void> {
     const docRef = doc(db, 'providers', id);
     await deleteDoc(docRef);
 }
+
 

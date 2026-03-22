@@ -516,6 +516,7 @@ const handleExpenseData = (formData: FormData) => {
   const description = formData.get('description') as string;
   const exchangeRateStr = formData.get('exchangeRate') as string;
   const categoryIdValue = formData.get('categoryId') as string;
+  const providerIdValue = formData.get('providerId') as string;
 
   const expensePayload: {
     amount: number;
@@ -523,6 +524,7 @@ const handleExpenseData = (formData: FormData) => {
     exchangeRate?: number;
     originalUsdAmount?: number;
     categoryId?: string | null;
+    providerId?: string | null;
   } = {
     amount: originalAmount,
     description: description,
@@ -554,6 +556,7 @@ const handleExpenseData = (formData: FormData) => {
   }
 
   expensePayload.categoryId = categoryIdValue === 'none' ? null : categoryIdValue;
+  expensePayload.providerId = providerIdValue === 'none' ? null : providerIdValue;
 
   if (expensePayload.exchangeRate === undefined) delete expensePayload.exchangeRate;
   if (expensePayload.originalUsdAmount === undefined)
@@ -567,7 +570,6 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
     const propertyId = formData.get('propertyId') as string;
     const date = formData.get('date') as string;
     const taskId = formData.get('taskId') as string | null;
-    const providerId = formData.get('providerId') as string | null;
 
     if (!propertyId || !date) {
       return {
@@ -582,7 +584,6 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
       date,
       ...expenseData,
       taskId: taskId || null,
-      providerId: (providerId && providerId !== 'none') ? providerId : null,
     };
 
     await addPropertyExpenseDb(newExpense);
@@ -591,6 +592,7 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
     revalidatePath('/expenses');
     revalidatePath('/informes');
     revalidatePath('/tasks'); // Revalidate tasks to update actual cost
+    revalidatePath('/providers');
     return { success: true, message: 'Gasto añadido correctamente.' };
   } catch (error: any) {
     return { success: false, message: error.message || 'Error al añadir el gasto.' };
@@ -605,7 +607,6 @@ export async function updatePropertyExpense(
     const id = formData.get('id') as string;
     const propertyId = formData.get('propertyId') as string;
     const date = formData.get('date') as string;
-    const providerId = formData.get('providerId') as string | null;
 
     if (!id || !propertyId || !date) {
       return { success: false, message: 'Faltan datos para actualizar el gasto.' };
@@ -618,7 +619,6 @@ export async function updatePropertyExpense(
       date,
       ...expenseData,
       currency: 'ARS',
-      providerId: (providerId && providerId !== 'none') ? providerId : null,
     };
 
     await updatePropertyExpenseDb(updatedExpense);
@@ -627,6 +627,7 @@ export async function updatePropertyExpense(
     revalidatePath('/expenses');
     revalidatePath('/informes');
     revalidatePath('/tasks');
+    revalidatePath('/providers');
     return { success: true, message: 'Gasto actualizado correctamente.' };
   } catch (error: any) {
     return {
@@ -662,6 +663,7 @@ export async function deletePropertyExpense(
     revalidatePath('/expenses');
     revalidatePath('/informes');
     revalidatePath('/tasks');
+    revalidatePath('/providers');
     return { success: true, message: 'Gasto eliminado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
@@ -1524,3 +1526,4 @@ export async function deleteProviderCategory(previousState: any, formData: FormD
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
+

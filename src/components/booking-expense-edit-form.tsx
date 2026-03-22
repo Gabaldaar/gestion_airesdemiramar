@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateBookingExpense } from '@/lib/actions';
-import { BookingExpense, ExpenseCategory } from '@/lib/data';
+import { BookingExpense, ExpenseCategory, Provider } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn, parseDateSafely } from '@/lib/utils';
@@ -49,9 +49,10 @@ function SubmitButton() {
     )
 }
 
-export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated, context }: {
+export function BookingExpenseEditForm({ expense, categories, providers, onExpenseUpdated, context }: {
     expense: BookingExpense,
     categories: ExpenseCategory[],
+    providers?: Provider[],
     onExpenseUpdated: () => void;
     context?: { propertyName: string, tenantName: string }
 }) {
@@ -175,6 +176,24 @@ export function BookingExpenseEditForm({ expense, categories, onExpenseUpdated, 
                         </SelectContent>
                     </Select>
                 </div>
+                {providers && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="providerId" className="text-right">
+                            Proveedor
+                        </Label>
+                        <Select name="providerId" defaultValue={expense.providerId || 'none'}>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Asignar proveedor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Sin Proveedor</SelectItem>
+                                {providers.map(p => (
+                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="currency" className="text-right">
                     Moneda

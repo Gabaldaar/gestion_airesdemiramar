@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -23,7 +24,7 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { ExpenseCategory } from '@/lib/data';
+import { ExpenseCategory, Provider } from '@/lib/data';
 
 const initialState = {
   message: '',
@@ -50,11 +51,12 @@ interface BookingExpenseAddFormProps {
     bookingId: string;
     onExpenseAdded: () => void;
     categories: ExpenseCategory[];
+    providers?: Provider[];
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
 }
 
-export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories, isOpen, onOpenChange }: BookingExpenseAddFormProps) {
+export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories, providers, isOpen, onOpenChange }: BookingExpenseAddFormProps) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -161,6 +163,24 @@ export function BookingExpenseAddForm({ bookingId, onExpenseAdded, categories, i
                         </SelectContent>
                     </Select>
                 </div>
+                {providers && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="providerId" className="text-right">
+                            Proveedor
+                        </Label>
+                        <Select name="providerId">
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Asignar proveedor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Sin Proveedor</SelectItem>
+                                {providers.map(p => (
+                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="currency" className="text-right">
                     Moneda

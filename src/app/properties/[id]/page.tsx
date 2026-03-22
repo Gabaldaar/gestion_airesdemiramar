@@ -334,7 +334,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <BookingsList bookings={bookings} properties={properties} tenants={tenants} origins={origins} onDataChanged={handleDataChanged} />
+                <BookingsList bookings={bookings} properties={properties} tenants={tenants} origins={origins} providers={providers} onDataChanged={handleDataChanged} />
                 </CardContent>
             </Card>
             </TabsContent>

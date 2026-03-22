@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import { getBookingExpensesByBookingId, BookingExpense, getExpenseCategories, ExpenseCategory, getBookingWithDetails, BookingWithDetails } from '@/lib/data';
+import { getBookingExpensesByBookingId, BookingExpense, getExpenseCategories, ExpenseCategory, getBookingWithDetails, BookingWithDetails, Provider, getProviders } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -33,15 +33,17 @@ interface BookingExpensesManagerProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     onAddExpenseClick: () => void;
+    providers?: Provider[];
 }
 
 
-export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChange, onAddExpenseClick }: BookingExpensesManagerProps) {
+export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChange, onAddExpenseClick, providers }: BookingExpensesManagerProps) {
   const [expenses, setExpenses] = useState<BookingExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [booking, setBooking] = useState<BookingWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const providersMap = new Map(providers?.map(p => [p.id, p.name]));
 
   const fetchExpensesAndBooking = useCallback(async () => {
     if (!isOpen) return;
@@ -115,6 +117,7 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
                 <TableRow>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Categoría</TableHead>
+                  <TableHead>Proveedor</TableHead>
                   <TableHead>Descripción</TableHead>
                   <TableHead className="text-right">Monto</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
@@ -125,6 +128,7 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
                   <TableRow key={expense.id}>
                     <TableCell>{formatDate(expense.date)}</TableCell>
                     <TableCell>{expense.categoryId ? categoriesMap.get(expense.categoryId) : 'N/A'}</TableCell>
+                    <TableCell>{expense.providerId ? providersMap.get(expense.providerId) : 'N/A'}</TableCell>
                     <TableCell className="font-medium">{expense.description}</TableCell>
                     <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                     <TableCell className="text-right">
@@ -132,6 +136,7 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
                         <BookingExpenseEditForm
                           expense={expense}
                           categories={categories}
+                          providers={providers}
                           onExpenseUpdated={handleExpenseAction}
                           context={booking ? { propertyName: booking.property?.name || 'N/A', tenantName: booking.tenant?.name || 'N/A'} : undefined} />
                         <BookingExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={handleExpenseAction} />
@@ -142,7 +147,7 @@ export function BookingExpensesManager({ bookingId, children, isOpen, onOpenChan
               </TableBody>
               <TableFooter>
                   <TableRow>
-                      <TableCell colSpan={3} className="font-bold text-right">Total</TableCell>
+                      <TableCell colSpan={4} className="font-bold text-right">Total</TableCell>
                       <TableCell className="text-right font-bold">{formatCurrency(totalAmount)}</TableCell>
                       <TableCell></TableCell>
                   </TableRow>
