@@ -56,24 +56,26 @@ export default function TasksPage() {
 
   return (
     <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="min-w-0">
                 <CardTitle>Gestión de Tareas</CardTitle>
                 <CardDescription>Consulta y filtra todas las tareas de mantenimiento y mejoras.</CardDescription>
             </div>
-            <TaskAddForm
-                properties={data.properties}
-                providers={data.providers}
-                categories={data.categories}
-                isOpen={isAddOpen}
-                onOpenChange={setIsAddOpen}
-                onTaskAdded={fetchData}
-            >
-                <Button className="w-full sm:w-auto" onClick={() => setIsAddOpen(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Nueva Tarea
-                </Button>
-            </TaskAddForm>
+            <div className="w-full sm:w-auto sm:ml-auto flex-shrink-0">
+                <TaskAddForm
+                    properties={data.properties}
+                    providers={data.providers}
+                    categories={data.categories}
+                    isOpen={isAddOpen}
+                    onOpenChange={setIsAddOpen}
+                    onTaskAdded={fetchData}
+                >
+                    <Button className="w-full sm:w-auto" onClick={() => setIsAddOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Nueva Tarea
+                    </Button>
+                </TaskAddForm>
+            </div>
         </CardHeader>
         <CardContent>
             <TasksClient 
