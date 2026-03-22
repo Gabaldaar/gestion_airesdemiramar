@@ -61,7 +61,7 @@ export default function TasksPage() {
                 <CardTitle>Gestión de Tareas</CardTitle>
                 <CardDescription>Consulta y filtra las tareas.</CardDescription>
             </div>
-            <div className="w-full sm:w-auto">
+            <div className="w-full sm:w-auto flex-shrink-0">
                 <TaskAddForm
                     properties={data.properties}
                     providers={data.providers}
