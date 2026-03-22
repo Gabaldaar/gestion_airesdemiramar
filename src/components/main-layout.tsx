@@ -247,7 +247,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </div>
             </header>
             <OfflineWarning isOnline={isOnline} />
-            <main className="flex flex-1 flex-col gap-4 p-2 md:p-4 lg:gap-6 lg:p-6 overflow-x-auto">
+            <main className="flex flex-1 flex-col gap-4 p-2 md:p-4 lg:gap-6 lg:p-6">
             {children}
             </main>
             <Toaster />
