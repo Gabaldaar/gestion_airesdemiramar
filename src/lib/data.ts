@@ -1517,4 +1517,14 @@ export async function deleteProvider(id: string): Promise<void> {
     await deleteDoc(docRef);
 }
 
+export async function updateTenantPartial(id: string, data: Partial<Omit<Tenant, 'id'>>): Promise<void> {
+    if (!id) throw new Error("Update tenant requires an ID.");
+    const docRef = doc(db, 'tenants', id);
+    await updateDoc(docRef, data);
+}
 
+export async function updateProviderPartial(id: string, data: Partial<Omit<Provider, 'id'>>): Promise<void> {
+    if (!id) throw new Error("Update provider requires an ID.");
+    const docRef = doc(db, 'providers', id);
+    await updateDoc(docRef, data);
+}

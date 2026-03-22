@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -48,6 +49,8 @@ import {
   getBookingById,
   getPropertyById,
   getTenantById,
+  updateTenantPartial,
+  updateProviderPartial,
   Tenant,
   Booking,
   PropertyExpense,
@@ -1544,4 +1547,59 @@ export async function deleteProviderCategory(previousState: any, formData: FormD
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
+}
+
+export async function updateTenantRating(previousState: any, formData: FormData) {
+    const id = formData.get('id') as string;
+    const ratingStr = formData.get('rating') as string;
+    const notes = formData.get('notes') as string | null;
+
+    if (!id || !ratingStr) {
+        return { success: false, message: 'Faltan datos (ID o calificación).' };
+    }
+    
+    const rating = parseInt(ratingStr, 10);
+    if (isNaN(rating) || rating < 0 || rating > 5) {
+        return { success: false, message: 'Calificación no válida.' };
+    }
+
+    try {
+        const dataToUpdate: Partial<Omit<Tenant, 'id'>> = { rating };
+        // Only update notes if it's passed in the form data
+        if (notes !== null) {
+            dataToUpdate.notes = notes;
+        }
+        await updateTenantPartial(id, dataToUpdate);
+        revalidatePath('/tenants');
+        return { success: true, message: 'Calificación actualizada.' };
+    } catch (error: any) {
+        return { success: false, message: `Error de base de datos: ${error.message}` };
+    }
+}
+
+export async function updateProviderRating(previousState: any, formData: FormData) {
+    const id = formData.get('id') as string;
+    const ratingStr = formData.get('rating') as string;
+    const notes = formData.get('notes') as string | null;
+
+    if (!id || !ratingStr) {
+        return { success: false, message: 'Faltan datos (ID o calificación).' };
+    }
+
+    const rating = parseInt(ratingStr, 10);
+    if (isNaN(rating) || rating < 0 || rating > 5) {
+        return { success: false, message: 'Calificación no válida.' };
+    }
+
+    try {
+        const dataToUpdate: Partial<Omit<Provider, 'id'>> = { rating };
+        if (notes !== null) {
+            dataToUpdate.notes = notes;
+        }
+        await updateProviderPartial(id, dataToUpdate);
+        revalidatePath('/providers');
+        return { success: true, message: 'Calificación actualizada.' };
+    } catch (error: any) {
+        return { success: false, message: `Error de base de datos: ${error.message}` };
+    }
 }

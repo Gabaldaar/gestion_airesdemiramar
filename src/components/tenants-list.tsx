@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from "next/link";
@@ -13,14 +14,20 @@ import {
 import { Tenant, Origin } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { TenantDeleteForm } from "@/components/tenant-delete-form";
-import { History, FileText, Mail, Phone, Pencil, Star } from "lucide-react";
+import { History, FileText, Mail, Phone, Pencil, Star, Loader2 } from "lucide-react";
 import { NotesViewer } from "@/components/notes-viewer";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Badge } from "./ui/badge";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
 import useWindowSize from "@/hooks/use-window-size";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { useToast } from './ui/use-toast';
+import { updateTenantRating } from '@/lib/actions';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -50,30 +57,109 @@ const formatWhatsAppLink = (phone: string | null | undefined, countryCode: strin
     return `https://wa.me/${code}${phoneNum}`;
 };
 
-const DisplayRating = ({ rating }: { rating: number | undefined }) => {
-    const effectiveRating = rating || 0;
-    if (effectiveRating === 0) return <span className="text-xs text-muted-foreground">Sin calificar</span>;
+function InteractiveRating({ tenant, onRated }: { tenant: Tenant; onRated: () => void }) {
+    const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [dialogRating, setDialogRating] = useState(0);
+    const [dialogError, setDialogError] = useState('');
+    const currentRating = tenant.rating || 0;
 
-    const getColorClass = () => {
-        if (effectiveRating === 1) return "text-red-500 fill-red-500";
-        if (effectiveRating === 2) return "text-orange-400 fill-orange-400";
+    const getStarColorClass = (rating: number) => {
+        if (rating === 1) return "text-red-500 fill-red-500";
+        if (rating === 2) return "text-orange-400 fill-orange-400";
         return "text-yellow-400 fill-yellow-400";
     };
 
+    const handleRatingClick = (newRating: number) => {
+        if (currentRating === newRating) {
+            newRating = 0; // Allow un-rating
+        }
+
+        if (newRating <= 2 && newRating > 0) {
+            setDialogRating(newRating);
+            setDialogError('');
+            setIsDialogOpen(true);
+        } else {
+            const formData = new FormData();
+            formData.append('id', tenant.id);
+            formData.append('rating', String(newRating));
+            
+            startTransition(async () => {
+                const result = await updateTenantRating({ success: false, message: '' }, formData);
+                if (result.success) {
+                    toast({ title: 'Éxito', description: 'Calificación actualizada.' });
+                    onRated();
+                } else {
+                    toast({ title: 'Error', description: result.message, variant: 'destructive' });
+                }
+            });
+        }
+    };
+
+    const handleDialogFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        formData.append('id', tenant.id);
+        formData.append('rating', String(dialogRating));
+
+        startTransition(async () => {
+            const result = await updateTenantRating({ success: false, message: '' }, formData);
+            if (result.success) {
+                toast({ title: 'Éxito', description: 'Calificación y notas guardadas.' });
+                setIsDialogOpen(false);
+                onRated();
+            } else {
+                setDialogError(result.message);
+            }
+        });
+    };
+
     return (
-        <div className="flex items-center gap-0.5">
-            {[...Array(5)].map((_, index) => (
-                <Star
-                    key={index}
-                    className={cn(
-                        "h-4 w-4",
-                        index < effectiveRating ? getColorClass() : "text-gray-300"
-                    )}
-                />
-            ))}
-        </div>
+        <>
+            <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, index) => {
+                    const ratingValue = index + 1;
+                    return (
+                        <Star
+                            key={ratingValue}
+                            className={cn(
+                                "h-4 w-4 cursor-pointer",
+                                ratingValue <= currentRating ? getStarColorClass(currentRating) : "text-gray-300",
+                                isPending && "opacity-50"
+                            )}
+                            onClick={() => !isPending && handleRatingClick(ratingValue)}
+                        />
+                    );
+                })}
+                {currentRating === 0 && <span className="text-xs text-muted-foreground ml-1">Sin calificar</span>}
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Añadir justificación</DialogTitle>
+                        <DialogDescription>
+                            Has asignado una calificación baja a <span className="font-semibold">{tenant.name}</span>. Por favor, añade una nota para justificar el motivo.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleDialogFormSubmit}>
+                        <div className="grid gap-4 py-4">
+                            <Label htmlFor="notes">Notas (la nota anterior se reemplazará)</Label>
+                            <Textarea id="notes" name="notes" defaultValue={tenant.notes || ''} />
+                            {dialogError && <p className="text-sm font-medium text-destructive">{dialogError}</p>}
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isPending}>Cancelar</Button>
+                            <Button type="submit" disabled={isPending}>
+                                {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Guardando...</> : 'Guardar Calificación y Notas'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </>
     );
-};
+}
 
 function TenantActions({ tenant, onDataChanged, onEditTenant }: { tenant: Tenant, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
@@ -172,7 +258,7 @@ function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Te
                     <a href={`mailto:${tenant.email}`} className="text-primary hover:underline">
                         {tenant.name}
                     </a>
-                    <DisplayRating rating={tenant.rating} />
+                    <InteractiveRating tenant={tenant} onRated={onDataChanged} />
                 </div>
             </TableCell>
             <TableCell>
@@ -227,7 +313,7 @@ function TenantCard({ tenant, origin, onDataChanged, onEditTenant }: { tenant: T
             <CardContent className="p-4 grid gap-2 text-sm">
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Calificación</span>
-                    <DisplayRating rating={tenant.rating} />
+                    <InteractiveRating tenant={tenant} onRated={onDataChanged} />
                 </div>
                 {tenant.dni && (
                     <div className="flex justify-between">
