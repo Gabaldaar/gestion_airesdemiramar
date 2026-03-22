@@ -78,7 +78,7 @@ function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalcula
     const isInactive = booking.status === 'cancelled' || booking.status === 'pending';
 
     return (
-        <div className="flex flex-nowrap items-center justify-end gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
              <NotesViewer 
                 notes={booking.notes} 
                 title={`Notas sobre la reserva de ${booking.tenant?.name}`} 
@@ -730,4 +730,3 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
     </div>
   );
 }
-

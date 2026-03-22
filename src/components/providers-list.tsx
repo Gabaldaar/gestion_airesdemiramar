@@ -167,7 +167,7 @@ function ProviderActions({ provider, onDataChanged, onEditProvider, onHistoryCli
     const telLink = `tel:${(provider.countryCode || '+54').replace('+', '')}${provider.phone?.replace(/[^0-9]/g, '')}`;
 
     return (
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
             <NotesViewer 
                 notes={provider.notes} 
                 title={`Notas sobre ${provider.name}`}

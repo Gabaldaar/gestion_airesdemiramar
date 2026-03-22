@@ -169,7 +169,7 @@ function TaskActions({ task, onEdit, onDelete, onRegisterExpense }: {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
 
     return (
-        <div className="flex flex-nowrap items-center justify-end gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
              <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
