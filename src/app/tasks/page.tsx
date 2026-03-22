@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -55,27 +56,25 @@ export default function TasksPage() {
 
   return (
     <Card>
-        <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <CardTitle>Gestión de Tareas</CardTitle>
-                    <CardDescription>Consulta y filtra las tareas.</CardDescription>
-                </div>
-                <div className="w-full sm:w-auto">
-                    <TaskAddForm
-                        properties={data.properties}
-                        providers={data.providers}
-                        categories={data.categories}
-                        isOpen={isAddOpen}
-                        onOpenChange={setIsAddOpen}
-                        onTaskAdded={fetchData}
-                    >
-                        <Button className="w-full sm:w-auto" onClick={() => setIsAddOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Nueva Tarea
-                        </Button>
-                    </TaskAddForm>
-                </div>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+                <CardTitle>Gestión de Tareas</CardTitle>
+                <CardDescription>Consulta y filtra las tareas.</CardDescription>
+            </div>
+            <div className="w-full sm:w-auto">
+                <TaskAddForm
+                    properties={data.properties}
+                    providers={data.providers}
+                    categories={data.categories}
+                    isOpen={isAddOpen}
+                    onOpenChange={setIsAddOpen}
+                    onTaskAdded={fetchData}
+                >
+                    <Button className="w-full sm:w-auto" onClick={() => setIsAddOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Nueva Tarea
+                    </Button>
+                </TaskAddForm>
             </div>
         </CardHeader>
         <CardContent>
