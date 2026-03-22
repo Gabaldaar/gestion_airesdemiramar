@@ -88,7 +88,7 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Nuevo Proveedor
+          Proveedor
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -348,30 +347,30 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                     <StatusBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
                 </div>
                 {task.categoryName && (
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Categoría</span>
-                        <span className="font-medium text-right">{task.categoryName}</span>
+                    <div className="flex justify-between items-baseline gap-2">
+                        <span className="text-muted-foreground shrink-0">Categoría</span>
+                        <span className="font-medium text-right truncate">{task.categoryName}</span>
                     </div>
                 )}
                  {task.providerName && (
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground flex items-center gap-1"><Wrench className="h-3 w-3"/> Proveedor</span>
-                        <span className="font-medium text-right">{task.providerName}</span>
+                    <div className="flex justify-between items-baseline gap-2">
+                        <span className="text-muted-foreground flex items-center gap-1 shrink-0"><Wrench className="h-3 w-3"/> Proveedor</span>
+                        <span className="font-medium text-right truncate">{task.providerName}</span>
                     </div>
                 )}
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Fecha Límite</span>
-                    <span className={cn("font-medium", isOverdue && "text-destructive flex items-center")}>
+                <div className="flex justify-between items-baseline gap-2">
+                    <span className="text-muted-foreground shrink-0">Fecha Límite</span>
+                    <span className={cn("font-medium text-right", isOverdue && "text-destructive flex items-center justify-end")}>
                         {isOverdue && <AlertTriangle className="inline mr-1 h-4 w-4" />}
                         {formatDate(task.dueDate)}
                     </span>
                 </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Costo Est.</span>
+                <div className="flex justify-between items-baseline gap-2">
+                    <span className="text-muted-foreground shrink-0">Costo Est.</span>
                     <span className={cn("font-medium", task.costCurrency === 'ARS' ? "text-blue-600" : "text-green-600")}>{formatCurrency(task.estimatedCost, task.costCurrency)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Costo Real</span>
+                <div className="flex justify-between items-baseline gap-2">
+                    <span className="text-muted-foreground shrink-0">Costo Real</span>
                     <span className={cn("font-medium", task.costCurrency === 'ARS' ? "text-blue-600" : "text-green-600")}>{formatCurrency(task.actualCost, task.costCurrency)}</span>
                 </div>
             </CardContent>

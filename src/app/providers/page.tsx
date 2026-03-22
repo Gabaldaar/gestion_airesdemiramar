@@ -52,7 +52,7 @@ export default function ProvidersPage() {
 
     return (
         <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
             <CardTitle className="flex items-center gap-2">
                 Proveedores
