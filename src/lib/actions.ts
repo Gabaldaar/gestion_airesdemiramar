@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -556,7 +555,11 @@ const handleExpenseData = (formData: FormData) => {
   }
 
   expensePayload.categoryId = categoryIdValue === 'none' ? null : categoryIdValue;
-  expensePayload.providerId = providerIdValue === 'none' ? null : providerIdValue;
+  if (providerIdValue && providerIdValue !== 'none') {
+    expensePayload.providerId = providerIdValue;
+  } else {
+    expensePayload.providerId = null;
+  }
 
   if (expensePayload.exchangeRate === undefined) delete expensePayload.exchangeRate;
   if (expensePayload.originalUsdAmount === undefined)
@@ -585,6 +588,11 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
       ...expenseData,
       taskId: taskId || null,
     };
+    
+    // Explicitly set providerId to null if it's not provided or is 'none'
+    if (!newExpense.providerId) {
+        newExpense.providerId = null;
+    }
 
     await addPropertyExpenseDb(newExpense);
     revalidatePath(`/properties/${propertyId}`);
@@ -1339,40 +1347,51 @@ export async function updateTask(previousState: any, formData: FormData) {
   if (!id) {
     return { success: false, message: 'ID de tarea no proporcionado.' };
   }
-  
-  const categoryIdValue = formData.get('categoryId') as string;
-  const dueDateValue = formData.get('dueDate') as string;
-  const estimatedCostValue = formData.get('estimatedCost') as string;
-  const actualCostValue = formData.get('actualCost') as string;
-  const costCurrencyValue = formData.get('costCurrency') as ('ARS' | 'USD') | null;
-  const providerIdValue = formData.get('providerId') as string;
 
-  const taskData: Partial<Task> = {
-    id,
-    propertyId: formData.get('propertyId') as string,
-    description: formData.get('description') as string,
-    status: formData.get('status') as TaskStatus,
-    priority: formData.get('priority') as TaskPriority,
-    notes: formData.get('notes') as string,
-    categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
-    dueDate: dueDateValue || null,
-    costCurrency: costCurrencyValue || 'ARS',
-    providerId: providerIdValue === 'none' ? null : providerIdValue,
-  };
-
-  const estimatedCost = estimatedCostValue ? parseFloat(estimatedCostValue) : undefined;
-  if (estimatedCost !== undefined && !isNaN(estimatedCost)) {
-    taskData.estimatedCost = estimatedCost;
+  const propertyId = formData.get('propertyId') as string;
+  if (!propertyId) {
+      return { success: false, message: 'ID de propiedad no proporcionado para revalidación.' };
   }
 
-  const actualCost = actualCostValue ? parseFloat(actualCostValue) : undefined;
-  if (actualCost !== undefined && !isNaN(actualCost)) {
-    taskData.actualCost = actualCost;
+  const taskData: { [key: string]: any } = {};
+
+  // Dynamically build the update object based on what's in formData
+  if (formData.has('description')) taskData.description = formData.get('description');
+  if (formData.has('status')) taskData.status = formData.get('status');
+  if (formData.has('priority')) taskData.priority = formData.get('priority');
+  if (formData.has('notes')) taskData.notes = formData.get('notes');
+  
+  if (formData.has('categoryId')) {
+    const categoryIdValue = formData.get('categoryId') as string;
+    taskData.categoryId = categoryIdValue === 'none' ? null : categoryIdValue;
   }
   
+  if (formData.has('dueDate')) {
+    const dueDateValue = formData.get('dueDate') as string;
+    taskData.dueDate = dueDateValue || null;
+  }
+  
+  if (formData.has('costCurrency')) {
+    const costCurrencyValue = formData.get('costCurrency') as ('ARS' | 'USD') | null;
+    taskData.costCurrency = costCurrencyValue || 'ARS';
+  }
+  
+  if (formData.has('providerId')) {
+    const providerIdValue = formData.get('providerId') as string;
+    taskData.providerId = providerIdValue === 'none' ? null : providerIdValue;
+  }
+
+  if (formData.has('estimatedCost')) {
+    const estimatedCostValue = formData.get('estimatedCost') as string;
+    const estimatedCost = estimatedCostValue ? parseFloat(estimatedCostValue) : undefined;
+    taskData.estimatedCost = (estimatedCost !== undefined && !isNaN(estimatedCost)) ? estimatedCost : null;
+  }
+  
+  // actualCost is calculated, not set via form.
+
   try {
-    await updateTaskDb(taskData);
-    revalidatePathsAfterAction(taskData.propertyId!);
+    await updateTaskDb({ id, ...taskData });
+    revalidatePathsAfterAction(propertyId);
     return { success: true, message: 'Tarea actualizada.' };
   } catch (dbError: any) {
     return { success: false, message: `Error de base de datos: ${dbError.message}` };
@@ -1526,4 +1545,3 @@ export async function deleteProviderCategory(previousState: any, formData: FormD
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
-

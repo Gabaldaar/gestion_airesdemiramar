@@ -26,14 +26,23 @@ import { cn, parseDateSafely } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { Button } from "./ui/button";
 import { NotesViewer } from './notes-viewer';
-import { Landmark, Wallet, Pencil, Trash2, FileText, Calculator, Mail, AlertTriangle, ArrowUp, ArrowDown, ChevronsRight, Wrench } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import useWindowSize from '@/hooks/use-window-size';
+import { useState, useMemo, useTransition } from 'react';
+import useWindowSize from "@/hooks/use-window-size";
 import { TaskEditForm } from "./task-edit-form";
 import { TaskDeleteForm } from "./task-delete-form";
 import { ExpensePreloadData } from "./expense-add-form";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { updateTask } from '@/lib/actions';
+import { useToast } from './ui/use-toast';
+import { Loader2, Landmark, Wallet, Pencil, Trash2, FileText, AlertTriangle, ArrowUp, ArrowDown, ChevronsRight, Wrench } from 'lucide-react';
+
 
 interface TasksListProps {
   tasks: TaskWithDetails[];
@@ -60,6 +69,95 @@ const priorityMap: Record<TaskPriority, { text: string, className: string, Icon:
     medium: { text: 'Media', className: 'bg-blue-400', Icon: ChevronsRight },
     high: { text: 'Alta', className: 'bg-red-500', Icon: ArrowUp },
 };
+
+
+function StatusBadgeUpdater({ task, onTaskUpdated }: { task: TaskWithDetails, onTaskUpdated: () => void }) {
+    const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
+
+    const handleStatusChange = (newStatus: TaskStatus) => {
+        if (newStatus === task.status) return;
+
+        startTransition(async () => {
+            const formData = new FormData();
+            formData.append('id', task.id);
+            formData.append('propertyId', task.propertyId);
+            formData.append('status', newStatus);
+            const result = await updateTask({success: false, message: ''}, formData);
+            if (result.success) {
+                toast({ title: "Estado Actualizado", description: `La tarea ahora está "${statusMap[newStatus].text}".` });
+                onTaskUpdated();
+            } else {
+                toast({ title: "Error", description: result.message, variant: "destructive" });
+            }
+        });
+    }
+
+    const statusInfo = statusMap[task.status];
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={cn("h-auto p-0 text-left", isPending && "cursor-not-allowed")} disabled={isPending}>
+                    <Badge className={cn("cursor-pointer", statusInfo.className)}>
+                        {isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <statusInfo.Icon className="mr-1 h-3 w-3" />}
+                        {statusInfo.text}
+                    </Badge>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+                {(Object.keys(statusMap) as TaskStatus[]).map(status => (
+                    <DropdownMenuItem key={status} onSelect={() => handleStatusChange(status)} disabled={task.status === status}>
+                        {statusMap[status].text}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+function PriorityBadgeUpdater({ task, onTaskUpdated }: { task: TaskWithDetails, onTaskUpdated: () => void }) {
+    const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
+
+    const handlePriorityChange = (newPriority: TaskPriority) => {
+        if (newPriority === task.priority) return;
+
+        startTransition(async () => {
+            const formData = new FormData();
+            formData.append('id', task.id);
+            formData.append('propertyId', task.propertyId);
+            formData.append('priority', newPriority);
+            const result = await updateTask({success: false, message: ''}, formData);
+            if (result.success) {
+                toast({ title: "Prioridad Actualizada", description: `La tarea ahora tiene prioridad "${priorityMap[newPriority].text}".` });
+                onTaskUpdated();
+            } else {
+                toast({ title: "Error", description: result.message, variant: "destructive" });
+            }
+        });
+    }
+
+    const priorityInfo = priorityMap[task.priority];
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                 <Button variant="ghost" className={cn("h-auto p-0 text-left", isPending && "cursor-not-allowed")} disabled={isPending}>
+                    <Badge className={cn("cursor-pointer", priorityInfo.className)}>
+                        {isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <priorityInfo.Icon className="mr-1 h-3 w-3" />}
+                        {priorityInfo.text}
+                    </Badge>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+                {(Object.keys(priorityMap) as TaskPriority[]).map(priority => (
+                    <DropdownMenuItem key={priority} onSelect={() => handlePriorityChange(priority)} disabled={task.priority === priority}>
+                        {priorityMap[priority].text}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
 
 
 function TaskActions({ task, onEdit, onDelete, onRegisterExpense }: { 
@@ -130,7 +228,7 @@ function TaskActions({ task, onEdit, onDelete, onRegisterExpense }: {
     )
 }
 
-function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange, onRegisterExpense }: { 
+function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange, onRegisterExpense, onDataChanged }: { 
     task: TaskWithDetails, 
     showProperty?: boolean, 
     onEdit: (task: TaskWithDetails) => void, 
@@ -138,11 +236,9 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onS
     isSelected?: boolean, 
     onSelectionChange?: (checked: boolean) => void;
     onRegisterExpense: () => void;
+    onDataChanged: () => void;
 }) {
   
-    const statusInfo = statusMap[task.status];
-    const priorityInfo = priorityMap[task.priority];
-
     const formatDate = (date: string | undefined | null) => {
         if (!date) return 'N/A';
         const parsedDate = parseDateSafely(date);
@@ -181,16 +277,10 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onS
                  </TooltipProvider>
             </TableCell>
             <TableCell>
-                <Badge className={statusInfo.className}>
-                    <statusInfo.Icon className="mr-1 h-3 w-3" />
-                    {statusInfo.text}
-                </Badge>
+                 <StatusBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
             </TableCell>
             <TableCell className="hidden md:table-cell">
-                <Badge className={priorityInfo.className}>
-                    <priorityInfo.Icon className="mr-1 h-3 w-3" />
-                    {priorityInfo.text}
-                </Badge>
+                 <PriorityBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
             </TableCell>
             <TableCell className="hidden lg:table-cell">{task.categoryName || '-'}</TableCell>
             <TableCell className={cn("hidden md:table-cell", isOverdue && 'text-destructive font-bold')}>
@@ -206,7 +296,7 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onS
     );
 }
 
-function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange, onRegisterExpense }: { 
+function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, onSelectionChange, onRegisterExpense, onDataChanged }: { 
     task: TaskWithDetails, 
     showProperty?: boolean, 
     onEdit: (task: TaskWithDetails) => void, 
@@ -214,10 +304,8 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
     isSelected?: boolean, 
     onSelectionChange?: (checked: boolean) => void;
     onRegisterExpense: () => void;
+    onDataChanged: () => void;
 }) {
-    const statusInfo = statusMap[task.status];
-    const priorityInfo = priorityMap[task.priority];
-
     const formatDate = (date: string | undefined | null) => {
         if (!date) return 'N/A';
         const parsedDate = parseDateSafely(date);
@@ -251,19 +339,13 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                             {showProperty && <CardDescription className="truncate">{task.description}</CardDescription>}
                         </div>
                     </div>
-                    <Badge className={cn("flex-shrink-0", priorityInfo.className)}>
-                        <priorityInfo.Icon className="mr-1 h-3 w-3" />
-                        {priorityInfo.text}
-                    </Badge>
+                    <PriorityBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
                 </div>
             </CardHeader>
             <CardContent className="p-4 grid grid-cols-1 gap-2 text-sm">
                 <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Estado</span>
-                    <Badge className={statusInfo.className}>
-                        <statusInfo.Icon className="mr-1 h-3 w-3" />
-                        {statusInfo.text}
-                    </Badge>
+                    <StatusBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
                 </div>
                 {task.categoryName && (
                     <div className="flex justify-between items-center">
@@ -385,6 +467,7 @@ export default function TasksList({ tasks, properties, categories, providers, sh
                     onRegisterExpense={() => handleRegisterExpenseClick(task)}
                     isSelected={selectedTaskIds?.includes(task.id)}
                     onSelectionChange={onSelectionChange ? (checked) => onSelectionChange(task.id, checked) : undefined}
+                    onDataChanged={onDataChanged}
                 />
             ))}
         </TableBody>
@@ -416,6 +499,7 @@ export default function TasksList({ tasks, properties, categories, providers, sh
                 onRegisterExpense={() => handleRegisterExpenseClick(task)}
                 isSelected={selectedTaskIds?.includes(task.id)}
                 onSelectionChange={onSelectionChange ? (checked) => onSelectionChange(task.id, checked) : undefined}
+                onDataChanged={onDataChanged}
             />
         ))}
     </div>
