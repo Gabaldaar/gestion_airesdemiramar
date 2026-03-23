@@ -57,7 +57,7 @@ export default function TasksPage() {
 
   return (
     <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:justify-between sm:items-center gap-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-grow">
                 <CardTitle>Gestión de Tareas</CardTitle>
                 <CardDescription>Consulta y filtra las tareas.</CardDescription>

@@ -342,7 +342,7 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                     <PriorityBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
                 </div>
             </CardHeader>
-            <CardContent className="p-4 space-y-2 text-sm">
+            <CardContent className="p-4 grid gap-2 text-sm">
                 <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Estado</span>
                     <StatusBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
