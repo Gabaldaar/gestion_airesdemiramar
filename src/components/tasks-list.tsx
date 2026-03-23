@@ -342,29 +342,27 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                     <PriorityBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
                 </div>
             </CardHeader>
-            <CardContent className="p-4 grid gap-y-2 text-sm">
-                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+            <CardContent className="p-4 space-y-2 text-sm">
+                <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Estado</span>
-                    <div className="flex justify-end">
-                        <StatusBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
-                    </div>
+                    <StatusBadgeUpdater task={task} onTaskUpdated={onDataChanged} />
                 </div>
                 
                 {task.categoryName && (
-                    <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+                    <div className="flex justify-between items-center gap-2">
                         <span className="text-muted-foreground">Categoría</span>
                         <span className="font-medium text-right truncate">{task.categoryName}</span>
                     </div>
                 )}
                 
                 {task.providerName && (
-                    <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+                    <div className="flex justify-between items-center gap-2">
                         <span className="text-muted-foreground flex items-center gap-1 shrink-0"><Wrench className="h-3 w-3"/> Proveedor</span>
                         <span className="font-medium text-right truncate">{task.providerName}</span>
                     </div>
                 )}
 
-                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+                <div className="flex justify-between items-center gap-2">
                     <span className="text-muted-foreground">Fecha Límite</span>
                     <span className={cn("font-medium text-right flex items-center justify-end", isOverdue && "text-destructive")}>
                         {isOverdue && <AlertTriangle className="inline mr-1 h-4 w-4" />}
@@ -372,12 +370,12 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                     </span>
                 </div>
 
-                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+                <div className="flex justify-between items-center gap-2">
                     <span className="text-muted-foreground">Costo Est.</span>
                     <span className={cn("font-medium text-right", task.costCurrency === 'ARS' ? "text-blue-600" : "text-green-600")}>{formatCurrency(task.estimatedCost, task.costCurrency)}</span>
                 </div>
 
-                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+                <div className="flex justify-between items-center gap-2">
                     <span className="text-muted-foreground">Costo Real</span>
                     <span className={cn("font-medium text-right", task.costCurrency === 'ARS' ? "text-blue-600" : "text-green-600")}>{formatCurrency(task.actualCost, task.costCurrency)}</span>
                 </div>
