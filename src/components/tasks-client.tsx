@@ -138,7 +138,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
   return (
     <div className="space-y-4">
       <div className="p-4 border rounded-lg bg-muted/50">
-        <div className="flex flex-col sm:flex-row flex-wrap items-end gap-4">
+        <div className="flex flex-wrap items-end justify-center gap-4">
             <div className="grid gap-2 flex-1 min-w-[180px]">
                 <Label>Propiedad</Label>
                 <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
