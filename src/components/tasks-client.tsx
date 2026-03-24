@@ -24,7 +24,8 @@ interface TasksClientProps {
 
 export default function TasksClient({ initialTasks, properties, providers, categories, scopes, expenseCategories, onDataChanged }: TasksClientProps) {
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
-  const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
+  const [assignmentTypeFilter, setAssignmentTypeFilter] = useState<'all' | 'property' | 'scope' | 'unassigned'>('all');
+  const [assignmentIdFilter, setAssignmentIdFilter] = useState<string>('all');
   const [providerIdFilter, setProviderIdFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all');
@@ -45,9 +46,19 @@ export default function TasksClient({ initialTasks, properties, providers, categ
 
   const filteredTasks = useMemo(() => {
     let currentTasks = tasks.filter(task => {
-      // Property Filter
-      if (propertyIdFilter !== 'all' && task.assignment?.id !== propertyIdFilter) {
-        return false;
+        
+      // Assignment Type Filter
+      if (assignmentTypeFilter !== 'all') {
+        if (assignmentTypeFilter === 'unassigned') {
+          if (task.assignment && task.assignment.id) return false;
+        } else {
+          if (task.assignment?.type !== assignmentTypeFilter) return false;
+        }
+      }
+
+      // Assignment ID Filter (for property or scope)
+      if (assignmentIdFilter !== 'all') {
+        if (task.assignment?.id !== assignmentIdFilter) return false;
       }
       
       // Provider Filter
@@ -94,15 +105,16 @@ export default function TasksClient({ initialTasks, properties, providers, categ
         return priorityOrder[a.priority] - priorityOrder[b.priority];
     });
 
-  }, [tasks, propertyIdFilter, providerIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
+  }, [tasks, assignmentTypeFilter, assignmentIdFilter, providerIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
 
   // Reset selection when filters change
   useEffect(() => {
     setSelectedTaskIds([]);
-  }, [propertyIdFilter, providerIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
+  }, [assignmentTypeFilter, assignmentIdFilter, providerIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
 
   const handleClearFilters = () => {
-    setPropertyIdFilter('all');
+    setAssignmentTypeFilter('all');
+    setAssignmentIdFilter('all');
     setProviderIdFilter('all');
     setStatusFilter('all');
     setPriorityFilter('all');
@@ -142,19 +154,45 @@ export default function TasksClient({ initialTasks, properties, providers, categ
       <div className="p-4 border rounded-lg bg-muted/50">
         <div className="flex flex-wrap items-end justify-center gap-4">
             <div className="grid gap-2 flex-1 min-w-[180px]">
-                <Label>Propiedad</Label>
-                <Select value={propertyIdFilter} onValueChange={setPropertyIdFilter}>
+                <Label>Tipo de Asignación</Label>
+                <Select value={assignmentTypeFilter} onValueChange={(val) => {
+                    setAssignmentTypeFilter(val as 'all' | 'property' | 'scope' | 'unassigned');
+                    setAssignmentIdFilter('all'); // Reset specific filter when type changes
+                }}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Propiedad" />
+                        <SelectValue placeholder="Tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        {properties.map(p => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                        ))}
+                        <SelectItem value="all">Todos los Tipos</SelectItem>
+                        <SelectItem value="property">Propiedad</SelectItem>
+                        <SelectItem value="scope">Ámbito</SelectItem>
+                        <SelectItem value="unassigned">Sin Asignar</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
+            
+            {(assignmentTypeFilter === 'property' || assignmentTypeFilter === 'scope') && (
+                <div className="grid gap-2 flex-1 min-w-[180px]">
+                    <Label>{assignmentTypeFilter === 'property' ? 'Propiedad Específica' : 'Ámbito Específico'}</Label>
+                    <Select value={assignmentIdFilter} onValueChange={setAssignmentIdFilter}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">
+                                {assignmentTypeFilter === 'property' ? 'Todas las Propiedades' : 'Todos los Ámbitos'}
+                            </SelectItem>
+                            {assignmentTypeFilter === 'property' && properties.map(p => (
+                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                            {assignmentTypeFilter === 'scope' && scopes.map(s => (
+                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
+            
             <div className="grid gap-2 flex-1 min-w-[180px]">
                 <Label>Proveedor</Label>
                 <Select value={providerIdFilter} onValueChange={setProviderIdFilter}>
@@ -163,6 +201,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="none">Sin Asignar</SelectItem>
                         {providers.map(p => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                         ))}

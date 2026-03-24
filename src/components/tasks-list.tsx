@@ -391,6 +391,7 @@ export default function TasksList({ tasks, properties, categories, providers, sc
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deletingTask, setDeletingTask] = useState<TaskWithDetails | undefined>(undefined);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const { toast } = useToast();
 
   const { width } = useWindowSize();
   const useCardView = width < 1280; 
@@ -423,8 +424,12 @@ export default function TasksList({ tasks, properties, categories, providers, sc
   };
 
   const handleRegisterExpenseClick = (task: TaskWithDetails) => {
-    if (task.assignment.type !== 'property') {
-        alert("Solo se pueden registrar gastos para tareas asignadas a una propiedad."); // Replace with a better notification
+    if (task.assignment?.type !== 'property') {
+        toast({
+            title: "Acción no permitida",
+            description: "Solo se pueden registrar gastos para tareas asignadas a una propiedad.",
+            variant: "destructive"
+        });
         return;
     }
     onRegisterExpense({

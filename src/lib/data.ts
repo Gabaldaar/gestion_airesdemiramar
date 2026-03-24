@@ -330,7 +330,8 @@ export type TaskAssignment = {
 
 export type Task = {
     id: string;
-    assignment: TaskAssignment;
+    assignment?: TaskAssignment; // New flexible assignment
+    propertyId?: string; // Legacy field for backwards compatibility
     description: string;
     status: TaskStatus;
     priority: TaskPriority;
@@ -1399,27 +1400,42 @@ async function getTaskDetails(task: Task, propertiesMap: Map<string, Property>, 
         return sum + expense.amount; // Default to ARS
     }, 0);
 
-    let assignmentName = 'Asignación Desconocida';
+    let assignmentName = 'Sin Asignar';
     let assignmentColor: string | undefined = undefined;
+    let finalAssignment = task.assignment;
 
-    if (task.assignment) {
-        if (task.assignment.type === 'property') {
-            assignmentName = propertiesMap.get(task.assignment.id)?.name || 'Propiedad Desconocida';
-        } else if (task.assignment.type === 'scope') {
-            const scope = scopesMap.get(task.assignment.id);
+    // Compatibility for old tasks that only have propertyId
+    if (!finalAssignment && task.propertyId) {
+        finalAssignment = {
+            type: 'property',
+            id: task.propertyId,
+        };
+    }
+
+    if (finalAssignment) {
+        if (finalAssignment.type === 'property') {
+            assignmentName = propertiesMap.get(finalAssignment.id)?.name || 'Propiedad Desconocida';
+        } else if (finalAssignment.type === 'scope') {
+            const scope = scopesMap.get(finalAssignment.id);
             assignmentName = scope?.name || 'Ámbito Desconocido';
             assignmentColor = scope?.color;
         }
     }
-
-    return {
+    
+    const detailedTask: TaskWithDetails = {
         ...task,
-        actualCost: actualCost, // Use the newly calculated cost
+        assignment: finalAssignment, // Ensure the normalized assignment is on the object
+        actualCost: actualCost,
         assignmentName,
         assignmentColor,
         categoryName: task.categoryId ? categoriesMap.get(task.categoryId) : undefined,
         providerName: task.providerId ? providersMap.get(task.providerId) : undefined,
     };
+    
+    // Clean up legacy field if it exists
+    delete (detailedTask as any).propertyId;
+
+    return detailedTask;
 }
 
 export async function getTasks(): Promise<TaskWithDetails[]> {
