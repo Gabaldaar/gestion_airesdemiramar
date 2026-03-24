@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -62,8 +60,16 @@ export default function TasksClient({ initialTasks, properties, providers, categ
       }
       
       // Provider Filter
-      if (providerIdFilter !== 'all' && task.providerId !== providerIdFilter) {
-        return false;
+      if (providerIdFilter !== 'all') {
+        if (providerIdFilter === 'none') {
+            if (task.providerId) { // If it has any providerId, filter it out.
+                return false;
+            }
+        } else {
+            if (task.providerId !== providerIdFilter) { // If it's a specific provider, it must match.
+                return false;
+            }
+        }
       }
 
       // Status Filter
@@ -106,6 +112,10 @@ export default function TasksClient({ initialTasks, properties, providers, categ
     });
 
   }, [tasks, assignmentTypeFilter, assignmentIdFilter, providerIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   // Reset selection when filters change
   useEffect(() => {
