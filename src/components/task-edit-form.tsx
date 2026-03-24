@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -88,7 +87,7 @@ export function TaskEditForm({
   const [costCurrency, setCostCurrency] = useState<'ARS' | 'USD'>(task.costCurrency || 'ARS');
   const [showConfirmExpenseDialog, setShowConfirmExpenseDialog] = useState(false);
   const [formDataForExpense, setFormDataForExpense] = useState<FormData | null>(null);
-  const [assignmentType, setAssignmentType] = useState<'property' | 'scope'>(task.assignment.type);
+  const [assignmentType, setAssignmentType] = useState<'property' | 'scope'>(task.assignment?.type || 'property');
 
   const formAction = (formData: FormData) => {
     const newStatus = formData.get('status') as TaskStatus;
@@ -147,7 +146,7 @@ export function TaskEditForm({
         setDueDate(parseDateSafely(task.dueDate));
         setStatus(task.status);
         setCostCurrency(task.costCurrency || 'ARS');
-        setAssignmentType(task.assignment.type);
+        setAssignmentType(task.assignment?.type || 'property');
     }
   }, [isOpen, task]);
 
@@ -179,7 +178,7 @@ export function TaskEditForm({
                 {assignmentType === 'property' && (
                     <div className="space-y-2">
                         <Label htmlFor="propertyId">Propiedad</Label>
-                        <Select name="propertyId" defaultValue={task.assignment.type === 'property' ? task.assignment.id : undefined} required>
+                        <Select name="propertyId" defaultValue={task.assignment?.type === 'property' ? task.assignment.id : undefined} required>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona una propiedad" />
                             </SelectTrigger>
@@ -196,7 +195,7 @@ export function TaskEditForm({
                 {assignmentType === 'scope' && (
                     <div className="space-y-2">
                         <Label htmlFor="scopeId">Ámbito</Label>
-                        <Select name="scopeId" defaultValue={task.assignment.type === 'scope' ? task.assignment.id : undefined} required>
+                        <Select name="scopeId" defaultValue={task.assignment?.type === 'scope' ? task.assignment.id : undefined} required>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un ámbito" />
                             </SelectTrigger>
