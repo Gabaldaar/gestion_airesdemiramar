@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings, Origin, getOrigins, getAlertSettings, AlertSettings, getTaskCategories, TaskCategory, getProviderCategories, ProviderCategory } from "@/lib/data";
+import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings, Origin, getOrigins, getAlertSettings, AlertSettings, getTaskCategories, TaskCategory, getProviderCategories, ProviderCategory, getTaskScopes, TaskScope } from "@/lib/data";
 import { PropertyEditForm } from "@/components/property-edit-form";
 import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
@@ -21,11 +21,13 @@ import { useEffect, useState, useCallback } from "react";
 import OriginManager from "@/components/origin-manager";
 import TaskCategoryManager from "@/components/task-category-manager";
 import ProviderCategoryManager from "@/components/provider-category-manager";
+import TaskScopeManager from "@/components/task-scope-manager";
 
 interface SettingsData {
     properties: Property[];
     expenseCategories: ExpenseCategory[];
     taskCategories: TaskCategory[];
+    taskScopes: TaskScope[];
     providerCategories: ProviderCategory[];
     emailSettings: EmailSettings | null;
     alertSettings: AlertSettings | null;
@@ -40,7 +42,7 @@ export default function SettingsPage() {
     const fetchData = useCallback(async () => {
         if (user) {
             setLoading(true);
-            const [properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins] = await Promise.all([
+            const [properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins, taskScopes] = await Promise.all([
                 getProperties(),
                 getExpenseCategories(),
                 getTaskCategories(),
@@ -48,8 +50,9 @@ export default function SettingsPage() {
                 getEmailSettings(),
                 getAlertSettings(),
                 getOrigins(),
+                getTaskScopes(),
             ]);
-            setData({ properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins });
+            setData({ properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins, taskScopes });
             setLoading(false);
         }
     }, [user]);
@@ -62,7 +65,7 @@ export default function SettingsPage() {
         return <p>Cargando configuración...</p>
     }
     
-    const { properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins } = data;
+    const { properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins, taskScopes } = data;
 
   return (
     <Tabs defaultValue="properties" className="space-y-4">
@@ -71,12 +74,13 @@ export default function SettingsPage() {
                 <h2 className="text-3xl font-bold tracking-tight text-primary">Configuración</h2>
                 <p className="text-muted-foreground">Administra los datos de tu aplicación.</p>
             </div>
-            <TabsList className="grid w-full sm:w-auto grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 mb-4 sm:mb-0">
+            <TabsList className="grid w-full sm:w-auto grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 mb-4 sm:mb-0">
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 <TabsTrigger value="origins">Orígenes</TabsTrigger>
                 <TabsTrigger value="expense-categories">Cat. Gastos</TabsTrigger>
                 <TabsTrigger value="provider-categories">Cat. Prov.</TabsTrigger>
                 <TabsTrigger value="task-categories">Cat. Tareas</TabsTrigger>
+                <TabsTrigger value="task-scopes">Ámbitos</TabsTrigger>
                 <TabsTrigger value="email">Email</TabsTrigger>
                 <TabsTrigger value="alerts">Alertas</TabsTrigger>
             </TabsList>
@@ -158,6 +162,19 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                     <TaskCategoryManager initialCategories={taskCategories} onCategoriesChanged={fetchData} />
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="task-scopes">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Ámbitos de Tareas</CardTitle>
+                    <CardDescription>
+                        Crea y gestiona los contextos para tareas no asociadas a una propiedad (ej. Contabilidad, Marketing).
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <TaskScopeManager initialScopes={taskScopes} onScopesChanged={fetchData} />
                 </CardContent>
             </Card>
         </TabsContent>

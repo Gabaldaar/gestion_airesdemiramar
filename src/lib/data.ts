@@ -316,10 +316,21 @@ export type Provider = {
     rating?: number;
 };
 
+// New types for flexible task assignment
+export type TaskScope = {
+    id: string;
+    name: string;
+    color: string;
+};
+
+export type TaskAssignment = {
+    type: 'property' | 'scope';
+    id: string;
+};
 
 export type Task = {
     id: string;
-    propertyId: string;
+    assignment: TaskAssignment;
     description: string;
     status: TaskStatus;
     priority: TaskPriority;
@@ -333,7 +344,8 @@ export type Task = {
 };
 
 export type TaskWithDetails = Task & {
-    propertyName: string;
+    assignmentName: string;
+    assignmentColor?: string;
     categoryName?: string;
     providerName?: string;
 }
@@ -356,6 +368,7 @@ const tasksCollection = collection(db, 'tasks');
 const taskCategoriesCollection = collection(db, 'taskCategories');
 const providersCollection = collection(db, 'providers');
 const providerCategoriesCollection = collection(db, 'providerCategories');
+const taskScopesCollection = collection(db, 'taskScopes');
 
 
 // Helper function to add default data only if the collection is empty
@@ -461,7 +474,7 @@ export async function deleteProperty(propertyId: string): Promise<void> {
     propertyExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
     
     // 6. Find and delete all tasks for the property
-    const tasksQuery = query(tasksCollection, where('propertyId', '==', propertyId));
+    const tasksQuery = query(tasksCollection, where('assignment.id', '==', propertyId), where('assignment.type', '==', 'property'));
     const tasksSnapshot = await getDocs(tasksQuery);
     tasksSnapshot.forEach(doc => batch.delete(doc.ref));
 
@@ -1348,8 +1361,32 @@ export async function deleteTaskCategory(id: string): Promise<void> {
     await deleteDoc(docRef);
 }
 
+// Task Scopes
+export async function getTaskScopes(): Promise<TaskScope[]> {
+    const q = query(taskScopesCollection, orderBy("name"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as TaskScope[];
+}
 
-async function getTaskDetails(task: Task, propertiesMap: Map<string, string>, categoriesMap: Map<string, string>, providersMap: Map<string, string>): Promise<TaskWithDetails> {
+export async function addTaskScope(scope: Omit<TaskScope, 'id'>): Promise<TaskScope> {
+    const docRef = await addDoc(taskScopesCollection, scope);
+    return { id: docRef.id, ...scope };
+}
+
+export async function updateTaskScope(updatedScope: TaskScope): Promise<TaskScope> {
+    const { id, ...data } = updatedScope;
+    const docRef = doc(db, 'taskScopes', id);
+    await updateDoc(docRef, data);
+    return updatedScope;
+}
+
+export async function deleteTaskScope(id: string): Promise<void> {
+    const docRef = doc(db, 'taskScopes', id);
+    await deleteDoc(docRef);
+}
+
+
+async function getTaskDetails(task: Task, propertiesMap: Map<string, Property>, scopesMap: Map<string, TaskScope>, categoriesMap: Map<string, string>, providersMap: Map<string, string>): Promise<TaskWithDetails> {
     // Re-calculate actualCost on the fly by summing related expenses
     const expensesQuery = query(propertyExpensesCollection, where('taskId', '==', task.id));
     const expensesSnapshot = await getDocs(expensesQuery);
@@ -1362,59 +1399,78 @@ async function getTaskDetails(task: Task, propertiesMap: Map<string, string>, ca
         return sum + expense.amount; // Default to ARS
     }, 0);
 
+    let assignmentName = 'Asignación Desconocida';
+    let assignmentColor: string | undefined = undefined;
+
+    if (task.assignment) {
+        if (task.assignment.type === 'property') {
+            assignmentName = propertiesMap.get(task.assignment.id)?.name || 'Propiedad Desconocida';
+        } else if (task.assignment.type === 'scope') {
+            const scope = scopesMap.get(task.assignment.id);
+            assignmentName = scope?.name || 'Ámbito Desconocido';
+            assignmentColor = scope?.color;
+        }
+    }
 
     return {
         ...task,
         actualCost: actualCost, // Use the newly calculated cost
-        propertyName: propertiesMap.get(task.propertyId) || 'Propiedad Desconocida',
+        assignmentName,
+        assignmentColor,
         categoryName: task.categoryId ? categoriesMap.get(task.categoryId) : undefined,
         providerName: task.providerId ? providersMap.get(task.providerId) : undefined,
     };
 }
 
 export async function getTasks(): Promise<TaskWithDetails[]> {
-    const [tasksSnap, properties, categories, providers] = await Promise.all([
+    const [tasksSnap, properties, scopes, categories, providers] = await Promise.all([
         getDocs(tasksCollection),
         getProperties(),
+        getTaskScopes(),
         getTaskCategories(),
         getProviders(),
     ]);
 
-    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+    const propertiesMap = new Map(properties.map(p => [p.id, p]));
+    const scopesMap = new Map(scopes.map(s => [s.id, s]));
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
     const providersMap = new Map(providers.map(p => [p.id, p.name]));
     
     const allTasks = tasksSnap.docs.map(processDoc) as Task[];
-    const detailedTasks = await Promise.all(allTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap, providersMap)));
+    const detailedTasks = await Promise.all(allTasks.map(task => getTaskDetails(task, propertiesMap, scopesMap, categoriesMap, providersMap)));
 
     return detailedTasks;
 }
 
 export async function getTasksByPropertyId(propertyId: string): Promise<TaskWithDetails[]> {
-    const [properties, categories, providers] = await Promise.all([
+    const [properties, scopes, categories, providers] = await Promise.all([
         getProperties(),
+        getTaskScopes(),
         getTaskCategories(),
         getProviders(),
     ]);
-    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+    const propertiesMap = new Map(properties.map(p => [p.id, p]));
+    const scopesMap = new Map(scopes.map(s => [s.id, s]));
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
     const providersMap = new Map(providers.map(p => [p.id, p.name]));
 
-    const q = query(tasksCollection, where('propertyId', '==', propertyId));
+    const q = query(tasksCollection, where('assignment.id', '==', propertyId));
     const snapshot = await getDocs(q);
-    const propertyTasks = snapshot.docs.map(processDoc) as Task[];
+    const propertyTasks = snapshot.docs.map(processDoc).filter(t => t.assignment?.type === 'property') as Task[];
     
-    const detailedTasks = await Promise.all(propertyTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap, providersMap)));
+    const detailedTasks = await Promise.all(propertyTasks.map(task => getTaskDetails(task, propertiesMap, scopesMap, categoriesMap, providersMap)));
     return detailedTasks;
 }
 
 export async function getTasksByProviderId(providerId: string): Promise<TaskWithDetails[]> {
-    const [properties, categories, providers] = await Promise.all([
+    const [properties, scopes, categories, providers] = await Promise.all([
         getProperties(),
+        getTaskScopes(),
         getTaskCategories(),
         getProviders(),
     ]);
-    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+    const propertiesMap = new Map(properties.map(p => [p.id, p]));
+    const scopesMap = new Map(scopes.map(s => [s.id, s]));
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
     const providersMap = new Map(providers.map(p => [p.id, p.name]));
 
@@ -1422,7 +1478,7 @@ export async function getTasksByProviderId(providerId: string): Promise<TaskWith
     const snapshot = await getDocs(q);
     const providerTasks = snapshot.docs.map(processDoc) as Task[];
     
-    const detailedTasks = await Promise.all(providerTasks.map(task => getTaskDetails(task, propertiesMap, categoriesMap, providersMap)));
+    const detailedTasks = await Promise.all(providerTasks.map(task => getTaskDetails(task, propertiesMap, scopesMap, categoriesMap, providersMap)));
     
     // Sort manually to avoid needing a composite index
     detailedTasks.sort((a, b) => {

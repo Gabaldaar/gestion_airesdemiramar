@@ -51,6 +51,10 @@ import {
   getTenantById,
   updateTenantPartial,
   updateProviderPartial,
+  // New scope functions
+  addTaskScope as addTaskScopeDb,
+  updateTaskScope as updateTaskScopeDb,
+  deleteTaskScope as deleteTaskScopeDb,
   Tenant,
   Booking,
   PropertyExpense,
@@ -68,6 +72,7 @@ import {
   TaskPriority,
   Provider,
   ProviderCategory,
+  TaskAssignment
 } from './data';
 import { db } from './firebase';
 import { collection, doc, getDoc, getDocs, query, where, writeBatch, setDoc } from 'firebase/firestore';
@@ -87,8 +92,7 @@ export interface RegistrarCobroPayload {
 }
 
 
-const revalidatePathsAfterAction = (propertyId: string) => {
-  revalidatePath(`/properties/${propertyId}`);
+const revalidatePathsAfterAction = (propertyId?: string | null) => {
   revalidatePath('/bookings');
   revalidatePath('/'); // Revalidate dashboard
   revalidatePath('/reports');
@@ -98,6 +102,7 @@ const revalidatePathsAfterAction = (propertyId: string) => {
   revalidatePath('/tasks');
   revalidatePath('/providers');
   if (propertyId) {
+      revalidatePath(`/properties/${propertyId}`);
       revalidatePath(`/api/ical/${propertyId}`);
   }
 };
@@ -1303,7 +1308,71 @@ export async function deleteTaskCategory(previousState: any, formData: FormData)
   }
 }
 
+export async function addTaskScope(previousState: any, formData: FormData) {
+  const name = formData.get('name') as string;
+  const color = formData.get('color') as string;
+  if (!name || !color) {
+    return { success: false, message: 'El nombre y el color son obligatorios.' };
+  }
+  try {
+    await addTaskScopeDb({ name, color });
+    revalidatePath('/settings');
+    return { success: true, message: 'Ámbito añadido.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function updateTaskScope(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const name = formData.get('name') as string;
+  const color = formData.get('color') as string;
+  if (!id || !name || !color) {
+    return { success: false, message: 'Faltan datos para actualizar el ámbito.' };
+  }
+  try {
+    await updateTaskScopeDb({ id, name, color });
+    revalidatePath('/settings');
+    return { success: true, message: 'Ámbito actualizado.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function deleteTaskScope(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    return { success: false, message: 'ID de ámbito no válido.' };
+  }
+  try {
+    // Check if the scope is in use
+    const tasksQuery = query(collection(db, 'tasks'), where('assignment.id', '==', id), where('assignment.type', '==', 'scope'));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    if (!tasksSnapshot.empty) {
+      return { success: false, message: `No se puede eliminar. El ámbito está siendo utilizado por ${tasksSnapshot.size} tarea(s).` };
+    }
+    
+    await deleteTaskScopeDb(id);
+    revalidatePath('/settings');
+    return { success: true, message: 'Ámbito eliminado.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
 export async function addTask(previousState: any, formData: FormData) {
+  const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
+  const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
+
+  if (!assignmentType || !assignmentId) {
+    return { success: false, message: 'Se debe seleccionar una asignación (Propiedad o Ámbito).' };
+  }
+
+  const assignment: TaskAssignment = {
+    type: assignmentType,
+    id: assignmentId,
+  };
+
   const categoryIdValue = formData.get('categoryId') as string;
   const dueDateValue = formData.get('dueDate') as string;
   const estimatedCostValue = formData.get('estimatedCost') as string;
@@ -1311,7 +1380,7 @@ export async function addTask(previousState: any, formData: FormData) {
   const providerIdValue = formData.get('providerId') as string;
 
   const taskData: Partial<Task> = {
-    propertyId: formData.get('propertyId') as string,
+    assignment,
     description: formData.get('description') as string,
     status: (formData.get('status') as TaskStatus) || 'pending',
     priority: (formData.get('priority') as TaskPriority) || 'medium',
@@ -1332,13 +1401,13 @@ export async function addTask(previousState: any, formData: FormData) {
     taskData.actualCost = actualCost;
   }
 
-  if (!taskData.propertyId || !taskData.description) {
-    return { success: false, message: 'La propiedad y la descripción son obligatorias.' };
+  if (!taskData.assignment || !taskData.description) {
+    return { success: false, message: 'La asignación y la descripción son obligatorias.' };
   }
 
   try {
     await addTaskDb(taskData as Omit<Task, 'id'>);
-    revalidatePathsAfterAction(taskData.propertyId!);
+    revalidatePathsAfterAction(taskData.assignment.type === 'property' ? taskData.assignment.id : null);
     return { success: true, message: 'Tarea añadida correctamente.' };
   } catch (dbError: any) {
     return { success: false, message: `Error de base de datos: ${dbError.message}` };
@@ -1351,14 +1420,15 @@ export async function updateTask(previousState: any, formData: FormData) {
     return { success: false, message: 'ID de tarea no proporcionado.' };
   }
 
-  const propertyId = formData.get('propertyId') as string;
-  if (!propertyId) {
-      return { success: false, message: 'ID de propiedad no proporcionado para revalidación.' };
-  }
+  const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
+  const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
 
   const taskData: { [key: string]: any } = {};
+  
+  if(assignmentType && assignmentId) {
+    taskData.assignment = { type: assignmentType, id: assignmentId };
+  }
 
-  // Dynamically build the update object based on what's in formData
   if (formData.has('description')) taskData.description = formData.get('description');
   if (formData.has('status')) taskData.status = formData.get('status');
   if (formData.has('priority')) taskData.priority = formData.get('priority');
@@ -1389,11 +1459,10 @@ export async function updateTask(previousState: any, formData: FormData) {
     const estimatedCost = estimatedCostValue ? parseFloat(estimatedCostValue) : undefined;
     taskData.estimatedCost = (estimatedCost !== undefined && !isNaN(estimatedCost)) ? estimatedCost : null;
   }
-  
-  // actualCost is calculated, not set via form.
 
   try {
     await updateTaskDb({ id, ...taskData });
+    const propertyId = taskData.assignment?.type === 'property' ? taskData.assignment.id : null;
     revalidatePathsAfterAction(propertyId);
     return { success: true, message: 'Tarea actualizada.' };
   } catch (dbError: any) {
@@ -1403,13 +1472,15 @@ export async function updateTask(previousState: any, formData: FormData) {
 
 export async function deleteTask(previousState: any, formData: FormData) {
     const id = formData.get('id') as string;
-    const propertyId = formData.get('propertyId') as string;
-    if (!id || !propertyId) {
-        return { success: false, message: 'ID de tarea o propiedad no válido.' };
+    if (!id) {
+        return { success: false, message: 'ID de tarea no válido.' };
     }
 
     try {
+        const taskDoc = await getDoc(doc(db, 'tasks', id));
+        const task = taskDoc.data() as Task;
         await deleteTaskDb(id);
+        const propertyId = task.assignment?.type === 'property' ? task.assignment.id : null;
         revalidatePathsAfterAction(propertyId);
         return { success: true, message: 'Tarea eliminada.' };
     } catch (error: any) {
