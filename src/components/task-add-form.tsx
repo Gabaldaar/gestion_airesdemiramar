@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addTask } from '@/lib/actions';
-import { Property, Provider, TaskCategory } from '@/lib/data';
+import { Property, Provider, TaskCategory, TaskScope } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -50,6 +50,7 @@ export function TaskAddForm({
     properties,
     providers,
     categories,
+    scopes,
     children,
     isOpen,
     onOpenChange,
@@ -59,6 +60,7 @@ export function TaskAddForm({
     properties?: Property[],
     providers?: Provider[],
     categories: TaskCategory[],
+    scopes: TaskScope[],
     children?: React.ReactNode,
     isOpen: boolean,
     onOpenChange: (isOpen: boolean) => void;
@@ -69,6 +71,7 @@ export function TaskAddForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const { toast } = useToast();
+  const [assignmentType, setAssignmentType] = useState<'property' | 'scope'>(propertyId ? 'property' : 'scope');
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -80,17 +83,16 @@ export function TaskAddForm({
   const resetForm = useCallback(() => {
     formRef.current?.reset();
     setDueDate(undefined);
+    setAssignmentType(propertyId ? 'property' : 'scope');
     setState(initialState);
-  }, []);
+  }, [propertyId]);
 
-  // When the dialog is closed from outside (e.g., clicking cancel, overlay, or X button)
   useEffect(() => {
-    if (!isOpen) {
-      resetForm();
+    if (isOpen) {
+        resetForm();
     }
   }, [isOpen, resetForm]);
 
-  // After form submission
   useEffect(() => {
     if (state.message) {
       toast({
@@ -101,7 +103,7 @@ export function TaskAddForm({
     }
     if (state.success) {
       onTaskAdded();
-      onOpenChange(false); // Close the dialog
+      onOpenChange(false);
     }
   }, [state, onTaskAdded, onOpenChange, toast]);
 
@@ -118,7 +120,18 @@ export function TaskAddForm({
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="dueDate" value={dueDate?.toISOString().split('T')[0] || ''} />
             <div className="grid gap-4 py-4">
-                {properties && (
+                <div className="space-y-2">
+                    <Label htmlFor="assignmentType">Tipo de Asignación</Label>
+                    <Select name="assignmentType" value={assignmentType} onValueChange={(v) => setAssignmentType(v as 'property' | 'scope')} required>
+                        <SelectTrigger><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                            {properties && <SelectItem value="property">Propiedad</SelectItem>}
+                            <SelectItem value="scope">Ámbito</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {assignmentType === 'property' && properties && (
                     <div className="space-y-2">
                         <Label htmlFor="propertyId">Propiedad</Label>
                         <Select name="propertyId" defaultValue={propertyId} required>
@@ -135,8 +148,26 @@ export function TaskAddForm({
                         </Select>
                     </div>
                 )}
-                {!properties && propertyId && <input type="hidden" name="propertyId" value={propertyId} />}
-                
+                 {!properties && propertyId && assignmentType === 'property' && <input type="hidden" name="propertyId" value={propertyId} />}
+
+                {assignmentType === 'scope' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="scopeId">Ámbito</Label>
+                        <Select name="scopeId" required>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un ámbito" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {scopes.map(scope => (
+                                    <SelectItem key={scope.id} value={scope.id}>
+                                        {scope.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+
                 <div className="space-y-2">
                     <Label htmlFor="description">Descripción</Label>
                     <Input id="description" name="description" required />

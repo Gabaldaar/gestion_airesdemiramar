@@ -321,6 +321,7 @@ export default function PropertyDetailPage() {
                     <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
                     <TaskAddForm 
                         propertyId={property.id} 
+                        properties={properties}
                         providers={providers} 
                         categories={taskCategories} 
                         scopes={taskScopes}
@@ -356,7 +357,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <TasksList tasks={tasks} properties={properties} providers={providers} categories={taskCategories} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
+                    <TasksList tasks={tasks} properties={properties} providers={providers} categories={taskCategories} scopes={taskScopes} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
                 </CardContent>
             </Card>
             </TabsContent>

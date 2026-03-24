@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -18,7 +19,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TaskWithDetails, Property, TaskCategory, Task, TaskStatus, TaskPriority, Provider } from "@/lib/data";
+import { TaskWithDetails, Property, TaskCategory, Task, TaskStatus, TaskPriority, Provider, TaskScope } from "@/lib/data";
 import { format, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, parseDateSafely } from "@/lib/utils";
@@ -48,6 +49,7 @@ interface TasksListProps {
   properties: Property[];
   categories: TaskCategory[];
   providers: Provider[];
+  scopes: TaskScope[];
   showProperty?: boolean;
   propertyId?: string;
   onDataChanged: () => void;
@@ -80,7 +82,6 @@ function StatusBadgeUpdater({ task, onTaskUpdated }: { task: TaskWithDetails, on
         startTransition(async () => {
             const formData = new FormData();
             formData.append('id', task.id);
-            formData.append('propertyId', task.propertyId);
             formData.append('status', newStatus);
             const result = await updateTask({success: false, message: ''}, formData);
             if (result.success) {
@@ -124,7 +125,6 @@ function PriorityBadgeUpdater({ task, onTaskUpdated }: { task: TaskWithDetails, 
         startTransition(async () => {
             const formData = new FormData();
             formData.append('id', task.id);
-            formData.append('propertyId', task.propertyId);
             formData.append('priority', newPriority);
             const result = await updateTask({success: false, message: ''}, formData);
             if (result.success) {
@@ -264,7 +264,7 @@ function TaskRow({ task, showProperty = false, onEdit, onDelete, isSelected, onS
                     />
                 </TableCell>
             )}
-            {showProperty && <TableCell className="font-bold">{task.propertyName}</TableCell>}
+            {showProperty && <TableCell className="font-bold">{task.assignmentName}</TableCell>}
             <TableCell className="max-w-[250px] truncate cursor-default">
                  <TooltipProvider>
                     <Tooltip>
@@ -333,7 +333,7 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
                         />
                     )}
                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base truncate">{showProperty ? task.propertyName : task.description}</CardTitle>
+                        <CardTitle className="text-base truncate">{showProperty ? task.assignmentName : task.description}</CardTitle>
                         {showProperty && <CardDescription className="truncate">{task.description}</CardDescription>}
                     </div>
                 </div>
@@ -386,7 +386,7 @@ function TaskCard({ task, showProperty = false, onEdit, onDelete, isSelected, on
     );
 }
 
-export default function TasksList({ tasks, properties, categories, providers, showProperty = false, propertyId, onDataChanged, onRegisterExpense, selectedTaskIds, onSelectionChange, onSelectAll }: TasksListProps) {
+export default function TasksList({ tasks, properties, categories, providers, scopes, showProperty = false, propertyId, onDataChanged, onRegisterExpense, selectedTaskIds, onSelectionChange, onSelectAll }: TasksListProps) {
   const [editingTask, setEditingTask] = useState<TaskWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deletingTask, setDeletingTask] = useState<TaskWithDetails | undefined>(undefined);
@@ -417,22 +417,26 @@ export default function TasksList({ tasks, properties, categories, providers, sh
             currency: task.costCurrency || 'ARS',
             taskId: task.id,
             providerId: task.providerId,
-        }, task.propertyId);
+        }, task.assignment.id); // Assuming propertyId is in assignment.id for property tasks
     }
     onDataChanged();
   };
 
   const handleRegisterExpenseClick = (task: TaskWithDetails) => {
+    if (task.assignment.type !== 'property') {
+        alert("Solo se pueden registrar gastos para tareas asignadas a una propiedad."); // Replace with a better notification
+        return;
+    }
     onRegisterExpense({
         amount: task.estimatedCost || 0,
         description: `Gasto por tarea: ${task.description}`,
         currency: task.costCurrency || 'ARS',
         taskId: task.id,
         providerId: task.providerId,
-        propertyName: task.propertyName,
+        propertyName: task.assignmentName,
         providerName: task.providerName,
         amountPaidSoFar: task.actualCost,
-    }, task.propertyId);
+    }, task.assignment.id);
   };
 
 
@@ -449,7 +453,7 @@ export default function TasksList({ tasks, properties, categories, providers, sh
                         />
                     </TableHead>
                 )}
-                {showProperty && <TableHead>Propiedad</TableHead>}
+                {showProperty && <TableHead>Asignación</TableHead>}
                 <TableHead>Descripción</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="hidden md:table-cell">Prioridad</TableHead>
@@ -519,6 +523,7 @@ export default function TasksList({ tasks, properties, categories, providers, sh
                 properties={properties}
                 categories={categories}
                 providers={providers}
+                scopes={scopes}
                 isOpen={isEditOpen}
                 onOpenChange={setIsEditOpen}
                 onTaskUpdated={onDataChanged}

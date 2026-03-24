@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateTask } from '@/lib/actions';
-import { Property, TaskCategory, TaskPriority, TaskStatus, TaskWithDetails, Task, Provider } from '@/lib/data';
+import { Property, TaskCategory, TaskPriority, TaskStatus, TaskWithDetails, Task, Provider, TaskScope } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -61,6 +61,7 @@ export function TaskEditForm({
     properties,
     categories,
     providers,
+    scopes,
     isOpen,
     onOpenChange,
     onTaskUpdated,
@@ -70,6 +71,7 @@ export function TaskEditForm({
     properties: Property[];
     categories: TaskCategory[];
     providers?: Provider[];
+    scopes: TaskScope[];
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     onTaskUpdated: () => void;
@@ -82,23 +84,20 @@ export function TaskEditForm({
   
   const [dueDate, setDueDate] = useState<Date | undefined>(parseDateSafely(task.dueDate));
   const [status, setStatus] = useState<TaskStatus>(task.status);
-  const [actualCost, setActualCost] = useState<string>(''); // Actual cost is now registered via expenses
+  const [actualCost, setActualCost] = useState<string>('');
   const [costCurrency, setCostCurrency] = useState<'ARS' | 'USD'>(task.costCurrency || 'ARS');
   const [showConfirmExpenseDialog, setShowConfirmExpenseDialog] = useState(false);
   const [formDataForExpense, setFormDataForExpense] = useState<FormData | null>(null);
+  const [assignmentType, setAssignmentType] = useState<'property' | 'scope'>(task.assignment.type);
 
   const formAction = (formData: FormData) => {
-    // Check if status is changing to 'completed' and there's a cost
     const newStatus = formData.get('status') as TaskStatus;
     const estimatedCost = parseFloat(formData.get('estimatedCost') as string);
     
-    // We base the confirmation on estimatedCost, as actualCost is not entered manually anymore.
-    // The dialog will then be used to create the expense.
     if (task.status !== 'completed' && newStatus === 'completed' && estimatedCost > 0) {
         setFormDataForExpense(formData);
         setShowConfirmExpenseDialog(true);
     } else {
-        // Proceed with normal update
         submitUpdate(formData);
     }
   };
@@ -122,15 +121,14 @@ export function TaskEditForm({
   
   const handleConfirmExpense = () => {
     if (formDataForExpense) {
-        // Create an object from the form data to pass to the expense registration function
         const taskDataForExpense = {
             ...task,
             estimatedCost: parseFloat(formDataForExpense.get('estimatedCost') as string) || 0,
             costCurrency: (formDataForExpense.get('costCurrency') as 'ARS' | 'USD') || 'ARS',
             providerId: formDataForExpense.get('providerId') as string,
         };
-        onTaskCompletedWithExpense(taskDataForExpense); // This will open the expense form
-        submitUpdate(formDataForExpense); // We still save the task changes
+        onTaskCompletedWithExpense(taskDataForExpense);
+        submitUpdate(formDataForExpense);
     }
     setShowConfirmExpenseDialog(false);
     setFormDataForExpense(null);
@@ -144,6 +142,15 @@ export function TaskEditForm({
     setFormDataForExpense(null);
   }
 
+  useEffect(() => {
+    if (isOpen) {
+        setDueDate(parseDateSafely(task.dueDate));
+        setStatus(task.status);
+        setCostCurrency(task.costCurrency || 'ARS');
+        setAssignmentType(task.assignment.type);
+    }
+  }, [isOpen, task]);
+
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -151,14 +158,58 @@ export function TaskEditForm({
         <DialogHeader>
           <DialogTitle>Editar Tarea</DialogTitle>
           <DialogDescription>
-            Actualiza los datos de la tarea para la propiedad <span className="font-semibold">{task.propertyName}</span>.
+            Actualiza los datos de la tarea para la asignación <span className="font-semibold">{task.assignmentName}</span>.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="id" value={task.id} />
-            <input type="hidden" name="propertyId" value={task.propertyId} />
             <input type="hidden" name="dueDate" value={dueDate?.toISOString().split('T')[0] || ''} />
             <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="assignmentType">Tipo de Asignación</Label>
+                    <Select name="assignmentType" value={assignmentType} onValueChange={(v) => setAssignmentType(v as 'property' | 'scope')} required>
+                        <SelectTrigger><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="property">Propiedad</SelectItem>
+                            <SelectItem value="scope">Ámbito</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {assignmentType === 'property' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="propertyId">Propiedad</Label>
+                        <Select name="propertyId" defaultValue={task.assignment.type === 'property' ? task.assignment.id : undefined} required>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona una propiedad" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {properties.map(prop => (
+                                    <SelectItem key={prop.id} value={prop.id}>
+                                        {prop.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+                {assignmentType === 'scope' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="scopeId">Ámbito</Label>
+                        <Select name="scopeId" defaultValue={task.assignment.type === 'scope' ? task.assignment.id : undefined} required>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un ámbito" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {scopes.map(scope => (
+                                    <SelectItem key={scope.id} value={scope.id}>
+                                        {scope.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                 <div className="space-y-2">
                     <Label htmlFor="description">Descripción</Label>
                     <Input id="description" name="description" defaultValue={task.description} required />

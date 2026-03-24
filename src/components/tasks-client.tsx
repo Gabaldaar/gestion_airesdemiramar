@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { TaskWithDetails, Property, Provider, TaskCategory, TaskStatus, TaskPriority, ExpenseCategory } from '@/lib/data';
+import { TaskWithDetails, Property, Provider, TaskCategory, TaskStatus, TaskPriority, ExpenseCategory, TaskScope } from '@/lib/data';
 import TasksList from '@/components/tasks-list';
 import { ExpensePreloadData } from '@/components/expense-add-form';
 import { Button } from '@/components/ui/button';
@@ -16,11 +17,12 @@ interface TasksClientProps {
   properties: Property[];
   providers: Provider[];
   categories: TaskCategory[];
+  scopes: TaskScope[];
   expenseCategories: ExpenseCategory[];
   onDataChanged: () => void;
 }
 
-export default function TasksClient({ initialTasks, properties, providers, categories, expenseCategories, onDataChanged }: TasksClientProps) {
+export default function TasksClient({ initialTasks, properties, providers, categories, scopes, expenseCategories, onDataChanged }: TasksClientProps) {
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
   const [providerIdFilter, setProviderIdFilter] = useState<string>('all');
@@ -44,7 +46,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
   const filteredTasks = useMemo(() => {
     let currentTasks = tasks.filter(task => {
       // Property Filter
-      if (propertyIdFilter !== 'all' && task.propertyId !== propertyIdFilter) {
+      if (propertyIdFilter !== 'all' && task.assignment?.id !== propertyIdFilter) {
         return false;
       }
       
@@ -256,6 +258,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
         categories={categories} 
         properties={properties}
         providers={providers}
+        scopes={scopes}
         showProperty={true}
         onDataChanged={onDataChanged}
         onRegisterExpense={handleRegisterExpense}
