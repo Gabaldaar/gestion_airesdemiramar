@@ -1,5 +1,5 @@
 
-import { getBookingsByPropertyId, getPropertyById, getTenantById } from '@/lib/data';
+import { getBookingsByPropertyId, getPropertyById, getTenantById, getDateBlocksByPropertyId } from '@/lib/data';
 import { NextRequest } from 'next/server';
 import { format, addDays } from 'date-fns';
 
@@ -19,9 +19,10 @@ export async function GET(
   }
 
   try {
-    const [property, bookings] = await Promise.all([
+    const [property, bookings, blocks] = await Promise.all([
       getPropertyById(propertyId),
       getBookingsByPropertyId(propertyId),
+      getDateBlocksByPropertyId(propertyId),
     ]);
 
     if (!property) {
@@ -34,6 +35,7 @@ export async function GET(
 
     const events: string[] = [];
 
+    // Process Bookings
     bookings.forEach(booking => {
         if (booking.status && booking.status !== 'active') {
             return; // Skip cancelled or pending bookings
@@ -41,12 +43,10 @@ export async function GET(
 
         const tenant = tenantsMap.get(booking.tenantId);
         const tenantName = tenant ? tenant.name : 'Inquilino Desconocido';
-        const propertyName = property.name;
-
-        // --- Main Blocking Event ---
-        // Start date is the day AFTER check-in to leave the check-in day free
-        const startBlockingDate = addDays(new Date(booking.startDate), 1);
-        // End date is the check-out date. For all-day events, the end date is exclusive.
+        
+        // Corrected start date for blocking. The event starts on the check-in day.
+        const startBlockingDate = new Date(booking.startDate);
+        // End date is exclusive for all-day events. The check-out day is available.
         const endBlockingDate = new Date(booking.endDate);
         const eventUID = `${booking.id}@adm.com`;
 
@@ -56,8 +56,28 @@ export async function GET(
         `DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`,
         `DTSTART;VALUE=DATE:${formatICalDate(startBlockingDate)}`,
         `DTEND;VALUE=DATE:${formatICalDate(endBlockingDate)}`,
-        `SUMMARY:Reserva - ${tenantName} - ${propertyName}`,
+        `SUMMARY:Reserva - ${tenantName}`,
         `DESCRIPTION:Reserva para ${tenantName}. Check-in el ${format(new Date(booking.startDate), 'yyyy-MM-dd')}, Check-out el ${format(new Date(booking.endDate), 'yyyy-MM-dd')}.`,
+        `END:VEVENT`
+        );
+    });
+    
+    // Process Date Blocks
+    blocks.forEach(block => {
+        const startDate = new Date(block.startDate);
+        // For iCal all-day events, DTEND is exclusive. Add one day to block the full range including the end date.
+        const endDate = addDays(new Date(block.endDate), 1);
+        const eventUID = `block-${block.id}@adm.com`;
+        const summary = `Bloqueado - ${block.reason || 'No Disponible'}`;
+        
+        events.push(
+        `BEGIN:VEVENT`,
+        `UID:${eventUID}`,
+        `DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`,
+        `DTSTART;VALUE=DATE:${formatICalDate(startDate)}`,
+        `DTEND;VALUE=DATE:${formatICalDate(endDate)}`,
+        `SUMMARY:${summary}`,
+        `DESCRIPTION:Período no disponible. Razón: ${block.reason || 'No especificada'}.`,
         `END:VEVENT`
         );
     });
