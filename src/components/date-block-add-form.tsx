@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState, useMemo, useTransition } from 'react';
@@ -148,14 +147,14 @@ export function DateBlockAddForm({
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        {children || (
-             <DialogTrigger asChild>
+        <DialogTrigger asChild>
+            {children || (
                 <Button variant="secondary">
                     <CalendarX className="mr-2 h-4 w-4" />
                     Bloquear Fechas
                 </Button>
-            </DialogTrigger>
-        )}
+            )}
+        </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Bloquear Fechas</DialogTitle>
