@@ -44,9 +44,12 @@ export async function GET(
         const tenant = tenantsMap.get(booking.tenantId);
         const tenantName = tenant ? tenant.name : 'Inquilino Desconocido';
         
-        // Corrected start date for blocking. The event starts on the check-in day.
-        const startBlockingDate = new Date(booking.startDate);
-        // End date is exclusive for all-day events. The check-out day is available.
+        // The day of check-in should be available for a new booking in the morning.
+        // Therefore, the iCal event should start blocking from the day AFTER check-in.
+        const startBlockingDate = addDays(new Date(booking.startDate), 1);
+        
+        // The day of check-out should also be available for a new booking in the afternoon.
+        // The iCal DTEND is exclusive, so setting it to the check-out day makes that day available.
         const endBlockingDate = new Date(booking.endDate);
         const eventUID = `${booking.id}@adm.com`;
 
