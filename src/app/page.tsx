@@ -2,7 +2,7 @@
 
 'use client';
 
-import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings, BookingWithDetails, Property, Tenant, FinancialSummaryByCurrency, getAlertSettings, AlertSettings } from "@/lib/data";
+import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings, BookingWithDetails, Property, Tenant, FinancialSummaryByCurrency, getAlertSettings, AlertSettings, DateBlock, getDateBlocks } from "@/lib/data";
 import DashboardStats from "@/components/dashboard-stats";
 import DashboardRecentBookings from "@/components/dashboard-recent-bookings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,7 @@ interface DashboardData {
     tenants: Tenant[];
     bookings: BookingWithDetails[];
     alertSettings: AlertSettings | null;
+    blocks: DateBlock[];
 }
 
 export default function DashboardPage() {
@@ -38,14 +39,15 @@ export default function DashboardPage() {
         if (user) {
             const fetchData = async () => {
                 setLoading(true);
-                const [summaryByCurrency, properties, tenants, bookings, alertSettings] = await Promise.all([
+                const [summaryByCurrency, properties, tenants, bookings, alertSettings, blocks] = await Promise.all([
                     getFinancialSummaryByProperty({}),
                     getProperties(),
                     getTenants(),
                     getBookings(),
                     getAlertSettings(),
+                    getDateBlocks(),
                 ]);
-                setData({ summaryByCurrency, properties, tenants, bookings, alertSettings });
+                setData({ summaryByCurrency, properties, tenants, bookings, alertSettings, blocks });
                 setLoading(false);
             };
             fetchData();
@@ -273,7 +275,7 @@ export default function DashboardPage() {
         return <p>Cargando dashboard...</p>;
     }
 
-    const { summaryByCurrency, properties, tenants, bookings } = data;
+    const { summaryByCurrency, properties, tenants, bookings, blocks } = data;
 
     const totalIncomeArs = summaryByCurrency.ars.reduce((acc, item) => acc + item.totalIncome, 0);
     const totalNetResultArs = summaryByCurrency.ars.reduce((acc, item) => acc + item.netResult, 0);
@@ -433,7 +435,7 @@ export default function DashboardPage() {
             totalTenants={totalTenants}
         />
         
-        <AvailabilitySearcher allProperties={properties} allBookings={bookings} />
+        <AvailabilitySearcher allProperties={properties} allBookings={bookings} allBlocks={blocks} />
         
         <PaymentCalculator showTabs={true} />
 

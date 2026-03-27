@@ -9,12 +9,13 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { getBookings, getProperties, getTenants, BookingWithDetails, Property, Tenant, Origin, getOrigins, getProviders, Provider } from "@/lib/data";
+import { getBookings, getProperties, getTenants, BookingWithDetails, Property, Tenant, Origin, getOrigins, getProviders, Provider, DateBlock, getDateBlocks } from "@/lib/data";
 import BookingsClient from "@/components/bookings-client";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { BookingAddForm } from "@/components/booking-add-form";
+import { DateBlockAddForm } from "@/components/date-block-add-form";
 
 interface BookingsData {
     allBookings: BookingWithDetails[];
@@ -22,6 +23,7 @@ interface BookingsData {
     tenants: Tenant[];
     origins: Origin[];
     providers: Provider[];
+    blocks: DateBlock[];
 }
 
 export default function BookingsPage() {
@@ -32,6 +34,7 @@ export default function BookingsPage() {
   const searchParams = useSearchParams();
   const tenantId = searchParams.get('tenantId') || undefined;
   const [key, setKey] = useState(0); // State to force re-render
+  const [isBlockFormOpen, setIsBlockFormOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (user) {
@@ -42,8 +45,9 @@ export default function BookingsPage() {
             getTenants(),
             getOrigins(),
             getProviders(),
-        ]).then(([allBookings, properties, tenants, origins, providers]) => {
-            setData({ allBookings, properties, tenants, origins, providers });
+            getDateBlocks(),
+        ]).then(([allBookings, properties, tenants, origins, providers, blocks]) => {
+            setData({ allBookings, properties, tenants, origins, providers, blocks });
             if (filteredBookingCount === null) {
               setFilteredBookingCount(allBookings.length);
             }
@@ -64,7 +68,7 @@ export default function BookingsPage() {
       return <p>Cargando reservas...</p>;
   }
 
-  const { allBookings, properties, tenants, origins, providers } = data;
+  const { allBookings, properties, tenants, origins, providers, blocks } = data;
 
   const tenant = tenantId ? tenants.find(t => t.id === tenantId) : null;
   const pageTitle = tenant ? `Reservas de ${tenant.name}` : 'Reservas';
@@ -79,7 +83,7 @@ export default function BookingsPage() {
 
   return (
     <Card>
-    <CardHeader className="flex flex-row items-start justify-between gap-4">
+    <CardHeader className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div>
             <CardTitle className="flex items-center gap-2">
                 {pageTitle}
@@ -91,10 +95,19 @@ export default function BookingsPage() {
             </CardTitle>
             <CardDescription>{pageDescription}</CardDescription>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <DateBlockAddForm
+                properties={properties}
+                allBookings={allBookings}
+                allBlocks={blocks}
+                isOpen={isBlockFormOpen}
+                onOpenChange={setIsBlockFormOpen}
+                onDataChanged={handleDataChanged}
+            />
             <BookingAddForm 
                 tenants={tenants}
                 allBookings={allBookings}
+                allBlocks={blocks}
                 properties={properties}
                 onDataChanged={handleDataChanged}
             />

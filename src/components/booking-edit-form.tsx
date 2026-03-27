@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { updateBooking } from '@/lib/actions';
-import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins, BookingWithDetails, BookingStatus } from '@/lib/data';
+import { Booking, Tenant, Property, ContractStatus, GuaranteeStatus, Origin, getOrigins, BookingWithDetails, BookingStatus, DateBlock } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, AlertTriangle, Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -74,6 +74,7 @@ interface BookingEditFormProps {
     tenants: Tenant[];
     properties: Property[];
     allBookings?: Booking[];
+    allBlocks?: DateBlock[];
     children?: ReactNode;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
@@ -81,7 +82,7 @@ interface BookingEditFormProps {
 }
 
 
-export function BookingEditForm({ booking, tenants, properties, allBookings, children, isOpen, onOpenChange, onBookingUpdated }: BookingEditFormProps) {
+export function BookingEditForm({ booking, tenants, properties, allBookings, allBlocks, children, isOpen, onOpenChange, onBookingUpdated }: BookingEditFormProps) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [origins, setOrigins] = useState<Origin[]>([]);
@@ -89,7 +90,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
       from: parseDateSafely(booking.startDate),
       to: parseDateSafely(booking.endDate)
   });
-  const [conflict, setConflict] = useState<Booking | null>(null);
+  const [conflict, setConflict] = useState<Booking | DateBlock | null>(null);
 
   // Combobox state
   const [tenantComboboxOpen, setTenantComboboxOpen] = useState(false);
@@ -154,34 +155,51 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
    useEffect(() => {
     if (date?.from && date?.to && allBookings) {
         const bookingsForProperty = allBookings.filter(b => b.propertyId === booking.propertyId);
-        const conflictingBooking = checkDateConflict(date, bookingsForProperty, booking.id);
-        setConflict(conflictingBooking);
+        const bookingConflict = checkDateConflict(date, bookingsForProperty, booking.id);
+        if (bookingConflict) {
+            setConflict(bookingConflict);
+            return;
+        }
+
+        if (allBlocks) {
+             const blocksForProperty = allBlocks.filter(b => b.propertyId === booking.propertyId);
+             const blockConflict = blocksForProperty.find(block => {
+                const blockStart = parseDateSafely(block.startDate);
+                const blockEnd = parseDateSafely(block.endDate);
+                if (!blockStart || !blockEnd) return false;
+                return date.from! < blockEnd && date.to! > blockStart;
+             });
+             setConflict(blockConflict || null);
+        }
+
     } else {
         setConflict(null);
     }
-  }, [date, allBookings, booking.id, booking.propertyId]);
+  }, [date, allBookings, allBlocks, booking.id, booking.propertyId]);
 
   const disabledDays = useMemo(() => {
-    if (!allBookings) return [];
+    if (!allBookings || !allBlocks) return [];
     
     const otherBookings = allBookings.filter(b => b.id !== booking.id && b.propertyId === booking.propertyId && (!b.status || b.status === 'active'));
     
-    return otherBookings.flatMap(otherBooking => {
-        const startDate = parseDateSafely(otherBooking.startDate);
-        const endDate = parseDateSafely(otherBooking.endDate);
-        
-        if (!startDate || !endDate) return [];
-
-        const firstDayToBlock = addDays(startDate, 1);
-        const lastDayToBlock = addDays(endDate, -1);
-        
-        if (firstDayToBlock > lastDayToBlock) {
-            return [];
-        }
-        
-        return [{ from: firstDayToBlock, to: lastDayToBlock }];
+    const bookedRanges = otherBookings.flatMap(otherBooking => {
+        const from = parseDateSafely(otherBooking.startDate);
+        const to = parseDateSafely(otherBooking.endDate);
+        if (!from || !to) return [];
+        return [{ from, to }];
     });
-  }, [allBookings, booking.id, booking.propertyId]);
+    
+    const blocksForProperty = allBlocks.filter(b => b.propertyId === booking.propertyId);
+    const blockedRanges = blocksForProperty.flatMap(block => {
+        const from = parseDateSafely(block.startDate);
+        const to = parseDateSafely(block.endDate);
+        if (!from || !to) return [];
+        return [{ from, to }];
+    });
+
+    return [...bookedRanges, ...blockedRanges];
+
+  }, [allBookings, allBlocks, booking.id, booking.propertyId]);
   
   const { message: conflictMessage, isOverlap: isDateOverlap } = useMemo(() => {
     if (!conflict || !date?.from || !date?.to) return { message: "", isOverlap: false };
@@ -192,6 +210,10 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, chi
     const selectedEnd = date.to;
     
     if (!conflictStart || !conflictEnd) return { message: "", isOverlap: false };
+
+    if ('reason' in conflict) {
+        return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con un bloqueo manual.", isOverlap: true };
+    }
 
     if (isSameDay(selectedEnd, conflictStart)) {
         return { message: "Atención: El check-out coincide con el check-in de otra reserva.", isOverlap: false };

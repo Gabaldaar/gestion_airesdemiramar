@@ -122,6 +122,14 @@ export type BookingWithDetails = BookingWithTenantAndProperty & {
     balance: number;
 }
 
+export type DateBlock = {
+    id: string;
+    propertyId: string;
+    startDate: string;
+    endDate: string;
+    reason?: string;
+};
+
 
 export type Payment = {
   id: string;
@@ -370,6 +378,7 @@ const taskCategoriesCollection = collection(db, 'taskCategories');
 const providersCollection = collection(db, 'providers');
 const providerCategoriesCollection = collection(db, 'providerCategories');
 const taskScopesCollection = collection(db, 'taskScopes');
+const dateBlocksCollection = collection(db, 'dateBlocks');
 
 
 // Helper function to add default data only if the collection is empty
@@ -1599,4 +1608,27 @@ export async function updateProviderPartial(id: string, data: Partial<Omit<Provi
     if (!id) throw new Error("Update provider requires an ID.");
     const docRef = doc(db, 'providers', id);
     await updateDoc(docRef, data);
+}
+
+// --- DATE BLOCKS ---
+
+export async function getDateBlocks(): Promise<DateBlock[]> {
+  const snapshot = await getDocs(dateBlocksCollection);
+  return snapshot.docs.map(processDoc) as DateBlock[];
+}
+
+export async function getDateBlocksByPropertyId(propertyId: string): Promise<DateBlock[]> {
+  const q = query(dateBlocksCollection, where('propertyId', '==', propertyId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(processDoc) as DateBlock[];
+}
+
+export async function addDateBlockDb(block: Omit<DateBlock, 'id'>): Promise<DateBlock> {
+  const docRef = await addDoc(dateBlocksCollection, block);
+  return { id: docRef.id, ...block };
+}
+
+export async function deleteDateBlockDb(id: string): Promise<void> {
+  const docRef = doc(db, 'dateBlocks', id);
+  await deleteDoc(docRef);
 }

@@ -3,7 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Property, Booking, PriceConfig } from '@/lib/data';
+import { Property, Booking, PriceConfig, DateBlock } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -11,14 +11,15 @@ import Link from 'next/link';
 import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle, Info } from 'lucide-react';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { calculatePriceForStay, PriceResult } from '@/lib/utils';
+import { calculatePriceForStay, PriceResult, parseDateSafely } from '@/lib/utils';
 
 interface AvailabilitySearcherProps {
     allProperties: Property[];
     allBookings: Booking[];
+    allBlocks: DateBlock[];
 }
 
-export default function AvailabilitySearcher({ allProperties, allBookings }: AvailabilitySearcherProps) {
+export default function AvailabilitySearcher({ allProperties, allBookings, allBlocks }: AvailabilitySearcherProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
   const [isSearching, setIsSearching] = useState(false);
@@ -54,13 +55,25 @@ export default function AvailabilitySearcher({ allProperties, allBookings }: Ava
         const propertyBookings = allBookings.filter(
           b => b.propertyId === property.id && (!b.status || b.status === 'active')
         );
-        const hasConflict = propertyBookings.some(booking => {
-          const bookingStart = new Date(booking.startDate);
-          const bookingEnd = new Date(booking.endDate);
-          // Check for overlap: new booking starts before old one ends AND new booking ends after old one starts
+        const propertyBlocks = allBlocks.filter(b => b.propertyId === property.id);
+
+        const hasBookingConflict = propertyBookings.some(booking => {
+          const bookingStart = parseDateSafely(booking.startDate);
+          const bookingEnd = parseDateSafely(booking.endDate);
+          if (!bookingStart || !bookingEnd) return false;
           return fromDate < bookingEnd && toDate > bookingStart;
         });
-        return !hasConflict;
+
+        if (hasBookingConflict) return false;
+
+        const hasBlockConflict = propertyBlocks.some(block => {
+            const blockStart = parseDateSafely(block.startDate);
+            const blockEnd = parseDateSafely(block.endDate);
+            if (!blockStart || !blockEnd) return false;
+            return fromDate < blockEnd && toDate > blockStart;
+        });
+
+        return !hasBlockConflict;
       });
 
       // 3. Calculate price for each available property

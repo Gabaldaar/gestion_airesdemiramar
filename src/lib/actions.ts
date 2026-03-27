@@ -55,6 +55,8 @@ import {
   addTaskScope as addTaskScopeDb,
   updateTaskScope as updateTaskScopeDb,
   deleteTaskScope as deleteTaskScopeDb,
+  addDateBlockDb,
+  deleteDateBlockDb,
   Tenant,
   Booking,
   PropertyExpense,
@@ -72,7 +74,8 @@ import {
   TaskPriority,
   Provider,
   ProviderCategory,
-  TaskAssignment
+  TaskAssignment,
+  DateBlock
 } from './data';
 import { db } from './firebase';
 import { collection, doc, getDoc, getDocs, query, where, writeBatch, setDoc } from 'firebase/firestore';
@@ -1673,4 +1676,46 @@ export async function updateProviderRating(previousState: any, formData: FormDat
     } catch (error: any) {
         return { success: false, message: `Error de base de datos: ${error.message}` };
     }
+}
+
+// --- DATE BLOCKS ---
+
+export async function addDateBlock(previousState: any, formData: FormData) {
+  const blockData = {
+    propertyId: formData.get('propertyId') as string,
+    startDate: formData.get('startDate') as string,
+    endDate: formData.get('endDate') as string,
+    reason: formData.get('reason') as string,
+  };
+
+  if (!blockData.propertyId || !blockData.startDate || !blockData.endDate) {
+    return { success: false, message: 'La propiedad y las fechas son obligatorias.' };
+  }
+
+  try {
+    await addDateBlockDb(blockData as Omit<DateBlock, 'id'>);
+    revalidatePathsAfterAction(blockData.propertyId);
+    return { success: true, message: 'Fechas bloqueadas correctamente.' };
+  } catch (dbError: any) {
+    console.error('Error creating date block in DB:', dbError);
+    return { success: false, message: `Error de base de datos: ${dbError.message}` };
+  }
+}
+
+export async function deleteDateBlock(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const propertyId = formData.get('propertyId') as string;
+
+  if (!id || !propertyId) {
+    return { success: false, message: 'ID de bloqueo o propiedad no válido.' };
+  }
+
+  try {
+    await deleteDateBlockDb(id);
+    revalidatePathsAfterAction(propertyId);
+    return { success: true, message: 'Bloqueo eliminado correctamente.' };
+  } catch (dbError: any) {
+    console.error('Error deleting date block from DB:', dbError);
+    return { success: false, message: `Error de base de datos: ${dbError.message}` };
+  }
 }

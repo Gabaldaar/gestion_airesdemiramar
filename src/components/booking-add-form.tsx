@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useMemo, useTransition } from 'react';
@@ -23,11 +24,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { addBooking } from '@/lib/actions';
-import { Tenant, Booking, Origin, getOrigins, BookingStatus, PriceConfig, getPropertyById, Property } from '@/lib/data';
+import { Tenant, Booking, Origin, getOrigins, BookingStatus, PriceConfig, getPropertyById, Property, DateBlock } from '@/lib/data';
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
-import { cn, checkDateConflict } from "@/lib/utils"
+import { cn, checkDateConflict, parseDateSafely } from "@/lib/utils"
 import { calculatePriceForStay } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -74,12 +75,14 @@ export function BookingAddForm({
   properties,
   tenants,
   allBookings,
+  allBlocks,
   onDataChanged,
 }: {
   propertyId?: string;
   properties?: Property[];
   tenants: Tenant[];
   allBookings: Booking[];
+  allBlocks: DateBlock[];
   onDataChanged: () => void;
 }) {
   const [state, setState] = useState(initialState);
@@ -88,7 +91,7 @@ export function BookingAddForm({
   const [origins, setOrigins] = useState<Origin[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
   const [date, setDate] = useState<DateRange | undefined>(undefined);
-  const [conflict, setConflict] = useState<Booking | null>(null);
+  const [conflict, setConflict] = useState<Booking | DateBlock | null>(null);
   const [amount, setAmount] = useState<number | string>('');
 
   // New state for handling property selection
@@ -126,14 +129,29 @@ export function BookingAddForm({
 
   const bookingsForSelectedProperty = useMemo(() => {
     if (!selectedPropertyId) return [];
-    return allBookings.filter(b => b.propertyId === selectedPropertyId);
+    return allBookings.filter(b => b.propertyId === selectedPropertyId && (!b.status || b.status === 'active'));
   }, [selectedPropertyId, allBookings]);
+
+  const blocksForSelectedProperty = useMemo(() => {
+    if (!selectedPropertyId) return [];
+    return allBlocks.filter(b => b.propertyId === selectedPropertyId);
+  }, [selectedPropertyId, allBlocks]);
 
   useEffect(() => {
     const calculateAndSetPrice = async () => {
         if (date?.from && date?.to && selectedPropertyId) {
-            const conflictingBooking = checkDateConflict(date, bookingsForSelectedProperty, '');
-            setConflict(conflictingBooking);
+            const bookingConflict = checkDateConflict(date, bookingsForSelectedProperty, '');
+            if (bookingConflict) {
+              setConflict(bookingConflict);
+            } else {
+              const blockConflict = blocksForSelectedProperty.find(block => {
+                const blockStart = parseDateSafely(block.startDate);
+                const blockEnd = parseDateSafely(block.endDate);
+                if (!blockStart || !blockEnd) return false;
+                return date.from! < blockEnd && date.to! > blockStart;
+              });
+              setConflict(blockConflict || null);
+            }
 
             try {
                 const [property, priceConfigsResponse] = await Promise.all([
@@ -170,7 +188,7 @@ export function BookingAddForm({
     };
     
     calculateAndSetPrice();
-  }, [date, bookingsForSelectedProperty, selectedPropertyId]);
+  }, [date, bookingsForSelectedProperty, blocksForSelectedProperty, selectedPropertyId]);
   
    useEffect(() => {
     if (isOpen) {
@@ -181,31 +199,41 @@ export function BookingAddForm({
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const disabledDays = useMemo(() => {
-    const activeBookings = bookingsForSelectedProperty.filter(b => !b.status || b.status === 'active');
+    const activeBookings = bookingsForSelectedProperty;
     
-    return activeBookings.flatMap(booking => {
-        const startDate = new Date(booking.startDate);
-        const endDate = new Date(booking.endDate);
-        
-        const firstDayToBlock = addDays(startDate, 1);
-        const lastDayToBlock = addDays(endDate, -1);
-        
-        if (firstDayToBlock > lastDayToBlock) {
-            return [];
-        }
-        
-        return [{ from: firstDayToBlock, to: lastDayToBlock }];
+    const bookedDays = activeBookings.flatMap(booking => {
+        const from = parseDateSafely(booking.startDate);
+        const to = parseDateSafely(booking.endDate);
+        if (!from || !to) return [];
+        return [{ from, to }];
     });
-  }, [bookingsForSelectedProperty]);
+
+    const blockedDays = blocksForSelectedProperty.flatMap(block => {
+        const from = parseDateSafely(block.startDate);
+        const to = parseDateSafely(block.endDate);
+        if (!from || !to) return [];
+        return [{ from, to }];
+    });
+        
+    return [...bookedDays, ...blockedDays];
+
+  }, [bookingsForSelectedProperty, blocksForSelectedProperty]);
   
   const { message: conflictMessage, isOverlap: isDateOverlap } = useMemo(() => {
     if (!conflict || !date?.from || !date?.to) return { message: "", isOverlap: false };
     
-    const conflictStart = new Date(conflict.startDate);
-    const conflictEnd = new Date(conflict.endDate);
+    const conflictStart = parseDateSafely(conflict.startDate);
+    const conflictEnd = parseDateSafely(conflict.endDate);
     const selectedStart = new Date(date.from);
     const selectedEnd = new Date(date.to);
     
+    if (!conflictStart || !conflictEnd) return { message: "", isOverlap: false };
+    
+    if ('reason' in conflict) { // It's a DateBlock
+        return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con un bloqueo manual.", isOverlap: true };
+    }
+
+    // It's a Booking
     if (isSameDay(selectedEnd, conflictStart)) {
       return { message: "Atención: El check-out coincide con el check-in de otra reserva.", isOverlap: false };
     }

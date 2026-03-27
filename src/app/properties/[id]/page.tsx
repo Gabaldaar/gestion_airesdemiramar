@@ -18,7 +18,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookings, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories, getProviders, Provider, getTaskScopes, TaskScope } from "@/lib/data";
+import { getPropertyById, getTenants, getBookings, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories, getProviders, Provider, getTaskScopes, TaskScope, DateBlock, getDateBlocks, getDateBlocksByPropertyId } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import ExpensesList from '@/components/expenses-list';
@@ -28,7 +28,7 @@ import { PropertyNotesForm } from '@/components/property-notes-form';
 import { useEffect, useState, useMemo, FC, useCallback } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Copy, Calendar as CalendarIcon, ExternalLink, PlusCircle } from 'lucide-react';
+import { Copy, Calendar as CalendarIcon, ExternalLink, PlusCircle, CalendarX } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,8 @@ import { addDays, isWithinInterval, isSameDay } from 'date-fns';
 import useWindowSize from '@/hooks/use-window-size';
 import { parseDateSafely } from '@/lib/utils';
 import { TaskAddForm } from '@/components/task-add-form';
+import { DateBlockAddForm } from '@/components/date-block-add-form';
+import DateBlocksList from '@/components/date-blocks-list';
 
 
 interface PropertyDetailData {
@@ -47,6 +49,7 @@ interface PropertyDetailData {
     properties: Property[];
     tenants: Tenant[];
     bookings: BookingWithDetails[];
+    blocks: DateBlock[];
     expenses: PropertyExpense[];
     expenseCategories: ExpenseCategory[];
     tasks: TaskWithDetails[];
@@ -74,12 +77,29 @@ const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> 
         });
     }, [currentDateStr, data, activeModifiers.booked]);
 
+    const blockForDay = useMemo(() => {
+        if (!data || !activeModifiers.blocked) return undefined;
+        return data.blocks.find(b => {
+            const blockStartStr = b.startDate.substring(0, 10);
+            const blockEndStr = b.endDate.substring(0, 10);
+            return currentDateStr >= blockStartStr && currentDateStr <= blockEndStr;
+        });
+    }, [currentDateStr, data, activeModifiers.blocked]);
+
     const tenant = useMemo(() => {
         if (!bookingForDay || !data?.tenants) return undefined;
         return data.tenants.find(t => t.id === bookingForDay.tenantId);
     }, [bookingForDay, data?.tenants]);
-
+    
+    let tooltipContent: React.ReactNode = null;
     if (tenant) {
+        tooltipContent = <p>{tenant.name}</p>;
+    } else if (blockForDay) {
+        tooltipContent = <p className='font-semibold'>Bloqueado: <span className='font-normal'>{blockForDay.reason || 'Sin motivo'}</span></p>;
+    }
+
+
+    if (tooltipContent) {
         return (
             <TooltipProvider delayDuration={100}>
                 <Tooltip>
@@ -87,7 +107,7 @@ const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> 
                         <span>{date.getDate()}</span>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>{tenant.name}</p>
+                        {tooltipContent}
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
@@ -113,16 +133,18 @@ export default function PropertyDetailPage() {
   const [isTaskAddOpen, setIsTaskAddOpen] = useState(false);
   const [isExpenseAddOpen, setIsExpenseAddOpen] = useState(false);
   const [expensePreloadData, setExpensePreloadData] = useState<ExpensePreloadData | undefined>(undefined);
+  const [isBlockFormOpen, setIsBlockFormOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (user && propertyId) {
         setLoading(true);
         try {
-            const [property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, providers, origins, taskScopes] = await Promise.all([
+            const [property, properties, tenants, bookings, blocks, expenses, expenseCategories, tasks, taskCategories, providers, origins, taskScopes] = await Promise.all([
                 getPropertyById(propertyId),
                 getProperties(),
                 getTenants(),
                 getBookings(), // Fetch all bookings
+                getDateBlocks(), // Fetch all blocks
                 getPropertyExpensesByPropertyId(propertyId),
                 getExpenseCategories(),
                 getTasksByPropertyId(propertyId),
@@ -135,7 +157,7 @@ export default function PropertyDetailPage() {
             if (!property) {
                 setData(null);
             } else {
-                setData({ property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, providers, origins, taskScopes });
+                setData({ property, properties, tenants, bookings, blocks, expenses, expenseCategories, tasks, taskCategories, providers, origins, taskScopes });
             }
         } catch (error) {
             console.error("Error fetching property details:", error);
@@ -169,6 +191,11 @@ export default function PropertyDetailPage() {
         if (!data) return [];
         return data.bookings.filter(b => b.propertyId === propertyId);
     }, [data, propertyId]);
+    
+    const blocksForThisProperty = useMemo(() => {
+        if (!data) return [];
+        return data.blocks.filter(b => b.propertyId === propertyId);
+    }, [data, propertyId]);
   
     const dayModifiers = useMemo(() => {
         if (!data) return {};
@@ -178,6 +205,13 @@ export default function PropertyDetailPage() {
         const bookedDays = activeBookings.map(booking => {
             const from = parseDateSafely(booking.startDate);
             const to = parseDateSafely(booking.endDate);
+            if (!from || !to) return null;
+            return { from, to };
+        }).filter(d => d !== null) as { from: Date, to: Date }[];
+        
+        const blockedDays = blocksForThisProperty.map(block => {
+            const from = parseDateSafely(block.startDate);
+            const to = parseDateSafely(block.endDate);
             if (!from || !to) return null;
             return { from, to };
         }).filter(d => d !== null) as { from: Date, to: Date }[];
@@ -196,15 +230,17 @@ export default function PropertyDetailPage() {
 
         return {
             booked: bookedDays,
+            blocked: blockedDays,
             checkin: checkinDays,
             checkout: checkoutDays,
             'booked-middle': bookedMiddleDays,
         };
-    }, [data, bookingsForThisProperty]);
+    }, [data, bookingsForThisProperty, blocksForThisProperty]);
 
     const dayModifiersClassNames = {
         checkin: 'day-checkin',
         checkout: 'day-checkout',
+        blocked: 'bg-zinc-400/80 text-white rounded-md',
         'booked-middle': 'day-booked-middle',
         disabled: 'day-disabled',
     };
@@ -218,7 +254,7 @@ export default function PropertyDetailPage() {
     return <p>Propiedad no encontrada o error al cargar los datos.</p>;
   }
   
-  const { property, properties, tenants, bookings, expenses, expenseCategories, tasks, taskCategories, taskScopes, providers, origins } = data;
+  const { property, properties, tenants, bookings, blocks, expenses, expenseCategories, tasks, taskCategories, taskScopes, providers, origins } = data;
   
   const icalUrl = `${baseUrl}/api/ical/${property.id}`;
   
@@ -308,8 +344,9 @@ export default function PropertyDetailPage() {
         <div className="lg:col-span-1">
         <Tabs defaultValue="bookings" className="space-y-4">
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <TabsList className="grid w-full sm:w-auto grid-cols-4">
+                <TabsList className="grid w-full sm:w-auto grid-cols-5">
                     <TabsTrigger value="bookings">Reservas</TabsTrigger>
+                    <TabsTrigger value="blocks">Bloqueos</TabsTrigger>
                     <TabsTrigger value="tasks">Tareas</TabsTrigger>
                     <TabsTrigger value="expenses">Gastos</TabsTrigger>
                     <TabsTrigger value="calendar">Calendario</TabsTrigger>
@@ -327,23 +364,10 @@ export default function PropertyDetailPage() {
                         propertyId={property.id} 
                         tenants={tenants} 
                         allBookings={bookings} 
+                        allBlocks={blocks}
                         properties={properties} 
                         onDataChanged={handleDataChanged}
                     />
-                    <TaskAddForm 
-                        propertyId={property.id} 
-                        properties={properties}
-                        providers={providers} 
-                        categories={taskCategories} 
-                        scopes={taskScopes}
-                        isOpen={isTaskAddOpen} 
-                        onOpenChange={setIsTaskAddOpen} 
-                        onTaskAdded={handleDataChanged}>
-                        <Button variant="outline" onClick={() => setIsTaskAddOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Añadir Tarea
-                        </Button>
-                    </TaskAddForm>
                 </div>
             </div>
             <TabsContent value="bookings" className="space-y-4">
@@ -359,13 +383,56 @@ export default function PropertyDetailPage() {
                 </CardContent>
             </Card>
             </TabsContent>
+            <TabsContent value="blocks" className="space-y-4">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Fechas Bloqueadas</CardTitle>
+                        <CardDescription>
+                            Gestiona períodos no disponibles por mantenimiento, uso personal, etc.
+                        </CardDescription>
+                    </div>
+                    <DateBlockAddForm
+                        propertyId={property.id}
+                        allBookings={bookings}
+                        allBlocks={blocks}
+                        isOpen={isBlockFormOpen}
+                        onOpenChange={setIsBlockFormOpen}
+                        onDataChanged={handleDataChanged}>
+                        <Button variant="outline">
+                            <CalendarX className="mr-2 h-4 w-4" />
+                            Bloquear Fechas
+                        </Button>
+                    </DateBlockAddForm>
+                </CardHeader>
+                <CardContent>
+                    <DateBlocksList blocks={blocksForThisProperty} onDataChanged={handleDataChanged} />
+                </CardContent>
+            </Card>
+            </TabsContent>
             <TabsContent value="tasks" className="space-y-4">
             <Card>
-                <CardHeader>
-                <CardTitle>Tareas de la Propiedad</CardTitle>
-                <CardDescription>
-                    Gestiona el mantenimiento y las tareas pendientes para esta propiedad.
-                </CardDescription>
+                 <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Tareas de la Propiedad</CardTitle>
+                        <CardDescription>
+                            Gestiona el mantenimiento y las tareas pendientes para esta propiedad.
+                        </CardDescription>
+                    </div>
+                     <TaskAddForm 
+                        propertyId={property.id} 
+                        properties={properties}
+                        providers={providers} 
+                        categories={taskCategories} 
+                        scopes={taskScopes}
+                        isOpen={isTaskAddOpen} 
+                        onOpenChange={setIsTaskAddOpen} 
+                        onTaskAdded={handleDataChanged}>
+                        <Button variant="outline" onClick={() => setIsTaskAddOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Añadir Tarea
+                        </Button>
+                    </TaskAddForm>
                 </CardHeader>
                 <CardContent>
                     <TasksList tasks={tasks} properties={properties} providers={providers} categories={taskCategories} scopes={taskScopes} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
