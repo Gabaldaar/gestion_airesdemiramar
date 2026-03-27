@@ -1628,6 +1628,13 @@ export async function addDateBlockDb(block: Omit<DateBlock, 'id'>): Promise<Date
   return { id: docRef.id, ...block };
 }
 
+export async function updateDateBlockDb(block: DateBlock): Promise<DateBlock> {
+  const { id, ...data } = block;
+  const docRef = doc(db, 'dateBlocks', id);
+  await updateDoc(docRef, data);
+  return block;
+}
+
 export async function deleteDateBlockDb(id: string): Promise<void> {
   const docRef = doc(db, 'dateBlocks', id);
   await deleteDoc(docRef);

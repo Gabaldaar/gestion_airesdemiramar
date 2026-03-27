@@ -194,7 +194,9 @@ export default function PropertyDetailPage() {
     
     const blocksForThisProperty = useMemo(() => {
         if (!data) return [];
-        return data.blocks.filter(b => b.propertyId === propertyId);
+        return data.blocks
+            .filter(b => b.propertyId === propertyId)
+            .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     }, [data, propertyId]);
   
     const dayModifiers = useMemo(() => {
@@ -406,7 +408,12 @@ export default function PropertyDetailPage() {
                     </DateBlockAddForm>
                 </CardHeader>
                 <CardContent>
-                    <DateBlocksList blocks={blocksForThisProperty} onDataChanged={handleDataChanged} />
+                    <DateBlocksList 
+                        blocks={blocksForThisProperty} 
+                        allBookings={bookings}
+                        allBlocks={blocks}
+                        onDataChanged={handleDataChanged} 
+                    />
                 </CardContent>
             </Card>
             </TabsContent>

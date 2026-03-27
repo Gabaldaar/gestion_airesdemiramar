@@ -56,6 +56,7 @@ import {
   updateTaskScope as updateTaskScopeDb,
   deleteTaskScope as deleteTaskScopeDb,
   addDateBlockDb,
+  updateDateBlockDb,
   deleteDateBlockDb,
   Tenant,
   Booking,
@@ -1701,6 +1702,36 @@ export async function addDateBlock(previousState: any, formData: FormData) {
     return { success: false, message: `Error de base de datos: ${dbError.message}` };
   }
 }
+
+export async function updateDateBlock(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+
+  if (!id) {
+    return { success: false, message: 'ID de bloqueo no proporcionado.' };
+  }
+
+  const blockData = {
+    id,
+    propertyId: formData.get('propertyId') as string,
+    startDate: formData.get('startDate') as string,
+    endDate: formData.get('endDate') as string,
+    reason: formData.get('reason') as string,
+  };
+
+  if (!blockData.propertyId || !blockData.startDate || !blockData.endDate) {
+    return { success: false, message: 'La propiedad y las fechas son obligatorias.' };
+  }
+
+  try {
+    await updateDateBlockDb(blockData as DateBlock);
+    revalidatePathsAfterAction(blockData.propertyId);
+    return { success: true, message: 'Bloqueo actualizado correctamente.' };
+  } catch (dbError: any) {
+    console.error('Error updating date block in DB:', dbError);
+    return { success: false, message: `Error de base de datos: ${dbError.message}` };
+  }
+}
+
 
 export async function deleteDateBlock(previousState: any, formData: FormData) {
   const id = formData.get('id') as string;
