@@ -18,7 +18,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookingsByPropertyId, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories, getProviders, Provider, getTaskScopes, TaskScope } from "@/lib/data";
+import { getPropertyById, getTenants, getBookings, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories, getProviders, Provider, getTaskScopes, TaskScope } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import ExpensesList from '@/components/expenses-list';
@@ -122,7 +122,7 @@ export default function PropertyDetailPage() {
                 getPropertyById(propertyId),
                 getProperties(),
                 getTenants(),
-                getBookingsByPropertyId(propertyId),
+                getBookings(), // Fetch all bookings
                 getPropertyExpensesByPropertyId(propertyId),
                 getExpenseCategories(),
                 getTasksByPropertyId(propertyId),
@@ -165,10 +165,15 @@ export default function PropertyDetailPage() {
     setBaseUrl(window.location.origin);
   }, []);
   
+    const bookingsForThisProperty = useMemo(() => {
+        if (!data) return [];
+        return data.bookings.filter(b => b.propertyId === propertyId);
+    }, [data, propertyId]);
+  
     const dayModifiers = useMemo(() => {
         if (!data) return {};
         
-        const activeBookings = data.bookings.filter(b => !b.status || b.status === 'active');
+        const activeBookings = bookingsForThisProperty.filter(b => !b.status || b.status === 'active');
 
         const bookedDays = activeBookings.map(booking => {
             const from = parseDateSafely(booking.startDate);
@@ -195,7 +200,7 @@ export default function PropertyDetailPage() {
             checkout: checkoutDays,
             'booked-middle': bookedMiddleDays,
         };
-    }, [data]);
+    }, [data, bookingsForThisProperty]);
 
     const dayModifiersClassNames = {
         checkin: 'day-checkin',
@@ -318,7 +323,13 @@ export default function PropertyDetailPage() {
                         </Link>
                       </Button>
                     )}
-                    <BookingAddForm propertyId={property.id} tenants={tenants} existingBookings={bookings} />
+                    <BookingAddForm 
+                        propertyId={property.id} 
+                        tenants={tenants} 
+                        allBookings={bookings} 
+                        properties={properties} 
+                        onDataChanged={handleDataChanged}
+                    />
                     <TaskAddForm 
                         propertyId={property.id} 
                         properties={properties}
@@ -344,7 +355,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <BookingsList bookings={bookings} properties={properties} tenants={tenants} origins={origins} providers={providers} onDataChanged={handleDataChanged} />
+                <BookingsList bookings={bookingsForThisProperty} properties={properties} tenants={tenants} origins={origins} providers={providers} onDataChanged={handleDataChanged} />
                 </CardContent>
             </Card>
             </TabsContent>

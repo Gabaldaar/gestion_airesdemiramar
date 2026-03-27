@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useRef, useState, useMemo, useTransition } from 'react';
@@ -25,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { addBooking } from '@/lib/actions';
-import { Tenant, Booking, Origin, getOrigins, BookingStatus, PriceConfig, getPropertyById } from '@/lib/data';
+import { Tenant, Booking, Origin, getOrigins, BookingStatus, PriceConfig, getPropertyById, Property } from '@/lib/data';
 import { PlusCircle, AlertTriangle, Calendar as CalendarIcon, Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import { format, addDays, isSameDay } from "date-fns"
 import { es } from 'date-fns/locale';
@@ -71,7 +69,19 @@ function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
     )
 }
 
-export function BookingAddForm({ propertyId, tenants, existingBookings }: { propertyId: string, tenants: Tenant[], existingBookings: Booking[] }) {
+export function BookingAddForm({
+  propertyId,
+  properties,
+  tenants,
+  allBookings,
+  onDataChanged,
+}: {
+  propertyId?: string;
+  properties?: Property[];
+  tenants: Tenant[];
+  allBookings: Booking[];
+  onDataChanged: () => void;
+}) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
@@ -81,9 +91,14 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   const [conflict, setConflict] = useState<Booking | null>(null);
   const [amount, setAmount] = useState<number | string>('');
 
+  // New state for handling property selection
+  const [selectedPropertyId, setSelectedPropertyId] = useState(propertyId || '');
+
   // Combobox state
   const [tenantComboboxOpen, setTenantComboboxOpen] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState('');
+
+  const isPropertySelectionMode = !propertyId;
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -97,6 +112,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     setDate(undefined);
     setConflict(null);
     setSelectedTenantId('');
+    setSelectedPropertyId(propertyId || ''); // Reset to initial prop or clear
     setAmount('');
   };
 
@@ -104,25 +120,30 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     if (state.success) {
       setIsOpen(false);
       resetForm();
+      onDataChanged();
     }
-  }, [state]);
+  }, [state, onDataChanged]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const bookingsForSelectedProperty = useMemo(() => {
+    if (!selectedPropertyId) return [];
+    return allBookings.filter(b => b.propertyId === selectedPropertyId);
+  }, [selectedPropertyId, allBookings]);
 
   useEffect(() => {
     const calculateAndSetPrice = async () => {
-        if (date?.from && date?.to) {
-            const conflictingBooking = checkDateConflict(date, existingBookings, '');
+        if (date?.from && date?.to && selectedPropertyId) {
+            const conflictingBooking = checkDateConflict(date, bookingsForSelectedProperty, '');
             setConflict(conflictingBooking);
 
-            // Fetch property and price configs
             try {
                 const [property, priceConfigsResponse] = await Promise.all([
-                    getPropertyById(propertyId),
+                    getPropertyById(selectedPropertyId),
                     fetch('/api/get-price-configurations')
                 ]);
 
                 if (!property || !priceConfigsResponse.ok) {
                     console.error("No se pudo obtener la propiedad o la configuración de precios.");
-                    setAmount(''); // Reset amount on error
+                    setAmount('');
                     return;
                 }
 
@@ -135,7 +156,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                 if (priceResult && !priceResult.error && !priceResult.minNightsError) {
                     setAmount(Math.round(priceResult.totalPrice).toString());
                 } else {
-                    setAmount(''); // Reset if there's an error or min nights not met
+                    setAmount('');
                 }
 
             } catch (error) {
@@ -144,28 +165,28 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
             }
         } else {
             setConflict(null);
-            setAmount(''); // Reset amount if dates are cleared
+            setAmount('');
         }
     };
     
     calculateAndSetPrice();
-  }, [date, existingBookings, propertyId]);
+  }, [date, bookingsForSelectedProperty, selectedPropertyId]);
   
    useEffect(() => {
     if (isOpen) {
       getOrigins().then(setOrigins);
+      // Reset form state when dialog opens
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const disabledDays = useMemo(() => {
-    const activeBookings = existingBookings.filter(b => !b.status || b.status === 'active');
+    const activeBookings = bookingsForSelectedProperty.filter(b => !b.status || b.status === 'active');
     
     return activeBookings.flatMap(booking => {
         const startDate = new Date(booking.startDate);
         const endDate = new Date(booking.endDate);
         
-        // Block only the nights between check-in and check-out.
-        // For a booking from 5th to 10th, we block 6, 7, 8, 9.
         const firstDayToBlock = addDays(startDate, 1);
         const lastDayToBlock = addDays(endDate, -1);
         
@@ -175,7 +196,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
         
         return [{ from: firstDayToBlock, to: lastDayToBlock }];
     });
-  }, [existingBookings]);
+  }, [bookingsForSelectedProperty]);
   
   const { message: conflictMessage, isOverlap: isDateOverlap } = useMemo(() => {
     if (!conflict || !date?.from || !date?.to) return { message: "", isOverlap: false };
@@ -185,7 +206,6 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
     const selectedStart = new Date(date.from);
     const selectedEnd = new Date(date.to);
     
-    // Check for back-to-back (warning, not an error)
     if (isSameDay(selectedEnd, conflictStart)) {
       return { message: "Atención: El check-out coincide con el check-in de otra reserva.", isOverlap: false };
     }
@@ -193,7 +213,6 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
       return { message: "Atención: El check-in coincide con el check-out de otra reserva.", isOverlap: false };
     }
 
-    // Any other conflict is a true overlap
     return { message: "¡Conflicto de Fechas! El rango seleccionado se solapa con una reserva existente.", isOverlap: true };
   }, [conflict, date]);
 
@@ -201,7 +220,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm() }; setIsOpen(open)}}>
       <DialogTrigger asChild>
-        <Button onClick={() => { setIsOpen(true); resetForm(); }}>
+        <Button onClick={() => { setIsOpen(true); }}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Nueva Reserva
         </Button>
@@ -226,6 +245,21 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
 
         <form action={formAction} ref={formRef}>
             <div className="grid gap-4 py-4">
+                 {isPropertySelectionMode && properties && (
+                    <div className="space-y-2">
+                        <Label htmlFor="propertyId-select">Propiedad</Label>
+                        <Select name="propertyId-select" value={selectedPropertyId} onValueChange={(value) => { setSelectedPropertyId(value); setDate(undefined); }} required>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona una propiedad..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {properties.map(prop => (
+                                    <SelectItem key={prop.id} value={prop.id}>{prop.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                 <div className="space-y-2">
                     <Label htmlFor="tenantId">Inquilino</Label>
                     <input type="hidden" name="tenantId" value={selectedTenantId} required />
@@ -236,6 +270,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                             role="combobox"
                             aria-expanded={tenantComboboxOpen}
                             className="w-full justify-between"
+                            disabled={!selectedPropertyId && isPropertySelectionMode}
                             >
                             {selectedTenantId
                                 ? tenants.find((tenant) => tenant.id === selectedTenantId)?.name
@@ -285,6 +320,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                             "w-full justify-start text-left font-normal",
                             !date && "text-muted-foreground"
                             )}
+                            disabled={!selectedPropertyId && isPropertySelectionMode}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {date?.from ? (
@@ -308,7 +344,7 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                             defaultMonth={date?.from}
                             selected={date}
                             onSelect={setDate}
-                            numberOfMonths={2}
+                            numberOfMonths={1}
                             locale={es}
                             disabled={disabledDays}
                         />
@@ -355,13 +391,13 @@ export function BookingAddForm({ propertyId, tenants, existingBookings }: { prop
                     <Label htmlFor="notes">Notas</Label>
                     <Textarea id="notes" name="notes" />
                 </div>
-                <input type="hidden" name="propertyId" value={propertyId} />
+                <input type="hidden" name="propertyId" value={selectedPropertyId} />
             </div>
             <DialogFooter>
                 <DialogClose asChild>
                     <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
                 </DialogClose>
-                <SubmitButton isDisabled={!date?.from || !date?.to || isDateOverlap} />
+                <SubmitButton isDisabled={!date?.from || !date?.to || isDateOverlap || !selectedPropertyId || !selectedTenantId} />
             </DialogFooter>
         </form>
          {state.message && !state.success && (

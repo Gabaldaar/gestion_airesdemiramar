@@ -14,6 +14,7 @@ import BookingsClient from "@/components/bookings-client";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { BookingAddForm } from "@/components/booking-add-form";
 
 interface BookingsData {
     allBookings: BookingWithDetails[];
@@ -78,16 +79,26 @@ export default function BookingsPage() {
 
   return (
     <Card>
-    <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-            {pageTitle}
-            {!tenantId && (
-                <span className="text-sm font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                    {countDisplay}
-                </span>
-            )}
-        </CardTitle>
-        <CardDescription>{pageDescription}</CardDescription>
+    <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <div>
+            <CardTitle className="flex items-center gap-2">
+                {pageTitle}
+                {!tenantId && (
+                    <span className="text-sm font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                        {countDisplay}
+                    </span>
+                )}
+            </CardTitle>
+            <CardDescription>{pageDescription}</CardDescription>
+        </div>
+        <div className="flex-shrink-0">
+            <BookingAddForm 
+                tenants={tenants}
+                allBookings={allBookings}
+                properties={properties}
+                onDataChanged={handleDataChanged}
+            />
+        </div>
     </CardHeader>
     <CardContent>
         <BookingsClient 
