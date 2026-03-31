@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ExpenseWithDetails, ExpenseCategory, Provider, TaskAssignment } from "@/lib/data";
+import { ExpenseWithDetails, ExpenseCategory, Provider } from "@/lib/data";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ExpenseEditForm } from "./expense-edit-form";
@@ -59,7 +59,7 @@ function ExpenseActions({ expense, categories, providers, onDataChanged }: {
                 categories={categories}
                 providers={providers}
                 onExpenseUpdated={onDataChanged}
-                assignmentName={expense.assignmentName} />
+            />
             <ExpenseDeleteForm expenseId={expense.id} onExpenseDeleted={onDataChanged} />
         </div>
     );

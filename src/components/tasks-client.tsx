@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { TaskWithDetails, Property, Provider, TaskCategory, TaskStatus, TaskPriority, ExpenseCategory, TaskScope } from '@/lib/data';
+import { TaskWithDetails, Property, Provider, TaskCategory, TaskStatus, TaskPriority, ExpenseCategory, TaskScope, TaskAssignment } from '@/lib/data';
 import TasksList from '@/components/tasks-list';
 import { ExpensePreloadData } from '@/components/expense-add-form';
 import { Button } from '@/components/ui/button';
@@ -33,12 +34,12 @@ export default function TasksClient({ initialTasks, properties, providers, categ
   
   const [isExpenseAddOpen, setIsExpenseAddOpen] = useState(false);
   const [expensePreloadData, setExpensePreloadData] = useState<ExpensePreloadData | undefined>(undefined);
-  const [expensePropertyId, setExpensePropertyId] = useState<string>('');
+  const [expenseAssignment, setExpenseAssignment] = useState<TaskAssignment | null>(null);
 
 
-  const handleRegisterExpense = useCallback((data: ExpensePreloadData, propertyId: string) => {
+  const handleRegisterExpense = useCallback((data: ExpensePreloadData, assignment: TaskAssignment) => {
     setExpensePreloadData(data);
-    setExpensePropertyId(propertyId);
+    setExpenseAssignment(assignment);
     setIsExpenseAddOpen(true);
   }, []);
 
@@ -315,9 +316,9 @@ export default function TasksClient({ initialTasks, properties, providers, categ
         onSelectionChange={handleSelectionChange}
         onSelectAll={handleSelectAll}
       />
-      {expensePropertyId && (
+      {expenseAssignment && (
         <ExpenseAddForm
-            propertyId={expensePropertyId}
+            assignment={expenseAssignment}
             categories={expenseCategories}
             providers={providers}
             onExpenseAdded={onDataChanged}

@@ -18,7 +18,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookings, getPropertyExpensesByPropertyId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, PropertyExpense, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories, getProviders, Provider, getTaskScopes, TaskScope, DateBlock, getDateBlocks, getDateBlocksByPropertyId } from "@/lib/data";
+import { getPropertyById, getTenants, getBookings, getExpensesByAssignmentId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, ExpenseWithDetails, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories, getProviders, Provider, getTaskScopes, TaskScope, DateBlock, getDateBlocks, getDateBlocksByPropertyId } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import ExpensesList from '@/components/expenses-list';
@@ -50,7 +50,7 @@ interface PropertyDetailData {
     tenants: Tenant[];
     bookings: BookingWithDetails[];
     blocks: DateBlock[];
-    expenses: PropertyExpense[];
+    expenses: ExpenseWithDetails[];
     expenseCategories: ExpenseCategory[];
     tasks: TaskWithDetails[];
     taskCategories: TaskCategory[];
@@ -145,7 +145,7 @@ export default function PropertyDetailPage() {
                 getTenants(),
                 getBookings(), // Fetch all bookings
                 getDateBlocks(), // Fetch all blocks
-                getPropertyExpensesByPropertyId(propertyId),
+                getExpensesByAssignmentId(propertyId),
                 getExpenseCategories(),
                 getTasksByPropertyId(propertyId),
                 getTaskCategories(),
@@ -456,7 +456,7 @@ export default function PropertyDetailPage() {
                         </CardDescription>
                     </div>
                      <ExpenseAddForm
-                        propertyId={property.id}
+                        assignment={{ type: 'property', id: property.id }}
                         categories={expenseCategories}
                         providers={providers}
                         onExpenseAdded={handleDataChanged}
@@ -471,7 +471,7 @@ export default function PropertyDetailPage() {
                     </ExpenseAddForm>
                 </CardHeader>
                 <CardContent>
-                    <ExpensesList expenses={expenses} categories={expenseCategories} providers={providers} property={property} onDataChanged={handleDataChanged} />
+                    <ExpensesList expenses={expenses} categories={expenseCategories} providers={providers} onDataChanged={handleDataChanged} />
                 </CardContent>
             </Card>
             </TabsContent>

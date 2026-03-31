@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { addPropertyExpense } from '@/lib/actions';
+import { addExpense } from '@/lib/actions';
 import { Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,7 @@ import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { ExpenseCategory, Provider } from '@/lib/data';
+import { ExpenseCategory, Provider, TaskAssignment } from '@/lib/data';
 
 const initialState = {
   message: '',
@@ -65,7 +65,7 @@ const formatCurrency = (amount: number, currency: 'USD' | 'ARS' = 'ARS') => {
 }
 
 export function ExpenseAddForm({
-    propertyId,
+    assignment,
     categories,
     providers,
     children,
@@ -74,7 +74,7 @@ export function ExpenseAddForm({
     onExpenseAdded,
     preloadData
 }: {
-    propertyId: string,
+    assignment: TaskAssignment,
     categories: ExpenseCategory[],
     providers?: Provider[],
     children?: React.ReactNode,
@@ -96,7 +96,7 @@ export function ExpenseAddForm({
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
-        const result = await addPropertyExpense(initialState, formData);
+        const result = await addExpense(initialState, formData);
         setState(result);
     });
   };
@@ -167,7 +167,7 @@ export function ExpenseAddForm({
           <DialogTitle>Añadir Gasto</DialogTitle>
            <DialogDescription>
                 Completa los datos del gasto.
-                {preloadData?.propertyName && <> para la propiedad <span className="font-semibold text-foreground">{preloadData.propertyName}</span></>}
+                {preloadData?.propertyName && <> para <span className="font-semibold text-foreground">{preloadData.propertyName}</span></>}
             </DialogDescription>
             {(preloadData?.providerName || (preloadData?.amountPaidSoFar && preloadData.amountPaidSoFar > 0)) && (
                 <div className="text-sm text-muted-foreground border-t pt-2 mt-2 space-y-1">
@@ -177,7 +177,8 @@ export function ExpenseAddForm({
             )}
         </DialogHeader>
         <form action={formAction} ref={formRef}>
-            <input type="hidden" name="propertyId" value={propertyId} />
+            <input type="hidden" name="assignmentType" value={assignment.type} />
+            <input type="hidden" name="assignmentId" value={assignment.id} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             {preloadData?.taskId && <input type="hidden" name="taskId" value={preloadData.taskId} />}
             <input type="hidden" name="providerId" value={selectedProviderId} />

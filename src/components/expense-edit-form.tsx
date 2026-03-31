@@ -16,8 +16,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { updatePropertyExpense } from '@/lib/actions';
-import { PropertyExpense, ExpenseCategory, Provider } from '@/lib/data';
+import { updateExpense } from '@/lib/actions';
+import { ExpenseWithDetails, ExpenseCategory, Provider } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn, parseDateSafely } from '@/lib/utils';
@@ -48,12 +48,11 @@ function SubmitButton() {
     )
 }
 
-export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdated, propertyName }: {
-    expense: PropertyExpense,
+export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdated }: {
+    expense: ExpenseWithDetails,
     categories: ExpenseCategory[],
     providers?: Provider[],
     onExpenseUpdated: () => void;
-    propertyName?: string;
 }) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
@@ -66,7 +65,7 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
-        const result = await updatePropertyExpense(initialState, formData);
+        const result = await updateExpense(initialState, formData);
         setState(result);
     });
   };
@@ -115,14 +114,13 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
         <DialogHeader>
           <DialogTitle>Editar Gasto</DialogTitle>
             <DialogDescription>
-                Modifica los datos del gasto
-                {propertyName && <> para la propiedad <span className="font-semibold text-foreground">{propertyName}</span></>}
-                .
+                Modifica los datos del gasto para <span className="font-semibold text-foreground">{expense.assignmentName}</span>.
             </DialogDescription>
         </DialogHeader>
         <form action={formAction}>
             <input type="hidden" name="id" value={expense.id} />
-            <input type="hidden" name="propertyId" value={expense.propertyId} />
+            <input type="hidden" name="assignmentType" value={expense.assignment.type} />
+            <input type="hidden" name="assignmentId" value={expense.assignment.id} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <input type="hidden" name="providerId" value={selectedProviderId} />
             <div className="grid gap-4 py-4">

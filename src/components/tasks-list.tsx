@@ -19,7 +19,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TaskWithDetails, Property, TaskCategory, Task, TaskStatus, TaskPriority, Provider, TaskScope } from "@/lib/data";
+import { TaskWithDetails, Property, TaskCategory, Task, TaskStatus, TaskPriority, Provider, TaskScope, TaskAssignment } from "@/lib/data";
 import { format, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, parseDateSafely } from "@/lib/utils";
@@ -53,7 +53,7 @@ interface TasksListProps {
   showProperty?: boolean;
   propertyId?: string;
   onDataChanged: () => void;
-  onRegisterExpense: (data: ExpensePreloadData, propertyId: string) => void;
+  onRegisterExpense: (data: ExpensePreloadData, assignment: TaskAssignment) => void;
   selectedTaskIds?: string[];
   onSelectionChange?: (taskId: string, isSelected: boolean) => void;
   onSelectAll?: (isSelected: boolean) => void;
@@ -411,23 +411,23 @@ export default function TasksList({ tasks, properties, categories, providers, sc
   };
   
   const handleTaskCompletedWithExpense = (task: Task) => {
-    if (task.estimatedCost && task.estimatedCost > 0) {
+    if (task.assignment && task.estimatedCost && task.estimatedCost > 0) {
         onRegisterExpense({
             amount: task.estimatedCost,
             description: `Gasto de tarea: ${task.description}`,
             currency: task.costCurrency || 'ARS',
             taskId: task.id,
             providerId: task.providerId,
-        }, task.assignment.id); // Assuming propertyId is in assignment.id for property tasks
+        }, task.assignment);
     }
     onDataChanged();
   };
 
   const handleRegisterExpenseClick = (task: TaskWithDetails) => {
-    if (task.assignment?.type !== 'property') {
+    if (!task.assignment) {
         toast({
             title: "Acción no permitida",
-            description: "Solo se pueden registrar gastos para tareas asignadas a una propiedad.",
+            description: "Esta tarea no tiene una asignación válida para registrar un gasto.",
             variant: "destructive"
         });
         return;
@@ -441,7 +441,7 @@ export default function TasksList({ tasks, properties, categories, providers, sc
         propertyName: task.assignmentName,
         providerName: task.providerName,
         amountPaidSoFar: task.actualCost,
-    }, task.assignment.id);
+    }, task.assignment);
   };
 
 
