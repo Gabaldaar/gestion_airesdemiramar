@@ -1,5 +1,7 @@
 
 
+'use server';
+
 import { db } from './firebase';
 import {
   collection,
@@ -660,17 +662,20 @@ export async function deleteExpenseCategory(id: string): Promise<void> {
 }
 
 export async function getExpensesByAssignmentId(assignmentId: string): Promise<ExpenseWithDetails[]> {
-    const q = query(expensesCollection, where('assignment.id', '==', assignmentId), orderBy('date', 'desc'));
+    const q = query(expensesCollection, where('assignment.id', '==', assignmentId));
     const snapshot = await getDocs(q);
-    const expenses = snapshot.docs.map(processDoc) as Expense[];
-    return await enrichExpenses(expenses);
+    // Note: This fetches expenses for a given assignment ID regardless of type (property or scope)
+    // The filter for property type is applied afterwards.
+    const expenses = snapshot.docs.map(processDoc).filter(e => e.assignment?.type === 'property') as Expense[];
+    const detailedExpenses = await enrichExpenses(expenses);
+    detailedExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return detailedExpenses;
 }
 
-export async function getExpensesByProviderId(providerId: string): Promise<ExpenseWithDetails[]> {
-    const q = query(expensesCollection, where('providerId', '==', providerId), orderBy('date', 'desc'));
+export async function getPropertyExpensesByProviderId(providerId: string): Promise<Expense[]> {
+    const q = query(expensesCollection, where('providerId', '==', providerId), where('assignment.type', '==', 'property'));
     const snapshot = await getDocs(q);
-    const expenses = snapshot.docs.map(processDoc) as Expense[];
-    return await enrichExpenses(expenses);
+    return snapshot.docs.map(processDoc) as Expense[];
 }
 
 
@@ -734,7 +739,7 @@ async function enrichExpenses(expenses: Expense[]): Promise<ExpenseWithDetails[]
 }
 
 
-export async function getExpensesWithDetails(): Promise<ExpenseWithDetails[]> {
+export async function getAllExpensesUnified(): Promise<ExpenseWithDetails[]> {
     const q = query(expensesCollection, orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
     const allExpenses = snapshot.docs.map(processDoc) as Expense[];
@@ -1042,10 +1047,8 @@ const stringToColor = (str: string) => {
 }
 
 export async function getExpensesByCategorySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByCategorySummary[]> {
-    const [allExpenses, categories] = await Promise.all([
-        getExpensesWithDetails(),
-        getExpenseCategories()
-    ]);
+    const allExpenses = await getAllExpensesUnified();
+    const categories = await getExpenseCategories();
     
     const startDate = options?.startDate;
     const endDate = options?.endDate;
@@ -1090,7 +1093,7 @@ export async function getExpensesByCategorySummary(options?: { startDate?: strin
 }
 
 export async function getExpensesByPropertySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByPropertySummary[]> {
-    const allExpenses = await getExpensesWithDetails();
+    const allExpenses = await getAllExpensesUnified();
     
     const startDate = options?.startDate;
     const endDate = options?.endDate;
@@ -1576,4 +1579,3 @@ export async function deleteDateBlockDb(id: string): Promise<void> {
   const docRef = doc(db, 'dateBlocks', id);
   await deleteDoc(docRef);
 }
-

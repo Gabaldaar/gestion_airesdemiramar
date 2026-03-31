@@ -424,10 +424,10 @@ export default function TasksList({ tasks, properties, categories, providers, sc
   };
 
   const handleRegisterExpenseClick = (task: TaskWithDetails) => {
-    if (!task.assignment) {
+    if (!task.assignment || !task.assignment.id) {
         toast({
             title: "Acción no permitida",
-            description: "Esta tarea no tiene una asignación válida para registrar un gasto.",
+            description: `La tarea "${task.description}" no tiene una asignación válida (propiedad o ámbito). ID de tarea: ${task.id}`,
             variant: "destructive"
         });
         return;
