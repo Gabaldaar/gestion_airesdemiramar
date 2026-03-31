@@ -154,9 +154,9 @@ export type ExpenseCategory = {
     name: string;
 };
 
-export type PropertyExpense = {
+export type Expense = {
     id: string;
-    propertyId: string;
+    assignment: TaskAssignment;
     description: string;
     amount: number; // Always in ARS
     date: string;
@@ -168,26 +168,9 @@ export type PropertyExpense = {
     providerId?: string | null;
 }
 
-export type BookingExpense = {
-    id: string;
-    bookingId: string;
-    description: string;
-    amount: number; // Always in ARS
-    date: string;
-    currency: 'ARS'; // Always ARS
-    exchangeRate?: number; 
-    originalUsdAmount?: number;
-    categoryId?: string | null;
-    providerId?: string | null;
-}
-
-// Extend unified expense to include all original fields for editing
-export type UnifiedExpense = (PropertyExpense | BookingExpense) & {
-    type: 'Propiedad' | 'Reserva';
-    amountARS: number;
-    amountUSD: number;
-    propertyName: string;
-    tenantName?: string;
+export type ExpenseWithDetails = Expense & {
+    assignmentName: string;
+    assignmentColor?: string;
     categoryName?: string;
     providerName?: string;
 };
@@ -365,8 +348,7 @@ export type TaskWithDetails = Task & {
 const propertiesCollection = collection(db, 'properties');
 const tenantsCollection = collection(db, 'tenants');
 const bookingsCollection = collection(db, 'bookings');
-const propertyExpensesCollection = collection(db, 'propertyExpenses');
-const bookingExpensesCollection = collection(db, 'bookingExpenses');
+const expensesCollection = collection(db, 'expenses');
 const paymentsCollection = collection(db, 'payments');
 const expenseCategoriesCollection = collection(db, 'expenseCategories');
 const emailTemplatesCollection = collection(db, 'emailTemplates');
@@ -453,42 +435,30 @@ export async function updateProperty(updatedProperty: Partial<Property>): Promis
 export async function deleteProperty(propertyId: string): Promise<void> {
     const batch = writeBatch(db);
 
-    // 1. Delete the property itself
     const propertyRef = doc(db, 'properties', propertyId);
     batch.delete(propertyRef);
 
-    // 2. Find and delete all bookings for the property
     const bookingsQuery = query(bookingsCollection, where('propertyId', '==', propertyId));
     const bookingsSnapshot = await getDocs(bookingsQuery);
     
     const bookingIds = bookingsSnapshot.docs.map(d => d.id);
 
     if (bookingIds.length > 0) {
-        // 3. Find and delete all payments for those bookings
         const paymentsQuery = query(paymentsCollection, where('bookingId', 'in', bookingIds));
         const paymentsSnapshot = await getDocs(paymentsQuery);
         paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
-
-        // 4. Find and delete all booking expenses for those bookings
-        const bookingExpensesQuery = query(bookingExpensesCollection, where('bookingId', 'in', bookingIds));
-        const bookingExpensesSnapshot = await getDocs(bookingExpensesQuery);
-        bookingExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
     }
 
-    // Delete the bookings themselves
     bookingsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-    // 5. Find and delete all property expenses
-    const propertyExpensesQuery = query(propertyExpensesCollection, where('propertyId', '==', propertyId));
-    const propertyExpensesSnapshot = await getDocs(propertyExpensesQuery);
-    propertyExpensesSnapshot.forEach(doc => batch.delete(doc.ref));
+    const expensesQuery = query(expensesCollection, where('assignment.type', '==', 'property'), where('assignment.id', '==', propertyId));
+    const expensesSnapshot = await getDocs(expensesQuery);
+    expensesSnapshot.forEach(doc => batch.delete(doc.ref));
     
-    // 6. Find and delete all tasks for the property
     const tasksQuery = query(tasksCollection, where('assignment.id', '==', propertyId), where('assignment.type', '==', 'property'));
     const tasksSnapshot = await getDocs(tasksQuery);
     tasksSnapshot.forEach(doc => batch.delete(doc.ref));
 
-    // Commit the batch
     await batch.commit();
 }
 
@@ -611,10 +581,6 @@ export async function deleteBooking(id: string): Promise<boolean> {
     const paymentsQuery = query(paymentsCollection, where('bookingId', '==', id));
     const paymentsSnapshot = await getDocs(paymentsQuery);
     paymentsSnapshot.forEach(doc => batch.delete(doc.ref));
-
-    const expensesQuery = query(bookingExpensesCollection, where('bookingId', '==', id));
-    const expensesSnapshot = await getDocs(expensesQuery);
-    expensesSnapshot.forEach(doc => batch.delete(doc.ref));
     
     await batch.commit();
     return true;
@@ -693,141 +659,96 @@ export async function deleteExpenseCategory(id: string): Promise<void> {
     await deleteDoc(docRef);
 }
 
-
-export async function getPropertyExpensesByPropertyId(propertyId: string): Promise<PropertyExpense[]> {
-    const q = query(propertyExpensesCollection, where('propertyId', '==', propertyId), orderBy('date', 'desc'));
+export async function getExpensesByAssignmentId(assignmentId: string): Promise<ExpenseWithDetails[]> {
+    const q = query(expensesCollection, where('assignment.id', '==', assignmentId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as PropertyExpense[];
+    const expenses = snapshot.docs.map(processDoc) as Expense[];
+    return await enrichExpenses(expenses);
 }
 
-export async function getPropertyExpensesByProviderId(providerId: string): Promise<PropertyExpense[]> {
-    const q = query(propertyExpensesCollection, where('providerId', '==', providerId));
+export async function getExpensesByProviderId(providerId: string): Promise<ExpenseWithDetails[]> {
+    const q = query(expensesCollection, where('providerId', '==', providerId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
-    const expenses = snapshot.docs.map(processDoc) as PropertyExpense[];
-    // Sort manually to avoid needing a composite index
-    expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return expenses;
+    const expenses = snapshot.docs.map(processDoc) as Expense[];
+    return await enrichExpenses(expenses);
 }
 
-export async function addPropertyExpense(expense: Omit<PropertyExpense, 'id'>): Promise<PropertyExpense> {
-    const docRef = await addDoc(propertyExpensesCollection, expense);
+
+export async function addExpense(expense: Omit<Expense, 'id'>): Promise<Expense> {
+    const docRef = await addDoc(expensesCollection, expense);
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
-export async function updatePropertyExpense(updatedExpense: PropertyExpense): Promise<PropertyExpense> {
+export async function updateExpense(updatedExpense: Expense): Promise<Expense> {
     const { id, ...data } = updatedExpense;
-    const docRef = doc(db, 'propertyExpenses', id);
+    const docRef = doc(db, 'expenses', id);
     await updateDoc(docRef, data);
     return updatedExpense;
 }
 
-export async function deletePropertyExpense(id: string): Promise<void> {
-    const docRef = doc(db, 'propertyExpenses', id);
+export async function deleteExpense(id: string): Promise<void> {
+    const docRef = doc(db, 'expenses', id);
     await deleteDoc(docRef);
 }
 
 
-export async function getBookingExpensesByBookingId(bookingId: string): Promise<BookingExpense[]> {
-    const q = query(bookingExpensesCollection, where('bookingId', '==', bookingId), orderBy('date', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as BookingExpense[];
-}
-
-export async function addBookingExpense(expense: Omit<BookingExpense, 'id'>): Promise<BookingExpense> {
-    const docRef = await addDoc(bookingExpensesCollection, expense);
-    return { id: docRef.id, ...expense, currency: 'ARS' };
-}
-
-export async function updateBookingExpense(updatedExpense: BookingExpense): Promise<BookingExpense> {
-    const { id, ...data } = updatedExpense;
-    const docRef = doc(db, 'bookingExpenses', id);
-    await updateDoc(docRef, data);
-    return updatedExpense;
-}
-
-export async function deleteBookingExpense(id: string): Promise<void> {
-    const docRef = doc(db, 'bookingExpenses', id);
-    await deleteDoc(docRef);
-}
-
-
-export async function getAllExpensesUnified(): Promise<UnifiedExpense[]> {
-    const [propExpensesSnap, bookExpensesSnap, properties, tenants, categories, providers] = await Promise.all([
-        getDocs(query(propertyExpensesCollection, orderBy('date', 'desc'))),
-        getDocs(query(bookingExpensesCollection, orderBy('date', 'desc'))),
+async function enrichExpenses(expenses: Expense[]): Promise<ExpenseWithDetails[]> {
+    const [properties, scopes, categories, providers] = await Promise.all([
         getProperties(),
-        getTenants(),
+        getTaskScopes(),
         getExpenseCategories(),
         getProviders(),
     ]);
 
     const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
-    const tenantsMap = new Map(tenants.map(t => [t.id, t.name]));
+    const scopesMap = new Map(scopes.map(s => [s.id, { name: s.name, color: s.color }]));
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
     const providersMap = new Map(providers.map(p => [p.id, p.name]));
-    const bookingsMap = new Map<string, { propertyName: string, tenantName: string }>();
 
-    const allExpenses: UnifiedExpense[] = [];
+    const detailedExpenses = expenses.map(expense => {
+        let assignmentName = 'N/A';
+        let assignmentColor: string | undefined;
 
-    for (const doc of propExpensesSnap.docs) {
-        const expense = processDoc(doc) as PropertyExpense;
-        allExpenses.push({
-            ...expense,
-            type: 'Propiedad',
-            amountARS: expense.amount,
-            amountUSD: expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0),
-            propertyName: propertiesMap.get(expense.propertyId) || 'N/A',
-            categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
-            providerName: expense.providerId ? providersMap.get(expense.providerId) : undefined,
-        });
-    }
-
-    for (const doc of bookExpensesSnap.docs) {
-        const expense = processDoc(doc) as BookingExpense;
-        let propertyName = 'N/A';
-        let tenantName = 'N/A';
-
-        if (bookingsMap.has(expense.bookingId)) {
-            propertyName = bookingsMap.get(expense.bookingId)!.propertyName;
-            tenantName = bookingsMap.get(expense.bookingId)!.tenantName;
-        } else {
-            const booking = await getBookingById(expense.bookingId);
-            if (booking) {
-                const propName = propertiesMap.get(booking.propertyId) || 'N/A';
-                const tenName = tenantsMap.get(booking.tenantId) || 'N/A';
-                bookingsMap.set(expense.bookingId, { propertyName: propName, tenantName: tenName });
-                propertyName = propName;
-                tenantName = tenName;
+        if (expense.assignment) {
+            if (expense.assignment.type === 'property') {
+                assignmentName = propertiesMap.get(expense.assignment.id) || 'Propiedad Desconocida';
+            } else if (expense.assignment.type === 'scope') {
+                const scope = scopesMap.get(expense.assignment.id);
+                assignmentName = scope?.name || 'Ámbito Desconocido';
+                assignmentColor = scope?.color;
             }
         }
-        
-        allExpenses.push({
+
+        return {
             ...expense,
-            type: 'Reserva',
             amountARS: expense.amount,
             amountUSD: expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0),
-            propertyName,
-            tenantName,
+            assignmentName,
+            assignmentColor,
             categoryName: expense.categoryId ? categoriesMap.get(expense.categoryId) : undefined,
             providerName: expense.providerId ? providersMap.get(expense.providerId) : undefined,
-        });
-    }
-    
-    // Since we query separately, we need to sort them together by date
-    allExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        };
+    });
 
-    return allExpenses;
+    return detailedExpenses;
+}
+
+
+export async function getExpensesWithDetails(): Promise<ExpenseWithDetails[]> {
+    const q = query(expensesCollection, orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    const allExpenses = snapshot.docs.map(processDoc) as Expense[];
+    return await enrichExpenses(allExpenses);
 }
 
 
 // --- FINANCIAL SUMMARY ---
 
 export async function getFinancialSummaryByProperty(options?: { startDate?: string; endDate?: string }): Promise<FinancialSummaryByCurrency> {
-    const [properties, bookings, propertyExpenses, bookingExpenses, payments] = await Promise.all([
+    const [properties, bookings, allExpenses, payments] = await Promise.all([
         getProperties(),
         getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
-        getDocs(propertyExpensesCollection).then(snap => snap.docs.map(processDoc) as PropertyExpense[]),
-        getDocs(bookingExpensesCollection).then(snap => snap.docs.map(processDoc) as BookingExpense[]),
+        getDocs(expensesCollection).then(snap => snap.docs.map(processDoc) as Expense[]),
         getDocs(paymentsCollection).then(snap => snap.docs.map(processDoc) as Payment[])
     ]);
     
@@ -868,7 +789,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
         totalPayments: 0,
         balance: 0,
         totalPropertyExpenses: 0,
-        totalBookingExpenses: 0,
+        totalBookingExpenses: 0, // This will now be 0, as expenses are tied to properties/scopes
         netResult: 0
     });
 
@@ -906,29 +827,15 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
         }
     });
     
-    propertyExpenses.filter(e => isWithinDateRange(e.date)).forEach(expense => {
-        const propId = expense.propertyId;
-        if (summaryByProperty[propId]) {
-            summaryByProperty[propId].totalPropertyExpenses += expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0);
-        }
-         if (summaryByPropertyArs[propId]) {
-            summaryByPropertyArs[propId].totalPropertyExpenses += expense.amount;
-        }
-    });
-    
-    bookingExpenses.filter(e => isWithinDateRange(e.date)).forEach(expense => {
-        const booking = bookingsMap.get(expense.bookingId);
-        if (booking) {
-            const propId = booking.propertyId;
-             if (booking.currency === 'USD') {
-                if (summaryByProperty[propId]) {
-                     summaryByProperty[propId].totalBookingExpenses += expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0);
-                }
-             } else {
-                 if (summaryByPropertyArs[propId]) {
-                    summaryByPropertyArs[propId].totalBookingExpenses += expense.amount;
-                }
-             }
+    allExpenses.filter(e => isWithinDateRange(e.date)).forEach(expense => {
+        if (expense.assignment.type === 'property') {
+            const propId = expense.assignment.id;
+            if (summaryByProperty[propId]) {
+                summaryByProperty[propId].totalPropertyExpenses += expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0);
+            }
+             if (summaryByPropertyArs[propId]) {
+                summaryByPropertyArs[propId].totalPropertyExpenses += expense.amount;
+            }
         }
     });
     
@@ -1136,7 +1043,7 @@ const stringToColor = (str: string) => {
 
 export async function getExpensesByCategorySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByCategorySummary[]> {
     const [allExpenses, categories] = await Promise.all([
-        getAllExpensesUnified(),
+        getExpensesWithDetails(),
         getExpenseCategories()
     ]);
     
@@ -1183,8 +1090,7 @@ export async function getExpensesByCategorySummary(options?: { startDate?: strin
 }
 
 export async function getExpensesByPropertySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByPropertySummary[]> {
-    const allExpenses = await getAllExpensesUnified();
-    const properties = await getProperties();
+    const allExpenses = await getExpensesWithDetails();
     
     const startDate = options?.startDate;
     const endDate = options?.endDate;
@@ -1201,17 +1107,15 @@ export async function getExpensesByPropertySummary(options?: { startDate?: strin
         return true;
     };
 
-    const filteredExpenses = allExpenses.filter(e => isWithinDateRange(e.date));
+    const filteredExpenses = allExpenses.filter(e => isWithinDateRange(e.date) && e.assignment.type === 'property');
     if (filteredExpenses.length === 0) return [];
 
     const summaryMap = new Map<string, number>();
-    properties.forEach(p => summaryMap.set(p.name, 0)); // Initialize all properties
 
     filteredExpenses.forEach(expense => {
-        if (expense.propertyName !== 'N/A') {
-            const currentTotal = summaryMap.get(expense.propertyName) || 0;
-            summaryMap.set(expense.propertyName, currentTotal + expense.amountUSD);
-        }
+        const propertyName = expense.assignmentName;
+        const currentTotal = summaryMap.get(propertyName) || 0;
+        summaryMap.set(propertyName, currentTotal + expense.amountUSD);
     });
     
     const totalExpenses = Array.from(summaryMap.values()).reduce((acc, val) => acc + val, 0);
@@ -1398,10 +1302,10 @@ export async function deleteTaskScope(id: string): Promise<void> {
 
 async function getTaskDetails(task: Task, propertiesMap: Map<string, Property>, scopesMap: Map<string, TaskScope>, categoriesMap: Map<string, string>, providersMap: Map<string, string>): Promise<TaskWithDetails> {
     // Re-calculate actualCost on the fly by summing related expenses
-    const expensesQuery = query(propertyExpensesCollection, where('taskId', '==', task.id));
+    const expensesQuery = query(expensesCollection, where('taskId', '==', task.id));
     const expensesSnapshot = await getDocs(expensesQuery);
     const actualCost = expensesSnapshot.docs.reduce((sum, doc) => {
-        const expense = doc.data() as PropertyExpense;
+        const expense = doc.data() as Expense;
         // Sum based on the task's currency
         if (task.costCurrency === 'USD') {
             return sum + (expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0));
@@ -1530,9 +1434,42 @@ export async function updateTask(updatedTask: Partial<Task>): Promise<Task | nul
     return newDoc.exists() ? processDoc(newDoc) as Task : null;
 }
 
+export async function reassignTaskExpenses(taskId: string, newAssignment: TaskAssignment): Promise<void> {
+    if (!taskId || !newAssignment) {
+        throw new Error("Task ID and new assignment are required.");
+    }
+    const expensesQuery = query(expensesCollection, where('taskId', '==', taskId));
+    const expensesSnapshot = await getDocs(expensesQuery);
+    
+    if (expensesSnapshot.empty) {
+        return; // No expenses to move
+    }
+
+    const batch = writeBatch(db);
+    expensesSnapshot.forEach(expenseDoc => {
+        const expenseRef = doc(db, 'expenses', expenseDoc.id);
+        batch.update(expenseRef, { assignment: newAssignment });
+    });
+    
+    await batch.commit();
+}
+
+
 export async function deleteTask(id: string): Promise<void> {
-    const docRef = doc(db, 'tasks', id);
-    await deleteDoc(docRef);
+    const batch = writeBatch(db);
+    
+    // Delete the task
+    const taskRef = doc(db, 'tasks', id);
+    batch.delete(taskRef);
+
+    // Delete associated expenses
+    const expensesQuery = query(expensesCollection, where('taskId', '==', id));
+    const expensesSnapshot = await getDocs(expensesQuery);
+    expensesSnapshot.forEach(expenseDoc => {
+        batch.delete(doc(db, 'expenses', expenseDoc.id));
+    });
+
+    await batch.commit();
 }
 
 
@@ -1639,3 +1576,4 @@ export async function deleteDateBlockDb(id: string): Promise<void> {
   const docRef = doc(db, 'dateBlocks', id);
   await deleteDoc(docRef);
 }
+

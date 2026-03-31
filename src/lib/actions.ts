@@ -10,12 +10,9 @@ import {
   addBooking as addBookingDb,
   updateBooking as updateBookingDb,
   deleteBooking as deleteBookingDb,
-  addPropertyExpense as addPropertyExpenseDb,
-  updatePropertyExpense as updatePropertyExpenseDb,
-  deletePropertyExpense as deletePropertyExpenseDb,
-  addBookingExpense as addBookingExpenseDb,
-  updateBookingExpense as updateBookingExpenseDb,
-  deleteBookingExpense as deleteBookingExpenseDb,
+  addExpense as addExpenseDb,
+  updateExpense as updateExpenseDb,
+  deleteExpense as deleteExpenseDb,
   addPayment as addPaymentDb,
   updatePayment as updatePaymentDb,
   deletePayment as deletePaymentDb,
@@ -55,13 +52,13 @@ import {
   addTaskScope as addTaskScopeDb,
   updateTaskScope as updateTaskScopeDb,
   deleteTaskScope as deleteTaskScopeDb,
+  reassignTaskExpenses,
   addDateBlockDb,
   updateDateBlockDb,
   deleteDateBlockDb,
   Tenant,
   Booking,
-  PropertyExpense,
-  BookingExpense,
+  Expense,
   Payment,
   Property,
   ContractStatus,
@@ -580,25 +577,27 @@ const handleExpenseData = (formData: FormData) => {
   return expensePayload;
 };
 
-export async function addPropertyExpense(previousState: any, formData: FormData) {
+export async function addExpense(previousState: any, formData: FormData) {
   try {
-    const propertyId = formData.get('propertyId') as string;
+    const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
+    const assignmentId = formData.get('assignmentId') as string;
     const date = formData.get('date') as string;
     const taskId = formData.get('taskId') as string | null;
 
-    if (!propertyId || !date) {
+    if (!assignmentType || !assignmentId || !date) {
       return {
         success: false,
-        message: 'La propiedad y la fecha son obligatorias.',
+        message: 'La asignación y la fecha son obligatorias.',
       };
     }
 
     const expenseData = handleExpenseData(formData);
-    const newExpense: Omit<PropertyExpense, 'id'> = {
-      propertyId,
+    const newExpense: Omit<Expense, 'id'> = {
+      assignment: { type: assignmentType, id: assignmentId },
       date,
       ...expenseData,
       taskId: taskId || null,
+      currency: 'ARS',
     };
     
     // Explicitly set providerId to null if it's not provided or is 'none'
@@ -606,48 +605,39 @@ export async function addPropertyExpense(previousState: any, formData: FormData)
         newExpense.providerId = null;
     }
 
-    await addPropertyExpenseDb(newExpense);
-    revalidatePath(`/properties/${propertyId}`);
-    revalidatePath('/reports');
-    revalidatePath('/expenses');
-    revalidatePath('/informes');
-    revalidatePath('/tasks'); // Revalidate tasks to update actual cost
-    revalidatePath('/providers');
+    await addExpenseDb(newExpense);
+    revalidatePathsAfterAction(assignmentType === 'property' ? assignmentId : null);
     return { success: true, message: 'Gasto añadido correctamente.' };
   } catch (error: any) {
     return { success: false, message: error.message || 'Error al añadir el gasto.' };
   }
 }
 
-export async function updatePropertyExpense(
+export async function updateExpense(
   previousState: any,
   formData: FormData
 ) {
   try {
     const id = formData.get('id') as string;
-    const propertyId = formData.get('propertyId') as string;
+    const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
+    const assignmentId = formData.get('assignmentId') as string;
     const date = formData.get('date') as string;
 
-    if (!id || !propertyId || !date) {
+    if (!id || !assignmentType || !assignmentId || !date) {
       return { success: false, message: 'Faltan datos para actualizar el gasto.' };
     }
 
     const expenseData = handleExpenseData(formData);
-    const updatedExpense: PropertyExpense = {
+    const updatedExpense: Expense = {
       id,
-      propertyId,
+      assignment: { type: assignmentType, id: assignmentId },
       date,
       ...expenseData,
       currency: 'ARS',
     };
 
-    await updatePropertyExpenseDb(updatedExpense);
-    revalidatePath(`/properties/${propertyId}`);
-    revalidatePath('/reports');
-    revalidatePath('/expenses');
-    revalidatePath('/informes');
-    revalidatePath('/tasks');
-    revalidatePath('/providers');
+    await updateExpenseDb(updatedExpense);
+    revalidatePathsAfterAction(assignmentType === 'property' ? assignmentId : null);
     return { success: true, message: 'Gasto actualizado correctamente.' };
   } catch (error: any) {
     return {
@@ -657,7 +647,7 @@ export async function updatePropertyExpense(
   }
 }
 
-export async function deletePropertyExpense(
+export async function deleteExpense(
   previousState: any,
   formData: FormData
 ) {
@@ -667,125 +657,17 @@ export async function deletePropertyExpense(
   }
 
   try {
-    const expenseDocRef = doc(db, 'propertyExpenses', id);
+    const expenseDocRef = doc(db, 'expenses', id);
     const expenseDoc = await getDoc(expenseDocRef);
     if (!expenseDoc.exists()) {
       return { success: false, message: 'No se encontró el gasto para eliminar.' };
     }
-    const propertyId = expenseDoc.data()?.propertyId;
+    const assignment = expenseDoc.data()?.assignment as TaskAssignment;
 
-    await deletePropertyExpenseDb(id);
+    await deleteExpenseDb(id);
 
-    if (propertyId) {
-      revalidatePath(`/properties/${propertyId}`);
-    }
-    revalidatePath('/reports');
-    revalidatePath('/expenses');
-    revalidatePath('/informes');
-    revalidatePath('/tasks');
-    revalidatePath('/providers');
+    revalidatePathsAfterAction(assignment?.type === 'property' ? assignment.id : null);
     return { success: true, message: 'Gasto eliminado correctamente.' };
-  } catch (error: any) {
-    return { success: false, message: `Error de base de datos: ${error.message}` };
-  }
-}
-
-export async function addBookingExpense(previousState: any, formData: FormData) {
-  try {
-    const bookingId = formData.get('bookingId') as string;
-    const date = formData.get('date') as string;
-
-    if (!bookingId || !date) {
-      return {
-        success: false,
-        message: 'La reserva y la fecha son obligatorias.',
-      };
-    }
-
-    const expenseData = handleExpenseData(formData);
-    const newExpense = {
-      bookingId,
-      date,
-      ...expenseData,
-    };
-
-    await addBookingExpenseDb(newExpense as Omit<BookingExpense, 'id'>);
-    const booking = await getBookingById(bookingId);
-    if (booking) {
-      revalidatePathsAfterAction(booking.propertyId);
-    }
-    return { success: true, message: 'Gasto de reserva añadido correctamente.' };
-  } catch (error: any) {
-    return {
-      success: false,
-      message: error.message || 'Error al añadir el gasto de reserva.',
-    };
-  }
-}
-
-export async function updateBookingExpense(
-  previousState: any,
-  formData: FormData
-) {
-  try {
-    const id = formData.get('id') as string;
-    const bookingId = formData.get('bookingId') as string;
-    const date = formData.get('date') as string;
-
-    if (!id || !bookingId || !date) {
-      return { success: false, message: 'Faltan datos para actualizar el gasto.' };
-    }
-
-    const expenseData = handleExpenseData(formData);
-    const updatedExpense: BookingExpense = {
-      id,
-      bookingId,
-      date,
-      ...expenseData,
-      currency: 'ARS',
-    };
-
-    await updateBookingExpenseDb(updatedExpense);
-    const booking = await getBookingById(bookingId);
-    if (booking) {
-      revalidatePathsAfterAction(booking.propertyId);
-    }
-    return { success: true, message: 'Gasto de reserva actualizado correctamente.' };
-  } catch (error: any) {
-    return {
-      success: false,
-      message: error.message || 'Error al actualizar el gasto de reserva.',
-    };
-  }
-}
-
-export async function deleteBookingExpense(
-  previousState: any,
-  formData: FormData
-) {
-  const id = formData.get('id') as string;
-  if (!id) {
-    return { success: false, message: 'ID de gasto no válido.' };
-  }
-
-  try {
-    const expenseDocRef = doc(db, 'bookingExpenses', id);
-    const expenseDoc = await getDoc(expenseDocRef);
-
-    if (!expenseDoc.exists()) {
-      return { success: false, message: 'No se encontró el gasto para eliminar.' };
-    }
-    const bookingId = expenseDoc.data()?.bookingId;
-
-    await deleteBookingExpenseDb(id);
-
-    if (bookingId) {
-      const booking = await getBookingById(bookingId);
-      if (booking) {
-        revalidatePathsAfterAction(booking.propertyId);
-      }
-    }
-    return { success: true, message: 'Gasto de reserva eliminado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
@@ -1474,6 +1356,33 @@ export async function updateTask(previousState: any, formData: FormData) {
   }
 }
 
+export async function reassignTaskAndMoveCosts(previousState: any, formData: FormData) {
+  const taskId = formData.get('id') as string;
+  const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
+  const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
+
+  if (!taskId || !assignmentType || !assignmentId) {
+    return { success: false, message: 'Faltan datos para reasignar la tarea y sus costos.' };
+  }
+
+  try {
+    const newAssignment: TaskAssignment = { type: assignmentType, id: assignmentId };
+    
+    // First, update the task itself
+    await updateTaskDb({ id: taskId, assignment: newAssignment });
+
+    // Then, move the associated costs
+    await reassignTaskExpenses(taskId, newAssignment);
+
+    revalidatePathsAfterAction();
+    return { success: true, message: 'Tarea y todos sus costos han sido reasignados correctamente.' };
+
+  } catch (error: any) {
+    console.error('Error in reassignTaskAndMoveCosts:', error);
+    return { success: false, message: `Error al reasignar: ${error.message}` };
+  }
+}
+
 export async function deleteTask(previousState: any, formData: FormData) {
     const id = formData.get('id') as string;
     if (!id) {
@@ -1750,3 +1659,4 @@ export async function deleteDateBlock(previousState: any, formData: FormData) {
     return { success: false, message: `Error de base de datos: ${dbError.message}` };
   }
 }
+

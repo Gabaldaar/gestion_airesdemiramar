@@ -27,7 +27,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { BookingPaymentsManager } from './booking-payments-manager';
-import { BookingExpensesManager } from './booking-expenses-manager';
 import { BookingEditForm } from './booking-edit-form';
 import { BookingDeleteForm } from './booking-delete-form';
 import { NotesViewer } from './notes-viewer';
@@ -37,7 +36,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { EmailSender } from "./email-sender";
 import useWindowSize from '@/hooks/use-window-size';
 import { PaymentAddForm, PaymentPreloadData } from "./payment-add-form";
-import { BookingExpenseAddForm } from "./booking-expense-add-form";
 import PaymentCalculator from "./payment-calculator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { TenantDetailsDialog } from "./tenant-details-dialog";
@@ -68,11 +66,10 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-700' }
 };
 
-function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
+function BookingActions({ booking, onEdit, onAddPayment, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
     const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
-    const [isExpensesOpen, setIsExpensesOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     
     const isInactive = booking.status === 'cancelled' || booking.status === 'pending';
@@ -129,25 +126,6 @@ function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalcula
                 </TooltipProvider>
             </BookingPaymentsManager>
             
-            <BookingExpensesManager 
-                bookingId={booking.id} 
-                isOpen={isExpensesOpen} 
-                onOpenChange={setIsExpensesOpen}
-                onAddExpenseClick={() => onAddExpense(booking.id)}
-            >
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsExpensesOpen(true)} disabled={isInactive}>
-                                <Wallet className="h-4 w-4" />
-                                <span className="sr-only">Gestionar Gastos</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Gestionar Gastos</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </BookingExpensesManager>
-            
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -189,7 +167,7 @@ function BookingActions({ booking, onEdit, onAddPayment, onAddExpense, onCalcula
     )
 }
 
-function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen, onTenantClick }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void }) {
+function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onCalculatorOpen, onEmailOpen, onTenantClick }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void }) {
 
   const isCancelled = booking.status === 'cancelled';
   const isPending = booking.status === 'pending';
@@ -374,13 +352,13 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onAdd
           </TooltipProvider>
       </TableCell>
       <TableCell className="text-right">
-        <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onAddExpense={onAddExpense} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} />
+        <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} />
       </TableCell>
     </TableRow>
   );
 }
 
-function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAddExpense, onCalculatorOpen, onEmailOpen, onTenantClick }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onAddExpense: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void }) {
+function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onCalculatorOpen, onEmailOpen, onTenantClick }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void }) {
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
 
@@ -520,7 +498,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onAd
                 </div>
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onAddExpense={onAddExpense} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} />
+                <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} />
             </CardFooter>
         </Card>
     )
@@ -534,9 +512,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [paymentPreloadData, setPaymentPreloadData] = useState<PaymentPreloadData | undefined>(undefined);
 
-  const [addingExpenseForBookingId, setAddingExpenseForBookingId] = useState<string | undefined>(undefined);
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
-  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
   const [calculatorBooking, setCalculatorBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [emailBooking, setEmailBooking] = useState<BookingWithDetails | undefined>(undefined);
@@ -550,10 +525,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
   const sortedBookings = useMemo(() => {
     return bookings; // The parent component `bookings-client` is now responsible for sorting
   }, [bookings]);
-
-  useEffect(() => {
-    getExpenseCategories().then(setExpenseCategories);
-  }, []);
 
   if (sortedBookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
@@ -570,11 +541,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
     setAddingPaymentForBookingId(bookingId);
     setPaymentPreloadData(undefined); // Clear any previous preload data
     setIsAddPaymentOpen(true);
-  }
-
-  const handleAddExpenseClick = (bookingId: string) => {
-    setAddingExpenseForBookingId(bookingId);
-    setIsAddExpenseOpen(true);
   }
 
   const handleCalculatorOpen = (booking: BookingWithDetails) => {
@@ -612,7 +578,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
             origin={booking.originId ? originsMap.get(booking.originId) : undefined}
             onEdit={handleEditClick}
             onAddPayment={handleAddPaymentClick}
-            onAddExpense={handleAddExpenseClick}
             onCalculatorOpen={handleCalculatorOpen}
             onEmailOpen={handleEmailOpen}
             onTenantClick={handleTenantClick}
@@ -645,7 +610,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
                     origin={booking.originId ? originsMap.get(booking.originId) : undefined}
                     onEdit={handleEditClick}
                     onAddPayment={handleAddPaymentClick}
-                    onAddExpense={handleAddExpenseClick}
                     onCalculatorOpen={handleCalculatorOpen}
                     onEmailOpen={handleEmailOpen}
                     onTenantClick={handleTenantClick}
@@ -687,16 +651,6 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
                 preloadData={paymentPreloadData}
             />
         )}
-        {addingExpenseForBookingId && (
-             <BookingExpenseAddForm
-                bookingId={addingExpenseForBookingId}
-                onExpenseAdded={onDataChanged}
-                categories={expenseCategories}
-                providers={providers}
-                isOpen={isAddExpenseOpen}
-                onOpenChange={setIsAddExpenseOpen}
-            />
-        )}
         {calculatorBooking && (
             <Dialog open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen}>
                 <DialogContent>
@@ -730,3 +684,4 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
     </div>
   );
 }
+
