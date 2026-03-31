@@ -4,7 +4,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { UnifiedExpense, Property, ExpenseCategory, getAllExpensesUnified, Provider } from '@/lib/data';
-import ExpensesUnifiedList from '@/components/expenses-unified-list';
+import ExpensesList from '@/components/expenses-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -163,7 +163,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
           <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
         </div>
       </div>
-      <ExpensesUnifiedList expenses={filteredExpenses} categories={categories} providers={providers} onDataChanged={refreshExpenses} />
+      <ExpensesList expenses={filteredExpenses} categories={categories} providers={providers} onDataChanged={refreshExpenses} />
     </div>
   );
 }
