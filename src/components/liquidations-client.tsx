@@ -59,14 +59,18 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
     }, []);
 
     useEffect(() => {
-        fetchProviderData(selectedProviderId);
+        if(selectedProviderId) {
+            fetchProviderData(selectedProviderId);
+        }
         setSelectedWorkLogIds([]);
         setSelectedAdjustmentIds([]);
     }, [selectedProviderId, fetchProviderData]);
 
-    const handleDataChange = () => {
-        fetchProviderData(selectedProviderId);
-    };
+    const handleDataChange = useCallback(() => {
+        if (selectedProviderId) {
+            fetchProviderData(selectedProviderId);
+        }
+    }, [selectedProviderId, fetchProviderData]);
 
     const liquidationProviders = useMemo(() => providers.filter(p => p.managementType === 'liquidations'), [providers]);
 
@@ -104,7 +108,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
         return {
             totalToLiquidate: total,
             currency: currencies.values().next().value || null,
-            canLiquidate: currencies.size === 1
+            canLiquidate: currencies.size === 1 && (selectedWorkLogIds.length > 0 || selectedAdjustmentIds.length > 0)
         };
     }, [selectedWorkLogIds, selectedAdjustmentIds, providerData]);
 
@@ -161,12 +165,11 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
             {selectedProvider && (
                 <>
                     <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsAdjustmentFormOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Ajuste</Button>
+                        <ManualAdjustmentAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isAdjustmentFormOpen} onOpenChange={setIsAdjustmentFormOpen} onActionComplete={handleDataChange} />
+                        <WorkLogAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isWorkLogFormOpen} onOpenChange={setIsWorkLogFormOpen} onActionComplete={handleDataChange} />
+                         <Button variant="outline" onClick={() => setIsAdjustmentFormOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Ajuste</Button>
                         <Button onClick={() => setIsWorkLogFormOpen(true)} disabled={!canRegisterActivity}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Actividad</Button>
                     </div>
-
-                    <ManualAdjustmentAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isAdjustmentFormOpen} onOpenChange={setIsAdjustmentFormOpen} onActionComplete={handleDataChange} />
-                    <WorkLogAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isWorkLogFormOpen} onOpenChange={setIsWorkLogFormOpen} onActionComplete={handleDataChange} />
 
                     <Tabs defaultValue="pending">
                         <TabsList className="grid w-full grid-cols-2">
@@ -188,7 +191,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                                                     <Table>
                                                         <TableHeader>
                                                             <TableRow>
-                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedWorkLogIds(checked ? providerData?.workLogs.map(w => w.id) || [] : [])} /></TableHead>
+                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedWorkLogIds(checked ? providerData?.workLogs.map(w => w.id) || [] : [])} checked={providerData?.workLogs.length ? selectedWorkLogIds.length === providerData.workLogs.length : false} /></TableHead>
                                                                 <TableHead>Fecha</TableHead>
                                                                 <TableHead>Asignación</TableHead>
                                                                 <TableHead>Descripción</TableHead>
@@ -221,7 +224,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                                                     <Table>
                                                         <TableHeader>
                                                             <TableRow>
-                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedAdjustmentIds(checked ? providerData?.adjustments.map(a => a.id) || [] : [])} /></TableHead>
+                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedAdjustmentIds(checked ? providerData?.adjustments.map(a => a.id) || [] : [])} checked={providerData?.adjustments.length ? selectedAdjustmentIds.length === providerData.adjustments.length : false} /></TableHead>
                                                                 <TableHead>Fecha</TableHead>
                                                                 <TableHead>Descripción</TableHead>
                                                                 <TableHead>Imputado a</TableHead>

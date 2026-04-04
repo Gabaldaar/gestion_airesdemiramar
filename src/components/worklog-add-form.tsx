@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -54,7 +52,8 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
             onOpenChange(false);
             onActionComplete();
         }
-    }, [state, onOpenChange, onActionComplete, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state]);
     
     useEffect(() => {
         if (isOpen) {

@@ -51,7 +51,8 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
             onOpenChange(false);
             onActionComplete();
         }
-    }, [state, onOpenChange, onActionComplete, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state]);
     
     useEffect(() => {
         if (isOpen) {
