@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -45,7 +44,8 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
             toast({
                 title: state.success ? 'Éxito' : 'Error',
                 description: state.message,
-                variant: state.success ? 'default' : 'destructive'
+                variant: state.success ? 'default' : 'destructive',
+                duration: state.success ? 3000 : 5000,
             });
             if (state.success) {
                 onActionComplete();

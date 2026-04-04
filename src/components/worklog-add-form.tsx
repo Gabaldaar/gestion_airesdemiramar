@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
@@ -48,13 +47,11 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
                 title: state.success ? 'Éxito' : 'Error',
                 description: state.message,
                 variant: state.success ? 'default' : 'destructive',
+                duration: state.success ? 3000 : 5000,
             });
             if (state.success) {
                 onActionComplete();
                 onOpenChange(false);
-            } else {
-                // If there was an error, reset the state to allow retrying
-                setState(initialState);
             }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps

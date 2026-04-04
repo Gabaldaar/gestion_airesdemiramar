@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db } from './firebase';
@@ -1372,6 +1370,7 @@ export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]>
     const q = query(workLogsCollection, where('providerId', '==', providerId));
     const snapshot = await getDocs(q);
     const allLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as WorkLog[];
+    // Filter and sort in code to avoid composite index requirement
     const pendingLogs = allLogs.filter(log => log.status === 'pending_liquidation');
     pendingLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return pendingLogs;
@@ -1381,6 +1380,7 @@ export async function getPendingManualAdjustments(providerId: string): Promise<M
     const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId));
     const snapshot = await getDocs(q);
     const allAdjustments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ManualAdjustment[];
+    // Filter and sort in code to avoid composite index requirement
     const pendingAdjustments = allAdjustments.filter(adj => adj.status === 'pending_liquidation');
     pendingAdjustments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return pendingAdjustments;
@@ -1439,4 +1439,3 @@ export async function getLiquidationById(id: string): Promise<Liquidation | unde
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? processDoc(docSnap) as Liquidation : undefined;
 }
-    

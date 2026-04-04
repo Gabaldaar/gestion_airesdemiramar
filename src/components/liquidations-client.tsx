@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -160,7 +158,8 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
         toast({
             title: result.success ? 'Éxito' : 'Error',
             description: result.message,
-            variant: result.success ? 'default' : 'destructive'
+            variant: result.success ? 'default' : 'destructive',
+            duration: result.success ? 3000 : 5000,
         });
 
         if (result.success) {

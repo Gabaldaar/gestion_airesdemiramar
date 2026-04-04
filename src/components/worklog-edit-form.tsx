@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -51,12 +49,11 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
                 title: state.success ? 'Éxito' : 'Error',
                 description: state.message,
                 variant: state.success ? 'default' : 'destructive',
+                duration: 3000,
             });
             if (state.success) {
                 onActionComplete();
                 onOpenChange(false);
-            } else {
-                setState(initialState);
             }
         }
     }, [state, onActionComplete, onOpenChange, toast]);

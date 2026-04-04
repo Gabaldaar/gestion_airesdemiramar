@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
@@ -48,13 +46,12 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
             toast({
                 title: state.success ? 'Éxito' : 'Error',
                 description: state.message,
-                variant: state.success ? 'default' : 'destructive'
+                variant: state.success ? 'default' : 'destructive',
+                duration: 3000,
             });
             if (state.success) {
                 onActionComplete();
                 onOpenChange(false);
-            } else {
-                setState(initialState);
             }
         }
     }, [state, onActionComplete, onOpenChange, toast]);

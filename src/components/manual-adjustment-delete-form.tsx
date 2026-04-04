@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -55,6 +53,7 @@ export function ManualAdjustmentDeleteForm({ adjustmentId, onActionComplete }: M
                 title: state.success ? "Éxito" : "Error",
                 description: state.message,
                 variant: state.success ? "default" : "destructive",
+                duration: 3000,
             });
         }
         if (state.success) {
