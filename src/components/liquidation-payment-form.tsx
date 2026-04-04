@@ -27,6 +27,14 @@ const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount);
 };
 
+const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'Fecha Inválida';
+    const date = parseDateSafely(dateString);
+    if (!date) return 'Fecha Inválida';
+    return format(date, "dd-LLL-yy", { locale: es });
+};
+
+
 export function LiquidationPaymentForm({ liquidation, isOpen, onOpenChange, onActionComplete }: {
     liquidation: Liquidation;
     isOpen: boolean;
