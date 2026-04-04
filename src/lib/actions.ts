@@ -1828,12 +1828,11 @@ export async function generateLiquidation(previousState: any, formData: FormData
         const expense: Omit<Expense, 'id'> = {
             assignment: group.assignment,
             date: new Date().toISOString().split('T')[0],
-            amount: group.amount,
-            currency: 'ARS', // Expenses are always in ARS for now
+            amount: currency === 'ARS' ? group.amount : 0,
+            currency: 'ARS',
             description: `Liquidación: ${group.descriptions.join(', ')}`,
             providerId,
-            // Assuming we need to convert to ARS if liquidation is in USD
-            // This part might need adjustment based on final requirements.
+            liquidationId,
             ...(currency === 'USD' && { originalUsdAmount: group.amount, exchangeRate: 1 }) // Placeholder rate
         };
         batch.set(expenseRef, expense);
@@ -1935,4 +1934,61 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
     } catch (e: any) {
         return { success: false, message: e.message };
     }
+}
+
+export async function revertLiquidation(previousState: any, liquidationId: string) {
+  if (!liquidationId) {
+    return { success: false, message: 'ID de liquidación no proporcionado.' };
+  }
+
+  const batch = writeBatch(db);
+
+  try {
+    // 1. Check if the liquidation has payments
+    const liquidation = await getLiquidationByIdDb(liquidationId);
+    if (!liquidation) {
+        throw new Error("La liquidación que intentas revertir no existe.");
+    }
+    if (liquidation.amountPaid > 0) {
+        throw new Error("No se puede revertir una liquidación que ya tiene pagos registrados.");
+    }
+
+    const workLogsCollection = collection(db, 'workLogs');
+    const manualAdjustmentsCollection = collection(db, 'manualAdjustments');
+    const expensesCollection = collection(db, 'expenses');
+
+    // 2. Find and revert associated work logs
+    const workLogsQuery = query(workLogsCollection, where('liquidationId', '==', liquidationId));
+    const workLogsSnap = await getDocs(workLogsQuery);
+    workLogsSnap.forEach(logDoc => {
+        batch.update(logDoc.ref, { status: 'pending_liquidation', liquidationId: null });
+    });
+
+    // 3. Find and revert associated manual adjustments
+    const adjustmentsQuery = query(manualAdjustmentsCollection, where('liquidationId', '==', liquidationId));
+    const adjustmentsSnap = await getDocs(adjustmentsQuery);
+    adjustmentsSnap.forEach(adjDoc => {
+        batch.update(adjDoc.ref, { status: 'pending_liquidation', liquidationId: null });
+    });
+
+    // 4. Find and delete associated expenses
+    const expensesQuery = query(expensesCollection, where('liquidationId', '==', liquidationId));
+    const expensesSnap = await getDocs(expensesQuery);
+    expensesSnap.forEach(expDoc => {
+        batch.delete(expDoc.ref);
+    });
+
+    // 5. Delete the liquidation itself
+    const liquidationRef = doc(db, 'liquidations', liquidationId);
+    batch.delete(liquidationRef);
+
+    await batch.commit();
+    revalidatePath('/liquidations');
+    revalidatePath('/expenses');
+    return { success: true, message: 'Liquidación revertida con éxito.' };
+
+  } catch (error: any) {
+    console.error('Error reverting liquidation:', error);
+    return { success: false, message: `Error al revertir: ${error.message}` };
+  }
 }
