@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -9,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { WorkLogAddForm } from './worklog-add-form';
 import { ManualAdjustmentAddForm } from './manual-adjustment-add-form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Checkbox } from './ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { format } from 'date-fns';
@@ -171,104 +171,99 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                         <Button onClick={() => setIsWorkLogFormOpen(true)} disabled={!canRegisterActivity}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Actividad</Button>
                     </div>
 
-                    <Tabs defaultValue="pending">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="pending">Pendiente de Liquidación</TabsTrigger>
-                            <TabsTrigger value="history" disabled>Historial (próximamente)</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="pending">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Actividades y Ajustes Pendientes</CardTitle>
-                                    <CardDescription>Selecciona los ítems que deseas incluir en la próxima liquidación para {selectedProvider.name}.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    {isLoadingData ? <div className="text-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : (
-                                        <>
-                                            <div>
-                                                <h4 className="font-semibold mb-2">Horas y Visitas</h4>
-                                                <div className="border rounded-lg">
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedWorkLogIds(checked ? providerData?.workLogs.map(w => w.id) || [] : [])} checked={providerData?.workLogs.length ? selectedWorkLogIds.length === providerData.workLogs.length : false} /></TableHead>
-                                                                <TableHead>Fecha</TableHead>
-                                                                <TableHead>Asignación</TableHead>
-                                                                <TableHead>Descripción</TableHead>
-                                                                <TableHead className="text-right">Costo</TableHead>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Actividades y Ajustes Pendientes</CardTitle>
+                            <CardDescription>
+                                Selecciona los ítems que deseas incluir en la próxima liquidación para {selectedProvider.name}. 
+                                El total se calculará automáticamente.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {isLoadingData ? <div className="text-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : (
+                                <>
+                                    <div>
+                                        <h4 className="font-semibold mb-2">Horas y Visitas</h4>
+                                        <div className="border rounded-lg">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedWorkLogIds(checked ? providerData?.workLogs.map(w => w.id) || [] : [])} checked={providerData?.workLogs.length ? selectedWorkLogIds.length === providerData.workLogs.length : false} /></TableHead>
+                                                        <TableHead>Fecha</TableHead>
+                                                        <TableHead>Asignación</TableHead>
+                                                        <TableHead>Descripción</TableHead>
+                                                        <TableHead className="text-right">Costo</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {providerData?.workLogs.map(log => {
+                                                        const assignmentName = log.assignment.type === 'property'
+                                                            ? properties.find(p => p.id === log.assignment.id)?.name
+                                                            : scopes.find(s => s.id === log.assignment.id)?.name;
+                                                        return (
+                                                            <TableRow key={log.id}>
+                                                                <TableCell><Checkbox checked={selectedWorkLogIds.includes(log.id)} onCheckedChange={(checked) => setSelectedWorkLogIds(prev => checked ? [...prev, log.id] : prev.filter(id => id !== log.id))} /></TableCell>
+                                                                <TableCell>{formatDate(log.date)}</TableCell>
+                                                                <TableCell>{assignmentName || 'N/A'}</TableCell>
+                                                                <TableCell>{log.description}</TableCell>
+                                                                <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
                                                             </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {providerData?.workLogs.map(log => {
-                                                                const assignmentName = log.assignment.type === 'property'
-                                                                    ? properties.find(p => p.id === log.assignment.id)?.name
-                                                                    : scopes.find(s => s.id === log.assignment.id)?.name;
-                                                                return (
-                                                                    <TableRow key={log.id}>
-                                                                        <TableCell><Checkbox checked={selectedWorkLogIds.includes(log.id)} onCheckedChange={(checked) => setSelectedWorkLogIds(prev => checked ? [...prev, log.id] : prev.filter(id => id !== log.id))} /></TableCell>
-                                                                        <TableCell>{formatDate(log.date)}</TableCell>
-                                                                        <TableCell>{assignmentName || 'N/A'}</TableCell>
-                                                                        <TableCell>{log.description}</TableCell>
-                                                                        <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
-                                                                    </TableRow>
-                                                                );
-                                                            })}
-                                                            {providerData?.workLogs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No hay actividades pendientes.</TableCell></TableRow>}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-semibold mb-2">Ajustes Manuales (Bonos, Adelantos, etc.)</h4>
-                                                <div className="border rounded-lg">
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedAdjustmentIds(checked ? providerData?.adjustments.map(a => a.id) || [] : [])} checked={providerData?.adjustments.length ? selectedAdjustmentIds.length === providerData.adjustments.length : false} /></TableHead>
-                                                                <TableHead>Fecha</TableHead>
-                                                                <TableHead>Descripción</TableHead>
-                                                                <TableHead>Imputado a</TableHead>
-                                                                <TableHead className="text-right">Monto</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {providerData?.adjustments.map(adj => {
-                                                                const assignmentName = adj.assignment.type === 'property'
-                                                                    ? properties.find(p => p.id === adj.assignment.id)?.name
-                                                                    : scopes.find(s => s.id === adj.assignment.id)?.name;
-
-                                                                return (
-                                                                    <TableRow key={adj.id}>
-                                                                        <TableCell><Checkbox checked={selectedAdjustmentIds.includes(adj.id)} onCheckedChange={(checked) => setSelectedAdjustmentIds(prev => checked ? [...prev, adj.id] : prev.filter(id => id !== adj.id))} /></TableCell>
-                                                                        <TableCell>{formatDate(adj.date)}</TableCell>
-                                                                        <TableCell>{adj.description}</TableCell>
-                                                                        <TableCell>{assignmentName || 'N/A'}</TableCell>
-                                                                        <TableCell className={`text-right font-medium ${adj.amount < 0 ? 'text-red-500' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
-                                                                    </TableRow>
-                                                                )
-                                                            })}
-                                                            {providerData?.adjustments.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No hay ajustes pendientes.</TableCell></TableRow>}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </CardContent>
-                                {(selectedWorkLogIds.length > 0 || selectedAdjustmentIds.length > 0) && (
-                                    <CardFooter className="flex-col items-end gap-4 border-t pt-4">
-                                        <div className="text-right">
-                                            <p className="text-muted-foreground">Total a liquidar</p>
-                                            <p className="text-2xl font-bold">{canLiquidate && currency ? formatCurrency(totalToLiquidate, currency) : 'Monedas Mixtas'}</p>
+                                                        );
+                                                    })}
+                                                    {providerData?.workLogs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No hay actividades pendientes.</TableCell></TableRow>}
+                                                </TableBody>
+                                            </Table>
                                         </div>
-                                        <Button onClick={handleGenerateLiquidation} disabled={!canLiquidate || isSubmitting}>
-                                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Procesando...</> : "Generar Liquidación"}
-                                        </Button>
-                                    </CardFooter>
-                                )}
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold mb-2">Ajustes Manuales (Bonos, Adelantos, etc.)</h4>
+                                        <div className="border rounded-lg">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedAdjustmentIds(checked ? providerData?.adjustments.map(a => a.id) || [] : [])} checked={providerData?.adjustments.length ? selectedAdjustmentIds.length === providerData.adjustments.length : false} /></TableHead>
+                                                        <TableHead>Fecha</TableHead>
+                                                        <TableHead>Descripción</TableHead>
+                                                        <TableHead>Imputado a</TableHead>
+                                                        <TableHead className="text-right">Monto</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {providerData?.adjustments.map(adj => {
+                                                        const assignmentName = adj.assignment.type === 'property'
+                                                            ? properties.find(p => p.id === adj.assignment.id)?.name
+                                                            : scopes.find(s => s.id === adj.assignment.id)?.name;
+
+                                                        return (
+                                                            <TableRow key={adj.id}>
+                                                                <TableCell><Checkbox checked={selectedAdjustmentIds.includes(adj.id)} onCheckedChange={(checked) => setSelectedAdjustmentIds(prev => checked ? [...prev, adj.id] : prev.filter(id => id !== adj.id))} /></TableCell>
+                                                                <TableCell>{formatDate(adj.date)}</TableCell>
+                                                                <TableCell>{adj.description}</TableCell>
+                                                                <TableCell>{assignmentName || 'N/A'}</TableCell>
+                                                                <TableCell className={`text-right font-medium ${adj.amount < 0 ? 'text-red-500' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
+                                                            </TableRow>
+                                                        )
+                                                    })}
+                                                    {providerData?.adjustments.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No hay ajustes pendientes.</TableCell></TableRow>}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </CardContent>
+                        {(selectedWorkLogIds.length > 0 || selectedAdjustmentIds.length > 0) && (
+                            <CardFooter className="flex-col items-end gap-4 border-t pt-4">
+                                <div className="text-right">
+                                    <p className="text-muted-foreground">Total a liquidar</p>
+                                    <p className="text-2xl font-bold">{canLiquidate && currency ? formatCurrency(totalToLiquidate, currency) : 'Monedas Mixtas'}</p>
+                                </div>
+                                <Button onClick={handleGenerateLiquidation} disabled={!canLiquidate || isSubmitting}>
+                                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Procesando...</> : "Generar Liquidación"}
+                                </Button>
+                            </CardFooter>
+                        )}
+                    </Card>
                 </>
             )}
         </div>

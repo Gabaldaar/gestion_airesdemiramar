@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -46,19 +47,16 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
                 description: state.message,
                 variant: state.success ? 'default' : 'destructive'
             });
-        }
-        if (state.success) {
-            onOpenChange(false);
-            onActionComplete();
-        }
-        if (state.message) {
-            setState(initialState);
+            if (state.success) {
+                onActionComplete();
+                onOpenChange(false);
+            }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state]);
     
     useEffect(() => {
-        if (isOpen) {
+        if (!isOpen) {
             formRef.current?.reset();
             setDate(new Date());
             setAssignmentType('scope');
