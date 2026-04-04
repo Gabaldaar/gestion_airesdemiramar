@@ -17,8 +17,15 @@ import { es } from 'date-fns/locale';
 import { generateLiquidation } from '@/lib/actions';
 import { useToast } from './ui/use-toast';
 
-const formatDate = (dateString: string) => {
-    return format(new Date(dateString.replace(/-/g, '/')), "dd-LLL-yy", { locale: es });
+const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) {
+        return 'N/A';
+    }
+    const date = new Date(dateString.replace(/-/g, '/'));
+    if (isNaN(date.getTime())) {
+        return 'Fecha Inválida';
+    }
+    return format(date, "dd-LLL-yy", { locale: es });
 };
 
 const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
@@ -45,6 +52,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
         }
         setIsLoadingData(true);
         try {
+            // This is the corrected data fetching strategy
             const [workLogs, adjustments] = await Promise.all([
                 getPendingWorkLogs(providerId),
                 getPendingManualAdjustments(providerId),
@@ -53,10 +61,15 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
         } catch (error) {
             console.error("Error fetching provider data:", error);
             setProviderData(null);
+            toast({
+                title: "Error al cargar datos",
+                description: "No se pudieron obtener las actividades pendientes. Revisa la consola para más detalles.",
+                variant: "destructive"
+            });
         } finally {
             setIsLoadingData(false);
         }
-    }, []);
+    }, [toast]);
 
     useEffect(() => {
         if(selectedProviderId) {
@@ -83,7 +96,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
 
     const { totalToLiquidate, currency, canLiquidate } = useMemo(() => {
         let total = 0;
-        let currencies = new Set<string>();
+        const currencies = new Set<string>();
 
         selectedWorkLogIds.forEach(id => {
             const item = providerData?.workLogs.find(w => w.id === id);
@@ -102,7 +115,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
         });
 
         if (currencies.size > 1) {
-            return { totalToLiquidate: 0, currency: null, canLiquidate: false };
+            return { totalToLiquidate: 0, currency: 'Monedas Mixtas', canLiquidate: false };
         }
 
         return {
