@@ -1,0 +1,261 @@
+'use client';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Provider, Property, TaskScope, WorkLog, ManualAdjustment, getPendingWorkLogs, getPendingManualAdjustments } from '@/lib/data';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Loader2, PlusCircle } from 'lucide-react';
+import { WorkLogAddForm } from './worklog-add-form';
+import { ManualAdjustmentAddForm } from './manual-adjustment-add-form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Checkbox } from './ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { generateLiquidation } from '@/lib/actions';
+import { useToast } from './ui/use-toast';
+
+const formatDate = (dateString: string) => {
+    return format(new Date(dateString.replace(/-/g, '/')), "dd-LLL-yy", { locale: es });
+};
+
+const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount);
+};
+
+export default function LiquidationsClient({ providers, properties, scopes }: { providers: Provider[], properties: Property[], scopes: TaskScope[] }) {
+    const [selectedProviderId, setSelectedProviderId] = useState<string>('');
+    const [providerData, setProviderData] = useState<{ workLogs: WorkLog[], adjustments: ManualAdjustment[] } | null>(null);
+    const [isLoadingData, setIsLoadingData] = useState(false);
+    const [isWorkLogFormOpen, setIsWorkLogFormOpen] = useState(false);
+    const [isAdjustmentFormOpen, setIsAdjustmentFormOpen] = useState(false);
+
+    const [selectedWorkLogIds, setSelectedWorkLogIds] = useState<string[]>([]);
+    const [selectedAdjustmentIds, setSelectedAdjustmentIds] = useState<string[]>([]);
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
+
+    const fetchProviderData = useCallback(async (providerId: string) => {
+        if (!providerId) {
+            setProviderData(null);
+            return;
+        }
+        setIsLoadingData(true);
+        try {
+            const [workLogs, adjustments] = await Promise.all([
+                getPendingWorkLogs(providerId),
+                getPendingManualAdjustments(providerId),
+            ]);
+            setProviderData({ workLogs, adjustments });
+        } catch (error) {
+            console.error("Error fetching provider data:", error);
+            setProviderData(null);
+        } finally {
+            setIsLoadingData(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchProviderData(selectedProviderId);
+        setSelectedWorkLogIds([]);
+        setSelectedAdjustmentIds([]);
+    }, [selectedProviderId, fetchProviderData]);
+
+    const handleDataChange = () => {
+        fetchProviderData(selectedProviderId);
+    };
+
+    const selectedProvider = useMemo(() => providers.find(p => p.id === selectedProviderId), [providers, selectedProviderId]);
+
+    const { totalToLiquidate, currency, canLiquidate } = useMemo(() => {
+        let total = 0;
+        let currencies = new Set<string>();
+
+        selectedWorkLogIds.forEach(id => {
+            const item = providerData?.workLogs.find(w => w.id === id);
+            if (item) {
+                total += item.calculatedCost;
+                currencies.add(item.costCurrency);
+            }
+        });
+
+        selectedAdjustmentIds.forEach(id => {
+            const item = providerData?.adjustments.find(a => a.id === id);
+            if (item) {
+                total += item.amount;
+                currencies.add(item.currency);
+            }
+        });
+
+        if (currencies.size > 1) {
+            return { totalToLiquidate: 0, currency: null, canLiquidate: false };
+        }
+
+        return {
+            totalToLiquidate: total,
+            currency: currencies.values().next().value || null,
+            canLiquidate: currencies.size === 1
+        };
+    }, [selectedWorkLogIds, selectedAdjustmentIds, providerData]);
+
+    const handleGenerateLiquidation = async () => {
+        if (!canLiquidate || !currency) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pueden mezclar diferentes monedas en una misma liquidación.' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        const formData = new FormData();
+        formData.append('providerId', selectedProviderId);
+        formData.append('currency', currency);
+        selectedWorkLogIds.forEach(id => formData.append('workLogIds', id));
+        selectedAdjustmentIds.forEach(id => formData.append('adjustmentIds', id));
+
+        const result = await generateLiquidation({ success: false, message: '' }, formData);
+        
+        toast({
+            title: result.success ? 'Éxito' : 'Error',
+            description: result.message,
+            variant: result.success ? 'default' : 'destructive'
+        });
+
+        if (result.success) {
+            handleDataChange();
+            setSelectedWorkLogIds([]);
+            setSelectedAdjustmentIds([]);
+        }
+        setIsSubmitting(false);
+    };
+
+    return (
+        <div className="space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Selección de Colaborador</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Label htmlFor="provider-select">Colaborador</Label>
+                    <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+                        <SelectTrigger id="provider-select">
+                            <SelectValue placeholder="Selecciona un colaborador..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {providers.map(p => (
+                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </CardContent>
+            </Card>
+
+            {selectedProvider && (
+                <>
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsAdjustmentFormOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Ajuste</Button>
+                        <Button onClick={() => setIsWorkLogFormOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Actividad</Button>
+                    </div>
+
+                    <ManualAdjustmentAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isAdjustmentFormOpen} onOpenChange={setIsAdjustmentFormOpen} onActionComplete={handleDataChange} />
+                    <WorkLogAddForm provider={selectedProvider} properties={properties} isOpen={isWorkLogFormOpen} onOpenChange={setIsWorkLogFormOpen} onActionComplete={handleDataChange} />
+
+                    <Tabs defaultValue="pending">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="pending">Pendiente de Liquidación</TabsTrigger>
+                            <TabsTrigger value="history" disabled>Historial (próximamente)</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="pending">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Actividades y Ajustes Pendientes</CardTitle>
+                                    <CardDescription>Selecciona los ítems que deseas incluir en la próxima liquidación para {selectedProvider.name}.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    {isLoadingData ? <div className="text-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : (
+                                        <>
+                                            <div>
+                                                <h4 className="font-semibold mb-2">Horas y Visitas</h4>
+                                                <div className="border rounded-lg">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedWorkLogIds(checked ? providerData?.workLogs.map(w => w.id) || [] : [])} /></TableHead>
+                                                                <TableHead>Fecha</TableHead>
+                                                                <TableHead>Propiedad</TableHead>
+                                                                <TableHead>Descripción</TableHead>
+                                                                <TableHead className="text-right">Costo</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {providerData?.workLogs.map(log => (
+                                                                <TableRow key={log.id}>
+                                                                    <TableCell><Checkbox checked={selectedWorkLogIds.includes(log.id)} onCheckedChange={(checked) => setSelectedWorkLogIds(prev => checked ? [...prev, log.id] : prev.filter(id => id !== log.id))} /></TableCell>
+                                                                    <TableCell>{formatDate(log.date)}</TableCell>
+                                                                    <TableCell>{properties.find(p => p.id === log.propertyId)?.name || 'N/A'}</TableCell>
+                                                                    <TableCell>{log.description}</TableCell>
+                                                                    <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                            {providerData?.workLogs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No hay actividades pendientes.</TableCell></TableRow>}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold mb-2">Ajustes Manuales (Bonos, Adelantos, etc.)</h4>
+                                                <div className="border rounded-lg">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedAdjustmentIds(checked ? providerData?.adjustments.map(a => a.id) || [] : [])} /></TableHead>
+                                                                <TableHead>Fecha</TableHead>
+                                                                <TableHead>Descripción</TableHead>
+                                                                <TableHead>Imputado a</TableHead>
+                                                                <TableHead className="text-right">Monto</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {providerData?.adjustments.map(adj => {
+                                                                const assignmentName = adj.assignment.type === 'property'
+                                                                    ? properties.find(p => p.id === adj.assignment.id)?.name
+                                                                    : scopes.find(s => s.id === adj.assignment.id)?.name;
+
+                                                                return (
+                                                                    <TableRow key={adj.id}>
+                                                                        <TableCell><Checkbox checked={selectedAdjustmentIds.includes(adj.id)} onCheckedChange={(checked) => setSelectedAdjustmentIds(prev => checked ? [...prev, adj.id] : prev.filter(id => id !== adj.id))} /></TableCell>
+                                                                        <TableCell>{formatDate(adj.date)}</TableCell>
+                                                                        <TableCell>{adj.description}</TableCell>
+                                                                        <TableCell>{assignmentName || 'N/A'}</TableCell>
+                                                                        <TableCell className={`text-right font-medium ${adj.amount < 0 ? 'text-red-500' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
+                                                                    </TableRow>
+                                                                )
+                                                            })}
+                                                            {providerData?.adjustments.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No hay ajustes pendientes.</TableCell></TableRow>}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </CardContent>
+                                {(selectedWorkLogIds.length > 0 || selectedAdjustmentIds.length > 0) && (
+                                    <CardFooter className="flex-col items-end gap-4 border-t pt-4">
+                                        <div className="text-right">
+                                            <p className="text-muted-foreground">Total a liquidar</p>
+                                            <p className="text-2xl font-bold">{canLiquidate && currency ? formatCurrency(totalToLiquidate, currency) : 'Monedas Mixtas'}</p>
+                                        </div>
+                                        <Button onClick={handleGenerateLiquidation} disabled={!canLiquidate || isSubmitting}>
+                                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Procesando...</> : "Generar Liquidación"}
+                                        </Button>
+                                    </CardFooter>
+                                )}
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+                </>
+            )}
+        </div>
+    );
+}

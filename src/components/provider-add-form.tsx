@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -91,7 +90,7 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
           Proveedor
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Añadir Nuevo Proveedor</DialogTitle>
           <DialogDescription>
@@ -101,67 +100,85 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="rating" value={rating} />
             <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                    Nombre
-                    </Label>
-                    <Input id="name" name="name" className="col-span-3" required />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="categoryId" className="text-right">
-                        Categoría
-                    </Label>
-                    <Select name="categoryId">
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Selecciona una categoría" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">Ninguna</SelectItem>
-                            {categories.map(category => (
-                                <SelectItem key={category.id} value={category.id}>
-                                    {category.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">
-                    Email
-                    </Label>
-                    <Input id="email" name="email" type="email" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="phone" className="text-right">
-                    Teléfono
-                    </Label>
-                    <div className="col-span-3 flex items-center gap-2">
-                        <Select name="countryCode" defaultValue="+54">
-                            <SelectTrigger className="w-[120px]">
-                                <SelectValue placeholder="+54" />
-                            </SelectTrigger>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Nombre</Label>
+                        <Input id="name" name="name" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="categoryId">Categoría</Label>
+                        <Select name="categoryId">
+                            <SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger>
                             <SelectContent>
-                                {countries.map(country => (
-                                    <SelectItem key={country.code} value={country.dial_code}>
-                                        {country.name} ({country.dial_code})
-                                    </SelectItem>
+                                <SelectItem value="none">Ninguna</SelectItem>
+                                {categories.map(category => (
+                                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-                        <Input id="phone" name="phone" className="flex-grow" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" name="email" type="email" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="phone">Teléfono</Label>
+                         <div className="flex items-center gap-2">
+                            <Select name="countryCode" defaultValue="+54">
+                                <SelectTrigger className="w-[120px]"><SelectValue placeholder="+54" /></SelectTrigger>
+                                <SelectContent>
+                                    {countries.map(country => (
+                                        <SelectItem key={country.code} value={country.dial_code}>{country.name} ({country.dial_code})</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Input id="phone" name="phone" className="flex-grow" />
+                        </div>
+                    </div>
+                     <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="address">Dirección</Label>
+                        <Input id="address" name="address" />
                     </div>
                 </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="address" className="text-right">
-                    Dirección
-                    </Label>
-                    <Input id="address" name="address" className="col-span-3" />
+
+                <div className="border-t pt-4 mt-2">
+                    <h4 className="text-md font-medium mb-2 text-center">Facturación y Liquidación</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="billingType">Tipo de Cobro</Label>
+                            <Select name="billingType" defaultValue="other">
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="hourly">Por Hora</SelectItem>
+                                    <SelectItem value="per_visit">Por Visita</SelectItem>
+                                    <SelectItem value="other">Otro / No Aplicable</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="rateCurrency">Moneda de Tarifa</Label>
+                            <Select name="rateCurrency" defaultValue="ARS">
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ARS">ARS</SelectItem>
+                                    <SelectItem value="USD">USD</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
+                            <Input id="hourlyRate" name="hourlyRate" type="number" step="0.01" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="perVisitRate">Tarifa por Visita</Label>
+                            <Input id="perVisitRate" name="perVisitRate" type="number" step="0.01" />
+                        </div>
+                    </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="rating" className="text-right">
-                        Calificación
-                    </Label>
-                    <div className="col-span-3 flex items-center gap-1">
+
+                <div className="space-y-2">
+                    <Label>Calificación</Label>
+                    <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, index) => {
                             const ratingValue = index + 1;
                             return (
@@ -169,9 +186,7 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
                                 key={ratingValue}
                                 className={cn(
                                 "h-6 w-6 cursor-pointer",
-                                ratingValue <= rating
-                                    ? getStarColorClass(rating)
-                                    : "text-gray-300"
+                                ratingValue <= rating ? getStarColorClass(rating) : "text-gray-300"
                                 )}
                                 onClick={() => setRating(ratingValue === rating ? 0 : ratingValue)}
                             />
@@ -179,11 +194,10 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
                         })}
                     </div>
                 </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="notes" className="text-right pt-2">
-                        Notas
-                    </Label>
-                    <Textarea id="notes" name="notes" className="col-span-3" />
+
+                <div className="space-y-2">
+                    <Label htmlFor="notes">Notas</Label>
+                    <Textarea id="notes" name="notes" />
                 </div>
             </div>
             <DialogFooter>
