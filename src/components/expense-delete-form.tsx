@@ -13,7 +13,7 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { deletePropertyExpense } from '@/lib/actions';
+import { deleteExpense } from '@/lib/actions';
 import { Trash2, Loader2 } from 'lucide-react';
 
 const initialState = {
@@ -43,7 +43,7 @@ export function ExpenseDeleteForm({ expenseId, onExpenseDeleted }: { expenseId: 
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
-        const result = await deletePropertyExpense(initialState, formData);
+        const result = await deleteExpense(initialState, formData);
         setState(result);
     });
   }
