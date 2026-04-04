@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Briefcase } from "lucide-react";
-import { getProviders, Provider, getProperties, Property, getTaskScopes, TaskScope, getPendingWorkLogs, WorkLog, getPendingManualAdjustments, ManualAdjustment } from "@/lib/data";
+import { getProviders, Provider, getProperties, Property, getTaskScopes, TaskScope, getLiquidations, LiquidationWithProvider } from "@/lib/data";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import LiquidationsClient from "@/components/liquidations-client";
@@ -19,6 +19,7 @@ interface LiquidationsData {
     providers: Provider[];
     properties: Property[];
     scopes: TaskScope[];
+    liquidations: LiquidationWithProvider[];
 }
 
 export default function LiquidationsPage() {
@@ -30,12 +31,13 @@ export default function LiquidationsPage() {
         if (user) {
             setLoading(true);
             try {
-                const [providers, properties, scopes] = await Promise.all([
+                const [providers, properties, scopes, liquidations] = await Promise.all([
                     getProviders(),
                     getProperties(),
                     getTaskScopes(),
+                    getLiquidations(),
                 ]);
-                setData({ providers, properties, scopes });
+                setData({ providers, properties, scopes, liquidations });
             } catch (error) {
                 console.error("Error fetching initial data for liquidations:", error);
             } finally {
@@ -80,6 +82,8 @@ export default function LiquidationsPage() {
                 providers={data.providers}
                 properties={data.properties}
                 scopes={data.scopes}
+                liquidations={data.liquidations}
+                onDataNeedsRefresh={fetchData}
             />
         </div>
     );

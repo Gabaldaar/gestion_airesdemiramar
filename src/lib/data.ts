@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from './firebase';
@@ -390,6 +391,10 @@ export type Liquidation = {
     amountPaid: number;
     balance: number;
 }
+
+export type LiquidationWithProvider = Liquidation & {
+    providerName?: string;
+};
 
 
 // --- DATA ACCESS FUNCTIONS ---
@@ -1366,25 +1371,46 @@ export async function deleteDateBlockDb(id: string): Promise<void> {
 
 // --- LIQUIDATIONS ---
 
+// Helper to enrich logs and adjustments
+async function enrichItems(items: (WorkLog | ManualAdjustment)[]): Promise<(WorkLog | ManualAdjustment)[]> {
+    const [properties, scopes] = await Promise.all([
+        getProperties(),
+        getTaskScopes(),
+    ]);
+    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+    const scopesMap = new Map(scopes.map(s => [s.id, s.name]));
+
+    return items.map(item => {
+        let assignmentName = 'N/A';
+        if (item.assignment) {
+            if (item.assignment.type === 'property') {
+                assignmentName = propertiesMap.get(item.assignment.id) || 'Propiedad Desconocida';
+            } else if (item.assignment.type === 'scope') {
+                assignmentName = scopesMap.get(item.assignment.id) || 'Ámbito Desconocido';
+            }
+        }
+        return { ...item, assignmentName };
+    });
+}
+
 export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]> {
     const q = query(workLogsCollection, where('providerId', '==', providerId));
     const snapshot = await getDocs(q);
-    const allLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as WorkLog[];
-    // Filter and sort in code to avoid composite index requirement
+    const allLogs = snapshot.docs.map(processDoc) as WorkLog[];
     const pendingLogs = allLogs.filter(log => log.status === 'pending_liquidation');
     pendingLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return pendingLogs;
+    return await enrichItems(pendingLogs) as WorkLog[];
 }
 
 export async function getPendingManualAdjustments(providerId: string): Promise<ManualAdjustment[]> {
     const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId));
     const snapshot = await getDocs(q);
-    const allAdjustments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ManualAdjustment[];
-    // Filter and sort in code to avoid composite index requirement
+    const allAdjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
     const pendingAdjustments = allAdjustments.filter(adj => adj.status === 'pending_liquidation');
     pendingAdjustments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return pendingAdjustments;
+    return await enrichItems(pendingAdjustments) as ManualAdjustment[];
 }
+
 
 export async function addWorkLogDb(workLog: Omit<WorkLog, 'id' | 'status'>): Promise<WorkLog> {
     const newLog: Omit<WorkLog, 'id'> = {
@@ -1438,4 +1464,35 @@ export async function getLiquidationById(id: string): Promise<Liquidation | unde
     const docRef = doc(db, 'liquidations', id);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? processDoc(docSnap) as Liquidation : undefined;
+}
+
+
+export async function getLiquidations(): Promise<LiquidationWithProvider[]> {
+    const [liquidationsSnap, providers] = await Promise.all([
+        getDocs(query(liquidationsCollection, orderBy('dateGenerated', 'desc'))),
+        getProviders(),
+    ]);
+
+    const providersMap = new Map(providers.map(p => [p.id, p.name]));
+    
+    const liquidations = liquidationsSnap.docs.map(processDoc) as Liquidation[];
+
+    return liquidations.map(liq => ({
+        ...liq,
+        providerName: providersMap.get(liq.providerId) || 'Proveedor Desconocido',
+    }));
+}
+
+export async function getWorkLogsByLiquidationId(liquidationId: string): Promise<WorkLog[]> {
+    const q = query(workLogsCollection, where('liquidationId', '==', liquidationId));
+    const snapshot = await getDocs(q);
+    const logs = snapshot.docs.map(processDoc) as WorkLog[];
+    return await enrichItems(logs) as WorkLog[];
+}
+
+export async function getManualAdjustmentsByLiquidationId(liquidationId: string): Promise<ManualAdjustment[]> {
+    const q = query(manualAdjustmentsCollection, where('liquidationId', '==', liquidationId));
+    const snapshot = await getDocs(q);
+    const adjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
+    return await enrichItems(adjustments) as ManualAdjustment[];
 }
