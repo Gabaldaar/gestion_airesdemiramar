@@ -54,17 +54,19 @@ import {
   updateTaskScope as updateTaskScopeDb,
   deleteTaskScope as deleteTaskScopeDb,
   reassignTaskExpenses,
-  addDateBlockDb,
-  updateDateBlockDb,
-  deleteDateBlockDb,
+  addDateBlock as addDateBlockDb,
+  updateDateBlock as updateDateBlockDb,
+  deleteDateBlock as deleteDateBlockDb,
   // New liquidation functions
-  addWorkLogDb,
-  addManualAdjustmentDb,
-  getLiquidationById as getLiquidationByIdDb,
-  updateWorkLogDb,
-  deleteWorkLogDb,
-  updateManualAdjustmentDb,
-  deleteManualAdjustmentDb,
+  addWorkLog as addWorkLogDb,
+  addManualAdjustment as addManualAdjustmentDb,
+  getLiquidationById,
+  updateLiquidationDb,
+  updateWorkLog as updateWorkLogDb,
+  deleteWorkLog as deleteWorkLogDb,
+  updateManualAdjustment as updateManualAdjustmentDb,
+  deleteManualAdjustment as deleteManualAdjustmentDb,
+  revertLiquidation as revertLiquidationDb,
   Tenant,
   Booking,
   Expense,
@@ -1856,6 +1858,139 @@ export async function generateLiquidation(previousState: any, formData: FormData
   }
 }
 
+export async function addLiquidationPayment(previousState: any, formData: FormData) {
+  const liquidationId = formData.get('liquidationId') as string;
+  const paymentAmount = parseFloat(formData.get('paymentAmount') as string);
+  const paymentDate = formData.get('paymentDate') as string;
+  const expenseDescription = formData.get('expenseDescription') as string;
+  const expenseCategoryId = formData.get('expenseCategoryId') as string;
+
+  if (!liquidationId || isNaN(paymentAmount) || !paymentDate) {
+    return { success: false, message: 'Faltan datos obligatorios para registrar el pago.' };
+  }
+   if (paymentAmount <= 0) {
+    return { success: false, message: 'El monto del pago debe ser mayor a cero.' };
+  }
+
+  const batch = writeBatch(db);
+
+  try {
+    const liquidation = await getLiquidationById(liquidationId);
+    if (!liquidation) {
+      throw new Error('No se encontró la liquidación.');
+    }
+    if (paymentAmount > liquidation.balance + 0.001) {
+      throw new Error(`El pago (${paymentAmount}) no puede ser mayor al saldo pendiente (${liquidation.balance}).`);
+    }
+
+    // 1. Update liquidation
+    const liquidationRef = doc(db, 'liquidations', liquidationId);
+    const newAmountPaid = liquidation.amountPaid + paymentAmount;
+    const newBalance = liquidation.balance - paymentAmount;
+    const newStatus: Liquidation['status'] = newBalance <= 0.001 ? 'paid' : 'partially_paid';
+
+    batch.update(liquidationRef, {
+        amountPaid: newAmountPaid,
+        balance: newBalance,
+        status: newStatus
+    });
+
+    // 2. Create corresponding expense
+    // For now, we don't have a UI to select assignment, so we'll have to find a default scope.
+    const scopesSnapshot = await getDocs(query(collection(db, 'taskScopes'), where('name', '==', 'Administración General')));
+    let scopeId = scopesSnapshot.docs.length > 0 ? scopesSnapshot.docs[0].id : null;
+    
+    if (!scopeId) {
+        // As a fallback, create the scope if it doesn't exist.
+        const newScopeRef = doc(collection(db, 'taskScopes'));
+        batch.set(newScopeRef, { name: 'Administración General', color: '#808080' });
+        scopeId = newScopeRef.id;
+    }
+
+    const expenseRef = doc(collection(db, 'expenses'));
+    const expenseData: Omit<Expense, 'id'> = {
+      assignment: { type: 'scope', id: scopeId },
+      date: paymentDate,
+      description: expenseDescription,
+      amount: liquidation.currency === 'ARS' ? paymentAmount : 0,
+      currency: 'ARS',
+      providerId: liquidation.providerId,
+      liquidationId: liquidationId,
+      categoryId: expenseCategoryId || null,
+    };
+    if (liquidation.currency === 'USD') {
+        expenseData.originalUsdAmount = paymentAmount;
+    }
+
+    batch.set(expenseRef, expenseData);
+
+    await batch.commit();
+
+    revalidatePathsAfterAction();
+    return { success: true, message: 'Pago registrado y gasto asociado creado.' };
+  } catch (error: any) {
+    console.error('Error adding liquidation payment:', error);
+    return { success: false, message: `Error al registrar el pago: ${error.message}` };
+  }
+}
+
+export async function revertLiquidation(previousState: any, liquidationId: string) {
+  if (!liquidationId) {
+    return { success: false, message: 'ID de liquidación no proporcionado.' };
+  }
+
+  const batch = writeBatch(db);
+
+  try {
+    // 1. Check if the liquidation has payments
+    const liquidation = await getLiquidationById(liquidationId);
+    if (!liquidation) {
+        throw new Error("La liquidación que intentas revertir no existe.");
+    }
+    if (liquidation.amountPaid > 0) {
+        throw new Error("No se puede revertir una liquidación que ya tiene pagos registrados.");
+    }
+
+    const workLogsCollection = collection(db, 'workLogs');
+    const manualAdjustmentsCollection = collection(db, 'manualAdjustments');
+    const expensesCollection = collection(db, 'expenses');
+
+    // 2. Find and revert associated work logs
+    const workLogsQuery = query(workLogsCollection, where('liquidationId', '==', liquidationId));
+    const workLogsSnap = await getDocs(workLogsQuery);
+    workLogsSnap.forEach(logDoc => {
+        batch.update(logDoc.ref, { status: 'pending_liquidation', liquidationId: null });
+    });
+
+    // 3. Find and revert associated manual adjustments
+    const adjustmentsQuery = query(manualAdjustmentsCollection, where('liquidationId', '==', liquidationId));
+    const adjustmentsSnap = await getDocs(adjustmentsQuery);
+    adjustmentsSnap.forEach(adjDoc => {
+        batch.update(adjDoc.ref, { status: 'pending_liquidation', liquidationId: null });
+    });
+
+    // 4. Find and delete associated expenses
+    const expensesQuery = query(expensesCollection, where('liquidationId', '==', liquidationId));
+    const expensesSnap = await getDocs(expensesQuery);
+    expensesSnap.forEach(expDoc => {
+        batch.delete(expDoc.ref);
+    });
+
+    // 5. Delete the liquidation itself
+    const liquidationRef = doc(db, 'liquidations', liquidationId);
+    batch.delete(liquidationRef);
+
+    await batch.commit();
+    revalidatePath('/liquidations');
+    revalidatePath('/expenses');
+    return { success: true, message: 'Liquidación revertida con éxito.' };
+
+  } catch (error: any) {
+    console.error('Error reverting liquidation:', error);
+    return { success: false, message: `Error al revertir: ${error.message}` };
+  }
+}
+
 export async function updateWorkLog(previousState: any, formData: FormData) {
     try {
         const id = formData.get('id') as string;
@@ -1934,61 +2069,4 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
     } catch (e: any) {
         return { success: false, message: e.message };
     }
-}
-
-export async function revertLiquidation(previousState: any, liquidationId: string) {
-  if (!liquidationId) {
-    return { success: false, message: 'ID de liquidación no proporcionado.' };
-  }
-
-  const batch = writeBatch(db);
-
-  try {
-    // 1. Check if the liquidation has payments
-    const liquidation = await getLiquidationByIdDb(liquidationId);
-    if (!liquidation) {
-        throw new Error("La liquidación que intentas revertir no existe.");
-    }
-    if (liquidation.amountPaid > 0) {
-        throw new Error("No se puede revertir una liquidación que ya tiene pagos registrados.");
-    }
-
-    const workLogsCollection = collection(db, 'workLogs');
-    const manualAdjustmentsCollection = collection(db, 'manualAdjustments');
-    const expensesCollection = collection(db, 'expenses');
-
-    // 2. Find and revert associated work logs
-    const workLogsQuery = query(workLogsCollection, where('liquidationId', '==', liquidationId));
-    const workLogsSnap = await getDocs(workLogsQuery);
-    workLogsSnap.forEach(logDoc => {
-        batch.update(logDoc.ref, { status: 'pending_liquidation', liquidationId: null });
-    });
-
-    // 3. Find and revert associated manual adjustments
-    const adjustmentsQuery = query(manualAdjustmentsCollection, where('liquidationId', '==', liquidationId));
-    const adjustmentsSnap = await getDocs(adjustmentsQuery);
-    adjustmentsSnap.forEach(adjDoc => {
-        batch.update(adjDoc.ref, { status: 'pending_liquidation', liquidationId: null });
-    });
-
-    // 4. Find and delete associated expenses
-    const expensesQuery = query(expensesCollection, where('liquidationId', '==', liquidationId));
-    const expensesSnap = await getDocs(expensesQuery);
-    expensesSnap.forEach(expDoc => {
-        batch.delete(expDoc.ref);
-    });
-
-    // 5. Delete the liquidation itself
-    const liquidationRef = doc(db, 'liquidations', liquidationId);
-    batch.delete(liquidationRef);
-
-    await batch.commit();
-    revalidatePath('/liquidations');
-    revalidatePath('/expenses');
-    return { success: true, message: 'Liquidación revertida con éxito.' };
-
-  } catch (error: any) {
-    console.error('Error reverting liquidation:', error);
-    return { success: false, message: `Error al revertir: ${error.message}` };
-  }
 }

@@ -477,12 +477,12 @@ export async function getPropertyById(id: string): Promise<Property | undefined>
   return docSnap.exists() ? processDoc(docSnap) as Property : undefined;
 }
 
-export async function addProperty(property: Omit<Property, 'id'>): Promise<Property> {
+export async function addPropertyDb(property: Omit<Property, 'id'>): Promise<Property> {
     const docRef = await addDoc(propertiesCollection, property);
     return { id: docRef.id, ...property };
 }
 
-export async function updateProperty(updatedProperty: Partial<Property>): Promise<Property | null> {
+export async function updatePropertyDb(updatedProperty: Partial<Property>): Promise<Property | null> {
     const { id, ...data } = updatedProperty;
     if (!id) throw new Error("Update property requires an ID.");
     const docRef = doc(db, 'properties', id);
@@ -491,7 +491,7 @@ export async function updateProperty(updatedProperty: Partial<Property>): Promis
     return newDoc.exists() ? processDoc(newDoc) as Property : null;
 }
 
-export async function deleteProperty(propertyId: string): Promise<void> {
+export async function deletePropertyDb(propertyId: string): Promise<void> {
     const batch = writeBatch(db);
 
     const propertyRef = doc(db, 'properties', propertyId);
@@ -535,19 +535,19 @@ export async function getTenantById(id: string): Promise<Tenant | undefined> {
     return docSnap.exists() ? processDoc(docSnap) as Tenant : undefined;
 }
 
-export async function addTenant(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
+export async function addTenantDb(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
     const docRef = await addDoc(tenantsCollection, tenant);
     return { id: docRef.id, ...tenant };
 }
 
-export async function updateTenant(updatedTenant: Tenant): Promise<Tenant | null> {
+export async function updateTenantDb(updatedTenant: Tenant): Promise<Tenant | null> {
     const { id, ...data } = updatedTenant;
     const docRef = doc(db, 'tenants', id);
     await updateDoc(docRef, data);
     return updatedTenant;
 }
 
-export async function deleteTenant(id: string): Promise<boolean> {
+export async function deleteTenantDb(id: string): Promise<boolean> {
     const docRef = doc(db, 'tenants', id);
     await deleteDoc(docRef);
     return true;
@@ -617,12 +617,12 @@ export async function getBookingWithDetails(id: string): Promise<BookingWithDeta
 }
 
 
-export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
+export async function addBookingDb(booking: Omit<Booking, 'id'>): Promise<Booking> {
     const docRef = await addDoc(bookingsCollection, { ...booking, status: 'active' });
     return { id: docRef.id, ...booking, status: 'active' };
 }
 
-export async function updateBooking(updatedBooking: Partial<Booking>): Promise<Booking | null> {
+export async function updateBookingDb(updatedBooking: Partial<Booking>): Promise<Booking | null> {
     const { id, ...data } = updatedBooking;
     if (!id) throw new Error("Update booking requires an ID.");
     const docRef = doc(db, 'bookings', id);
@@ -631,7 +631,7 @@ export async function updateBooking(updatedBooking: Partial<Booking>): Promise<B
     return newDoc.exists() ? processDoc(newDoc) as Booking : null;
 }
 
-export async function deleteBooking(id: string): Promise<boolean> {
+export async function deleteBookingDb(id: string): Promise<boolean> {
     const batch = writeBatch(db);
     
     const bookingRef = doc(db, 'bookings', id);
@@ -678,19 +678,19 @@ export async function getAllPaymentsWithDetails(): Promise<PaymentWithDetails[]>
 }
 
 
-export async function addPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
+export async function addPaymentDb(payment: Omit<Payment, 'id'>): Promise<Payment> {
     const docRef = await addDoc(paymentsCollection, payment);
     return { id: docRef.id, ...payment };
 }
 
-export async function updatePayment(updatedPayment: Payment): Promise<Payment> {
+export async function updatePaymentDb(updatedPayment: Payment): Promise<Payment> {
     const { id, ...data } = updatedPayment;
     const docRef = doc(db, 'payments', id);
     await updateDoc(docRef, data);
     return updatedPayment;
 }
 
-export async function deletePayment(id: string): Promise<void> {
+export async function deletePaymentDb(id: string): Promise<void> {
     const docRef = doc(db, 'payments', id);
     await deleteDoc(docRef);
 }
@@ -701,19 +701,19 @@ export async function getExpenseCategories(): Promise<ExpenseCategory[]> {
     return snapshot.docs.map(processDoc) as ExpenseCategory[];
 }
 
-export async function addExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
+export async function addExpenseCategoryDb(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
     const docRef = await addDoc(expenseCategoriesCollection, category);
     return { id: docRef.id, ...category };
 }
 
-export async function updateExpenseCategory(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
+export async function updateExpenseCategoryDb(updatedCategory: ExpenseCategory): Promise<ExpenseCategory> {
     const { id, ...data } = updatedCategory;
     const docRef = doc(db, 'expenseCategories', id);
     await updateDoc(docRef, data);
     return updatedCategory;
 }
 
-export async function deleteExpenseCategory(id: string): Promise<void> {
+export async function deleteExpenseCategoryDb(id: string): Promise<void> {
     const docRef = doc(db, 'expenseCategories', id);
     await deleteDoc(docRef);
 }
@@ -726,19 +726,19 @@ export async function getExpensesByAssignmentId(assignmentId: string): Promise<E
 }
 
 
-export async function addExpense(expense: Omit<Expense, 'id'>): Promise<Expense> {
+export async function addExpenseDb(expense: Omit<Expense, 'id'>): Promise<Expense> {
     const docRef = await addDoc(expensesCollection, expense);
     return { id: docRef.id, ...expense, currency: 'ARS' };
 }
 
-export async function updateExpense(updatedExpense: Expense): Promise<Expense> {
+export async function updateExpenseDb(updatedExpense: Expense): Promise<Expense> {
     const { id, ...data } = updatedExpense;
     const docRef = doc(db, 'expenses', id);
     await updateDoc(docRef, data);
     return updatedExpense;
 }
 
-export async function deleteExpense(id: string): Promise<void> {
+export async function deleteExpenseDb(id: string): Promise<void> {
     const docRef = doc(db, 'expenses', id);
     await deleteDoc(docRef);
 }
@@ -922,19 +922,19 @@ export async function getEmailTemplates(): Promise<EmailTemplate[]> {
   return snapshot.docs.map(processDoc) as EmailTemplate[];
 }
 
-export async function addEmailTemplate(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
+export async function addEmailTemplateDb(template: Omit<EmailTemplate, 'id'>): Promise<EmailTemplate> {
   const docRef = await addDoc(emailTemplatesCollection, template);
   return { id: docRef.id, ...template };
 }
 
-export async function updateEmailTemplate(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
+export async function updateEmailTemplateDb(updatedTemplate: EmailTemplate): Promise<EmailTemplate> {
   const { id, ...data } = updatedTemplate;
   const docRef = doc(db, 'emailTemplates', id);
   await updateDoc(docRef, data);
   return updatedTemplate;
 }
 
-export async function deleteEmailTemplate(id: string): Promise<void> {
+export async function deleteEmailTemplateDb(id: string): Promise<void> {
   const docRef = doc(db, 'emailTemplates', id);
   await deleteDoc(docRef);
 }
@@ -958,7 +958,7 @@ export async function getEmailSettings(): Promise<EmailSettings | null> {
     return getSetting<'email' | any>('email');
 }
 
-export async function updateEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<void> {
+export async function updateEmailSettingsDb(settings: Omit<EmailSettings, 'id'>): Promise<void> {
     const docRef = doc(db, 'settings', 'email');
     await setDoc(docRef, settings, { merge: true });
 }
@@ -967,7 +967,7 @@ export async function getAlertSettings(): Promise<AlertSettings | null> {
     return getSetting<'alerts' | any>('alerts');
 }
 
-export async function updateAlertSettings(settings: Omit<AlertSettings, 'id'>): Promise<void> {
+export async function updateAlertSettingsDb(settings: Omit<AlertSettings, 'id'>): Promise<void> {
     const docRef = doc(db, 'settings', 'alerts');
     await setDoc(docRef, settings, { merge: true });
 }
@@ -980,19 +980,19 @@ export async function getOrigins(): Promise<Origin[]> {
   return snapshot.docs.map(processDoc) as Origin[];
 }
 
-export async function addOrigin(origin: Omit<Origin, 'id'>): Promise<Origin> {
+export async function addOriginDb(origin: Omit<Origin, 'id'>): Promise<Origin> {
   const docRef = await addDoc(originsCollection, origin);
   return { id: docRef.id, ...origin };
 }
 
-export async function updateOrigin(updatedOrigin: Origin): Promise<Origin> {
+export async function updateOriginDb(updatedOrigin: Origin): Promise<Origin> {
   const { id, ...data } = updatedOrigin;
   const docRef = doc(db, 'origins', id);
   await updateDoc(docRef, data);
   return updatedOrigin;
 }
 
-export async function deleteOrigin(id: string): Promise<void> {
+export async function deleteOriginDb(id: string): Promise<void> {
   // Find tenants with this originId and unset it
   const tenantsToUpdateQuery = query(tenantsCollection, where('originId', '==', id));
   const tenantsSnapshot = await getDocs(tenantsToUpdateQuery);
@@ -1020,7 +1020,7 @@ export async function deleteOrigin(id: string): Promise<void> {
 
 
 // --- PUSH NOTIFICATIONS ---
-export async function savePushSubscription(subscription: any, safeId: string): Promise<void> {
+export async function savePushSubscriptionDb(subscription: any, safeId: string): Promise<void> {
     const subData: PushSubscription = {
         id: safeId,
         endpoint: subscription.endpoint,
@@ -1039,7 +1039,7 @@ export async function getPushSubscriptions(): Promise<PushSubscription[]> {
     return snapshot.docs.map(processDoc) as PushSubscription[];
 }
 
-export async function deletePushSubscription(id: string): Promise<void> {
+export async function deletePushSubscriptionDb(id: string): Promise<void> {
     const docRef = doc(db, 'pushSubscriptions', id);
     await deleteDoc(docRef);
 }
@@ -1052,19 +1052,19 @@ export async function getTaskCategories(): Promise<TaskCategory[]> {
     return snapshot.docs.map(processDoc) as TaskCategory[];
 }
 
-export async function addTaskCategory(category: Omit<TaskCategory, 'id'>): Promise<TaskCategory> {
+export async function addTaskCategoryDb(category: Omit<TaskCategory, 'id'>): Promise<TaskCategory> {
     const docRef = await addDoc(taskCategoriesCollection, category);
     return { id: docRef.id, ...category };
 }
 
-export async function updateTaskCategory(updatedCategory: TaskCategory): Promise<TaskCategory> {
+export async function updateTaskCategoryDb(updatedCategory: TaskCategory): Promise<TaskCategory> {
     const { id, ...data } = updatedCategory;
     const docRef = doc(db, 'taskCategories', id);
     await updateDoc(docRef, data);
     return updatedCategory;
 }
 
-export async function deleteTaskCategory(id: string): Promise<void> {
+export async function deleteTaskCategoryDb(id: string): Promise<void> {
     const docRef = doc(db, 'taskCategories', id);
     await deleteDoc(docRef);
 }
@@ -1076,19 +1076,19 @@ export async function getTaskScopes(): Promise<TaskScope[]> {
     return snapshot.docs.map(processDoc) as TaskScope[];
 }
 
-export async function addTaskScope(scope: Omit<TaskScope, 'id'>): Promise<TaskScope> {
+export async function addTaskScopeDb(scope: Omit<TaskScope, 'id'>): Promise<TaskScope> {
     const docRef = await addDoc(taskScopesCollection, scope);
     return { id: docRef.id, ...scope };
 }
 
-export async function updateTaskScope(updatedScope: TaskScope): Promise<TaskScope> {
+export async function updateTaskScopeDb(updatedScope: TaskScope): Promise<TaskScope> {
     const { id, ...data } = updatedScope;
     const docRef = doc(db, 'taskScopes', id);
     await updateDoc(docRef, data);
     return updatedScope;
 }
 
-export async function deleteTaskScope(id: string): Promise<void> {
+export async function deleteTaskScopeDb(id: string): Promise<void> {
     const docRef = doc(db, 'taskScopes', id);
     await deleteDoc(docRef);
 }
@@ -1214,12 +1214,12 @@ export async function getTasksByProviderId(providerId: string): Promise<TaskWith
 }
 
 
-export async function addTask(task: Omit<Task, 'id'>): Promise<Task> {
+export async function addTaskDb(task: Omit<Task, 'id'>): Promise<Task> {
     const docRef = await addDoc(tasksCollection, task);
     return { id: docRef.id, ...task };
 }
 
-export async function updateTask(updatedTask: Partial<Task>): Promise<Task | null> {
+export async function updateTaskDb(updatedTask: Partial<Task>): Promise<Task | null> {
     const { id, ...data } = updatedTask;
     if (!id) throw new Error("Update task requires an ID.");
     const docRef = doc(db, 'tasks', id);
@@ -1249,7 +1249,7 @@ export async function reassignTaskExpenses(taskId: string, newAssignment: TaskAs
 }
 
 
-export async function deleteTask(id: string): Promise<void> {
+export async function deleteTaskDb(id: string): Promise<void> {
     const batch = writeBatch(db);
     
     // Delete the task
@@ -1274,19 +1274,19 @@ export async function getProviderCategories(): Promise<ProviderCategory[]> {
     return snapshot.docs.map(processDoc) as ProviderCategory[];
 }
 
-export async function addProviderCategory(category: Omit<ProviderCategory, 'id'>): Promise<ProviderCategory> {
+export async function addProviderCategoryDb(category: Omit<ProviderCategory, 'id'>): Promise<ProviderCategory> {
     const docRef = await addDoc(providerCategoriesCollection, category);
     return { id: docRef.id, ...category };
 }
 
-export async function updateProviderCategory(updatedCategory: ProviderCategory): Promise<ProviderCategory> {
+export async function updateProviderCategoryDb(updatedCategory: ProviderCategory): Promise<ProviderCategory> {
     const { id, ...data } = updatedCategory;
     const docRef = doc(db, 'providerCategories', id);
     await updateDoc(docRef, data);
     return updatedCategory;
 }
 
-export async function deleteProviderCategory(id: string): Promise<void> {
+export async function deleteProviderCategoryDb(id: string): Promise<void> {
     const docRef = doc(db, 'providerCategories', id);
     await deleteDoc(docRef);
 }
@@ -1308,12 +1308,12 @@ export async function getProviderById(id: string): Promise<Provider | undefined>
 }
 
 
-export async function addProvider(provider: Omit<Provider, 'id'>): Promise<Provider> {
+export async function addProviderDb(provider: Omit<Provider, 'id'>): Promise<Provider> {
     const docRef = await addDoc(providersCollection, provider);
     return { id: docRef.id, ...provider };
 }
 
-export async function updateProvider(updatedProvider: Partial<Provider>): Promise<Provider | null> {
+export async function updateProviderDb(updatedProvider: Partial<Provider>): Promise<Provider | null> {
     const { id, ...data } = updatedProvider;
     if (!id) throw new Error("Update provider requires an ID.");
     const docRef = doc(db, 'providers', id);
@@ -1322,7 +1322,7 @@ export async function updateProvider(updatedProvider: Partial<Provider>): Promis
     return newDoc.exists() ? processDoc(newDoc) as Provider : null;
 }
 
-export async function deleteProvider(id: string): Promise<void> {
+export async function deleteProviderDb(id: string): Promise<void> {
     // Note: This does not handle unlinking from tasks.
     // That logic should be in the server action if needed.
     const docRef = doc(db, 'providers', id);
@@ -1396,19 +1396,17 @@ async function enrichItems(items: (WorkLog | ManualAdjustment)[]): Promise<(Work
 }
 
 export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]> {
-    const q = query(workLogsCollection, where('providerId', '==', providerId));
+    const q = query(workLogsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'));
     const snapshot = await getDocs(q);
-    const allLogs = snapshot.docs.map(processDoc) as WorkLog[];
-    const pendingLogs = allLogs.filter(log => log.status === 'pending_liquidation');
+    const pendingLogs = snapshot.docs.map(processDoc) as WorkLog[];
     pendingLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return await enrichItems(pendingLogs) as WorkLog[];
 }
 
 export async function getPendingManualAdjustments(providerId: string): Promise<ManualAdjustment[]> {
-    const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId));
+    const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'));
     const snapshot = await getDocs(q);
-    const allAdjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
-    const pendingAdjustments = allAdjustments.filter(adj => adj.status === 'pending_liquidation');
+    const pendingAdjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
     pendingAdjustments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return await enrichItems(pendingAdjustments) as ManualAdjustment[];
 }
@@ -1468,6 +1466,10 @@ export async function getLiquidationById(id: string): Promise<Liquidation | unde
     return docSnap.exists() ? processDoc(docSnap) as Liquidation : undefined;
 }
 
+export async function updateLiquidationDb(id: string, data: Partial<Liquidation>): Promise<void> {
+    const docRef = doc(db, 'liquidations', id);
+    await updateDoc(docRef, data);
+}
 
 export async function getLiquidations(): Promise<LiquidationWithProvider[]> {
     const [liquidationsSnap, providers] = await Promise.all([
@@ -1497,4 +1499,39 @@ export async function getManualAdjustmentsByLiquidationId(liquidationId: string)
     const snapshot = await getDocs(q);
     const adjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
     return await enrichItems(adjustments) as ManualAdjustment[];
+}
+
+export async function revertLiquidationDb(liquidationId: string): Promise<void> {
+    const batch = writeBatch(db);
+
+    const liquidation = await getLiquidationById(liquidationId);
+    if (!liquidation) {
+        throw new Error("La liquidación que intentas revertir no existe.");
+    }
+    if (liquidation.amountPaid > 0) {
+        throw new Error("No se puede revertir una liquidación que ya tiene pagos registrados.");
+    }
+
+    const workLogsQuery = query(workLogsCollection, where('liquidationId', '==', liquidationId));
+    const workLogsSnap = await getDocs(workLogsQuery);
+    workLogsSnap.forEach(logDoc => {
+        batch.update(logDoc.ref, { status: 'pending_liquidation', liquidationId: null });
+    });
+
+    const adjustmentsQuery = query(manualAdjustmentsCollection, where('liquidationId', '==', liquidationId));
+    const adjustmentsSnap = await getDocs(adjustmentsQuery);
+    adjustmentsSnap.forEach(adjDoc => {
+        batch.update(adjDoc.ref, { status: 'pending_liquidation', liquidationId: null });
+    });
+
+    const expensesQuery = query(expensesCollection, where('liquidationId', '==', liquidationId));
+    const expensesSnap = await getDocs(expensesQuery);
+    expensesSnap.forEach(expDoc => {
+        batch.delete(expDoc.ref);
+    });
+
+    const liquidationRef = doc(db, 'liquidations', liquidationId);
+    batch.delete(liquidationRef);
+
+    await batch.commit();
 }
