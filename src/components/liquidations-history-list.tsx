@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { LiquidationWithProvider, Property, TaskScope } from '@/lib/data';
 import {
   Table,
@@ -47,7 +47,7 @@ const getStatusBadge = (status: Liquidation['status']) => {
 };
 
 function RevertLiquidationAction({ liquidationId, onReverted }: { liquidationId: string, onReverted: () => void }) {
-    const [isPending, startTransition] = React.useTransition();
+    const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
     const handleRevert = async () => {
