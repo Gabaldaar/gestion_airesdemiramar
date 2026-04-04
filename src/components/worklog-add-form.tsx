@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -25,6 +26,7 @@ export function WorkLogAddForm({ provider, properties, isOpen, onOpenChange, onA
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
+    const [activityType, setActivityType] = useState<'hourly' | 'per_visit'>('hourly');
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
@@ -56,8 +58,21 @@ export function WorkLogAddForm({ provider, properties, isOpen, onOpenChange, onA
             formRef.current?.reset();
             setDate(new Date());
             setState(initialState);
+            // Set activity type based on provider's billing type
+            if (provider.billingType === 'hourly') {
+                setActivityType('hourly');
+            } else if (provider.billingType === 'per_visit') {
+                setActivityType('per_visit');
+            } else {
+                setActivityType('hourly'); // Default for hourly_or_visit
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, provider.billingType]);
+
+    const showActivityTypeSelect = provider.billingType === 'hourly_or_visit';
+    const quantityLabel = activityType === 'hourly' ? "Cantidad de Horas" : "Cantidad de Visitas";
+    const quantityPlaceholder = activityType === 'hourly' ? "Ej: 2.5" : "Ej: 1";
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -85,25 +100,29 @@ export function WorkLogAddForm({ provider, properties, isOpen, onOpenChange, onA
                         </Select>
                     </div>
                     
-                    <div className="space-y-2">
-                        <Label htmlFor="activityType">Tipo de Actividad</Label>
-                        <Select name="activityType" defaultValue="hourly" required>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="hourly">Horas Trabajadas</SelectItem>
-                                <SelectItem value="per_visit">Visita</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {showActivityTypeSelect ? (
+                        <div className="space-y-2">
+                            <Label htmlFor="activityType">Tipo de Actividad</Label>
+                            <Select name="activityType" value={activityType} onValueChange={(v) => setActivityType(v as 'hourly' | 'per_visit')} required>
+                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="hourly">Horas Trabajadas</SelectItem>
+                                    <SelectItem value="per_visit">Visita</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    ) : (
+                        <input type="hidden" name="activityType" value={activityType} />
+                    )}
 
                     <div className="space-y-2">
-                        <Label htmlFor="quantity">Cantidad</Label>
-                        <Input id="quantity" name="quantity" type="number" step="0.5" placeholder="Ej: 2.5 (para horas)" required />
+                        <Label htmlFor="quantity">{quantityLabel}</Label>
+                        <Input id="quantity" name="quantity" type="number" step="0.5" placeholder={quantityPlaceholder} required />
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="description">Descripción</Label>
-                        <Textarea id="description" name="description" placeholder="Ej: Limpieza de salida" required />
+                        <Textarea id="description" name="description" placeholder="Ej: Limpieza de salida, check-in familia Pérez" required />
                     </div>
 
                     <DialogFooter>

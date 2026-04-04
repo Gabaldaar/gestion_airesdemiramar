@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -54,7 +55,7 @@ export default function LiquidationsPage() {
                     <Briefcase className="h-10 w-10 text-primary" />
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight text-primary">Liquidaciones</h2>
-                        <p className="text-muted-foreground">Gestiona los pagos a tus colaboradores.</p>
+                        <p className="text-muted-foreground">Gestiona los pagos a tus colaboradores recurrentes.</p>
                     </div>
                 </div>
                 <Card>
@@ -72,7 +73,7 @@ export default function LiquidationsPage() {
                 <Briefcase className="h-10 w-10 text-primary" />
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-primary">Liquidaciones</h2>
-                    <p className="text-muted-foreground">Gestiona los pagos a tus colaboradores.</p>
+                    <p className="text-muted-foreground">Gestiona los pagos a tus colaboradores recurrentes.</p>
                 </div>
             </div>
             <LiquidationsClient

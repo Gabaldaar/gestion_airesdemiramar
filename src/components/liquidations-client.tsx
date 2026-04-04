@@ -68,7 +68,14 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
         fetchProviderData(selectedProviderId);
     };
 
+    const liquidationProviders = useMemo(() => providers.filter(p => p.managementType === 'liquidations'), [providers]);
+
     const selectedProvider = useMemo(() => providers.find(p => p.id === selectedProviderId), [providers, selectedProviderId]);
+
+    const canRegisterActivity = useMemo(() => {
+        if (!selectedProvider || !selectedProvider.billingType) return false;
+        return selectedProvider.billingType !== 'other';
+    }, [selectedProvider]);
 
     const { totalToLiquidate, currency, canLiquidate } = useMemo(() => {
         let total = 0;
@@ -143,7 +150,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                             <SelectValue placeholder="Selecciona un colaborador..." />
                         </SelectTrigger>
                         <SelectContent>
-                            {providers.map(p => (
+                            {liquidationProviders.map(p => (
                                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                             ))}
                         </SelectContent>
@@ -155,7 +162,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                 <>
                     <div className="flex justify-end gap-2">
                         <Button variant="outline" onClick={() => setIsAdjustmentFormOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Ajuste</Button>
-                        <Button onClick={() => setIsWorkLogFormOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Actividad</Button>
+                        <Button onClick={() => setIsWorkLogFormOpen(true)} disabled={!canRegisterActivity}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Actividad</Button>
                     </div>
 
                     <ManualAdjustmentAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isAdjustmentFormOpen} onOpenChange={setIsAdjustmentFormOpen} onActionComplete={handleDataChange} />

@@ -56,6 +56,10 @@ import {
   addDateBlockDb,
   updateDateBlockDb,
   deleteDateBlockDb,
+  // New liquidation functions
+  addWorkLog as addWorkLogDb,
+  addManualAdjustment as addManualAdjustmentDb,
+  getLiquidationById as getLiquidationByIdDb,
   Tenant,
   Booking,
   Expense,
@@ -72,11 +76,15 @@ import {
   TaskPriority,
   Provider,
   ProviderCategory,
+  ProviderManagementType,
+  ProviderBillingType,
   TaskAssignment,
-  DateBlock
+  DateBlock,
+  WorkLog,
+  ManualAdjustment
 } from './data';
 import { db } from './firebase';
-import { collection, doc, getDoc, getDocs, query, where, writeBatch, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, writeBatch, setDoc, addDoc, Timestamp } from 'firebase/firestore';
 
 // Define the payload for the finance API registration
 export interface RegistrarCobroPayload {
@@ -102,6 +110,7 @@ const revalidatePathsAfterAction = (propertyId?: string | null) => {
   revalidatePath('/informes');
   revalidatePath('/tasks');
   revalidatePath('/providers');
+  revalidatePath('/liquidations');
   if (propertyId) {
       revalidatePath(`/properties/${propertyId}`);
       revalidatePath(`/api/ical/${propertyId}`);
@@ -1418,6 +1427,11 @@ export async function addProvider(previousState: any, formData: FormData) {
     address: formData.get('address') as string,
     notes: (formData.get('notes') as string) || '',
     rating: !isNaN(rating) ? rating : 0,
+    managementType: (formData.get('managementType') as ProviderManagementType) || 'tasks',
+    billingType: (formData.get('billingType') as ProviderBillingType) || null,
+    rateCurrency: (formData.get('rateCurrency') as 'ARS' | 'USD') || null,
+    hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null,
+    perVisitRate: formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null,
   };
 
   try {
@@ -1444,6 +1458,11 @@ export async function updateProvider(previousState: any, formData: FormData) {
     address: formData.get('address') as string,
     notes: formData.get('notes') as string,
     rating: !isNaN(rating) ? rating : 0,
+    managementType: (formData.get('managementType') as ProviderManagementType) || 'tasks',
+    billingType: (formData.get('billingType') as ProviderBillingType) || null,
+    rateCurrency: (formData.get('rateCurrency') as 'ARS' | 'USD') || null,
+    hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null,
+    perVisitRate: formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null,
   };
 
   try {
@@ -1660,3 +1679,152 @@ export async function deleteDateBlock(previousState: any, formData: FormData) {
   }
 }
 
+// --- LIQUIDATIONS ---
+export async function addWorkLog(previousState: any, formData: FormData) {
+    try {
+        const workLogData: Omit<WorkLog, 'id' | 'calculatedCost' | 'status' | 'costCurrency'> = {
+            providerId: formData.get('providerId') as string,
+            propertyId: formData.get('propertyId') as string,
+            date: formData.get('date') as string,
+            activityType: formData.get('activityType') as 'hourly' | 'per_visit',
+            quantity: parseFloat(formData.get('quantity') as string),
+            description: formData.get('description') as string,
+        };
+        await addWorkLogDb(workLogData);
+        revalidatePath('/liquidations');
+        return { success: true, message: 'Actividad registrada correctamente.' };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+export async function addManualAdjustment(previousState: any, formData: FormData) {
+    try {
+        const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
+        const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
+        
+        const adjustmentData: Omit<ManualAdjustment, 'id' | 'status'> = {
+            providerId: formData.get('providerId') as string,
+            date: formData.get('date') as string,
+            amount: parseFloat(formData.get('amount') as string),
+            currency: formData.get('currency') as 'ARS' | 'USD',
+            description: formData.get('description') as string,
+            assignment: { type: assignmentType, id: assignmentId },
+        };
+        await addManualAdjustmentDb(adjustmentData);
+        revalidatePath('/liquidations');
+        return { success: true, message: 'Ajuste registrado correctamente.' };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+export async function generateLiquidation(previousState: any, formData: FormData) {
+  const providerId = formData.get('providerId') as string;
+  const workLogIds = formData.getAll('workLogIds') as string[];
+  const adjustmentIds = formData.getAll('adjustmentIds') as string[];
+  const currency = formData.get('currency') as 'ARS' | 'USD';
+
+  if (!providerId || !currency || (workLogIds.length === 0 && adjustmentIds.length === 0)) {
+    return { success: false, message: 'Faltan datos para generar la liquidación.' };
+  }
+
+  const batch = writeBatch(db);
+
+  try {
+    let totalAmount = 0;
+    const workLogsToUpdate: WorkLog[] = [];
+    const adjustmentsToUpdate: ManualAdjustment[] = [];
+
+    // Process Work Logs
+    if (workLogIds.length > 0) {
+        const workLogsQuery = query(collection(db, 'workLogs'), where(documentId(), 'in', workLogIds));
+        const workLogsSnap = await getDocs(workLogsQuery);
+        for (const doc of workLogsSnap.docs) {
+            const log = { id: doc.id, ...doc.data() } as WorkLog;
+            if (log.status !== 'pending_liquidation') throw new Error(`La actividad ${log.description} ya ha sido liquidada.`);
+            if (log.costCurrency !== currency) throw new Error('No se pueden mezclar monedas en una liquidación.');
+            totalAmount += log.calculatedCost;
+            workLogsToUpdate.push(log);
+        }
+    }
+
+    // Process Manual Adjustments
+    if (adjustmentIds.length > 0) {
+        const adjustmentsQuery = query(collection(db, 'manualAdjustments'), where(documentId(), 'in', adjustmentIds));
+        const adjustmentsSnap = await getDocs(adjustmentsQuery);
+        for (const doc of adjustmentsSnap.docs) {
+            const adj = { id: doc.id, ...doc.data() } as ManualAdjustment;
+            if (adj.status !== 'pending_liquidation') throw new Error(`El ajuste ${adj.description} ya ha sido liquidado.`);
+            if (adj.currency !== currency) throw new Error('No se pueden mezclar monedas en una liquidación.');
+            totalAmount += adj.amount;
+            adjustmentsToUpdate.push(adj);
+        }
+    }
+
+    // 1. Create the Liquidation document
+    const liquidationRef = doc(collection(db, 'liquidations'));
+    const newLiquidation: Omit<Liquidation, 'id'> = {
+        providerId,
+        dateGenerated: new Date().toISOString().split('T')[0],
+        totalAmount,
+        currency,
+        status: 'pending_payment',
+        amountPaid: 0,
+        balance: totalAmount,
+    };
+    batch.set(liquidationRef, newLiquidation);
+    const liquidationId = liquidationRef.id;
+
+    // 2. Create an Expense for each group
+    const expensesByAssignment = new Map<string, { amount: number, assignment: TaskAssignment, descriptions: string[] }>();
+    
+    workLogsToUpdate.forEach(log => {
+        const key = `property-${log.propertyId}`;
+        const existing = expensesByAssignment.get(key) || { amount: 0, assignment: { type: 'property', id: log.propertyId }, descriptions: [] };
+        existing.amount += log.calculatedCost;
+        existing.descriptions.push(log.description);
+        expensesByAssignment.set(key, existing);
+    });
+
+    adjustmentsToUpdate.forEach(adj => {
+        const key = `${adj.assignment.type}-${adj.assignment.id}`;
+        const existing = expensesByAssignment.get(key) || { amount: 0, assignment: adj.assignment, descriptions: [] };
+        existing.amount += adj.amount;
+        existing.descriptions.push(adj.description);
+        expensesByAssignment.set(key, existing);
+    });
+    
+    for (const [, group] of expensesByAssignment.entries()) {
+        const expenseRef = doc(collection(db, 'expenses'));
+        const expense: Omit<Expense, 'id'> = {
+            assignment: group.assignment,
+            date: new Date().toISOString().split('T')[0],
+            amount: group.amount,
+            currency: 'ARS', // Expenses are always in ARS for now
+            description: `Liquidación: ${group.descriptions.join(', ')}`,
+            providerId,
+            // Assuming we need to convert to ARS if liquidation is in USD
+            // This part might need adjustment based on final requirements.
+            ...(currency === 'USD' && { originalUsdAmount: group.amount, exchangeRate: 1 }) // Placeholder rate
+        };
+        batch.set(expenseRef, expense);
+    }
+    
+    // 3. Update status of worklogs and adjustments
+    workLogsToUpdate.forEach(log => {
+        batch.update(doc(db, 'workLogs', log.id), { status: 'liquidated', liquidationId });
+    });
+    adjustmentsToUpdate.forEach(adj => {
+        batch.update(doc(db, 'manualAdjustments', adj.id), { status: 'liquidated', liquidationId });
+    });
+    
+    await batch.commit();
+
+    revalidatePath('/liquidations');
+    return { success: true, message: 'Liquidación generada con éxito.' };
+  } catch (error: any) {
+    console.error(error);
+    return { success: false, message: error.message };
+  }
+}

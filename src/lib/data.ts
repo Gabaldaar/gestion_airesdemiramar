@@ -18,7 +18,7 @@ import {
   writeBatch,
   collectionGroup,
   setDoc,
-  FieldPath,
+  documentId,
 } from 'firebase/firestore';
 
 
@@ -297,6 +297,10 @@ export type ProviderCategory = {
     name: string;
 };
 
+export type ProviderManagementType = 'tasks' | 'liquidations';
+export type ProviderBillingType = 'hourly' | 'per_visit' | 'hourly_or_visit' | 'other';
+
+
 export type Provider = {
     id: string;
     name: string;
@@ -307,6 +311,12 @@ export type Provider = {
     address?: string | null;
     notes?: string;
     rating?: number;
+    // New fields
+    managementType: ProviderManagementType;
+    billingType?: ProviderBillingType | null;
+    rateCurrency?: 'ARS' | 'USD' | null;
+    hourlyRate?: number | null;
+    perVisitRate?: number | null;
 };
 
 // New types for flexible task assignment
@@ -344,6 +354,44 @@ export type TaskWithDetails = Task & {
     providerName?: string;
 }
 
+// LIQUIDATIONS MODULE
+export type WorkLog = {
+    id: string;
+    providerId: string;
+    propertyId: string;
+    date: string;
+    activityType: 'hourly' | 'per_visit';
+    quantity: number;
+    description: string;
+    costCurrency: 'ARS' | 'USD';
+    calculatedCost: number;
+    status: 'pending_liquidation' | 'liquidated';
+    liquidationId?: string;
+}
+
+export type ManualAdjustment = {
+    id: string;
+    providerId: string;
+    assignment: TaskAssignment;
+    date: string;
+    amount: number; // Can be negative for deductions
+    currency: 'ARS' | 'USD';
+    description: string;
+    status: 'pending_liquidation' | 'liquidated';
+    liquidationId?: string;
+}
+
+export type Liquidation = {
+    id: string;
+    providerId: string;
+    dateGenerated: string;
+    totalAmount: number;
+    currency: 'ARS' | 'USD';
+    status: 'pending_payment' | 'partially_paid' | 'paid';
+    amountPaid: number;
+    balance: number;
+}
+
 
 // --- DATA ACCESS FUNCTIONS ---
 
@@ -363,6 +411,9 @@ const providersCollection = collection(db, 'providers');
 const providerCategoriesCollection = collection(db, 'providerCategories');
 const taskScopesCollection = collection(db, 'taskScopes');
 const dateBlocksCollection = collection(db, 'dateBlocks');
+const workLogsCollection = collection(db, 'workLogs');
+const manualAdjustmentsCollection = collection(db, 'manualAdjustments');
+const liquidationsCollection = collection(db, 'liquidations');
 
 
 // Helper function to add default data only if the collection is empty
@@ -662,20 +713,10 @@ export async function deleteExpenseCategory(id: string): Promise<void> {
 }
 
 export async function getExpensesByAssignmentId(assignmentId: string): Promise<ExpenseWithDetails[]> {
-    const q = query(expensesCollection, where('assignment.id', '==', assignmentId));
+    const q = query(expensesCollection, where('assignment.id', '==', assignmentId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
-    // Note: This fetches expenses for a given assignment ID regardless of type (property or scope)
-    // The filter for property type is applied afterwards.
-    const expenses = snapshot.docs.map(processDoc).filter(e => e.assignment?.type === 'property') as Expense[];
-    const detailedExpenses = await enrichExpenses(expenses);
-    detailedExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return detailedExpenses;
-}
-
-export async function getPropertyExpensesByProviderId(providerId: string): Promise<Expense[]> {
-    const q = query(expensesCollection, where('providerId', '==', providerId), where('assignment.type', '==', 'property'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as Expense[];
+    const expenses = snapshot.docs.map(processDoc) as Expense[];
+    return await enrichExpenses(expenses);
 }
 
 
@@ -1239,7 +1280,7 @@ export async function savePushSubscription(subscription: any, safeId: string): P
             auth: subscription.keys.auth,
         },
     };
-    const docRef = doc(db, 'pushSubscriptions', subData.id);
+    const docRef = doc(db, 'pushSubscriptions', safeId);
     await setDoc(docRef, subData, { merge: true });
 }
 
@@ -1578,4 +1619,57 @@ export async function updateDateBlockDb(block: DateBlock): Promise<DateBlock> {
 export async function deleteDateBlockDb(id: string): Promise<void> {
   const docRef = doc(db, 'dateBlocks', id);
   await deleteDoc(docRef);
+}
+
+// --- LIQUIDATIONS ---
+
+export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]> {
+    const q = query(workLogsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as WorkLog[];
+}
+
+export async function getPendingManualAdjustments(providerId: string): Promise<ManualAdjustment[]> {
+    const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as ManualAdjustment[];
+}
+
+export async function addWorkLogDb(workLog: Omit<WorkLog, 'id' | 'calculatedCost' | 'status' | 'costCurrency'>): Promise<WorkLog> {
+    const provider = await getProviderById(workLog.providerId);
+    if (!provider) throw new Error("Proveedor no encontrado.");
+
+    let calculatedCost = 0;
+    const costCurrency = provider.rateCurrency || 'ARS';
+
+    if (workLog.activityType === 'hourly') {
+        calculatedCost = workLog.quantity * (provider.hourlyRate || 0);
+    } else { // per_visit
+        calculatedCost = workLog.quantity * (provider.perVisitRate || 0);
+    }
+
+    const newLog: Omit<WorkLog, 'id'> = {
+        ...workLog,
+        costCurrency,
+        calculatedCost,
+        status: 'pending_liquidation'
+    }
+
+    const docRef = await addDoc(workLogsCollection, newLog);
+    return { id: docRef.id, ...newLog };
+}
+
+export async function addManualAdjustmentDb(adjustment: Omit<ManualAdjustment, 'id' | 'status'>): Promise<ManualAdjustment> {
+    const newAdjustment: Omit<ManualAdjustment, 'id'> = {
+        ...adjustment,
+        status: 'pending_liquidation'
+    };
+    const docRef = await addDoc(manualAdjustmentsCollection, newAdjustment);
+    return { id: docRef.id, ...newAdjustment };
+}
+
+export async function getLiquidationById(id: string): Promise<Liquidation | undefined> {
+    const docRef = doc(db, 'liquidations', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? processDoc(docSnap) as Liquidation : undefined;
 }

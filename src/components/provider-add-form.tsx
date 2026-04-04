@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -18,10 +19,11 @@ import { addProvider } from '@/lib/actions';
 import { PlusCircle, Loader2, Star } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { ProviderCategory } from '@/lib/data';
+import { ProviderCategory, ProviderManagementType } from '@/lib/data';
 import { countries } from '@/lib/countries';
 import { cn } from '@/lib/utils';
 import { useToast } from './ui/use-toast';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 
 const initialState = {
   message: '',
@@ -49,6 +51,7 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState(0);
+  const [managementType, setManagementType] = useState<ProviderManagementType>('tasks');
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -70,6 +73,7 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
     if (state.success) {
       setIsOpen(false);
       setRating(0);
+      setManagementType('tasks');
       formRef.current?.reset();
       onProviderAdded();
     }
@@ -100,6 +104,19 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="rating" value={rating} />
             <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                    <Label>Método de Gestión</Label>
+                    <RadioGroup name="managementType" defaultValue="tasks" value={managementType} onValueChange={(v) => setManagementType(v as ProviderManagementType)} className="flex items-center gap-4">
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="tasks" id="r-tasks" />
+                            <Label htmlFor="r-tasks">Por Tareas</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="liquidations" id="r-liquidations" />
+                            <Label htmlFor="r-liquidations">Por Liquidaciones</Label>
+                        </div>
+                    </RadioGroup>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Nombre</Label>
@@ -141,40 +158,43 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
                     </div>
                 </div>
 
-                <div className="border-t pt-4 mt-2">
-                    <h4 className="text-md font-medium mb-2 text-center">Facturación y Liquidación</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="billingType">Tipo de Cobro</Label>
-                            <Select name="billingType" defaultValue="other">
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="hourly">Por Hora</SelectItem>
-                                    <SelectItem value="per_visit">Por Visita</SelectItem>
-                                    <SelectItem value="other">Otro / No Aplicable</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="rateCurrency">Moneda de Tarifa</Label>
-                            <Select name="rateCurrency" defaultValue="ARS">
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="ARS">ARS</SelectItem>
-                                    <SelectItem value="USD">USD</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
-                            <Input id="hourlyRate" name="hourlyRate" type="number" step="0.01" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="perVisitRate">Tarifa por Visita</Label>
-                            <Input id="perVisitRate" name="perVisitRate" type="number" step="0.01" />
+                {managementType === 'liquidations' && (
+                    <div className="border-t pt-4 mt-2">
+                        <h4 className="text-md font-medium mb-2 text-center">Facturación y Liquidación</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="billingType">Tipo de Cobro</Label>
+                                <Select name="billingType" defaultValue="other">
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="hourly">Por Hora</SelectItem>
+                                        <SelectItem value="per_visit">Por Visita</SelectItem>
+                                        <SelectItem value="hourly_or_visit">Por Hora o Visita</SelectItem>
+                                        <SelectItem value="other">Otro / No Aplicable</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="rateCurrency">Moneda de Tarifa</Label>
+                                <Select name="rateCurrency" defaultValue="ARS">
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ARS">ARS</SelectItem>
+                                        <SelectItem value="USD">USD</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
+                                <Input id="hourlyRate" name="hourlyRate" type="number" step="0.01" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="perVisitRate">Tarifa por Visita</Label>
+                                <Input id="perVisitRate" name="perVisitRate" type="number" step="0.01" />
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 <div className="space-y-2">
                     <Label>Calificación</Label>
