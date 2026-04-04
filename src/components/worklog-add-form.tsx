@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -11,14 +12,15 @@ import { DatePicker } from './ui/date-picker';
 import { Textarea } from './ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { addWorkLog } from '@/lib/actions';
-import { Provider, Property } from '@/lib/data';
+import { Provider, Property, TaskScope } from '@/lib/data';
 import { useToast } from './ui/use-toast';
 
 const initialState = { success: false, message: '' };
 
-export function WorkLogAddForm({ provider, properties, isOpen, onOpenChange, onActionComplete }: {
+export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenChange, onActionComplete }: {
     provider: Provider;
     properties: Property[];
+    scopes: TaskScope[];
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     onActionComplete: () => void;
@@ -27,6 +29,7 @@ export function WorkLogAddForm({ provider, properties, isOpen, onOpenChange, onA
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [activityType, setActivityType] = useState<'hourly' | 'per_visit'>('hourly');
+    const [assignmentType, setAssignmentType] = useState<'property' | 'scope'>('property');
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
@@ -58,6 +61,7 @@ export function WorkLogAddForm({ provider, properties, isOpen, onOpenChange, onA
             formRef.current?.reset();
             setDate(new Date());
             setState(initialState);
+            setAssignmentType('property');
             // Set activity type based on provider's billing type
             if (provider.billingType === 'hourly') {
                 setActivityType('hourly');
@@ -91,14 +95,40 @@ export function WorkLogAddForm({ provider, properties, isOpen, onOpenChange, onA
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="propertyId">Propiedad</Label>
-                        <Select name="propertyId" required>
-                            <SelectTrigger><SelectValue placeholder="Selecciona una propiedad" /></SelectTrigger>
+                        <Label htmlFor="assignmentType">Imputar a</Label>
+                        <Select name="assignmentType" value={assignmentType} onValueChange={(v) => setAssignmentType(v as 'property' | 'scope')} required>
+                            <SelectTrigger><SelectValue/></SelectTrigger>
                             <SelectContent>
-                                {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                <SelectItem value="property">Propiedad</SelectItem>
+                                <SelectItem value="scope">Ámbito</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
+
+                    {assignmentType === 'property' && (
+                        <div className="space-y-2">
+                            <Label htmlFor="propertyId">Propiedad</Label>
+                            <Select name="propertyId" required>
+                                <SelectTrigger><SelectValue placeholder="Selecciona una propiedad" /></SelectTrigger>
+                                <SelectContent>
+                                    {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
+                    {assignmentType === 'scope' && (
+                        <div className="space-y-2">
+                            <Label htmlFor="scopeId">Ámbito</Label>
+                            <Select name="scopeId" required>
+                                <SelectTrigger><SelectValue placeholder="Selecciona un ámbito" /></SelectTrigger>
+                                <SelectContent>
+                                    {scopes.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
                     
                     {showActivityTypeSelect ? (
                         <div className="space-y-2">

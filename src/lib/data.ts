@@ -358,7 +358,7 @@ export type TaskWithDetails = Task & {
 export type WorkLog = {
     id: string;
     providerId: string;
-    propertyId: string;
+    assignment: TaskAssignment;
     date: string;
     activityType: 'hourly' | 'per_visit';
     quantity: number;
@@ -713,10 +713,11 @@ export async function deleteExpenseCategory(id: string): Promise<void> {
 }
 
 export async function getExpensesByAssignmentId(assignmentId: string): Promise<ExpenseWithDetails[]> {
-    const q = query(expensesCollection, where('assignment.id', '==', assignmentId), orderBy('date', 'desc'));
+    const q = query(expensesCollection, where('assignment.id', '==', assignmentId));
     const snapshot = await getDocs(q);
     const expenses = snapshot.docs.map(processDoc) as Expense[];
-    return await enrichExpenses(expenses);
+    const enrichedExpenses = await enrichExpenses(expenses);
+    return enrichedExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 

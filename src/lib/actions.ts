@@ -57,8 +57,8 @@ import {
   updateDateBlockDb,
   deleteDateBlockDb,
   // New liquidation functions
-  addWorkLog as addWorkLogDb,
-  addManualAdjustment as addManualAdjustmentDb,
+  addWorkLogDb,
+  addManualAdjustmentDb,
   getLiquidationById as getLiquidationByIdDb,
   Tenant,
   Booking,
@@ -81,10 +81,11 @@ import {
   TaskAssignment,
   DateBlock,
   WorkLog,
-  ManualAdjustment
+  ManualAdjustment,
+  Liquidation
 } from './data';
 import { db } from './firebase';
-import { collection, doc, getDoc, getDocs, query, where, writeBatch, setDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, writeBatch, setDoc, addDoc, Timestamp, documentId } from 'firebase/firestore';
 
 // Define the payload for the finance API registration
 export interface RegistrarCobroPayload {
@@ -1682,9 +1683,15 @@ export async function deleteDateBlock(previousState: any, formData: FormData) {
 // --- LIQUIDATIONS ---
 export async function addWorkLog(previousState: any, formData: FormData) {
     try {
+        const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
+        const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
+        if (!assignmentId) {
+            return { success: false, message: 'Debe seleccionar una propiedad o ámbito.' };
+        }
+
         const workLogData: Omit<WorkLog, 'id' | 'calculatedCost' | 'status' | 'costCurrency'> = {
             providerId: formData.get('providerId') as string,
-            propertyId: formData.get('propertyId') as string,
+            assignment: { type: assignmentType, id: assignmentId },
             date: formData.get('date') as string,
             activityType: formData.get('activityType') as 'hourly' | 'per_visit',
             quantity: parseFloat(formData.get('quantity') as string),
@@ -1780,8 +1787,8 @@ export async function generateLiquidation(previousState: any, formData: FormData
     const expensesByAssignment = new Map<string, { amount: number, assignment: TaskAssignment, descriptions: string[] }>();
     
     workLogsToUpdate.forEach(log => {
-        const key = `property-${log.propertyId}`;
-        const existing = expensesByAssignment.get(key) || { amount: 0, assignment: { type: 'property', id: log.propertyId }, descriptions: [] };
+        const key = `${log.assignment.type}-${log.assignment.id}`;
+        const existing = expensesByAssignment.get(key) || { amount: 0, assignment: log.assignment, descriptions: [] };
         existing.amount += log.calculatedCost;
         existing.descriptions.push(log.description);
         expensesByAssignment.set(key, existing);

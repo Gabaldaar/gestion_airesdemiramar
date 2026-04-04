@@ -166,7 +166,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                     </div>
 
                     <ManualAdjustmentAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isAdjustmentFormOpen} onOpenChange={setIsAdjustmentFormOpen} onActionComplete={handleDataChange} />
-                    <WorkLogAddForm provider={selectedProvider} properties={properties} isOpen={isWorkLogFormOpen} onOpenChange={setIsWorkLogFormOpen} onActionComplete={handleDataChange} />
+                    <WorkLogAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isWorkLogFormOpen} onOpenChange={setIsWorkLogFormOpen} onActionComplete={handleDataChange} />
 
                     <Tabs defaultValue="pending">
                         <TabsList className="grid w-full grid-cols-2">
@@ -190,21 +190,26 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                                                             <TableRow>
                                                                 <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedWorkLogIds(checked ? providerData?.workLogs.map(w => w.id) || [] : [])} /></TableHead>
                                                                 <TableHead>Fecha</TableHead>
-                                                                <TableHead>Propiedad</TableHead>
+                                                                <TableHead>Asignación</TableHead>
                                                                 <TableHead>Descripción</TableHead>
                                                                 <TableHead className="text-right">Costo</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
-                                                            {providerData?.workLogs.map(log => (
-                                                                <TableRow key={log.id}>
-                                                                    <TableCell><Checkbox checked={selectedWorkLogIds.includes(log.id)} onCheckedChange={(checked) => setSelectedWorkLogIds(prev => checked ? [...prev, log.id] : prev.filter(id => id !== log.id))} /></TableCell>
-                                                                    <TableCell>{formatDate(log.date)}</TableCell>
-                                                                    <TableCell>{properties.find(p => p.id === log.propertyId)?.name || 'N/A'}</TableCell>
-                                                                    <TableCell>{log.description}</TableCell>
-                                                                    <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
-                                                                </TableRow>
-                                                            ))}
+                                                            {providerData?.workLogs.map(log => {
+                                                                const assignmentName = log.assignment.type === 'property'
+                                                                    ? properties.find(p => p.id === log.assignment.id)?.name
+                                                                    : scopes.find(s => s.id === log.assignment.id)?.name;
+                                                                return (
+                                                                    <TableRow key={log.id}>
+                                                                        <TableCell><Checkbox checked={selectedWorkLogIds.includes(log.id)} onCheckedChange={(checked) => setSelectedWorkLogIds(prev => checked ? [...prev, log.id] : prev.filter(id => id !== log.id))} /></TableCell>
+                                                                        <TableCell>{formatDate(log.date)}</TableCell>
+                                                                        <TableCell>{assignmentName || 'N/A'}</TableCell>
+                                                                        <TableCell>{log.description}</TableCell>
+                                                                        <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
+                                                                    </TableRow>
+                                                                );
+                                                            })}
                                                             {providerData?.workLogs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No hay actividades pendientes.</TableCell></TableRow>}
                                                         </TableBody>
                                                     </Table>
