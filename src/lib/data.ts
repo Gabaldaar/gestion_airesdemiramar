@@ -1371,10 +1371,8 @@ export async function deleteDateBlockDb(id: string): Promise<void> {
 export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]> {
     const q = query(workLogsCollection, where('providerId', '==', providerId));
     const snapshot = await getDocs(q);
-    const allLogs = snapshot.docs.map(processDoc) as WorkLog[];
-    // Filter in code to avoid needing a composite index
+    const allLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as WorkLog[];
     const pendingLogs = allLogs.filter(log => log.status === 'pending_liquidation');
-    // Sort manually after fetching
     pendingLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return pendingLogs;
 }
@@ -1382,15 +1380,12 @@ export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]>
 export async function getPendingManualAdjustments(providerId: string): Promise<ManualAdjustment[]> {
     const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId));
     const snapshot = await getDocs(q);
-    const allAdjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
-    // Filter in code to avoid needing a composite index
+    const allAdjustments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ManualAdjustment[];
     const pendingAdjustments = allAdjustments.filter(adj => adj.status === 'pending_liquidation');
-     // Sort manually after fetching
     pendingAdjustments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return pendingAdjustments;
 }
 
-// This function is simplified. The calculation logic is moved to the server action.
 export async function addWorkLogDb(workLog: Omit<WorkLog, 'id' | 'status'>): Promise<WorkLog> {
     const newLog: Omit<WorkLog, 'id'> = {
         ...workLog,
@@ -1409,6 +1404,35 @@ export async function addManualAdjustmentDb(adjustment: Omit<ManualAdjustment, '
     const docRef = await addDoc(manualAdjustmentsCollection, newAdjustment);
     return { id: docRef.id, ...newAdjustment };
 }
+
+export async function updateWorkLogDb(updatedWorkLog: Partial<WorkLog>): Promise<WorkLog> {
+    const { id, ...data } = updatedWorkLog;
+    if (!id) throw new Error("Update work log requires an ID.");
+    const docRef = doc(db, 'workLogs', id);
+    await updateDoc(docRef, data as any);
+    const newDoc = await getDoc(docRef);
+    return processDoc(newDoc) as WorkLog;
+}
+
+export async function deleteWorkLogDb(id: string): Promise<void> {
+    const docRef = doc(db, 'workLogs', id);
+    await deleteDoc(docRef);
+}
+
+export async function updateManualAdjustmentDb(updatedAdjustment: Partial<ManualAdjustment>): Promise<ManualAdjustment> {
+    const { id, ...data } = updatedAdjustment;
+    if (!id) throw new Error("Update manual adjustment requires an ID.");
+    const docRef = doc(db, 'manualAdjustments', id);
+    await updateDoc(docRef, data as any);
+    const newDoc = await getDoc(docRef);
+    return processDoc(newDoc) as ManualAdjustment;
+}
+
+export async function deleteManualAdjustmentDb(id: string): Promise<void> {
+    const docRef = doc(db, 'manualAdjustments', id);
+    await deleteDoc(docRef);
+}
+
 
 export async function getLiquidationById(id: string): Promise<Liquidation | undefined> {
     const docRef = doc(db, 'liquidations', id);

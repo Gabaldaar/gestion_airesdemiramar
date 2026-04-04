@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import { WorkLogAddForm } from './worklog-add-form';
 import { ManualAdjustmentAddForm } from './manual-adjustment-add-form';
 import { Checkbox } from './ui/checkbox';
@@ -16,15 +17,16 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { generateLiquidation } from '@/lib/actions';
 import { useToast } from './ui/use-toast';
+import { parseDateSafely } from '@/lib/utils';
+import { WorkLogEditForm } from './worklog-edit-form';
+import { ManualAdjustmentEditForm } from './manual-adjustment-edit-form';
+import { WorkLogDeleteForm } from './worklog-delete-form';
+import { ManualAdjustmentDeleteForm } from './manual-adjustment-delete-form';
 
 const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) {
-        return 'N/A';
-    }
-    const date = new Date(dateString.replace(/-/g, '/'));
-    if (isNaN(date.getTime())) {
-        return 'Fecha Inválida';
-    }
+    if (!dateString) return 'N/A';
+    const date = parseDateSafely(dateString);
+    if (!date) return 'Fecha Inválida';
     return format(date, "dd-LLL-yy", { locale: es });
 };
 
@@ -36,8 +38,14 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
     const [selectedProviderId, setSelectedProviderId] = useState<string>('');
     const [providerData, setProviderData] = useState<{ workLogs: WorkLog[], adjustments: ManualAdjustment[] } | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(false);
+    
+    // Form states
     const [isWorkLogFormOpen, setIsWorkLogFormOpen] = useState(false);
     const [isAdjustmentFormOpen, setIsAdjustmentFormOpen] = useState(false);
+    const [editingWorkLog, setEditingWorkLog] = useState<WorkLog | undefined>(undefined);
+    const [isWorkLogEditOpen, setIsWorkLogEditOpen] = useState(false);
+    const [editingAdjustment, setEditingAdjustment] = useState<ManualAdjustment | undefined>(undefined);
+    const [isAdjustmentEditOpen, setIsAdjustmentEditOpen] = useState(false);
 
     const [selectedWorkLogIds, setSelectedWorkLogIds] = useState<string[]>([]);
     const [selectedAdjustmentIds, setSelectedAdjustmentIds] = useState<string[]>([]);
@@ -52,7 +60,6 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
         }
         setIsLoadingData(true);
         try {
-            // This is the corrected data fetching strategy
             const [workLogs, adjustments] = await Promise.all([
                 getPendingWorkLogs(providerId),
                 getPendingManualAdjustments(providerId),
@@ -84,6 +91,16 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
             fetchProviderData(selectedProviderId);
         }
     }, [selectedProviderId, fetchProviderData]);
+    
+    const handleEditWorkLog = (log: WorkLog) => {
+        setEditingWorkLog(log);
+        setIsWorkLogEditOpen(true);
+    };
+
+    const handleEditAdjustment = (adj: ManualAdjustment) => {
+        setEditingAdjustment(adj);
+        setIsAdjustmentEditOpen(true);
+    };
 
     const liquidationProviders = useMemo(() => providers.filter(p => p.managementType === 'liquidations'), [providers]);
 
@@ -206,6 +223,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                                                         <TableHead>Asignación</TableHead>
                                                         <TableHead>Descripción</TableHead>
                                                         <TableHead className="text-right">Costo</TableHead>
+                                                        <TableHead className="text-right">Acciones</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -220,10 +238,16 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                                                                 <TableCell>{assignmentName || 'N/A'}</TableCell>
                                                                 <TableCell>{log.description}</TableCell>
                                                                 <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
+                                                                <TableCell className="text-right">
+                                                                    <div className="flex items-center justify-end">
+                                                                        <Button variant="ghost" size="icon" onClick={() => handleEditWorkLog(log)}><Pencil className="h-4 w-4" /></Button>
+                                                                        <WorkLogDeleteForm workLogId={log.id} onActionComplete={handleDataChange} />
+                                                                    </div>
+                                                                </TableCell>
                                                             </TableRow>
                                                         );
                                                     })}
-                                                    {providerData?.workLogs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No hay actividades pendientes.</TableCell></TableRow>}
+                                                    {providerData?.workLogs.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No hay actividades pendientes.</TableCell></TableRow>}
                                                 </TableBody>
                                             </Table>
                                         </div>
@@ -239,6 +263,7 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                                                         <TableHead>Descripción</TableHead>
                                                         <TableHead>Imputado a</TableHead>
                                                         <TableHead className="text-right">Monto</TableHead>
+                                                        <TableHead className="text-right">Acciones</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -254,10 +279,16 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                                                                 <TableCell>{adj.description}</TableCell>
                                                                 <TableCell>{assignmentName || 'N/A'}</TableCell>
                                                                 <TableCell className={`text-right font-medium ${adj.amount < 0 ? 'text-red-500' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
+                                                                <TableCell className="text-right">
+                                                                     <div className="flex items-center justify-end">
+                                                                        <Button variant="ghost" size="icon" onClick={() => handleEditAdjustment(adj)}><Pencil className="h-4 w-4" /></Button>
+                                                                        <ManualAdjustmentDeleteForm adjustmentId={adj.id} onActionComplete={handleDataChange} />
+                                                                    </div>
+                                                                </TableCell>
                                                             </TableRow>
                                                         )
                                                     })}
-                                                    {providerData?.adjustments.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No hay ajustes pendientes.</TableCell></TableRow>}
+                                                    {providerData?.adjustments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No hay ajustes pendientes.</TableCell></TableRow>}
                                                 </TableBody>
                                             </Table>
                                         </div>
@@ -277,6 +308,8 @@ export default function LiquidationsClient({ providers, properties, scopes }: { 
                             </CardFooter>
                         )}
                     </Card>
+                     {editingWorkLog && <WorkLogEditForm provider={selectedProvider} properties={properties} scopes={scopes} workLog={editingWorkLog} isOpen={isWorkLogEditOpen} onOpenChange={setIsWorkLogEditOpen} onActionComplete={handleDataChange} />}
+                     {editingAdjustment && <ManualAdjustmentEditForm provider={selectedProvider} properties={properties} scopes={scopes} adjustment={editingAdjustment} isOpen={isAdjustmentEditOpen} onOpenChange={setIsAdjustmentEditOpen} onActionComplete={handleDataChange} />}
                 </>
             )}
         </div>

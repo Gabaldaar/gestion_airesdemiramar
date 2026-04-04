@@ -61,6 +61,10 @@ import {
   addWorkLogDb,
   addManualAdjustmentDb,
   getLiquidationById as getLiquidationByIdDb,
+  updateWorkLogDb,
+  deleteWorkLogDb,
+  updateManualAdjustmentDb,
+  deleteManualAdjustmentDb,
   Tenant,
   Booking,
   Expense,
@@ -1689,16 +1693,12 @@ export async function addWorkLog(previousState: any, formData: FormData) {
         const providerId = formData.get('providerId') as string;
         const quantity = parseFloat(formData.get('quantity') as string);
         const rate = parseFloat(formData.get('rate') as string);
+        const date = formData.get('date') as string;
 
-        if (!assignmentId) {
-            return { success: false, message: 'Debe seleccionar una propiedad o ámbito.' };
-        }
-        if (isNaN(quantity) || quantity <= 0) {
-            return { success: false, message: 'La cantidad debe ser un número mayor a cero.' };
-        }
-        if (isNaN(rate) || rate < 0) {
-            return { success: false, message: 'La tarifa debe ser un número válido.' };
-        }
+        if (!assignmentId) return { success: false, message: 'Debe seleccionar una propiedad o ámbito.' };
+        if (isNaN(quantity) || quantity <= 0) return { success: false, message: 'La cantidad debe ser un número mayor a cero.' };
+        if (isNaN(rate) || rate < 0) return { success: false, message: 'La tarifa debe ser un número válido.' };
+        if (!date) return { success: false, message: 'La fecha es obligatoria.' };
 
         const provider = await getProviderById(providerId);
         if (!provider) throw new Error("Proveedor no encontrado.");
@@ -1709,7 +1709,7 @@ export async function addWorkLog(previousState: any, formData: FormData) {
         const workLogData: Omit<WorkLog, 'id' | 'status'> = {
             providerId,
             assignment: { type: assignmentType, id: assignmentId },
-            date: formData.get('date') as string,
+            date: date,
             activityType: formData.get('activityType') as 'hourly' | 'per_visit',
             quantity,
             description: formData.get('description') as string,
@@ -1855,4 +1855,84 @@ export async function generateLiquidation(previousState: any, formData: FormData
     console.error(error);
     return { success: false, message: error.message };
   }
+}
+
+export async function updateWorkLog(previousState: any, formData: FormData) {
+    try {
+        const id = formData.get('id') as string;
+        if (!id) throw new Error("ID de actividad no proporcionado.");
+        
+        const provider = await getProviderById(formData.get('providerId') as string);
+        if (!provider) throw new Error("Proveedor no encontrado.");
+
+        const quantity = parseFloat(formData.get('quantity') as string);
+        const rate = parseFloat(formData.get('rate') as string);
+
+        const workLogData: Partial<WorkLog> = {
+            date: formData.get('date') as string,
+            description: formData.get('description') as string,
+            quantity,
+            rateApplied: rate,
+            calculatedCost: quantity * rate,
+            activityType: formData.get('activityType') as 'hourly' | 'per_visit',
+            assignment: {
+                type: formData.get('assignmentType') as 'property' | 'scope',
+                id: formData.get(formData.get('assignmentType') === 'property' ? 'propertyId' : 'scopeId') as string,
+            }
+        };
+
+        await updateWorkLogDb({ id, ...workLogData });
+        revalidatePath('/liquidations');
+        return { success: true, message: 'Actividad actualizada.' };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+export async function deleteWorkLog(previousState: any, formData: FormData) {
+    const id = formData.get('id') as string;
+    if (!id) return { success: false, message: 'ID no válido.' };
+    try {
+        await deleteWorkLogDb(id);
+        revalidatePath('/liquidations');
+        return { success: true, message: 'Actividad eliminada.' };
+    } catch (e: any) {
+        return { success: false, message: e.message };
+    }
+}
+
+export async function updateManualAdjustment(previousState: any, formData: FormData) {
+    try {
+        const id = formData.get('id') as string;
+        if (!id) throw new Error("ID de ajuste no proporcionado.");
+        
+        const adjustmentData: Partial<ManualAdjustment> = {
+            date: formData.get('date') as string,
+            description: formData.get('description') as string,
+            amount: parseFloat(formData.get('amount') as string),
+            currency: formData.get('currency') as 'ARS' | 'USD',
+            assignment: {
+                type: formData.get('assignmentType') as 'property' | 'scope',
+                id: formData.get(formData.get('assignmentType') === 'property' ? 'propertyId' : 'scopeId') as string,
+            }
+        };
+
+        await updateManualAdjustmentDb({ id, ...adjustmentData });
+        revalidatePath('/liquidations');
+        return { success: true, message: 'Ajuste actualizado.' };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+export async function deleteManualAdjustment(previousState: any, formData: FormData) {
+    const id = formData.get('id') as string;
+    if (!id) return { success: false, message: 'ID no válido.' };
+    try {
+        await deleteManualAdjustmentDb(id);
+        revalidatePath('/liquidations');
+        return { success: true, message: 'Ajuste eliminado.' };
+    } catch (e: any) {
+        return { success: false, message: e.message };
+    }
 }
