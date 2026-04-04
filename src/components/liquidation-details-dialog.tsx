@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -52,7 +53,7 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Detalle de Liquidación</DialogTitle>
                     <DialogDescription>
@@ -72,6 +73,8 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                                             <TableHead>Fecha</TableHead>
                                             <TableHead>Asignación</TableHead>
                                             <TableHead>Descripción</TableHead>
+                                            <TableHead className="text-right">Cantidad</TableHead>
+                                            <TableHead className="text-right">Tarifa</TableHead>
                                             <TableHead className="text-right">Costo</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -81,7 +84,9 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                                                 <TableCell>{formatDate(log.date)}</TableCell>
                                                 <TableCell>{(log as any).assignmentName || 'N/A'}</TableCell>
                                                 <TableCell>{log.description}</TableCell>
-                                                <TableCell className="text-right">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
+                                                <TableCell className="text-right">{log.quantity} {log.activityType === 'hourly' ? 'hs' : 'visita(s)'}</TableCell>
+                                                <TableCell className="text-right">{formatCurrency(log.rateApplied, log.costCurrency)}</TableCell>
+                                                <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -113,9 +118,10 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                                 </Table>
                             </div>
                         )}
-                        <div className="border-t pt-2 text-right">
-                            <p className="text-muted-foreground">Monto Total de la Liquidación</p>
-                            <p className="font-bold text-xl">{formatCurrency(liquidation.totalAmount, liquidation.currency)}</p>
+                        <div className="border-t pt-4 mt-4 space-y-2 text-right">
+                             <p className="text-sm text-muted-foreground">Monto Total: <span className="font-semibold text-foreground">{formatCurrency(liquidation.totalAmount, liquidation.currency)}</span></p>
+                             <p className="text-sm text-muted-foreground">Monto Pagado: <span className="font-semibold text-green-600">{formatCurrency(liquidation.amountPaid, liquidation.currency)}</span></p>
+                            <p className="text-lg font-bold">Saldo: <span className={liquidation.balance > 0 ? 'text-orange-600' : 'text-foreground'}>{formatCurrency(liquidation.balance, liquidation.currency)}</span></p>
                         </div>
                     </div>
                 ) : (

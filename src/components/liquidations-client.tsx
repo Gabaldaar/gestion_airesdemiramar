@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -329,6 +330,7 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                                 liquidations={liquidations} 
                                 properties={properties} 
                                 scopes={scopes} 
+                                onDataRefreshed={onDataNeedsRefresh}
                             />
                         </CardContent>
                     </Card>

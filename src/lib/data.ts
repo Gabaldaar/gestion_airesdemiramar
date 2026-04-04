@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from './firebase';
@@ -167,6 +168,7 @@ export type Expense = {
     categoryId?: string | null;
     taskId?: string | null;
     providerId?: string | null;
+    liquidationId?: string | null;
 }
 
 export type ExpenseWithDetails = Expense & {
