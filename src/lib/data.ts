@@ -1369,15 +1369,19 @@ export async function deleteDateBlockDb(id: string): Promise<void> {
 // --- LIQUIDATIONS ---
 
 export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]> {
-    const q = query(workLogsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'), orderBy('date', 'desc'));
+    const q = query(workLogsCollection, where('providerId', '==', providerId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as WorkLog[];
+    const allLogs = snapshot.docs.map(processDoc) as WorkLog[];
+    // Filter in code to avoid needing a composite index
+    return allLogs.filter(log => log.status === 'pending_liquidation');
 }
 
 export async function getPendingManualAdjustments(providerId: string): Promise<ManualAdjustment[]> {
-    const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'), orderBy('date', 'desc'));
+    const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(processDoc) as ManualAdjustment[];
+    const allAdjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
+    // Filter in code to avoid needing a composite index
+    return allAdjustments.filter(adj => adj.status === 'pending_liquidation');
 }
 
 // This function is simplified. The calculation logic is moved to the server action.
