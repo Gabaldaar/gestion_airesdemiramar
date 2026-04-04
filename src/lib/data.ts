@@ -363,6 +363,7 @@ export type WorkLog = {
     activityType: 'hourly' | 'per_visit';
     quantity: number;
     description: string;
+    rateApplied: number; // The rate used for this specific log
     costCurrency: 'ARS' | 'USD';
     calculatedCost: number;
     status: 'pending_liquidation' | 'liquidated';
@@ -713,11 +714,10 @@ export async function deleteExpenseCategory(id: string): Promise<void> {
 }
 
 export async function getExpensesByAssignmentId(assignmentId: string): Promise<ExpenseWithDetails[]> {
-    const q = query(expensesCollection, where('assignment.id', '==', assignmentId));
+    const q = query(expensesCollection, where('assignment.id', '==', assignmentId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
     const expenses = snapshot.docs.map(processDoc) as Expense[];
-    const enrichedExpenses = await enrichExpenses(expenses);
-    return enrichedExpenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return await enrichExpenses(expenses);
 }
 
 
@@ -1014,263 +1014,7 @@ export async function deleteOrigin(id: string): Promise<void> {
 }
 
 
-export async function getTenantsByOriginSummary(): Promise<TenantsByOriginSummary[]> {
-  const [tenants, origins] = await Promise.all([
-    getTenants(),
-    getOrigins(),
-  ]);
-
-  const totalTenants = tenants.length;
-  if (totalTenants === 0) {
-    return [];
-  }
-
-  const originsMap = new Map(origins.map(o => [o.id, o]));
-  const summaryMap = new Map<string, number>();
-
-  // Initialize map with all existing origins to include those with 0 tenants
-  origins.forEach(origin => {
-    summaryMap.set(origin.id, 0);
-  });
-
-  // Add a "Sin Origen" category
-  summaryMap.set('none', 0);
-
-  // Count tenants for each origin
-  tenants.forEach(tenant => {
-    const originId = tenant.originId || 'none';
-    summaryMap.set(originId, (summaryMap.get(originId) || 0) + 1);
-  });
-  
-  const summary: TenantsByOriginSummary[] = [];
-  
-  summaryMap.forEach((count, originId) => {
-    if (count > 0) {
-        let name = "Sin Origen";
-        let color = "#808080"; // Grey for 'none'
-
-        if (originId !== 'none') {
-            const origin = originsMap.get(originId);
-            if (origin) {
-                name = origin.name;
-                color = origin.color;
-            } else {
-                name = "Origen Desconocido"
-            }
-        }
-        
-        summary.push({
-            name: name,
-            count: count,
-            percentage: (count / totalTenants) * 100,
-            fill: color,
-        });
-    }
-  });
-
-  return summary.sort((a,b) => b.count - a.count);
-}
-
-
-// --- New Expense Summary Functions ---
-
-// Generates a color from a string. Simple hash function.
-const stringToColor = (str: string) => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  let color = '#';
-  for (let i = 0; i < 3; i++) {
-    const value = (hash >> (i * 8)) & 0xFF;
-    color += ('00' + value.toString(16)).substr(-2);
-  }
-  return color;
-}
-
-export async function getExpensesByCategorySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByCategorySummary[]> {
-    const allExpenses = await getAllExpensesUnified();
-    const categories = await getExpenseCategories();
-    
-    const startDate = options?.startDate;
-    const endDate = options?.endDate;
-    const fromDate = startDate ? new Date(startDate.replace(/-/g, '/')) : null;
-    if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
-    const toDate = endDate ? new Date(endDate.replace(/-/g, '/')) : null;
-    if (toDate) toDate.setUTCHours(23, 59, 59, 999);
-
-    const isWithinDateRange = (dateStr: string) => {
-        if (!dateStr || (!fromDate && !toDate)) return true;
-        const itemDate = new Date(dateStr.replace(/-/g, '/'));
-        if (fromDate && itemDate < fromDate) return false;
-        if (toDate && itemDate > toDate) return false;
-        return true;
-    };
-
-    const filteredExpenses = allExpenses.filter(e => isWithinDateRange(e.date));
-
-    if (filteredExpenses.length === 0) return [];
-
-    const summaryMap = new Map<string, number>();
-    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
-    summaryMap.set('Sin Categoría', 0); // Initialize uncategorized
-
-    filteredExpenses.forEach(expense => {
-        const categoryName = expense.categoryId ? categoriesMap.get(expense.categoryId) || 'Sin Categoría' : 'Sin Categoría';
-        const currentTotal = summaryMap.get(categoryName) || 0;
-        summaryMap.set(categoryName, currentTotal + expense.amountUSD);
-    });
-
-    const totalExpenses = Array.from(summaryMap.values()).reduce((acc, val) => acc + val, 0);
-    if (totalExpenses === 0) return [];
-
-    const result = Array.from(summaryMap.entries()).map(([name, totalAmountUSD]) => ({
-        name,
-        totalAmountUSD,
-        percentage: (totalAmountUSD / totalExpenses) * 100,
-        fill: stringToColor(name)
-    })).filter(item => item.totalAmountUSD > 0).sort((a,b) => b.totalAmountUSD - a.totalAmountUSD);
-
-    return result;
-}
-
-export async function getExpensesByPropertySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByPropertySummary[]> {
-    const allExpenses = await getAllExpensesUnified();
-    
-    const startDate = options?.startDate;
-    const endDate = options?.endDate;
-    const fromDate = startDate ? new Date(startDate.replace(/-/g, '/')) : null;
-    if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
-    const toDate = endDate ? new Date(endDate.replace(/-/g, '/')) : null;
-    if (toDate) toDate.setUTCHours(23, 59, 59, 999);
-
-    const isWithinDateRange = (dateStr: string) => {
-        if (!dateStr || (!fromDate && !toDate)) return true;
-        const itemDate = new Date(dateStr.replace(/-/g, '/'));
-        if (fromDate && itemDate < fromDate) return false;
-        if (toDate && itemDate > toDate) return false;
-        return true;
-    };
-
-    const filteredExpenses = allExpenses.filter(e => isWithinDateRange(e.date) && e.assignment.type === 'property');
-    if (filteredExpenses.length === 0) return [];
-
-    const summaryMap = new Map<string, number>();
-
-    filteredExpenses.forEach(expense => {
-        const propertyName = expense.assignmentName;
-        const currentTotal = summaryMap.get(propertyName) || 0;
-        summaryMap.set(propertyName, currentTotal + expense.amountUSD);
-    });
-    
-    const totalExpenses = Array.from(summaryMap.values()).reduce((acc, val) => acc + val, 0);
-    if (totalExpenses === 0) return [];
-    
-    const result = Array.from(summaryMap.entries()).map(([name, totalAmountUSD]) => ({
-        name,
-        totalAmountUSD,
-        percentage: (totalAmountUSD / totalExpenses) * 100,
-        fill: stringToColor(name)
-    })).filter(item => item.totalAmountUSD > 0).sort((a,b) => b.totalAmountUSD - a.totalAmountUSD);
-
-    return result;
-}
-
-export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSummary[]> {
-  const [bookings, origins] = await Promise.all([
-    getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
-    getOrigins(),
-  ]);
-
-  const activeBookings = bookings.filter(b => b.status === 'active');
-
-  const totalBookings = activeBookings.length;
-  if (totalBookings === 0) {
-    return [];
-  }
-
-  const originsMap = new Map(origins.map(o => [o.id, o]));
-  const summaryMap = new Map<string, number>();
-
-  // Initialize map with all existing origins to include those with 0 bookings
-  origins.forEach(origin => {
-    summaryMap.set(origin.id, 0);
-  });
-  summaryMap.set('none', 0); // For bookings without an origin
-
-  // Count bookings for each origin
-  activeBookings.forEach(booking => {
-    const originId = booking.originId || 'none';
-    summaryMap.set(originId, (summaryMap.get(originId) || 0) + 1);
-  });
-  
-  const summary: BookingsByOriginSummary[] = [];
-  
-  summaryMap.forEach((count, originId) => {
-    if (count > 0) {
-      let name = "Sin Origen";
-      let color = "#808080"; // Grey for 'none'
-
-      if (originId !== 'none') {
-        const origin = originsMap.get(originId);
-        if (origin) {
-          name = origin.name;
-          color = origin.color;
-        } else {
-          name = "Origen Desconocido";
-        }
-      }
-      
-      summary.push({
-        name: name,
-        count: count,
-        percentage: (count / totalBookings) * 100,
-        fill: color,
-      });
-    }
-  });
-
-  return summary.sort((a,b) => b.count - a.count);
-}
-
-export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]> {
-  const bookings = await getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]);
-
-  if (bookings.length === 0) {
-    return [];
-  }
-
-  let activeCount = 0;
-  let cancelledCount = 0;
-  let pendingCount = 0;
-
-  bookings.forEach(booking => {
-    switch (booking.status) {
-        case 'cancelled':
-            cancelledCount++;
-            break;
-        case 'pending':
-            pendingCount++;
-            break;
-        case 'active':
-        default:
-            activeCount++;
-            break;
-    }
-  });
-  
-  const summary: BookingStatusSummary[] = [
-    { name: 'Activas', count: activeCount, fill: '#22c55e' },
-    { name: 'Canceladas', count: cancelledCount, fill: '#ef4444' },
-    { name: 'En Espera', count: pendingCount, fill: '#f59e0b' },
-  ];
-
-  return summary.filter(item => item.count > 0);
-}
-
-
 // --- PUSH NOTIFICATIONS ---
-
 export async function savePushSubscription(subscription: any, safeId: string): Promise<void> {
     const subData: PushSubscription = {
         id: safeId,
@@ -1636,29 +1380,16 @@ export async function getPendingManualAdjustments(providerId: string): Promise<M
     return snapshot.docs.map(processDoc) as ManualAdjustment[];
 }
 
-export async function addWorkLogDb(workLog: Omit<WorkLog, 'id' | 'calculatedCost' | 'status' | 'costCurrency'>): Promise<WorkLog> {
-    const provider = await getProviderById(workLog.providerId);
-    if (!provider) throw new Error("Proveedor no encontrado.");
-
-    let calculatedCost = 0;
-    const costCurrency = provider.rateCurrency || 'ARS';
-
-    if (workLog.activityType === 'hourly') {
-        calculatedCost = workLog.quantity * (provider.hourlyRate || 0);
-    } else { // per_visit
-        calculatedCost = workLog.quantity * (provider.perVisitRate || 0);
-    }
-
+// This function is simplified. The calculation logic is moved to the server action.
+export async function addWorkLogDb(workLog: Omit<WorkLog, 'id' | 'status'>): Promise<WorkLog> {
     const newLog: Omit<WorkLog, 'id'> = {
         ...workLog,
-        costCurrency,
-        calculatedCost,
         status: 'pending_liquidation'
     }
-
     const docRef = await addDoc(workLogsCollection, newLog);
     return { id: docRef.id, ...newLog };
 }
+
 
 export async function addManualAdjustmentDb(adjustment: Omit<ManualAdjustment, 'id' | 'status'>): Promise<ManualAdjustment> {
     const newAdjustment: Omit<ManualAdjustment, 'id'> = {

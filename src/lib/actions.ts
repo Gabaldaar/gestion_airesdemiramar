@@ -48,6 +48,7 @@ import {
   getTenantById,
   updateTenantPartial,
   updateProviderPartial,
+  getProviderById,
   // New scope functions
   addTaskScope as addTaskScopeDb,
   updateTaskScope as updateTaskScopeDb,
@@ -1685,18 +1686,38 @@ export async function addWorkLog(previousState: any, formData: FormData) {
     try {
         const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
         const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
+        const providerId = formData.get('providerId') as string;
+        const quantity = parseFloat(formData.get('quantity') as string);
+        const rate = parseFloat(formData.get('rate') as string);
+
         if (!assignmentId) {
             return { success: false, message: 'Debe seleccionar una propiedad o ámbito.' };
         }
+        if (isNaN(quantity) || quantity <= 0) {
+            return { success: false, message: 'La cantidad debe ser un número mayor a cero.' };
+        }
+        if (isNaN(rate) || rate < 0) {
+            return { success: false, message: 'La tarifa debe ser un número válido.' };
+        }
 
-        const workLogData: Omit<WorkLog, 'id' | 'calculatedCost' | 'status' | 'costCurrency'> = {
-            providerId: formData.get('providerId') as string,
+        const provider = await getProviderById(providerId);
+        if (!provider) throw new Error("Proveedor no encontrado.");
+
+        const calculatedCost = quantity * rate;
+        const costCurrency = provider.rateCurrency || 'ARS';
+
+        const workLogData: Omit<WorkLog, 'id' | 'status'> = {
+            providerId,
             assignment: { type: assignmentType, id: assignmentId },
             date: formData.get('date') as string,
             activityType: formData.get('activityType') as 'hourly' | 'per_visit',
-            quantity: parseFloat(formData.get('quantity') as string),
+            quantity,
             description: formData.get('description') as string,
+            rateApplied: rate,
+            costCurrency,
+            calculatedCost,
         };
+
         await addWorkLogDb(workLogData);
         revalidatePath('/liquidations');
         return { success: true, message: 'Actividad registrada correctamente.' };

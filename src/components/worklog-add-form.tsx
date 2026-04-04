@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [activityType, setActivityType] = useState<'hourly' | 'per_visit'>('hourly');
     const [assignmentType, setAssignmentType] = useState<'property' | 'scope'>('property');
+    const [rate, setRate] = useState<number | ''>('');
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
@@ -52,6 +53,9 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
             onOpenChange(false);
             onActionComplete();
         }
+        if (state.message) {
+            setState(initialState);
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state]);
     
@@ -61,21 +65,36 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
             setDate(new Date());
             setState(initialState);
             setAssignmentType('property');
-            // Set activity type based on provider's billing type
+            setRate(''); // Reset rate
+
             if (provider.billingType === 'hourly') {
                 setActivityType('hourly');
+                setRate(provider.hourlyRate || '');
             } else if (provider.billingType === 'per_visit') {
                 setActivityType('per_visit');
-            } else {
-                setActivityType('hourly'); // Default for hourly_or_visit
+                setRate(provider.perVisitRate || '');
+            } else { // 'hourly_or_visit' or 'other'
+                setActivityType('hourly'); // Default to hourly
+                setRate(provider.hourlyRate || '');
             }
         }
-    }, [isOpen, provider.billingType]);
+    }, [isOpen, provider]);
+
+    useEffect(() => {
+        if (provider?.billingType === 'hourly_or_visit') {
+            if (activityType === 'hourly') {
+                setRate(provider.hourlyRate || '');
+            } else { // per_visit
+                setRate(provider.perVisitRate || '');
+            }
+        }
+    }, [activityType, provider]);
+
 
     const showActivityTypeSelect = provider.billingType === 'hourly_or_visit';
     const quantityLabel = activityType === 'hourly' ? "Cantidad de Horas" : "Cantidad de Visitas";
     const quantityPlaceholder = activityType === 'hourly' ? "Ej: 2.5" : "Ej: 1";
-
+    const rateLabel = activityType === 'hourly' ? "Monto por Hora" : "Monto por Visita";
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -127,7 +146,6 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
                             </Select>
                         </div>
                     )}
-
                     
                     {showActivityTypeSelect ? (
                         <div className="space-y-2">
@@ -144,9 +162,15 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
                         <input type="hidden" name="activityType" value={activityType} />
                     )}
 
-                    <div className="space-y-2">
-                        <Label htmlFor="quantity">{quantityLabel}</Label>
-                        <Input id="quantity" name="quantity" type="number" step="0.5" placeholder={quantityPlaceholder} required />
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="quantity">{quantityLabel}</Label>
+                            <Input id="quantity" name="quantity" type="number" step="0.5" placeholder={quantityPlaceholder} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="rate">{rateLabel}</Label>
+                            <Input id="rate" name="rate" type="number" step="0.01" value={rate} onChange={(e) => setRate(e.target.value === '' ? '' : parseFloat(e.target.value))} required />
+                        </div>
                     </div>
 
                     <div className="space-y-2">
