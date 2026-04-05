@@ -719,10 +719,10 @@ export async function deleteExpenseCategoryDb(id: string): Promise<void> {
 }
 
 export async function getExpensesByAssignmentId(assignmentId: string): Promise<ExpenseWithDetails[]> {
-    const q = query(expensesCollection, where('assignment.id', '==', assignmentId), orderBy('date', 'desc'));
-    const snapshot = await getDocs(q);
-    const expenses = snapshot.docs.map(processDoc) as Expense[];
-    return await enrichExpenses(expenses);
+    const snapshot = await getDocs(query(expensesCollection, orderBy('date', 'desc')));
+    const allExpenses = snapshot.docs.map(processDoc) as Expense[];
+    const filteredExpenses = allExpenses.filter(expense => expense.assignment?.id === assignmentId);
+    return await enrichExpenses(filteredExpenses);
 }
 
 
@@ -1166,24 +1166,37 @@ export async function getTasks(): Promise<TaskWithDetails[]> {
 }
 
 export async function getTasksByPropertyId(propertyId: string): Promise<TaskWithDetails[]> {
-    const [properties, scopes, categories, providers] = await Promise.all([
+    const [tasksSnap, properties, scopes, categories, providers] = await Promise.all([
+        getDocs(tasksCollection),
         getProperties(),
         getTaskScopes(),
         getTaskCategories(),
         getProviders(),
     ]);
+
     const propertiesMap = new Map(properties.map(p => [p.id, p]));
     const scopesMap = new Map(scopes.map(s => [s.id, s]));
     const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
     const providersMap = new Map(providers.map(p => [p.id, p.name]));
-
-    const q = query(tasksCollection, where('assignment.id', '==', propertyId));
-    const snapshot = await getDocs(q);
-    const propertyTasks = snapshot.docs.map(processDoc).filter(t => t.assignment?.type === 'property') as Task[];
     
+    const allTasks = tasksSnap.docs.map(processDoc) as Task[];
+
+    const propertyTasks = allTasks.filter(task => {
+        // Handle new tasks with assignment object
+        if (task.assignment?.type === 'property' && task.assignment.id === propertyId) {
+            return true;
+        }
+        // Legacy support for old tasks with propertyId
+        if (!task.assignment && task.propertyId === propertyId) {
+            return true;
+        }
+        return false;
+    });
+
     const detailedTasks = await Promise.all(propertyTasks.map(task => getTaskDetails(task, propertiesMap, scopesMap, categoriesMap, providersMap)));
     return detailedTasks;
 }
+
 
 export async function getTasksByProviderId(providerId: string): Promise<TaskWithDetails[]> {
     const [properties, scopes, categories, providers] = await Promise.all([
@@ -1598,3 +1611,4 @@ export async function getPendingBookingsCount(): Promise<number> {
 
     return pendingCount;
 }
+
