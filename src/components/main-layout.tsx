@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { getPendingLiquidationsCount, getPendingBookingsCount } from '@/lib/data';
+import { getPendingLiquidationsCount, getPendingBookingsCount, getUnliquidatedItemsCount } from '@/lib/data';
 
 
 const mainNavItems = [
@@ -199,6 +199,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [isOnline, setIsOnline] = useState(true);
   const [pendingLiqCount, setPendingLiqCount] = useState(0);
   const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
+  const [unliquidatedItemsCount, setUnliquidatedItemsCount] = useState(0);
+
 
   useEffect(() => {
     // Set initial status
@@ -214,10 +216,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     
     Promise.all([
         getPendingLiquidationsCount(),
-        getPendingBookingsCount()
-    ]).then(([liqCount, bookingsCount]) => {
+        getPendingBookingsCount(),
+        getUnliquidatedItemsCount(),
+    ]).then(([liqCount, bookingsCount, unliquidatedCount]) => {
         setPendingLiqCount(liqCount);
         setPendingBookingsCount(bookingsCount);
+        setUnliquidatedItemsCount(unliquidatedCount);
     });
 
     return () => {
@@ -225,6 +229,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const totalLiquidationsBadge = pendingLiqCount + unliquidatedItemsCount;
 
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
@@ -235,16 +241,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         )}>
         <div className={cn("hidden border-r bg-muted/40 md:flex md:flex-col")}>
             <div className="flex h-14 items-center justify-between border-b px-4 lg:h-[60px] lg:px-6">
-                <Link href="/" className={cn("flex items-center gap-2 font-semibold text-primary", isCollapsed && "justify-center w-full")}>
+                <Link href="/" className={cn("flex items-center gap-2 font-semibold text-primary", isCollapsed && "justify-center")}>
                     <Image src={Logo} alt="Logo de la aplicacion" width={isCollapsed ? 40 : 180} height={40} className={cn('transition-all', isCollapsed && 'w-auto h-auto')}/>
                     <span className={cn('sr-only', isCollapsed && 'hidden')}>Aires de Miramar</span>
                 </Link>
-                <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className={cn(isCollapsed && 'hidden')}>
+                <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
                     <ChevronLeft className={cn("h-5 w-5 transition-transform", isCollapsed && "rotate-180")} />
                 </Button>
             </div>
             <div className="flex-1 overflow-auto py-2">
-                <SidebarNav isCollapsed={isCollapsed} pendingLiquidationsCount={pendingLiqCount} pendingBookingsCount={pendingBookingsCount} />
+                <SidebarNav isCollapsed={isCollapsed} pendingLiquidationsCount={totalLiquidationsBadge} pendingBookingsCount={pendingBookingsCount} />
             </div>
         </div>
         <div className="flex flex-col">
@@ -268,7 +274,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                          <SheetTitle className="sr-only">Menú Principal</SheetTitle>
                     </SheetHeader>
                     <div className="flex-1">
-                        <SidebarNav onLinkClick={() => setIsSheetOpen(false)} isCollapsed={false} pendingLiquidationsCount={pendingLiqCount} pendingBookingsCount={pendingBookingsCount} />
+                        <SidebarNav onLinkClick={() => setIsSheetOpen(false)} isCollapsed={false} pendingLiquidationsCount={totalLiquidationsBadge} pendingBookingsCount={pendingBookingsCount} />
                     </div>
                 </SheetContent>
             </Sheet>
