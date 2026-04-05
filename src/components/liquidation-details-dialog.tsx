@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -19,6 +18,8 @@ import { es } from 'date-fns/locale';
 import { parseDateSafely } from '@/lib/utils';
 import { Button } from './ui/button';
 import Link from 'next/link';
+import useWindowSize from '@/hooks/use-window-size';
+import { Card, CardContent } from './ui/card';
 
 const formatDate = (dateString: string) => {
     const date = parseDateSafely(dateString);
@@ -30,6 +31,43 @@ const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount);
 };
 
+
+function WorkLogDetailCard({ log }: { log: WorkLog & { assignmentName?: string } }) {
+    return (
+        <Card>
+            <CardContent className="p-3 text-sm space-y-1">
+                <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                        <p className="font-semibold">{log.assignmentName}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(log.date)}</p>
+                    </div>
+                    <p className="font-bold text-primary">{formatCurrency(log.calculatedCost, log.costCurrency)}</p>
+                </div>
+                <p>{log.description}</p>
+                 <p className="text-muted-foreground text-xs">({log.quantity} {log.activityType === 'hourly' ? 'hs' : 'visita(s)'} a {formatCurrency(log.rateApplied, log.costCurrency)})</p>
+            </CardContent>
+        </Card>
+    );
+}
+
+function AdjustmentDetailCard({ adj }: { adj: ManualAdjustment & { assignmentName?: string } }) {
+    return (
+        <Card>
+            <CardContent className="p-3 text-sm space-y-1">
+                <div className="flex justify-between items-start">
+                     <div className="flex-1">
+                        <p className="font-semibold">{adj.assignmentName}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(adj.date)}</p>
+                    </div>
+                    <p className={`font-bold ${adj.amount < 0 ? 'text-destructive' : 'text-primary'}`}>{formatCurrency(adj.amount, adj.currency)}</p>
+                </div>
+                 <p>{adj.description}</p>
+            </CardContent>
+        </Card>
+    );
+}
+
+
 export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: {
     liquidation: LiquidationWithProvider;
     isOpen: boolean;
@@ -37,6 +75,8 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
 }) {
     const [details, setDetails] = useState<{ workLogs: WorkLog[], adjustments: ManualAdjustment[] } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const { width } = useWindowSize();
+    const isMobile = width ? width < 768 : false;
 
     useEffect(() => {
         if (isOpen) {
@@ -70,55 +110,67 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                         {details.workLogs.length > 0 && (
                             <div>
                                 <h4 className="font-semibold mb-2">Actividades</h4>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead>Asignación</TableHead>
-                                            <TableHead>Descripción</TableHead>
-                                            <TableHead className="text-right">Cantidad</TableHead>
-                                            <TableHead className="text-right">Tarifa</TableHead>
-                                            <TableHead className="text-right">Costo</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {details.workLogs.map(log => (
-                                            <TableRow key={log.id}>
-                                                <TableCell>{formatDate(log.date)}</TableCell>
-                                                <TableCell>{(log as any).assignmentName || 'N/A'}</TableCell>
-                                                <TableCell>{log.description}</TableCell>
-                                                <TableCell className="text-right">{log.quantity} {log.activityType === 'hourly' ? 'hs' : 'visita(s)'}</TableCell>
-                                                <TableCell className="text-right">{formatCurrency(log.rateApplied, log.costCurrency)}</TableCell>
-                                                <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
+                                {isMobile ? (
+                                    <div className="space-y-2">
+                                        {details.workLogs.map(log => <WorkLogDetailCard key={log.id} log={log as any} />)}
+                                    </div>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Fecha</TableHead>
+                                                <TableHead>Asignación</TableHead>
+                                                <TableHead>Descripción</TableHead>
+                                                <TableHead className="text-right">Cantidad</TableHead>
+                                                <TableHead className="text-right">Tarifa</TableHead>
+                                                <TableHead className="text-right">Costo</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {details.workLogs.map(log => (
+                                                <TableRow key={log.id}>
+                                                    <TableCell>{formatDate(log.date)}</TableCell>
+                                                    <TableCell>{(log as any).assignmentName || 'N/A'}</TableCell>
+                                                    <TableCell>{log.description}</TableCell>
+                                                    <TableCell className="text-right">{log.quantity} {log.activityType === 'hourly' ? 'hs' : 'visita(s)'}</TableCell>
+                                                    <TableCell className="text-right">{formatCurrency(log.rateApplied, log.costCurrency)}</TableCell>
+                                                    <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
                             </div>
                         )}
                         {details.adjustments.length > 0 && (
                              <div>
                                 <h4 className="font-semibold mb-2">Ajustes</h4>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead>Asignación</TableHead>
-                                            <TableHead>Descripción</TableHead>
-                                            <TableHead className="text-right">Monto</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {details.adjustments.map(adj => (
-                                            <TableRow key={adj.id}>
-                                                <TableCell>{formatDate(adj.date)}</TableCell>
-                                                <TableCell>{(adj as any).assignmentName || 'N/A'}</TableCell>
-                                                <TableCell>{adj.description}</TableCell>
-                                                <TableCell className={`text-right ${adj.amount < 0 ? 'text-destructive' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
+                                {isMobile ? (
+                                    <div className="space-y-2">
+                                        {details.adjustments.map(adj => <AdjustmentDetailCard key={adj.id} adj={adj as any} />)}
+                                    </div>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Fecha</TableHead>
+                                                <TableHead>Asignación</TableHead>
+                                                <TableHead>Descripción</TableHead>
+                                                <TableHead className="text-right">Monto</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {details.adjustments.map(adj => (
+                                                <TableRow key={adj.id}>
+                                                    <TableCell>{formatDate(adj.date)}</TableCell>
+                                                    <TableCell>{(adj as any).assignmentName || 'N/A'}</TableCell>
+                                                    <TableCell>{adj.description}</TableCell>
+                                                    <TableCell className={`text-right ${adj.amount < 0 ? 'text-destructive' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
                             </div>
                         )}
                         <div className="border-t pt-4 mt-4 space-y-2 text-right">

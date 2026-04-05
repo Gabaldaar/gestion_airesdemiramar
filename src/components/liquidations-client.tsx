@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -22,17 +21,97 @@ import { ManualAdjustmentEditForm } from './manual-adjustment-edit-form';
 import { WorkLogDeleteForm } from './worklog-delete-form';
 import { ManualAdjustmentDeleteForm } from './manual-adjustment-delete-form';
 import { LiquidationsHistoryList } from './liquidations-history-list';
+import useWindowSize from '@/hooks/use-window-size';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     const date = parseDateSafely(dateString);
     if (!date) return 'Fecha Inválida';
-    return formatDate(dateString);
+    // The date from firestore is already a string like '2024-07-26', which new Date() parses as UTC.
+    // To avoid timezone issues when formatting, we need to treat it as a local date.
+    return format(new Date(dateString.replace(/-/g, '/')), "dd-LLL-yy", { locale: es });
 };
 
 const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount);
 };
+
+
+function WorkLogCard({ log, onEdit, onDelete, onSelectionChange, isSelected }: {
+    log: WorkLog & { assignmentName?: string };
+    onEdit: (log: WorkLog) => void;
+    onDelete: (log: WorkLog) => void;
+    onSelectionChange: (checked: boolean) => void;
+    isSelected: boolean;
+}) {
+    return (
+        <Card className={cn(isSelected && 'border-primary ring-2 ring-primary')}>
+            <CardHeader className="p-4 flex flex-row items-start gap-4">
+                <Checkbox
+                    className="mt-1"
+                    checked={isSelected}
+                    onCheckedChange={onSelectionChange}
+                />
+                <div className="flex-1">
+                    <CardTitle className="text-base">
+                        {log.assignmentName || 'N/A'}
+                    </CardTitle>
+                    <CardDescription>{formatDate(log.date)}</CardDescription>
+                </div>
+                 <div className="text-right">
+                    <p className="font-bold text-lg text-primary">{formatCurrency(log.calculatedCost, log.costCurrency)}</p>
+                </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-2 text-sm">
+                <p>{log.description}</p>
+                 <p className="text-muted-foreground text-xs mt-1">({log.quantity} {log.activityType === 'hourly' ? 'hs' : 'visita(s)'} a {formatCurrency(log.rateApplied, log.costCurrency)})</p>
+            </CardContent>
+            <CardFooter className="p-2 justify-end">
+                <Button variant="ghost" size="icon" onClick={() => onEdit(log)}><Pencil className="h-4 w-4" /></Button>
+                <WorkLogDeleteForm workLogId={log.id} onActionComplete={() => onDelete(log)} />
+            </CardFooter>
+        </Card>
+    )
+}
+
+function ManualAdjustmentCard({ adj, onEdit, onDelete, onSelectionChange, isSelected }: {
+    adj: ManualAdjustment & { assignmentName?: string };
+    onEdit: (adj: ManualAdjustment) => void;
+    onDelete: (adj: ManualAdjustment) => void;
+    onSelectionChange: (checked: boolean) => void;
+    isSelected: boolean;
+}) {
+    return (
+        <Card className={cn(isSelected && 'border-primary ring-2 ring-primary')}>
+             <CardHeader className="p-4 flex flex-row items-start gap-4">
+                <Checkbox
+                    className="mt-1"
+                    checked={isSelected}
+                    onCheckedChange={onSelectionChange}
+                />
+                <div className="flex-1">
+                    <CardTitle className="text-base">
+                        {adj.assignmentName || 'N/A'}
+                    </CardTitle>
+                    <CardDescription>{formatDate(adj.date)}</CardDescription>
+                </div>
+                 <div className="text-right">
+                    <p className={cn("font-bold text-lg", adj.amount < 0 ? 'text-destructive' : 'text-primary')}>{formatCurrency(adj.amount, adj.currency)}</p>
+                </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-2 text-sm">
+                <p>{adj.description}</p>
+            </CardContent>
+            <CardFooter className="p-2 justify-end">
+                <Button variant="ghost" size="icon" onClick={() => onEdit(adj)}><Pencil className="h-4 w-4" /></Button>
+                <ManualAdjustmentDeleteForm adjustmentId={adj.id} onActionComplete={() => onDelete(adj)} />
+            </CardFooter>
+        </Card>
+    );
+}
 
 export default function LiquidationsClient({ providers, properties, scopes, liquidations, onDataNeedsRefresh }: { 
     providers: Provider[], 
@@ -58,6 +137,8 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
+    const { width } = useWindowSize();
+    const isMobile = width ? width < 768 : false;
 
     const fetchProviderData = useCallback(async (providerId: string) => {
         if (!providerId) {
@@ -145,7 +226,7 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
         return {
             totalToLiquidate: total,
             currency: currencies.values().next().value || null,
-            canLiquidate: currencies.size === 1 && (selectedWorkLogIds.length > 0 || selectedAdjustmentIds.length > 0)
+            canLiquidate: currencies.size <= 1 && (selectedWorkLogIds.length > 0 || selectedAdjustmentIds.length > 0)
         };
     }, [selectedWorkLogIds, selectedAdjustmentIds, providerData]);
 
@@ -207,11 +288,11 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                 <TabsContent value="pending">
                     {selectedProvider ? (
                         <>
-                            <div className="flex justify-end gap-2 my-4">
+                            <div className="flex flex-col sm:flex-row justify-end gap-2 my-4">
                                 <ManualAdjustmentAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isAdjustmentFormOpen} onOpenChange={setIsAdjustmentFormOpen} onActionComplete={handleDataChange} />
                                 <WorkLogAddForm provider={selectedProvider} properties={properties} scopes={scopes} isOpen={isWorkLogFormOpen} onOpenChange={setIsWorkLogFormOpen} onActionComplete={handleDataChange} />
-                                <Button variant="outline" onClick={() => setIsAdjustmentFormOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Ajuste</Button>
-                                <Button onClick={() => setIsWorkLogFormOpen(true)} disabled={!canRegisterActivity}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Actividad</Button>
+                                <Button className="w-full sm:w-auto" variant="outline" onClick={() => setIsAdjustmentFormOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Ajuste</Button>
+                                <Button className="w-full sm:w-auto" onClick={() => setIsWorkLogFormOpen(true)} disabled={!canRegisterActivity}><PlusCircle className="mr-2 h-4 w-4"/> Registrar Actividad</Button>
                             </div>
 
                             <Card>
@@ -227,73 +308,91 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                                         <>
                                             <div>
                                                 <h4 className="font-semibold mb-2">Horas y Visitas</h4>
-                                                <div className="border rounded-lg">
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedWorkLogIds(checked ? providerData?.workLogs.map(w => w.id) || [] : [])} checked={providerData?.workLogs.length ? selectedWorkLogIds.length === providerData.workLogs.length : false} /></TableHead>
-                                                                <TableHead>Fecha</TableHead>
-                                                                <TableHead>Asignación</TableHead>
-                                                                <TableHead>Descripción</TableHead>
-                                                                <TableHead className="text-right">Costo</TableHead>
-                                                                <TableHead className="text-right">Acciones</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {providerData?.workLogs.map(log => (
-                                                                <TableRow key={log.id}>
-                                                                    <TableCell><Checkbox checked={selectedWorkLogIds.includes(log.id)} onCheckedChange={(checked) => setSelectedWorkLogIds(prev => checked ? [...prev, log.id] : prev.filter(id => id !== log.id))} /></TableCell>
-                                                                    <TableCell>{log.date}</TableCell>
-                                                                    <TableCell>{(log as any).assignmentName || 'N/A'}</TableCell>
-                                                                    <TableCell>{log.description}</TableCell>
-                                                                    <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
-                                                                    <TableCell className="text-right">
-                                                                        <div className="flex items-center justify-end">
-                                                                            <Button variant="ghost" size="icon" onClick={() => handleEditWorkLog(log)}><Pencil className="h-4 w-4" /></Button>
-                                                                            <WorkLogDeleteForm workLogId={log.id} onActionComplete={handleDataChange} />
-                                                                        </div>
-                                                                    </TableCell>
+                                                 {isMobile ? (
+                                                    <div className="space-y-2">
+                                                        {providerData?.workLogs.map(log => (
+                                                            <WorkLogCard key={log.id} log={log} onEdit={handleEditWorkLog} onDelete={handleDataChange} onSelectionChange={(checked) => setSelectedWorkLogIds(prev => checked ? [...prev, log.id] : prev.filter(id => id !== log.id))} isSelected={selectedWorkLogIds.includes(log.id)} />
+                                                        ))}
+                                                        {providerData?.workLogs.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">No hay actividades pendientes.</p>}
+                                                    </div>
+                                                ) : (
+                                                    <div className="border rounded-lg">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedWorkLogIds(checked ? providerData?.workLogs.map(w => w.id) || [] : [])} checked={providerData?.workLogs.length ? selectedWorkLogIds.length === providerData.workLogs.length : false} /></TableHead>
+                                                                    <TableHead>Fecha</TableHead>
+                                                                    <TableHead>Asignación</TableHead>
+                                                                    <TableHead>Descripción</TableHead>
+                                                                    <TableHead className="text-right">Costo</TableHead>
+                                                                    <TableHead className="text-right">Acciones</TableHead>
                                                                 </TableRow>
-                                                            ))}
-                                                            {providerData?.workLogs.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No hay actividades pendientes.</TableCell></TableRow>}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {providerData?.workLogs.map(log => (
+                                                                    <TableRow key={log.id}>
+                                                                        <TableCell><Checkbox checked={selectedWorkLogIds.includes(log.id)} onCheckedChange={(checked) => setSelectedWorkLogIds(prev => checked ? [...prev, log.id] : prev.filter(id => id !== log.id))} /></TableCell>
+                                                                        <TableCell>{formatDate(log.date)}</TableCell>
+                                                                        <TableCell>{(log as any).assignmentName || 'N/A'}</TableCell>
+                                                                        <TableCell>{log.description}</TableCell>
+                                                                        <TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
+                                                                        <TableCell className="text-right">
+                                                                            <div className="flex items-center justify-end">
+                                                                                <Button variant="ghost" size="icon" onClick={() => handleEditWorkLog(log)}><Pencil className="h-4 w-4" /></Button>
+                                                                                <WorkLogDeleteForm workLogId={log.id} onActionComplete={handleDataChange} />
+                                                                            </div>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                                {providerData?.workLogs.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No hay actividades pendientes.</TableCell></TableRow>}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div>
                                                 <h4 className="font-semibold mb-2">Ajustes Manuales (Bonos, Adelantos, etc.)</h4>
-                                                <div className="border rounded-lg">
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedAdjustmentIds(checked ? providerData?.adjustments.map(a => a.id) || [] : [])} checked={providerData?.adjustments.length ? selectedAdjustmentIds.length === providerData.adjustments.length : false} /></TableHead>
-                                                                <TableHead>Fecha</TableHead>
-                                                                <TableHead>Descripción</TableHead>
-                                                                <TableHead>Imputado a</TableHead>
-                                                                <TableHead className="text-right">Monto</TableHead>
-                                                                <TableHead className="text-right">Acciones</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {providerData?.adjustments.map(adj => (
-                                                                <TableRow key={adj.id}>
-                                                                    <TableCell><Checkbox checked={selectedAdjustmentIds.includes(adj.id)} onCheckedChange={(checked) => setSelectedAdjustmentIds(prev => checked ? [...prev, adj.id] : prev.filter(id => id !== adj.id))} /></TableCell>
-                                                                    <TableCell>{adj.date}</TableCell>
-                                                                    <TableCell>{adj.description}</TableCell>
-                                                                    <TableCell>{(adj as any).assignmentName || 'N/A'}</TableCell>
-                                                                    <TableCell className={`text-right font-medium ${adj.amount < 0 ? 'text-red-500' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
-                                                                    <TableCell className="text-right">
-                                                                        <div className="flex items-center justify-end">
-                                                                            <Button variant="ghost" size="icon" onClick={() => handleEditAdjustment(adj)}><Pencil className="h-4 w-4" /></Button>
-                                                                            <ManualAdjustmentDeleteForm adjustmentId={adj.id} onActionComplete={handleDataChange} />
-                                                                        </div>
-                                                                    </TableCell>
+                                                 {isMobile ? (
+                                                    <div className="space-y-2">
+                                                        {providerData?.adjustments.map(adj => (
+                                                            <ManualAdjustmentCard key={adj.id} adj={adj} onEdit={handleEditAdjustment} onDelete={handleDataChange} onSelectionChange={(checked) => setSelectedAdjustmentIds(prev => checked ? [...prev, adj.id] : prev.filter(id => id !== adj.id))} isSelected={selectedAdjustmentIds.includes(adj.id)} />
+                                                        ))}
+                                                        {providerData?.adjustments.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">No hay ajustes pendientes.</p>}
+                                                    </div>
+                                                ) : (
+                                                    <div className="border rounded-lg">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedAdjustmentIds(checked ? providerData?.adjustments.map(a => a.id) || [] : [])} checked={providerData?.adjustments.length ? selectedAdjustmentIds.length === providerData.adjustments.length : false} /></TableHead>
+                                                                    <TableHead>Fecha</TableHead>
+                                                                    <TableHead>Descripción</TableHead>
+                                                                    <TableHead>Imputado a</TableHead>
+                                                                    <TableHead className="text-right">Monto</TableHead>
+                                                                    <TableHead className="text-right">Acciones</TableHead>
                                                                 </TableRow>
-                                                            ))}
-                                                            {providerData?.adjustments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No hay ajustes pendientes.</TableCell></TableRow>}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {providerData?.adjustments.map(adj => (
+                                                                    <TableRow key={adj.id}>
+                                                                        <TableCell><Checkbox checked={selectedAdjustmentIds.includes(adj.id)} onCheckedChange={(checked) => setSelectedAdjustmentIds(prev => checked ? [...prev, adj.id] : prev.filter(id => id !== adj.id))} /></TableCell>
+                                                                        <TableCell>{formatDate(adj.date)}</TableCell>
+                                                                        <TableCell>{adj.description}</TableCell>
+                                                                        <TableCell>{(adj as any).assignmentName || 'N/A'}</TableCell>
+                                                                        <TableCell className={`text-right font-medium ${adj.amount < 0 ? 'text-red-500' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
+                                                                        <TableCell className="text-right">
+                                                                            <div className="flex items-center justify-end">
+                                                                                <Button variant="ghost" size="icon" onClick={() => handleEditAdjustment(adj)}><Pencil className="h-4 w-4" /></Button>
+                                                                                <ManualAdjustmentDeleteForm adjustmentId={adj.id} onActionComplete={handleDataChange} />
+                                                                            </div>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                                {providerData?.adjustments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No hay ajustes pendientes.</TableCell></TableRow>}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                )}
                                             </div>
                                         </>
                                     )}
