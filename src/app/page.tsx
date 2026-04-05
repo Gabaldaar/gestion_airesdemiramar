@@ -2,7 +2,7 @@
 
 'use client';
 
-import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings, BookingWithDetails, Property, Tenant, FinancialSummaryByCurrency, getAlertSettings, AlertSettings, DateBlock, getDateBlocks, getPendingLiquidationsCount } from "@/lib/data";
+import { getFinancialSummaryByProperty, getProperties, getTenants, getBookings, BookingWithDetails, Property, Tenant, FinancialSummaryByCurrency, getAlertSettings, AlertSettings, DateBlock, getDateBlocks, getPendingLiquidationsCount, getUnliquidatedItemsCount, getPendingBookingsCount } from "@/lib/data";
 import DashboardStats from "@/components/dashboard-stats";
 import DashboardRecentBookings from "@/components/dashboard-recent-bookings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { differenceInDays, startOfToday } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Info, Copy, Banknote, ShieldCheck, ShieldAlert, Briefcase } from "lucide-react";
+import { AlertTriangle, Info, Copy, Banknote, ShieldCheck, ShieldAlert, Briefcase, ClipboardList } from "lucide-react";
 import AvailabilitySearcher from "@/components/availability-searcher";
 import PaymentCalculator from "@/components/payment-calculator";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,8 @@ interface DashboardData {
     alertSettings: AlertSettings | null;
     blocks: DateBlock[];
     pendingLiquidationsCount: number;
+    unliquidatedItemsCount: number;
+    pendingBookingsCount: number;
 }
 
 export default function DashboardPage() {
@@ -41,7 +43,7 @@ export default function DashboardPage() {
         if (user) {
             const fetchData = async () => {
                 setLoading(true);
-                const [summaryByCurrency, properties, tenants, bookings, alertSettings, blocks, pendingLiquidationsCount] = await Promise.all([
+                const [summaryByCurrency, properties, tenants, bookings, alertSettings, blocks, pendingLiquidationsCount, unliquidatedItemsCount, pendingBookingsCount] = await Promise.all([
                     getFinancialSummaryByProperty({}),
                     getProperties(),
                     getTenants(),
@@ -49,8 +51,10 @@ export default function DashboardPage() {
                     getAlertSettings(),
                     getDateBlocks(),
                     getPendingLiquidationsCount(),
+                    getUnliquidatedItemsCount(),
+                    getPendingBookingsCount(),
                 ]);
-                setData({ summaryByCurrency, properties, tenants, bookings, alertSettings, blocks, pendingLiquidationsCount });
+                setData({ summaryByCurrency, properties, tenants, bookings, alertSettings, blocks, pendingLiquidationsCount, unliquidatedItemsCount, pendingBookingsCount });
                 setLoading(false);
             };
             fetchData();
@@ -278,7 +282,7 @@ export default function DashboardPage() {
         return <p>Cargando dashboard...</p>;
     }
 
-    const { summaryByCurrency, properties, tenants, bookings, blocks, pendingLiquidationsCount } = data;
+    const { summaryByCurrency, properties, tenants, bookings, blocks, pendingLiquidationsCount, unliquidatedItemsCount } = data;
 
     const totalIncomeArs = summaryByCurrency.ars.reduce((acc, item) => acc + item.totalIncome, 0);
     const totalNetResultArs = summaryByCurrency.ars.reduce((acc, item) => acc + item.netResult, 0);
@@ -307,6 +311,25 @@ export default function DashboardPage() {
                         <AlertTitle className="text-orange-800 dark:text-orange-300">Liquidaciones Pendientes de Pago</AlertTitle>
                         <AlertDescription>
                             Tienes {pendingLiquidationsCount} liquidaci&oacute;n(es) con saldo pendiente de pago a colaboradores.
+                        </AlertDescription>
+                    </div>
+                    <Button asChild variant="outline" size="sm">
+                        <Link href="/liquidations">
+                            Ir a Liquidaciones
+                        </Link>
+                    </Button>
+                </div>
+            </Alert>
+        )}
+        
+        {unliquidatedItemsCount > 0 && (
+            <Alert variant="default" className="border-blue-500 text-blue-800 dark:border-blue-400 dark:text-blue-300 [&>svg]:text-blue-500">
+                <ClipboardList className="h-4 w-4" />
+                <div className="flex justify-between items-start w-full">
+                    <div>
+                        <AlertTitle className="text-blue-800 dark:text-blue-300">Actividades sin Liquidar</AlertTitle>
+                        <AlertDescription>
+                            Tienes {unliquidatedItemsCount} actividad(es) de colaboradores pendiente(s) de ser liquidadas.
                         </AlertDescription>
                     </div>
                     <Button asChild variant="outline" size="sm">

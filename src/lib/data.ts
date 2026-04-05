@@ -1493,6 +1493,18 @@ export async function getPendingLiquidationsCount(): Promise<number> {
     return snapshot.size;
 }
 
+export async function getUnliquidatedItemsCount(): Promise<number> {
+    const workLogsQuery = query(workLogsCollection, where('status', '==', 'pending_liquidation'));
+    const adjustmentsQuery = query(manualAdjustmentsCollection, where('status', '==', 'pending_liquidation'));
+    
+    const [workLogsSnap, adjustmentsSnap] = await Promise.all([
+        getDocs(workLogsQuery),
+        getDocs(adjustmentsQuery)
+    ]);
+    
+    return workLogsSnap.size + adjustmentsSnap.size;
+}
+
 export async function getWorkLogsByLiquidationId(liquidationId: string): Promise<WorkLog[]> {
     const q = query(workLogsCollection, where('liquidationId', '==', liquidationId));
     const snapshot = await getDocs(q);
@@ -1578,7 +1590,7 @@ export async function getPendingBookingsCount(): Promise<number> {
             balance = booking.amount - totalPaidInArs;
         }
 
-        if (balance > 0.01) {
+        if (balance >= 1) {
             pendingCount++;
         }
     });
