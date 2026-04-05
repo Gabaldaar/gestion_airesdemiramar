@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -95,13 +94,33 @@ function PrintPageLoader() {
 function PrintPageComponent({ data }: { data: PrintPageData }) {
     const { liquidation, workLogs, adjustments, provider } = data;
 
+    useEffect(() => {
+        // This effect triggers the print dialog automatically
+        // and tries to close the window afterwards.
+        const handleAfterPrint = () => {
+            window.close();
+        };
+        window.addEventListener('afterprint', handleAfterPrint);
+
+        // Set a short timeout to let the page render before printing
+        const timer = setTimeout(() => {
+            window.print();
+        }, 500);
+
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('afterprint', handleAfterPrint);
+        };
+    }, []);
+
+
     const totalWorkLogs = workLogs.reduce((sum, log) => sum + log.calculatedCost, 0);
     const totalAdjustments = adjustments.reduce((sum, adj) => sum + adj.amount, 0);
 
     return (
-        <div className="bg-white text-black p-4 sm:p-8 md:p-12 print:p-0">
-            <div className="max-w-4xl mx-auto bg-white p-8 print:p-0 print:shadow-none shadow-lg border print:border-none rounded-lg">
-                <header className="flex justify-between items-center pb-8 border-b">
+        <div className="bg-white text-black p-4 sm:p-8 md:p-12 print:p-0 print:m-0">
+            <div className="max-w-4xl mx-auto bg-white p-8 print:p-0 print:shadow-none print:border-none">
+                <header className="flex justify-between items-center pb-8 border-b print:pb-4">
                     <div>
                         <Image src={LogoCont} alt="Logo" width={225} height={60} placeholder="blur" />
                     </div>
@@ -109,13 +128,10 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
                          <Button variant="outline" onClick={() => window.close()}>
                             <XIcon className="mr-2 h-4 w-4" /> Cerrar
                         </Button>
-                        <Button onClick={() => window.print()}>
-                            <Printer className="mr-2 h-4 w-4" /> Imprimir
-                        </Button>
                     </div>
                 </header>
 
-                <main className="mt-8">
+                <main className="mt-8 print:mt-4">
                     <h1 className="text-2xl font-bold text-center mb-4">Comprobante de Liquidación</h1>
                     <div className="grid grid-cols-2 gap-4 mb-8 text-sm">
                         <div className="space-y-1">
@@ -193,7 +209,7 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
                     )}
                 </main>
 
-                <footer className="mt-12 pt-4 border-t-2 border-black text-right">
+                <footer className="mt-12 pt-4 border-t-2 border-black text-right print:mt-8 print:break-inside-avoid">
                     <p className="text-sm">Total Actividades: {formatCurrency(totalWorkLogs, liquidation.currency)}</p>
                     <p className="text-sm">Total Ajustes: {formatCurrency(totalAdjustments, liquidation.currency)}</p>
                     <p className="text-2xl font-bold mt-2">TOTAL A PAGAR: {formatCurrency(liquidation.totalAmount, liquidation.currency)}</p>
@@ -211,4 +227,3 @@ export default function LiquidationPrintPage() {
         </Suspense>
     );
 }
-
