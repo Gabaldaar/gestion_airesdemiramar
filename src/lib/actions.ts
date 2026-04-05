@@ -63,7 +63,7 @@ import {
   getLiquidationById,
   updateLiquidationDb,
   updateWorkLog as updateWorkLogDb,
-  deleteWorkLog as deleteWorkLogDb,
+  deleteWorkLogDb,
   updateManualAdjustment as updateManualAdjustmentDb,
   deleteManualAdjustment as deleteManualAdjustmentDb,
   revertLiquidationDb,
@@ -2030,4 +2030,3 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
         return { success: false, message: e.message };
     }
 }
-
