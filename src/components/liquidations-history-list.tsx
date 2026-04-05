@@ -23,6 +23,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { revertLiquidation } from '@/lib/actions';
 import { useToast } from './ui/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 
 const formatDate = (dateString: string) => {
@@ -47,39 +49,77 @@ const getStatusBadge = (status: Liquidation['status']) => {
     }
 };
 
-function RevertLiquidationAction({ liquidationId, onReverted }: { liquidationId: string, onReverted: () => void }) {
+function RevertLiquidationAction({ liquidation, onReverted }: { liquidation: LiquidationWithProvider, onReverted: () => void }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
+    const [confirmText, setConfirmText] = useState("");
+    const [isOpen, setIsOpen] = useState(false);
 
-    const handleRevert = async () => {
+    const hasPayments = liquidation.amountPaid > 0;
+    const confirmationString = "REVERTIR";
+
+    const handleRevert = () => {
+        if (hasPayments && confirmText !== confirmationString) {
+            toast({
+                title: "Confirmación incorrecta",
+                description: `Debes escribir "${confirmationString}" para confirmar.`,
+                variant: "destructive",
+            });
+            return;
+        }
+
         startTransition(async () => {
-            const result = await revertLiquidation({ success: false, message: '' }, liquidationId);
+            const result = await revertLiquidation({ success: false, message: '' }, liquidation.id);
             if (result.success) {
                 toast({ title: "Éxito", description: "La liquidación ha sido revertida." });
+                setIsOpen(false);
                 onReverted();
             } else {
                 toast({ title: "Error", description: result.message, variant: 'destructive' });
             }
         });
     };
+    
+    const isButtonDisabled = isPending || (hasPayments && confirmText !== confirmationString);
 
     return (
-        <AlertDialog>
+        <AlertDialog open={isOpen} onOpenChange={(open) => {
+            if (!open) setConfirmText(""); // Reset on close
+            setIsOpen(open);
+        }}>
             <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">Revertir</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Esta acción es irreversible. Se eliminará la liquidación, se borrarán los gastos generados y todas las actividades y ajustes volverán al estado "Pendiente de Liquidación".
+                        Esta acción es irreversible. Se eliminará la liquidación, los gastos asociados y todas las actividades y ajustes volverán al estado "Pendiente".
+                        {hasPayments && (
+                            <span className="font-bold text-destructive mt-2 block">
+                                ¡Atención! Esta liquidación tiene pagos registrados. Revertirla también eliminará los registros de gastos asociados a esos pagos, lo que puede afectar tu contabilidad.
+                            </span>
+                        )}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
+                {hasPayments && (
+                    <div className="space-y-2 my-4">
+                        <Label htmlFor="confirm-revert-text" className="font-semibold">
+                            Para confirmar, escribe "{confirmationString}" en el campo de abajo.
+                        </Label>
+                        <Input
+                            id="confirm-revert-text"
+                            value={confirmText}
+                            onChange={(e) => setConfirmText(e.target.value)}
+                            autoComplete="off"
+                        />
+                    </div>
+                )}
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleRevert} disabled={isPending}>
+                    <AlertDialogAction onClick={handleRevert} disabled={isButtonDisabled}>
                         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Sí, revertir
+                        {hasPayments ? "Sí, revertir liquidación y pagos" : "Sí, revertir"}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -134,7 +174,7 @@ export function LiquidationsHistoryList({ liquidations, onDataRefreshed }: {
                                                 Pagar
                                             </Button>
                                         )}
-                                        <RevertLiquidationAction liquidationId={liq.id} onReverted={onDataRefreshed} />
+                                        <RevertLiquidationAction liquidation={liq} onReverted={onDataRefreshed} />
                                     </div>
                                 </TableCell>
                             </TableRow>
