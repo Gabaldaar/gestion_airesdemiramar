@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -108,6 +109,7 @@ export function LiquidationsHistoryList({ liquidations, onDataRefreshed }: {
                             <TableHead>Fecha</TableHead>
                             <TableHead>Colaborador</TableHead>
                             <TableHead className="text-right">Monto Total</TableHead>
+                            <TableHead className="text-right">Saldo</TableHead>
                             <TableHead className="text-right">Estado</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -118,6 +120,9 @@ export function LiquidationsHistoryList({ liquidations, onDataRefreshed }: {
                                 <TableCell>{formatDate(liq.dateGenerated)}</TableCell>
                                 <TableCell>{liq.providerName}</TableCell>
                                 <TableCell className="text-right font-medium">{formatCurrency(liq.totalAmount, liq.currency)}</TableCell>
+                                <TableCell className="text-right font-bold text-orange-600">
+                                    {liq.balance > 0.01 ? formatCurrency(liq.balance, liq.currency) : '-'}
+                                </TableCell>
                                 <TableCell className="text-right">{getStatusBadge(liq.status)}</TableCell>
                                 <TableCell className="text-right">
                                      <div className="flex gap-2 justify-end">

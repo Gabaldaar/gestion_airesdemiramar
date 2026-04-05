@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { getPendingLiquidationsCount } from '@/lib/data';
 
 
 const mainNavItems = [
@@ -49,9 +51,15 @@ const helpNavItem = { href: '/help', label: 'Ayuda', icon: CircleHelp };
 function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, isCollapsed: boolean }) {
   const pathname = usePathname();
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION;
+  const [pendingLiqCount, setPendingLiqCount] = useState(0);
+
+  useEffect(() => {
+    getPendingLiquidationsCount().then(setPendingLiqCount);
+  }, []);
   
   const renderLink = (item: { href: string, label: string, icon: React.ElementType }) => {
     const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+    const showBadge = item.href === '/liquidations' && pendingLiqCount > 0;
     
     if (isCollapsed) {
         return (
@@ -61,17 +69,23 @@ function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, is
                         <Link
                             href={item.href}
                             className={cn(
-                                'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
+                                'relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
                                 isActive && 'bg-accent text-accent-foreground'
                             )}
                             onClick={onLinkClick}
                             >
                             <item.icon className="h-5 w-5" />
+                             {showBadge && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground">
+                                    {pendingLiqCount}
+                                </span>
+                            )}
                             <span className="sr-only">{item.label}</span>
                         </Link>
                     </TooltipTrigger>
                     <TooltipContent side="right" className="flex items-center gap-4">
                        {item.label}
+                       {showBadge && <span className="ml-auto text-muted-foreground">({pendingLiqCount} pendiente{pendingLiqCount > 1 ? 's' : ''})</span>}
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
@@ -90,6 +104,11 @@ function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, is
       >
         <item.icon className="h-4 w-4" />
         {item.label}
+        {showBadge && (
+            <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground">
+                {pendingLiqCount}
+            </span>
+        )}
       </Link>
     );
   }

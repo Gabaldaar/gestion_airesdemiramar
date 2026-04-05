@@ -1399,7 +1399,7 @@ export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]>
     const q = query(workLogsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'));
     const snapshot = await getDocs(q);
     const pendingLogs = snapshot.docs.map(processDoc) as WorkLog[];
-    pendingLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    pendingLogs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     return await enrichItems(pendingLogs) as WorkLog[];
 }
 
@@ -1407,7 +1407,7 @@ export async function getPendingManualAdjustments(providerId: string): Promise<M
     const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'));
     const snapshot = await getDocs(q);
     const pendingAdjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
-    pendingAdjustments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    pendingAdjustments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     return await enrichItems(pendingAdjustments) as ManualAdjustment[];
 }
 
@@ -1485,6 +1485,12 @@ export async function getLiquidations(): Promise<LiquidationWithProvider[]> {
         ...liq,
         providerName: providersMap.get(liq.providerId) || 'Proveedor Desconocido',
     }));
+}
+
+export async function getPendingLiquidationsCount(): Promise<number> {
+    const q = query(liquidationsCollection, where('status', 'in', ['pending_payment', 'partially_paid']));
+    const snapshot = await getDocs(q);
+    return snapshot.size;
 }
 
 export async function getWorkLogsByLiquidationId(liquidationId: string): Promise<WorkLog[]> {
