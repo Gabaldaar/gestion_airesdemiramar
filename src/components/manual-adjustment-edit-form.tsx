@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
@@ -5,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup } from '@/components/ui/select';
 import { DatePicker } from './ui/date-picker';
 import { Textarea } from './ui/textarea';
 import { Loader2 } from 'lucide-react';
@@ -28,7 +29,6 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
-    const [assignmentType, setAssignmentType] = useState<'property' | 'scope'>('scope');
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
@@ -59,10 +59,11 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
     useEffect(() => {
         if (isOpen) {
             setDate(parseDateSafely(adjustment.date));
-            setAssignmentType(adjustment.assignment.type);
             setState(initialState);
         }
     }, [isOpen, adjustment]);
+
+    const defaultAssignmentValue = `${adjustment.assignment.type}-${adjustment.assignment.id}`;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -104,38 +105,21 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="assignmentType">Imputar Costo A</Label>
-                        <Select name="assignmentType" value={assignmentType} onValueChange={(v) => setAssignmentType(v as 'property' | 'scope')} required>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
+                        <Label htmlFor="assignment">Imputar a</Label>
+                        <Select name="assignment" defaultValue={defaultAssignmentValue} required>
+                            <SelectTrigger><SelectValue placeholder="Selecciona Propiedad o Ámbito..."/></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="property">Propiedad</SelectItem>
-                                <SelectItem value="scope">Ámbito</SelectItem>
+                                <SelectGroup>
+                                    <Label>Propiedades</Label>
+                                    {properties.map(p => <SelectItem key={p.id} value={`property-${p.id}`}>{p.name}</SelectItem>)}
+                                </SelectGroup>
+                                <SelectGroup>
+                                    <Label>Ámbitos</Label>
+                                    {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>
-
-                    {assignmentType === 'property' && (
-                        <div className="space-y-2">
-                            <Label htmlFor="propertyId">Propiedad Específica</Label>
-                            <Select name="propertyId" defaultValue={adjustment.assignment.type === 'property' ? adjustment.assignment.id : undefined} required>
-                                <SelectTrigger><SelectValue placeholder="Selecciona una propiedad" /></SelectTrigger>
-                                <SelectContent>
-                                    {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-                     {assignmentType === 'scope' && (
-                        <div className="space-y-2">
-                            <Label htmlFor="scopeId">Ámbito Específico</Label>
-                            <Select name="scopeId" defaultValue={adjustment.assignment.type === 'scope' ? adjustment.assignment.id : undefined} required>
-                                <SelectTrigger><SelectValue placeholder="Selecciona un ámbito" /></SelectTrigger>
-                                <SelectContent>
-                                    {scopes.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

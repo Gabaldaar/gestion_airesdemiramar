@@ -113,9 +113,9 @@ const revalidatePathsAfterAction = (propertyId?: string | null) => {
   revalidatePath('/bookings');
   revalidatePath('/'); // Revalidate dashboard
   revalidatePath('/reports');
+  revalidatePath('/informes');
   revalidatePath('/payments');
   revalidatePath('/expenses');
-  revalidatePath('/informes');
   revalidatePath('/tasks');
   revalidatePath('/providers');
   revalidatePath('/liquidations');
@@ -1264,13 +1264,11 @@ export async function deleteTaskScope(previousState: any, formData: FormData) {
 }
 
 export async function addTask(previousState: any, formData: FormData) {
-  const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
-  const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
-
-  if (!assignmentType || !assignmentId) {
-    return { success: false, message: 'Se debe seleccionar una asignación (Propiedad o Ámbito).' };
+  const assignmentValue = formData.get('assignment') as string;
+  if (!assignmentValue) {
+    return { success: false, message: 'Se debe seleccionar una asignación.' };
   }
-
+  const [assignmentType, assignmentId] = assignmentValue.split('-') as ['property' | 'scope', string];
   const assignment: TaskAssignment = {
     type: assignmentType,
     id: assignmentId,
@@ -1323,12 +1321,12 @@ export async function updateTask(previousState: any, formData: FormData) {
     return { success: false, message: 'ID de tarea no proporcionado.' };
   }
 
-  const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
-  const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
+  const assignmentValue = formData.get('assignment') as string;
 
   const taskData: { [key: string]: any } = {};
   
-  if(assignmentType && assignmentId) {
+  if (assignmentValue) {
+    const [assignmentType, assignmentId] = assignmentValue.split('-') as ['property' | 'scope', string];
     taskData.assignment = { type: assignmentType, id: assignmentId };
   }
 
@@ -1375,14 +1373,14 @@ export async function updateTask(previousState: any, formData: FormData) {
 
 export async function reassignTaskAndMoveCosts(previousState: any, formData: FormData) {
   const taskId = formData.get('id') as string;
-  const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
-  const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
+  const assignmentValue = formData.get('assignment') as string;
 
-  if (!taskId || !assignmentType || !assignmentId) {
+  if (!taskId || !assignmentValue) {
     return { success: false, message: 'Faltan datos para reasignar la tarea y sus costos.' };
   }
 
   try {
+    const [assignmentType, assignmentId] = assignmentValue.split('-') as ['property' | 'scope', string];
     const newAssignment: TaskAssignment = { type: assignmentType, id: assignmentId };
     
     // First, update the task itself
@@ -1690,14 +1688,17 @@ export async function deleteDateBlock(previousState: any, formData: FormData) {
 // --- LIQUIDATIONS ---
 export async function addWorkLog(previousState: any, formData: FormData) {
     try {
-        const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
-        const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
+        const assignmentValue = formData.get('assignment') as string;
+        if (!assignmentValue) {
+            return { success: false, message: 'Debe seleccionar una propiedad o ámbito.' };
+        }
+        const [assignmentType, assignmentId] = assignmentValue.split('-') as ['property' | 'scope', string];
+
         const providerId = formData.get('providerId') as string;
         const quantity = parseFloat(formData.get('quantity') as string);
         const rate = parseFloat(formData.get('rate') as string);
         const date = formData.get('date') as string;
 
-        if (!assignmentId) return { success: false, message: 'Debe seleccionar una propiedad o ámbito.' };
         if (isNaN(quantity) || quantity <= 0) return { success: false, message: 'La cantidad debe ser un número mayor a cero.' };
         if (isNaN(rate) || rate < 0) return { success: false, message: 'La tarifa debe ser un número válido.' };
         if (!date) return { success: false, message: 'La fecha es obligatoria.' };
@@ -1730,8 +1731,11 @@ export async function addWorkLog(previousState: any, formData: FormData) {
 
 export async function addManualAdjustment(previousState: any, formData: FormData) {
     try {
-        const assignmentType = formData.get('assignmentType') as 'property' | 'scope';
-        const assignmentId = formData.get(assignmentType === 'property' ? 'propertyId' : 'scopeId') as string;
+        const assignmentValue = formData.get('assignment') as string;
+        if (!assignmentValue) {
+            return { success: false, message: 'Debe seleccionar una propiedad o ámbito.' };
+        }
+        const [assignmentType, assignmentId] = assignmentValue.split('-') as ['property' | 'scope', string];
         
         const adjustmentData: Omit<ManualAdjustment, 'id' | 'status'> = {
             providerId: formData.get('providerId') as string,
@@ -1910,6 +1914,9 @@ export async function updateWorkLog(previousState: any, formData: FormData) {
         const quantity = parseFloat(formData.get('quantity') as string);
         const rate = parseFloat(formData.get('rate') as string);
 
+        const assignmentValue = formData.get('assignment') as string;
+        const [assignmentType, assignmentId] = assignmentValue.split('-') as ['property' | 'scope', string];
+
         const workLogData: Partial<WorkLog> = {
             date: formData.get('date') as string,
             description: formData.get('description') as string,
@@ -1918,8 +1925,8 @@ export async function updateWorkLog(previousState: any, formData: FormData) {
             calculatedCost: quantity * rate,
             activityType: formData.get('activityType') as 'hourly' | 'per_visit',
             assignment: {
-                type: formData.get('assignmentType') as 'property' | 'scope',
-                id: formData.get(formData.get('assignmentType') === 'property' ? 'propertyId' : 'scopeId') as string,
+                type: assignmentType,
+                id: assignmentId,
             }
         };
 
@@ -1948,14 +1955,17 @@ export async function updateManualAdjustment(previousState: any, formData: FormD
         const id = formData.get('id') as string;
         if (!id) throw new Error("ID de ajuste no proporcionado.");
         
+        const assignmentValue = formData.get('assignment') as string;
+        const [assignmentType, assignmentId] = assignmentValue.split('-') as ['property' | 'scope', string];
+
         const adjustmentData: Partial<ManualAdjustment> = {
             date: formData.get('date') as string,
             description: formData.get('description') as string,
             amount: parseFloat(formData.get('amount') as string),
             currency: formData.get('currency') as 'ARS' | 'USD',
             assignment: {
-                type: formData.get('assignmentType') as 'property' | 'scope',
-                id: formData.get(formData.get('assignmentType') === 'property' ? 'propertyId' : 'scopeId') as string,
+                type: assignmentType,
+                id: assignmentId,
             }
         };
 

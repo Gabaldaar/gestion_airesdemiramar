@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
@@ -20,7 +19,7 @@ import { addTask } from '@/lib/actions';
 import { Property, Provider, TaskCategory, TaskScope } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup } from './ui/select';
 import { DatePicker } from './ui/date-picker';
 import { useToast } from './ui/use-toast';
 
@@ -71,7 +70,6 @@ export function TaskAddForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const { toast } = useToast();
-  const [assignmentType, setAssignmentType] = useState<'property' | 'scope'>(propertyId ? 'property' : 'scope');
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -83,9 +81,8 @@ export function TaskAddForm({
   const resetForm = useCallback(() => {
     formRef.current?.reset();
     setDueDate(undefined);
-    setAssignmentType(propertyId ? 'property' : 'scope');
     setState(initialState);
-  }, [propertyId]);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -121,52 +118,23 @@ export function TaskAddForm({
             <input type="hidden" name="dueDate" value={dueDate?.toISOString().split('T')[0] || ''} />
             <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                    <Label htmlFor="assignmentType">Tipo de Asignación</Label>
-                    <Select name="assignmentType" value={assignmentType} onValueChange={(v) => setAssignmentType(v as 'property' | 'scope')} required>
-                        <SelectTrigger><SelectValue/></SelectTrigger>
+                    <Label htmlFor="assignment">Asignar a</Label>
+                    <Select name="assignment" defaultValue={propertyId ? `property-${propertyId}` : undefined} required>
+                        <SelectTrigger><SelectValue placeholder="Selecciona Propiedad o Ámbito..."/></SelectTrigger>
                         <SelectContent>
-                            {properties && <SelectItem value="property">Propiedad</SelectItem>}
-                            <SelectItem value="scope">Ámbito</SelectItem>
+                           {properties && (
+                             <SelectGroup>
+                                <Label>Propiedades</Label>
+                                {properties.map(p => <SelectItem key={p.id} value={`property-${p.id}`}>{p.name}</SelectItem>)}
+                            </SelectGroup>
+                           )}
+                           <SelectGroup>
+                                <Label>Ámbitos</Label>
+                                {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
+                           </SelectGroup>
                         </SelectContent>
                     </Select>
                 </div>
-
-                {assignmentType === 'property' && properties && (
-                    <div className="space-y-2">
-                        <Label htmlFor="propertyId">Propiedad</Label>
-                        <Select name="propertyId" defaultValue={propertyId} required>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecciona una propiedad" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {properties.map(prop => (
-                                    <SelectItem key={prop.id} value={prop.id}>
-                                        {prop.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                )}
-                 {!properties && propertyId && assignmentType === 'property' && <input type="hidden" name="propertyId" value={propertyId} />}
-
-                {assignmentType === 'scope' && (
-                    <div className="space-y-2">
-                        <Label htmlFor="scopeId">Ámbito</Label>
-                        <Select name="scopeId" required>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecciona un ámbito" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {scopes.map(scope => (
-                                    <SelectItem key={scope.id} value={scope.id}>
-                                        {scope.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                )}
 
                 <div className="space-y-2">
                     <Label htmlFor="description">Descripción</Label>
