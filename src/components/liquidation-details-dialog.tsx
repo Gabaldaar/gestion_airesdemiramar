@@ -9,13 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { LiquidationWithProvider, WorkLog, ManualAdjustment, getWorkLogsByLiquidationId, getManualAdjustmentsByLiquidationId } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDateSafely } from '@/lib/utils';
+import { Button } from './ui/button';
+import Link from 'next/link';
 
 const formatDate = (dateString: string) => {
     const date = parseDateSafely(dateString);
@@ -127,6 +130,17 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                 ) : (
                     <p>No se encontraron detalles para esta liquidación.</p>
                 )}
+                 <DialogFooter className="pt-4">
+                    <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+                        Cerrar
+                    </Button>
+                    <Button asChild variant="outline">
+                        <Link href={`/liquidations/${liquidation.id}/print`} target="_blank">
+                            <Printer className="mr-2 h-4 w-4" />
+                            Imprimir/PDF
+                        </Link>
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

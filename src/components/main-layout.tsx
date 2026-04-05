@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -28,7 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { getPendingLiquidationsCount } from '@/lib/data';
+import { getPendingLiquidationsCount, getPendingBookingsCount } from '@/lib/data';
 
 
 const mainNavItems = [
@@ -36,10 +37,10 @@ const mainNavItems = [
   { href: '/properties', label: 'Propiedades', icon: Building2 },
   { href: '/tenants', label: 'Inquilinos', icon: Users },
   { href: '/providers', label: 'Proveedores', icon: Wrench },
-  { href: '/bookings', label: 'Reservas', icon: Calendar },
+  { href: '/bookings', label: 'Reservas', icon: Calendar, badge: 'bookings' },
   { href: '/tasks', label: 'Tareas', icon: ClipboardList },
   { href: '/payments', label: 'Pagos', icon: CreditCard },
-  { href: '/liquidations', label: 'Liquidaciones', icon: Briefcase },
+  { href: '/liquidations', label: 'Liquidaciones', icon: Briefcase, badge: 'liquidations' },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
   { href: '/informes', label: 'Informes', icon: BarChart3 },
   { href: '/templates', label: 'Plantillas', icon: Mail },
@@ -48,18 +49,19 @@ const mainNavItems = [
 
 const helpNavItem = { href: '/help', label: 'Ayuda', icon: CircleHelp };
 
-function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, isCollapsed: boolean }) {
+function SidebarNav({ onLinkClick, isCollapsed, pendingLiquidationsCount, pendingBookingsCount }: { onLinkClick?: () => void, isCollapsed: boolean, pendingLiquidationsCount: number, pendingBookingsCount: number }) {
   const pathname = usePathname();
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION;
-  const [pendingLiqCount, setPendingLiqCount] = useState(0);
 
-  useEffect(() => {
-    getPendingLiquidationsCount().then(setPendingLiqCount);
-  }, []);
+  const badgeCounts = {
+      bookings: pendingBookingsCount,
+      liquidations: pendingLiquidationsCount,
+  };
   
-  const renderLink = (item: { href: string, label: string, icon: React.ElementType }) => {
+  const renderLink = (item: { href: string, label: string, icon: React.ElementType, badge?: string }) => {
     const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-    const showBadge = item.href === '/liquidations' && pendingLiqCount > 0;
+    const badgeCount = item.badge ? badgeCounts[item.badge as keyof typeof badgeCounts] : 0;
+    const showBadge = badgeCount > 0;
     
     if (isCollapsed) {
         return (
@@ -77,7 +79,7 @@ function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, is
                             <item.icon className="h-5 w-5" />
                              {showBadge && (
                                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground">
-                                    {pendingLiqCount}
+                                    {badgeCount}
                                 </span>
                             )}
                             <span className="sr-only">{item.label}</span>
@@ -85,7 +87,7 @@ function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, is
                     </TooltipTrigger>
                     <TooltipContent side="right" className="flex items-center gap-4">
                        {item.label}
-                       {showBadge && <span className="ml-auto text-muted-foreground">({pendingLiqCount} pendiente{pendingLiqCount > 1 ? 's' : ''})</span>}
+                       {showBadge && <span className="ml-auto text-muted-foreground">({badgeCount} pendiente{badgeCount > 1 ? 's' : ''})</span>}
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
@@ -106,7 +108,7 @@ function SidebarNav({ onLinkClick, isCollapsed }: { onLinkClick?: () => void, is
         {item.label}
         {showBadge && (
             <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground">
-                {pendingLiqCount}
+                {badgeCount}
             </span>
         )}
       </Link>
@@ -195,6 +197,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [pendingLiqCount, setPendingLiqCount] = useState(0);
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
 
   useEffect(() => {
     // Set initial status
@@ -207,6 +211,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    
+    Promise.all([
+        getPendingLiquidationsCount(),
+        getPendingBookingsCount()
+    ]).then(([liqCount, bookingsCount]) => {
+        setPendingLiqCount(liqCount);
+        setPendingBookingsCount(bookingsCount);
+    });
 
     return () => {
         window.removeEventListener('online', handleOnline);
@@ -232,7 +244,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </Button>
             </div>
             <div className="flex-1 overflow-auto py-2">
-                <SidebarNav isCollapsed={isCollapsed} />
+                <SidebarNav isCollapsed={isCollapsed} pendingLiquidationsCount={pendingLiqCount} pendingBookingsCount={pendingBookingsCount} />
             </div>
         </div>
         <div className="flex flex-col">
@@ -256,7 +268,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                          <SheetTitle className="sr-only">Menú Principal</SheetTitle>
                     </SheetHeader>
                     <div className="flex-1">
-                        <SidebarNav onLinkClick={() => setIsSheetOpen(false)} isCollapsed={false} />
+                        <SidebarNav onLinkClick={() => setIsSheetOpen(false)} isCollapsed={false} pendingLiquidationsCount={pendingLiqCount} pendingBookingsCount={pendingBookingsCount} />
                     </div>
                 </SheetContent>
             </Sheet>

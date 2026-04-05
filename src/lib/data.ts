@@ -1396,7 +1396,7 @@ async function enrichItems(items: (WorkLog | ManualAdjustment)[]): Promise<(Work
 }
 
 export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]> {
-    const q = query(workLogsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'));
+    const q = query(collection(db, 'workLogs'), where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'));
     const snapshot = await getDocs(q);
     const pendingLogs = snapshot.docs.map(processDoc) as WorkLog[];
     pendingLogs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -1404,7 +1404,7 @@ export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]>
 }
 
 export async function getPendingManualAdjustments(providerId: string): Promise<ManualAdjustment[]> {
-    const q = query(manualAdjustmentsCollection, where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'));
+    const q = query(collection(db, 'manualAdjustments'), where('providerId', '==', providerId), where('status', '==', 'pending_liquidation'));
     const snapshot = await getDocs(q);
     const pendingAdjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
     pendingAdjustments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -1540,4 +1540,48 @@ export async function revertLiquidationDb(liquidationId: string): Promise<void> 
     batch.delete(liquidationRef);
 
     await batch.commit();
+}
+
+
+export async function getPendingBookingsCount(): Promise<number> {
+    const activeBookingsQuery = query(bookingsCollection, where('status', 'in', ['active', 'pending']));
+    const [bookingsSnapshot, paymentsSnapshot] = await Promise.all([
+        getDocs(activeBookingsQuery),
+        getDocs(paymentsCollection)
+    ]);
+    
+    const bookings = bookingsSnapshot.docs.map(processDoc) as Booking[];
+    const payments = paymentsSnapshot.docs.map(processDoc) as Payment[];
+
+    const paymentsByBookingId = new Map<string, Payment[]>();
+    payments.forEach(p => {
+        const existing = paymentsByBookingId.get(p.bookingId) || [];
+        existing.push(p);
+        paymentsByBookingId.set(p.bookingId, existing);
+    });
+
+    let pendingCount = 0;
+    bookings.forEach(booking => {
+        const bookingPayments = paymentsByBookingId.get(booking.id) || [];
+        const totalPaidInUSD = bookingPayments.reduce((acc, p) => acc + p.amount, 0);
+
+        let balance = 0;
+        if (booking.currency === 'USD') {
+            balance = booking.amount - totalPaidInUSD;
+        } else { // ARS
+            const totalPaidInArs = bookingPayments.reduce((acc, p) => {
+                if (p.originalArsAmount) {
+                    return acc + p.originalArsAmount;
+                }
+                return p.exchangeRate ? acc + (p.amount * p.exchangeRate) : acc;
+            }, 0);
+            balance = booking.amount - totalPaidInArs;
+        }
+
+        if (balance > 0.01) {
+            pendingCount++;
+        }
+    });
+
+    return pendingCount;
 }
