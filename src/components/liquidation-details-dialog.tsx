@@ -18,7 +18,6 @@ import { es } from 'date-fns/locale';
 import { parseDateSafely } from '@/lib/utils';
 import { Button } from './ui/button';
 import Link from 'next/link';
-import useWindowSize from '@/hooks/use-window-size';
 import { Card, CardContent } from './ui/card';
 
 const formatDate = (dateString: string) => {
@@ -75,8 +74,6 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
 }) {
     const [details, setDetails] = useState<{ workLogs: WorkLog[], adjustments: ManualAdjustment[] } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const { width } = useWindowSize();
-    const isMobile = width ? width < 768 : false;
 
     useEffect(() => {
         if (isOpen) {
@@ -110,11 +107,12 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                         {details.workLogs.length > 0 && (
                             <div>
                                 <h4 className="font-semibold mb-2">Actividades</h4>
-                                {isMobile ? (
-                                    <div className="space-y-2">
-                                        {details.workLogs.map(log => <WorkLogDetailCard key={log.id} log={log as any} />)}
-                                    </div>
-                                ) : (
+                                {/* Mobile View */}
+                                <div className="space-y-2 md:hidden">
+                                    {details.workLogs.map(log => <WorkLogDetailCard key={log.id} log={log as any} />)}
+                                </div>
+                                {/* Desktop View */}
+                                <div className="hidden md:block">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -139,17 +137,18 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                                             ))}
                                         </TableBody>
                                     </Table>
-                                )}
+                                </div>
                             </div>
                         )}
                         {details.adjustments.length > 0 && (
                              <div>
                                 <h4 className="font-semibold mb-2">Ajustes</h4>
-                                {isMobile ? (
-                                    <div className="space-y-2">
-                                        {details.adjustments.map(adj => <AdjustmentDetailCard key={adj.id} adj={adj as any} />)}
-                                    </div>
-                                ) : (
+                                {/* Mobile View */}
+                                <div className="space-y-2 md:hidden">
+                                    {details.adjustments.map(adj => <AdjustmentDetailCard key={adj.id} adj={adj as any} />)}
+                                </div>
+                                {/* Desktop View */}
+                                <div className="hidden md:block">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -170,7 +169,7 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                                             ))}
                                         </TableBody>
                                     </Table>
-                                )}
+                                </div>
                             </div>
                         )}
                         <div className="border-t pt-4 mt-4 space-y-2 text-right">

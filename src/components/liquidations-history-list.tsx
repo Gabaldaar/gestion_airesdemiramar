@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState } from 'react';
 import { LiquidationWithProvider, Property, TaskScope } from '@/lib/data';
 import {
   Table,
@@ -21,12 +21,11 @@ import { LiquidationPaymentForm } from './liquidation-payment-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { revertLiquidation } from '@/lib/actions';
 import { useToast } from './ui/use-toast';
+import { useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import useWindowSize from '@/hooks/use-window-size';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
-import { cn } from '@/lib/utils';
 
 const formatDate = (dateString: string) => {
     const date = parseDateSafely(dateString);
@@ -179,8 +178,6 @@ export function LiquidationsHistoryList({ liquidations, onDataRefreshed }: {
 }) {
     const [selectedLiquidation, setSelectedLiquidation] = useState<LiquidationWithProvider | null>(null);
     const [paymentLiquidation, setPaymentLiquidation] = useState<LiquidationWithProvider | null>(null);
-    const { width } = useWindowSize();
-    const isMobile = width ? width < 768 : false;
 
     if (liquidations.length === 0) {
         return <p className="text-center text-muted-foreground p-8">No hay liquidaciones en el historial.</p>;
@@ -188,60 +185,61 @@ export function LiquidationsHistoryList({ liquidations, onDataRefreshed }: {
 
     return (
         <>
-            {isMobile ? (
-                 <div className="space-y-4">
-                    {liquidations.map(liq => (
-                        <LiquidationHistoryCard 
-                            key={liq.id} 
-                            liq={liq}
-                            onDetailsClick={setSelectedLiquidation}
-                            onPayClick={setPaymentLiquidation}
-                            onReverted={onDataRefreshed}
-                        />
-                    ))}
-                </div>
-            ) : (
-                <div className="border rounded-lg">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Fecha</TableHead>
-                                <TableHead>Colaborador</TableHead>
-                                <TableHead className="text-right">Monto Total</TableHead>
-                                <TableHead className="text-right">Saldo</TableHead>
-                                <TableHead className="text-right">Estado</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {liquidations.map(liq => (
-                                <TableRow key={liq.id}>
-                                    <TableCell>{formatDate(liq.dateGenerated)}</TableCell>
-                                    <TableCell>{liq.providerName}</TableCell>
-                                    <TableCell className="text-right font-medium">{formatCurrency(liq.totalAmount, liq.currency)}</TableCell>
-                                    <TableCell className="text-right font-bold text-orange-600">
-                                        {liq.balance > 0.01 ? formatCurrency(liq.balance, liq.currency) : '-'}
-                                    </TableCell>
-                                    <TableCell className="text-right">{getStatusBadge(liq.status)}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex gap-2 justify-end">
-                                            <Button variant="outline" size="sm" onClick={() => setSelectedLiquidation(liq)}>
-                                                Ver Detalles
+            {/* Mobile View using Cards */}
+            <div className="space-y-4 md:hidden">
+                {liquidations.map(liq => (
+                    <LiquidationHistoryCard 
+                        key={liq.id} 
+                        liq={liq}
+                        onDetailsClick={setSelectedLiquidation}
+                        onPayClick={setPaymentLiquidation}
+                        onReverted={onDataRefreshed}
+                    />
+                ))}
+            </div>
+
+            {/* Desktop View using Table */}
+            <div className="hidden md:block border rounded-lg">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Fecha</TableHead>
+                            <TableHead>Colaborador</TableHead>
+                            <TableHead className="text-right">Monto Total</TableHead>
+                            <TableHead className="text-right">Saldo</TableHead>
+                            <TableHead className="text-right">Estado</TableHead>
+                            <TableHead className="text-right">Acciones</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {liquidations.map(liq => (
+                            <TableRow key={liq.id}>
+                                <TableCell>{formatDate(liq.dateGenerated)}</TableCell>
+                                <TableCell>{liq.providerName}</TableCell>
+                                <TableCell className="text-right font-medium">{formatCurrency(liq.totalAmount, liq.currency)}</TableCell>
+                                <TableCell className="text-right font-bold text-orange-600">
+                                    {liq.balance > 0.01 ? formatCurrency(liq.balance, liq.currency) : '-'}
+                                </TableCell>
+                                <TableCell className="text-right">{getStatusBadge(liq.status)}</TableCell>
+                                <TableCell className="text-right">
+                                    <div className="flex gap-2 justify-end">
+                                        <Button variant="outline" size="sm" onClick={() => setSelectedLiquidation(liq)}>
+                                            Ver Detalles
+                                        </Button>
+                                        {liq.status !== 'paid' && (
+                                            <Button size="sm" onClick={() => setPaymentLiquidation(liq)}>
+                                                Pagar
                                             </Button>
-                                            {liq.status !== 'paid' && (
-                                                <Button size="sm" onClick={() => setPaymentLiquidation(liq)}>
-                                                    Pagar
-                                                </Button>
-                                            )}
-                                            <RevertLiquidationAction liquidation={liq} onReverted={onDataRefreshed} />
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            )}
+                                        )}
+                                        <RevertLiquidationAction liquidation={liq} onReverted={onDataRefreshed} />
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+
             {selectedLiquidation && (
                 <LiquidationDetailsDialog
                     liquidation={selectedLiquidation}
