@@ -66,7 +66,7 @@ import {
   deleteWorkLog as deleteWorkLogDb,
   updateManualAdjustment as updateManualAdjustmentDb,
   deleteManualAdjustment as deleteManualAdjustmentDb,
-  revertLiquidation as revertLiquidationDb,
+  revertLiquidationDb,
   Tenant,
   Booking,
   Expense,
@@ -1939,48 +1939,8 @@ export async function revertLiquidation(previousState: any, liquidationId: strin
     return { success: false, message: 'ID de liquidación no proporcionado.' };
   }
 
-  const batch = writeBatch(db);
-
   try {
-    // 1. Check if the liquidation has payments
-    const liquidation = await getLiquidationById(liquidationId);
-    if (!liquidation) {
-        throw new Error("La liquidación que intentas revertir no existe.");
-    }
-    if (liquidation.amountPaid > 0) {
-        throw new Error("No se puede revertir una liquidación que ya tiene pagos registrados.");
-    }
-
-    const workLogsCollection = collection(db, 'workLogs');
-    const manualAdjustmentsCollection = collection(db, 'manualAdjustments');
-    const expensesCollection = collection(db, 'expenses');
-
-    // 2. Find and revert associated work logs
-    const workLogsQuery = query(workLogsCollection, where('liquidationId', '==', liquidationId));
-    const workLogsSnap = await getDocs(workLogsQuery);
-    workLogsSnap.forEach(logDoc => {
-        batch.update(logDoc.ref, { status: 'pending_liquidation', liquidationId: null });
-    });
-
-    // 3. Find and revert associated manual adjustments
-    const adjustmentsQuery = query(manualAdjustmentsCollection, where('liquidationId', '==', liquidationId));
-    const adjustmentsSnap = await getDocs(adjustmentsQuery);
-    adjustmentsSnap.forEach(adjDoc => {
-        batch.update(adjDoc.ref, { status: 'pending_liquidation', liquidationId: null });
-    });
-
-    // 4. Find and delete associated expenses
-    const expensesQuery = query(expensesCollection, where('liquidationId', '==', liquidationId));
-    const expensesSnap = await getDocs(expensesQuery);
-    expensesSnap.forEach(expDoc => {
-        batch.delete(expDoc.ref);
-    });
-
-    // 5. Delete the liquidation itself
-    const liquidationRef = doc(db, 'liquidations', liquidationId);
-    batch.delete(liquidationRef);
-
-    await batch.commit();
+    await revertLiquidationDb(liquidationId);
     revalidatePath('/liquidations');
     revalidatePath('/expenses');
     return { success: true, message: 'Liquidación revertida con éxito.' };
@@ -2070,3 +2030,4 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
         return { success: false, message: e.message };
     }
 }
+
