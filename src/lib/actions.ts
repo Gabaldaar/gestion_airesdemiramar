@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -65,8 +64,9 @@ import {
   updateWorkLog as updateWorkLogDb,
   deleteWorkLogDb,
   updateManualAdjustment as updateManualAdjustmentDb,
-  deleteManualAdjustment as deleteManualAdjustmentDb,
+  deleteManualAdjustmentDb,
   revertLiquidationDb,
+  addLiquidationPayment as addLiquidationPaymentDb,
   Tenant,
   Booking,
   Expense,
@@ -1872,60 +1872,8 @@ export async function addLiquidationPayment(previousState: any, formData: FormDa
     return { success: false, message: 'El monto del pago debe ser mayor a cero.' };
   }
 
-  const batch = writeBatch(db);
-
   try {
-    const liquidation = await getLiquidationById(liquidationId);
-    if (!liquidation) {
-      throw new Error('No se encontró la liquidación.');
-    }
-    if (paymentAmount > liquidation.balance + 0.001) {
-      throw new Error(`El pago (${paymentAmount}) no puede ser mayor al saldo pendiente (${liquidation.balance}).`);
-    }
-
-    // 1. Update liquidation
-    const liquidationRef = doc(db, 'liquidations', liquidationId);
-    const newAmountPaid = liquidation.amountPaid + paymentAmount;
-    const newBalance = liquidation.balance - paymentAmount;
-    const newStatus: Liquidation['status'] = newBalance <= 0.001 ? 'paid' : 'partially_paid';
-
-    batch.update(liquidationRef, {
-        amountPaid: newAmountPaid,
-        balance: newBalance,
-        status: newStatus
-    });
-
-    // 2. Create corresponding expense
-    // For now, we don't have a UI to select assignment, so we'll have to find a default scope.
-    const scopesSnapshot = await getDocs(query(collection(db, 'taskScopes'), where('name', '==', 'Administración General')));
-    let scopeId = scopesSnapshot.docs.length > 0 ? scopesSnapshot.docs[0].id : null;
-    
-    if (!scopeId) {
-        // As a fallback, create the scope if it doesn't exist.
-        const newScopeRef = doc(collection(db, 'taskScopes'));
-        batch.set(newScopeRef, { name: 'Administración General', color: '#808080' });
-        scopeId = newScopeRef.id;
-    }
-
-    const expenseRef = doc(collection(db, 'expenses'));
-    const expenseData: Omit<Expense, 'id'> = {
-      assignment: { type: 'scope', id: scopeId },
-      date: paymentDate,
-      description: expenseDescription,
-      amount: liquidation.currency === 'ARS' ? paymentAmount : 0,
-      currency: 'ARS',
-      providerId: liquidation.providerId,
-      liquidationId: liquidationId,
-      categoryId: expenseCategoryId || null,
-    };
-    if (liquidation.currency === 'USD') {
-        expenseData.originalUsdAmount = paymentAmount;
-    }
-
-    batch.set(expenseRef, expenseData);
-
-    await batch.commit();
-
+    await addLiquidationPaymentDb(liquidationId, paymentAmount, paymentDate, expenseDescription, expenseCategoryId);
     revalidatePathsAfterAction();
     return { success: true, message: 'Pago registrado y gasto asociado creado.' };
   } catch (error: any) {
@@ -2030,3 +1978,5 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
         return { success: false, message: e.message };
     }
 }
+
+    

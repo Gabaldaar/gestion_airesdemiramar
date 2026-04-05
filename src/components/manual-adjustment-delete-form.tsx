@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -91,3 +92,5 @@ export function ManualAdjustmentDeleteForm({ adjustmentId, onActionComplete }: M
         </AlertDialog>
     );
 }
+
+    
