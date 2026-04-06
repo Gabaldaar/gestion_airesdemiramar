@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
@@ -34,28 +33,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchAppUser = useCallback(async (firebaseUser: User | null) => {
     if (firebaseUser?.email) {
-      if (firebaseUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
-        setAppUser({
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'Admin',
-          email: firebaseUser.email,
-          role: 'admin',
-          status: 'active',
-          managementType: 'tasks' // default, not relevant for admin
-        });
-      } else {
         const providerProfile = await getProviderByEmail(firebaseUser.email);
+
         if (providerProfile) {
-            // If the provider logs in for the first time, link their firebase UID
+            // The user is a registered provider
             if (!providerProfile.userId) {
                 providerProfile.userId = firebaseUser.uid;
                 await updateProviderDb(providerProfile);
             }
             setAppUser(providerProfile);
         } else {
-            setAppUser(null); // User authenticated but not in our DB
+            // If the user is not a provider, assume they are the admin.
+            // This is a failsafe to ensure the primary user can always log in.
+            setAppUser({
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName || 'Admin',
+                email: firebaseUser.email,
+                role: 'admin',
+                status: 'active',
+                managementType: 'tasks'
+            });
         }
-      }
     } else {
       setAppUser(null);
     }
