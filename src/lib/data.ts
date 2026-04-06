@@ -91,6 +91,8 @@ export type Tenant = {
 export type ContractStatus = 'not_sent' | 'sent' | 'signed' | 'not_required';
 export type GuaranteeStatus = 'not_solicited' | 'solicited' | 'received' | 'returned' | 'not_applicable';
 export type BookingStatus = 'active' | 'cancelled' | 'pending';
+export type UserRole = 'admin' | 'provider';
+export type UserStatus = 'active' | 'pending';
 
 
 export type Booking = {
@@ -318,6 +320,10 @@ export type Provider = {
     rateCurrency?: 'ARS' | 'USD' | null;
     hourlyRate?: number | null;
     perVisitRate?: number | null;
+    // User fields
+    userId?: string | null;
+    role?: UserRole;
+    status?: UserStatus;
 };
 
 // New types for flexible task assignment
@@ -1318,6 +1324,17 @@ export async function getProviderById(id: string): Promise<Provider | undefined>
     const docRef = doc(db, 'providers', id);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? processDoc(docSnap) as Provider : undefined;
+}
+
+export async function getProviderByEmail(email: string): Promise<Provider | undefined> {
+    if (!email) return undefined;
+    const q = query(providersCollection, where('email', '==', email));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+        return undefined;
+    }
+    // Assuming email is unique per provider
+    return processDoc(snapshot.docs[0]) as Provider;
 }
 
 
