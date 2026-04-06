@@ -32,32 +32,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   const fetchAppUser = useCallback(async (firebaseUser: User | null) => {
-    if (firebaseUser?.email) {
-        const providerProfile = await getProviderByEmail(firebaseUser.email);
+    try {
+        if (firebaseUser?.email) {
+            const providerProfile = await getProviderByEmail(firebaseUser.email);
 
-        if (providerProfile) {
-            // The user is a registered provider
-            if (!providerProfile.userId) {
-                providerProfile.userId = firebaseUser.uid;
-                await updateProviderDb(providerProfile);
+            if (providerProfile) {
+                // The user is a registered provider
+                if (!providerProfile.userId) {
+                    providerProfile.userId = firebaseUser.uid;
+                    await updateProviderDb(providerProfile);
+                }
+                setAppUser(providerProfile);
+            } else {
+                // If the user is not a provider, assume they are the admin.
+                // This is the failsafe to ensure the primary user can always log in.
+                setAppUser({
+                    id: firebaseUser.uid,
+                    name: firebaseUser.displayName || 'Admin',
+                    email: firebaseUser.email,
+                    role: 'admin',
+                    status: 'active',
+                    managementType: 'tasks'
+                });
             }
-            setAppUser(providerProfile);
         } else {
-            // If the user is not a provider, assume they are the admin.
-            // This is a failsafe to ensure the primary user can always log in.
+          setAppUser(null);
+        }
+    } catch (error) {
+        console.error("CRITICAL: Error fetching provider profile from DB. This might be a Firestore rules or configuration issue.", error);
+        // This is a critical fallback. If the database query fails for any reason
+        // (e.g., permissions, offline), we will assume the logged-in user is the admin
+        // to prevent the primary user from ever being locked out.
+        if (firebaseUser) {
             setAppUser({
                 id: firebaseUser.uid,
-                name: firebaseUser.displayName || 'Admin',
-                email: firebaseUser.email,
+                name: firebaseUser.displayName || 'Admin (Fallback)',
+                email: firebaseUser.email!,
                 role: 'admin',
                 status: 'active',
                 managementType: 'tasks'
             });
+        } else {
+            setAppUser(null);
         }
-    } else {
-      setAppUser(null);
+    } finally {
+        setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
