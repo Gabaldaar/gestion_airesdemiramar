@@ -35,30 +35,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // Always start loading
       setLoading(true);
-      setAuthError(null);
-
-      // No firebase user, so not logged in.
+      
       if (!firebaseUser) {
         setUser(null);
         setAppUser(null);
+        setAuthError(null);
         setLoading(false);
         return;
       }
       
-      // Firebase user exists, now check our DB.
+      // We have a firebase user, now let's get their app profile.
       try {
         const userProfile = await getProviderByEmail(firebaseUser.email || '');
+
+        // This is the crucial part. We set all states before we stop loading.
         setUser(firebaseUser);
-        setAppUser(userProfile || null);
+        setAppUser(userProfile || null); // If not found, it's null.
+        setAuthError(null);
+
       } catch (error: any) {
         console.error("Auth Provider Error:", error);
-        setUser(firebaseUser);
-        setAppUser(null);
+        setUser(firebaseUser); // Still set firebase user
+        setAppUser(null); // But no app profile
         setAuthError(error.message || "An unknown authentication error occurred.");
       } finally {
-        // CRITICAL: Always stop loading.
+        // This guarantees loading is always set to false at the end of the process.
         setLoading(false);
       }
     });
