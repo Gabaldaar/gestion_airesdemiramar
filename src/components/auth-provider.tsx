@@ -45,13 +45,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      // We have a firebase user, now let's get their app profile.
       try {
-        const userProfile = await getProviderByEmail(firebaseUser.email || '');
+        // We have a firebase user, now let's get their app profile.
+        let userProfile = await getProviderByEmail(firebaseUser.email || '');
 
+        // If no profile exists, check if this is the very first user.
+        if (!userProfile) {
+            const providersQuery = query(collection(db, 'providers'), limit(1));
+            const providersSnapshot = await getDocs(providersQuery);
+            if (providersSnapshot.empty) {
+                // This is the first user, automatically make them an admin.
+                console.log('No providers found. Creating first user as admin.');
+                const newAdminData: Omit<Provider, 'id'> = {
+                    name: firebaseUser.displayName || 'Admin',
+                    email: firebaseUser.email!,
+                    role: 'admin',
+                    status: 'active',
+                    managementType: 'tasks',
+                };
+                userProfile = await addProviderDb(newAdminData);
+            }
+        }
+        
         // This is the crucial part. We set all states before we stop loading.
         setUser(firebaseUser);
-        setAppUser(userProfile || null); // If not found, it's null.
+        setAppUser(userProfile || null); // If still not found, it's null.
         setAuthError(null);
 
       } catch (error: any) {
