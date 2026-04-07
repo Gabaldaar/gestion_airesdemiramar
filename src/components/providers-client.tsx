@@ -22,7 +22,6 @@ interface ProvidersClientProps {
 }
 
 export default function ProvidersClient({ initialProviders, categories, onFilteredProvidersChange, onDataChanged }: ProvidersClientProps) {
-  const [providers, setProviders] = useState(initialProviders);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -36,7 +35,7 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
   };
 
   const filteredProviders = useMemo(() => {
-    let currentProviders = initialProviders;
+    let currentProviders = [...initialProviders];
 
     // Filter by Category
     if (categoryFilter !== 'all') {
@@ -58,7 +57,6 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
         currentProviders = currentProviders.filter(provider => provider.status === statusFilter);
     }
     
-    // Sort logic
     const roleOrder: Record<UserRole, number> = { admin: 0, provider: 1 };
     const statusOrder: Record<UserStatus, number> = { active: 0, pending: 1 };
 
@@ -82,7 +80,7 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
   }, [initialProviders, categoryFilter, ratingFilter, statusFilter]);
 
   // Effect to update the count in the parent component
-  useMemo(() => {
+  useEffect(() => {
     onFilteredProvidersChange(filteredProviders.length);
   }, [filteredProviders, onFilteredProvidersChange]);
 

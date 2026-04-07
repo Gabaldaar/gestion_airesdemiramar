@@ -15,7 +15,7 @@ import {
 import { Provider, ProviderCategory, UserRole, UserStatus } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { ProviderDeleteForm } from "@/components/provider-delete-form";
-import { History, FileText, Mail, Phone, Pencil, Star, Wrench, Loader2 } from "lucide-react";
+import { History, FileText, Mail, Phone, Pencil, Star, Loader2 } from "lucide-react";
 import { NotesViewer } from "@/components/notes-viewer";
 import { Badge } from "./ui/badge";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "./ui/card";
@@ -71,7 +71,7 @@ const formatWhatsAppLink = (phone: string | null | undefined, countryCode: strin
     return `https://wa.me/${code}${phoneNum}`;
 };
 
-function InteractiveRating({ provider, onRated }: { provider: Provider; onRated: () => void }) {
+function InteractiveRating({ tenant: provider, onRated }: { tenant: Provider; onRated: () => void }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -175,7 +175,6 @@ function InteractiveRating({ provider, onRated }: { provider: Provider; onRated:
     );
 }
 
-
 function ProviderActions({ provider, onDataChanged, onEditProvider, onHistoryClick }: { provider: Provider, onDataChanged: () => void, onEditProvider: (provider: Provider) => void, onHistoryClick: (provider: Provider) => void }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const waLink = formatWhatsAppLink(provider.phone, provider.countryCode);
@@ -237,7 +236,7 @@ function ProviderActions({ provider, onDataChanged, onEditProvider, onHistoryCli
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={() => onEditProvider(provider)}>
                             <Pencil className="h-4 w-4" />
-                            <span className="sr-only">Editar Proveedor</span>
+                            <span className="sr-only">Editar Colaborador</span>
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent><p>Editar Colaborador</p></TooltipContent>
@@ -272,7 +271,7 @@ function ProviderRow({ provider, category, onDataChanged, onEditProvider, onHist
                         <span className="text-primary">{provider.name}</span>
                         {provider.role === 'admin' && <Badge variant="secondary">Admin</Badge>}
                     </div>
-                    <InteractiveRating provider={provider} onRated={onDataChanged} />
+                    <InteractiveRating tenant={provider} onRated={onDataChanged} />
                 </div>
             </TableCell>
             <TableCell>
@@ -322,7 +321,7 @@ function ProviderCard({ provider, category, onDataChanged, onEditProvider, onHis
             <CardContent className="p-4 grid gap-2 text-sm">
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Calificación</span>
-                    <InteractiveRating provider={provider} onRated={onDataChanged} />
+                    <InteractiveRating tenant={provider} onRated={onDataChanged} />
                 </div>
                 {provider.email && (
                     <div className="flex justify-between items-center">
@@ -379,40 +378,36 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
     let lastRenderedRole: UserRole | null = null;
     let lastRenderedStatus: UserStatus | null = null;
 
-    const renderProviderWithSeparator = (provider: Provider, index: number, isCardView: boolean) => {
+    const renderProviderWithSeparator = (provider: Provider, isCardView: boolean) => {
         const currentRole = provider.role;
         const currentStatus = provider.status;
 
-        // Determine if a separator is needed
-        const showAdminSeparator = currentRole === 'admin' && lastRenderedRole !== 'admin';
-        const showActiveSeparator = currentRole === 'provider' && currentStatus === 'active' && (lastRenderedRole !== 'provider' || lastRenderedStatus !== 'active');
-        const showPendingSeparator = currentRole === 'provider' && currentStatus === 'pending' && (lastRenderedRole !== 'provider' || lastRenderedStatus !== 'pending');
+        let separator = null;
+        if (currentRole === 'admin' && lastRenderedRole !== 'admin') {
+            separator = <ListSeparator>Administradores</ListSeparator>;
+        } else if (currentRole === 'provider' && currentStatus === 'active' && (lastRenderedRole !== 'provider' || lastRenderedStatus !== 'active')) {
+            separator = <ListSeparator>Colaboradores Activos</ListSeparator>;
+        } else if (currentRole === 'provider' && currentStatus === 'pending' && (lastRenderedRole !== 'provider' || lastRenderedStatus !== 'pending')) {
+            separator = <ListSeparator>Colaboradores Pendientes</ListSeparator>;
+        }
 
         lastRenderedRole = currentRole;
         lastRenderedStatus = currentStatus;
-
-        const separator = (
-            <>
-                {showAdminSeparator && <ListSeparator>Administradores</ListSeparator>}
-                {showActiveSeparator && <ListSeparator>Colaboradores Activos</ListSeparator>}
-                {showPendingSeparator && <ListSeparator>Colaboradores Pendientes</ListSeparator>}
-            </>
-        );
 
         const category = provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined;
         
         return (
             <React.Fragment key={provider.id}>
                 {isCardView && separator}
+                {!isCardView && separator && (
+                    <TableRow>
+                        <TableCell colSpan={6} className="p-0 h-auto">{separator}</TableCell>
+                    </TableRow>
+                )}
                 {isCardView ? (
                     <ProviderCard provider={provider} category={category} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
                 ) : (
-                    <>
-                        {showAdminSeparator && <TableRow><TableCell colSpan={6} className="p-0"><ListSeparator>Administradores</ListSeparator></TableCell></TableRow>}
-                        {showActiveSeparator && <TableRow><TableCell colSpan={6} className="p-0"><ListSeparator>Colaboradores Activos</ListSeparator></TableCell></TableRow>}
-                        {showPendingSeparator && <TableRow><TableCell colSpan={6} className="p-0"><ListSeparator>Colaboradores Pendientes</ListSeparator></TableCell></TableRow>}
-                        <ProviderRow provider={provider} category={category} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
-                    </>
+                    <ProviderRow provider={provider} category={category} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
                 )}
             </React.Fragment>
         );
@@ -420,7 +415,7 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
 
     const CardView = () => (
         <div className="space-y-4">
-            {providers.map((provider, index) => renderProviderWithSeparator(provider, index, true))}
+            {providers.map((provider) => renderProviderWithSeparator(provider, true))}
         </div>
     );
 
@@ -437,7 +432,7 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {providers.map((provider, index) => renderProviderWithSeparator(provider, index, false))}
+                {providers.map((provider) => renderProviderWithSeparator(provider, false))}
             </TableBody>
         </Table>
     );
