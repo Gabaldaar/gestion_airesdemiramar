@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from './firebase';
@@ -1324,14 +1325,22 @@ export async function getProviderById(id: string): Promise<Provider | undefined>
 }
 
 export async function getProviderByEmail(email: string): Promise<Provider | undefined> {
-    if (!email) return undefined;
-    const q = query(providersCollection, where('email', '==', email));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) {
-        return undefined;
-    }
-    // Assuming email is unique per provider
-    return processDoc(snapshot.docs[0]) as Provider;
+  if (!email) return undefined;
+
+  // Since Firestore queries are case-sensitive, we fetch all providers
+  // and filter them in memory for a case-insensitive match.
+  // This is acceptable for a small number of providers.
+  const snapshot = await getDocs(providersCollection);
+  if (snapshot.empty) {
+    return undefined;
+  }
+  
+  const providers = snapshot.docs.map(processDoc) as Provider[];
+  const lowercasedEmail = email.toLowerCase();
+  
+  const foundProvider = providers.find(provider => provider.email.toLowerCase() === lowercasedEmail);
+
+  return foundProvider;
 }
 
 

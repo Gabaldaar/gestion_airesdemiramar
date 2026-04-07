@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { getProviderByEmail, addProviderDb, Provider } from '@/lib/data';
-import { collection, getDocs, query, where, limit } from 'firebase/firestore';
+import { collection, getDocs, query, limit } from 'firebase/firestore';
 
 export type AppUser = Provider;
 
@@ -34,35 +34,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
 
-      if (!firebaseUser) {
-        // User is logged out, clear everything
+      if (!firebaseUser || !firebaseUser.email) {
         setUser(null);
         setAppUser(null);
         setLoading(false);
         return;
       }
+      
+      setUser(firebaseUser);
 
-      // User is logged in with Google
       try {
-        setUser(firebaseUser);
-
-        if (!firebaseUser.email) {
-          throw new Error("El email del usuario de Google no está disponible.");
-        }
-
-        // Attempt to find user profile in 'providers' collection
-        let userProfile = await getProviderByEmail(firebaseUser.email);
+        const userProfile = await getProviderByEmail(firebaseUser.email);
 
         if (userProfile) {
-          // User exists, set them as the appUser
+          // Scenario 1: User profile found in the database.
           setAppUser(userProfile);
         } else {
-          // User does NOT exist in the database. Check if they should be the first admin.
+          // Scenario 2: No profile found. Check if this is the very first user.
           const providersQuery = query(collection(db, 'providers'), limit(1));
           const providersSnapshot = await getDocs(providersQuery);
 
           if (providersSnapshot.empty) {
-            // The 'providers' collection is completely empty. This is the very first user.
+            // Database is empty. This is the first user, promote to admin.
             console.log("No providers found. Promoting first user to admin.");
             const newAdminProfile: Omit<Provider, 'id'> = {
               name: firebaseUser.displayName || 'Admin',
@@ -72,20 +65,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               managementType: 'tasks',
               userId: firebaseUser.uid,
             };
-            userProfile = await addProviderDb(newAdminProfile);
-            setAppUser(userProfile); // Set the newly created admin as appUser
+            const createdAdmin = await addProviderDb(newAdminProfile);
+            setAppUser(createdAdmin);
           } else {
-            // The collection is not empty, but the user was not found. They are unauthorized.
+            // Database is NOT empty, but this user is not in it. They are unauthorized.
             setAppUser(null);
           }
         }
       } catch (error) {
-        console.error("Critical error in AuthProvider:", error);
-        // If anything fails, set to a logged out state to be safe.
-        setUser(null);
+        console.error("Auth Provider Error:", error);
         setAppUser(null);
       } finally {
-        setLoading(false); // ALWAYS stop loading
+        setLoading(false);
       }
     });
 
@@ -108,7 +99,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await firebaseSignOut(auth);
     setUser(null);
     setAppUser(null);
-    // Let the LayoutManager handle the redirect
   };
 
   const value = { user, appUser, loading, signInWithGoogle, signOut };
