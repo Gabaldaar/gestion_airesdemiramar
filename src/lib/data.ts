@@ -1327,9 +1327,10 @@ export async function getProviderById(id: string): Promise<Provider | undefined>
 export async function getProviderByEmail(email: string): Promise<Provider | undefined> {
   if (!email) return undefined;
 
-  // Since Firestore queries are case-sensitive, we fetch all providers
-  // and filter them in memory for a case-insensitive match.
-  // This is acceptable for a small number of providers.
+  // Firestore queries are case-sensitive. To ensure a case-insensitive match,
+  // we fetch all providers and filter in the application. This is acceptable
+  // for a reasonable number of providers. For very large-scale apps,
+  // storing a normalized, lowercase version of the email would be better.
   const snapshot = await getDocs(providersCollection);
   if (snapshot.empty) {
     return undefined;
@@ -1338,7 +1339,7 @@ export async function getProviderByEmail(email: string): Promise<Provider | unde
   const providers = snapshot.docs.map(processDoc) as Provider[];
   const lowercasedEmail = email.toLowerCase();
   
-  const foundProvider = providers.find(provider => provider.email.toLowerCase() === lowercasedEmail);
+  const foundProvider = providers.find(provider => provider.email && provider.email.toLowerCase() === lowercasedEmail);
 
   return foundProvider;
 }
