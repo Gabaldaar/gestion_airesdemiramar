@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,39 +17,51 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   const { user, appUser, loading } = useAuth();
   const router = useRouter();
 
-  const isPublicPage = pathname === '/login' || pathname.startsWith('/contract') || pathname === '/pending-activation' || pathname === '/unauthorized';
+  const isPublicPage = pathname === '/login' || pathname === '/register' || pathname.startsWith('/contract') || pathname === '/pending-activation' || pathname === '/unauthorized';
 
   useEffect(() => {
     if (loading) {
-      return; // Wait until auth state is loaded
-    }
-    
-    // If not authenticated and not on a public page, redirect to login
-    if (!user && !isPublicPage) {
-      router.push('/login');
-      return;
-    }
-    
-    // If authenticated, handle routing based on appUser status
-    if (user && appUser) {
-        if (appUser.status === 'pending') {
-            if (pathname !== '/pending-activation') {
-                router.push('/pending-activation');
-            }
-        } else if (appUser.status === 'active') {
-            // If user is active and tries to access a public page (like login), redirect to dashboard
-            if (isPublicPage && pathname !== '/contract') { // Allow access to contract pages
-                 router.push('/');
-            }
-        }
-    } else if (user && !appUser && !isPublicPage) {
-        // User is authenticated with Firebase, but not found in our DB
-        router.push('/unauthorized');
+      return; // Wait until auth state and app user profile are fully loaded.
     }
 
-  }, [user, appUser, loading, isPublicPage, router, pathname]);
+    // --- After loading is complete ---
+
+    // CASE 1: User is NOT logged in
+    if (!user) {
+      if (!isPublicPage) {
+        router.push('/login');
+      }
+      // If on a public page, do nothing and allow access.
+      return;
+    }
+
+    // CASE 2: User IS logged in (user object exists)
+    // Because loading is false, the appUser object is guaranteed to be either a user profile or null.
+
+    if (!appUser) {
+        // This can happen if the user's email is not in the provider list and the admin failsafe didn't run.
+        // This is the gate for unauthorized users.
+        if (pathname !== '/unauthorized') {
+            router.push('/unauthorized');
+        }
+        return;
+    }
+
+    // `appUser` is now guaranteed to exist.
+    if (appUser.status === 'pending') {
+      if (pathname !== '/pending-activation') {
+        router.push('/pending-activation');
+      }
+    } else if (appUser.status === 'active') {
+      // User is active. If they are trying to access a public page, redirect them to the dashboard.
+      if (isPublicPage && pathname !== '/contract') { // Allow direct access to contract pages
+        router.push('/');
+      }
+    }
+
+  }, [user, appUser, loading, isPublicPage, pathname, router]);
   
-  // While initial user/appUser loading is in progress, show a loader on protected pages
+  // Show a loading screen while auth is being determined on protected pages.
   if (loading && !isPublicPage) {
      return (
       <div className="flex h-screen items-center justify-center">
@@ -60,21 +71,21 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
      );
   }
 
-  // If on a public page, just render the content
+  // If on a public page, just render the content without the main layout.
+  // This also covers the brief moment before a redirect happens.
   if (isPublicPage) {
     return <>{children}</>;
   }
 
-  // If user is authenticated and has an active appUser, render the main layout
-  if (user && appUser && appUser.status === 'active') {
+  // If we've passed all checks, user is authenticated and authorized. Render the main app layout.
+  if (user && appUser?.status === 'active') {
     return <MainLayout>{children}</MainLayout>;
   }
 
-  // Fallback loader while redirects are happening
+  // Fallback loader for any other intermediate states during redirects.
   return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
 }
-

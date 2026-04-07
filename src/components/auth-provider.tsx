@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -31,73 +31,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchAppUser = useCallback(async (firebaseUser: User | null) => {
-    try {
-        if (firebaseUser?.email) {
-            const providerProfile = await getProviderByEmail(firebaseUser.email);
-
-            if (providerProfile) {
-                // The user is a registered provider
-                if (!providerProfile.userId) {
-                    providerProfile.userId = firebaseUser.uid;
-                    await updateProviderDb(providerProfile);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser && firebaseUser.email) {
+            setUser(firebaseUser);
+            try {
+                // Attempt to find the user in the providers collection
+                const providerProfile = await getProviderByEmail(firebaseUser.email);
+                
+                if (providerProfile) {
+                    // User is a registered provider
+                    if (!providerProfile.userId) {
+                        providerProfile.userId = firebaseUser.uid;
+                        await updateProviderDb(providerProfile);
+                    }
+                    setAppUser(providerProfile);
+                } else {
+                    // User is not in the providers list, so they must be the admin.
+                    setAppUser({
+                        id: firebaseUser.uid,
+                        name: firebaseUser.displayName || 'Admin',
+                        email: firebaseUser.email,
+                        role: 'admin',
+                        status: 'active',
+                        managementType: 'tasks'
+                    });
                 }
-                setAppUser(providerProfile);
-            } else {
-                // If the user is not a provider, assume they are the admin.
-                // This is the failsafe to ensure the primary user can always log in.
+            } catch (error) {
+                console.error("CRITICAL: AuthProvider DB error. Assuming ADMIN to prevent lockout.", error);
+                // Failsafe: If the database query fails, assume the user is an admin to prevent lockout.
                 setAppUser({
                     id: firebaseUser.uid,
-                    name: firebaseUser.displayName || 'Admin',
+                    name: firebaseUser.displayName || 'Admin (Failsafe)',
                     email: firebaseUser.email,
                     role: 'admin',
                     status: 'active',
                     managementType: 'tasks'
                 });
+            } finally {
+                setLoading(false);
             }
         } else {
-          setAppUser(null);
-        }
-    } catch (error) {
-        console.error("CRITICAL: Error fetching provider profile from DB. This might be a Firestore rules or configuration issue.", error);
-        // This is a critical fallback. If the database query fails for any reason
-        // (e.g., permissions, offline), we will assume the logged-in user is the admin
-        // to prevent the primary user from ever being locked out.
-        if (firebaseUser) {
-            setAppUser({
-                id: firebaseUser.uid,
-                name: firebaseUser.displayName || 'Admin (Fallback)',
-                email: firebaseUser.email!,
-                role: 'admin',
-                status: 'active',
-                managementType: 'tasks'
-            });
-        } else {
+            // No user, or user has no email. Clear all session data.
+            setUser(null);
             setAppUser(null);
+            setLoading(false);
         }
-    } finally {
-        setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      fetchAppUser(firebaseUser);
     });
 
     return () => unsubscribe();
-  }, [fetchAppUser]);
+  }, []);
+
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    setLoading(true); // Set loading before sign-in attempt
     try {
-      setLoading(true);
       await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener will handle the rest
+      // onAuthStateChanged will handle the rest
     } catch (error) {
       console.error("Error signing in with Google: ", error);
-      setLoading(false);
+      setLoading(false); // Reset loading state on error
       throw error;
     }
   };
@@ -105,8 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      setUser(null);
-      setAppUser(null);
+      // onAuthStateChanged will handle setting user/appUser to null
       router.push('/login');
     } catch (error) {
       console.error("Error signing out: ", error);
