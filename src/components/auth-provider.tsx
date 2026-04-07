@@ -32,59 +32,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser && firebaseUser.email) {
-        setUser(firebaseUser);
-        
-        getProviderByEmail(firebaseUser.email)
-          .then((providerProfile) => {
-            if (providerProfile) {
-              // User is a registered provider
-              if (!providerProfile.userId) {
-                providerProfile.userId = firebaseUser.uid;
-                // Fire-and-forget update is safe here
-                updateProviderDb(providerProfile);
-              }
-              setAppUser(providerProfile);
-            } else {
-              // Failsafe: User is not in the providers list, so they must be the admin.
-              setAppUser({
-                  id: firebaseUser.uid,
-                  name: firebaseUser.displayName || 'Admin',
-                  email: firebaseUser.email,
-                  role: 'admin',
-                  status: 'active',
-                  managementType: 'tasks'
-              });
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+            try {
+                // There are cases where the user object is available but the email is not yet.
+                // We ensure we have an email before proceeding.
+                if (!firebaseUser.email) {
+                    throw new Error("El email del usuario no está disponible.");
+                }
+
+                setUser(firebaseUser);
+                const providerProfile = await getProviderByEmail(firebaseUser.email);
+
+                if (providerProfile) {
+                    // User is a registered provider
+                    if (providerProfile.status === 'pending') {
+                        setAppUser({ ...providerProfile, role: 'provider' });
+                    } else { // active
+                        if (!providerProfile.userId) { // Link Firebase UID on first active login
+                             await updateProviderDb({ ...providerProfile, userId: firebaseUser.uid });
+                        }
+                        setAppUser({ ...providerProfile, role: 'provider' });
+                    }
+                } else {
+                    // If not found in providers, assume ADMIN
+                    setAppUser({
+                        id: firebaseUser.uid,
+                        name: firebaseUser.displayName || 'Admin',
+                        email: firebaseUser.email,
+                        role: 'admin',
+                        status: 'active',
+                        managementType: 'tasks' // Default for admin
+                    });
+                }
+            } catch (error) {
+                console.error("Error during auth processing, assuming admin to prevent lockout:", error);
+                // Failsafe: on any error, assume admin to prevent being locked out.
+                 setAppUser({
+                    id: firebaseUser.uid,
+                    name: firebaseUser.displayName || 'Admin (Failsafe)',
+                    email: firebaseUser.email!,
+                    role: 'admin',
+                    status: 'active',
+                    managementType: 'tasks'
+                });
+            } finally {
+                setLoading(false);
             }
-          })
-          .catch((error) => {
-            console.error("CRITICAL: AuthProvider DB error. Assuming ADMIN to prevent lockout.", error);
-            // Failsafe: If the database query fails for any reason, assume the user is an admin.
-            setAppUser({
-                id: firebaseUser.uid,
-                name: firebaseUser.displayName || 'Admin (Failsafe)',
-                email: firebaseUser.email,
-                role: 'admin',
-                status: 'active',
-                managementType: 'tasks'
-            });
-          })
-          .finally(() => {
+        } else {
+            // No user is signed in.
+            setUser(null);
+            setAppUser(null);
             setLoading(false);
-          });
-          
-      } else {
-        // No user, clear all session data.
-        setUser(null);
-        setAppUser(null);
-        setLoading(false);
-      }
+        }
     });
 
     return () => unsubscribe();
   }, []);
-
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();

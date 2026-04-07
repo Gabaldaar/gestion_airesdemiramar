@@ -17,44 +17,37 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   const { user, appUser, loading } = useAuth();
   const router = useRouter();
 
-  const isPublicPage = pathname === '/login' || pathname === '/register' || pathname.startsWith('/contract') || pathname === '/pending-activation' || pathname === '/unauthorized';
+  const isPublicPage = pathname === '/login' || pathname === '/register' || pathname.startsWith('/contract');
+  const isStatusPage = pathname === '/pending-activation' || pathname === '/unauthorized';
 
   useEffect(() => {
     if (loading) {
-      // While loading, do nothing and show the loading screen.
+      return; // Wait until authentication is resolved
+    }
+
+    if (!user && !isPublicPage && !isStatusPage) {
+      router.push('/login');
       return;
     }
 
-    if (!user) {
-      // If not loading and no user, redirect to login if not on a public page.
-      if (!isPublicPage) {
-        router.push('/login');
+    if (user) {
+      if (!appUser) {
+        // This case might happen transiently or if getProviderByEmail fails.
+        // The failsafe in AuthProvider should prevent this, but as a backup, redirect.
+        if (!isStatusPage) router.push('/unauthorized');
+        return;
       }
-      return;
-    }
-
-    // If we reach here, user is logged in. Now check appUser profile.
-    if (appUser) {
-      if (appUser.status === 'pending') {
-        if (pathname !== '/pending-activation') {
-          router.push('/pending-activation');
-        }
-      } else if (appUser.status === 'active') {
-        if (isPublicPage && pathname !== '/contract') {
-          router.push('/');
-        }
+      
+      if (appUser.status === 'pending' && pathname !== '/pending-activation') {
+        router.push('/pending-activation');
+      } else if (appUser.status === 'active' && (isStatusPage || (isPublicPage && !pathname.startsWith('/contract')))) {
+        router.push('/');
       }
-    } else {
-        // This case should theoretically not be hit due to the failsafe in AuthProvider,
-        // but as an extra guard, we redirect to unauthorized.
-        if (pathname !== '/unauthorized') {
-            router.push('/unauthorized');
-        }
     }
-
-  }, [user, appUser, loading, isPublicPage, pathname, router]);
+  }, [user, appUser, loading, pathname, isPublicPage, isStatusPage, router]);
   
-  if (loading && !isPublicPage) {
+  // Show loading screen while auth state is being determined
+  if (loading) {
      return (
       <div className="flex h-screen items-center justify-center bg-muted/40">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -63,16 +56,26 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
      );
   }
 
-  if (isPublicPage) {
+  // If loading is finished, determine what to render
+  if (!user && !isPublicPage) {
+    // If not logged in and trying to access a protected page, show loading while redirecting.
+     return (
+      <div className="flex h-screen items-center justify-center bg-muted/40">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-4 text-muted-foreground">Redirigiendo...</span>
+      </div>
+     );
+  }
+
+  if (isPublicPage || isStatusPage) {
     return <>{children}</>;
   }
 
-  // If user is logged in and their profile is determined and active, show the layout.
   if (user && appUser?.status === 'active') {
     return <MainLayout>{children}</MainLayout>;
   }
 
-  // Fallback for any other intermediate state (like redirects being processed).
+  // Fallback for any other transient state during redirection
   return (
       <div className="flex h-screen items-center justify-center bg-muted/40">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
