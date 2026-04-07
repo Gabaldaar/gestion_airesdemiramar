@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -15,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateProvider } from '@/lib/actions';
-import { Provider, ProviderCategory, ProviderManagementType } from '@/lib/data';
+import { Provider, ProviderCategory, ProviderManagementType, UserStatus } from '@/lib/data';
 import { Loader2, Star } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -99,33 +100,43 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-          <DialogTitle>Editar Proveedor</DialogTitle>
+          <DialogTitle>Editar Colaborador</DialogTitle>
           <DialogDescription>
-              Modifica los datos del proveedor.
+              Modifica los datos del colaborador.
           </DialogDescription>
           </DialogHeader>
           <form action={formAction}>
               <input type="hidden" name="id" value={provider.id} />
               <input type="hidden" name="rating" value={rating} />
+              {/* Pass email as a hidden field to preserve it, as it's read-only */}
+              <input type="hidden" name="email" value={provider.email} />
+
               <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                        <Label>Método de Gestión</Label>
-                        <RadioGroup name="managementType" value={managementType} onValueChange={(v) => setManagementType(v as ProviderManagementType)} className="flex items-center gap-4">
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="tasks" id="r-tasks-edit" />
-                                <Label htmlFor="r-tasks-edit">Por Tareas</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="liquidations" id="r-liquidations-edit" />
-                                <Label htmlFor="r-liquidations-edit">Por Liquidaciones</Label>
-                            </div>
-                        </RadioGroup>
-                    </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Nombre</Label>
                             <Input id="name" name="name" defaultValue={provider.name} required />
                         </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="email-display">Email (de Google)</Label>
+                            <Input id="email-display" type="email" defaultValue={provider.email} readOnly disabled className="bg-muted/50" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Estado</Label>
+                        <RadioGroup name="status" defaultValue={provider.status || 'pending'} className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="pending" id="r-edit-pending" />
+                                <Label htmlFor="r-edit-pending">Pendiente</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="active" id="r-edit-active" />
+                                <Label htmlFor="r-edit-active">Activo</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+
+                    <div className="border-t pt-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="categoryId">Categoría</Label>
                             <Select name="categoryId" defaultValue={provider.categoryId || 'none'}>
@@ -137,10 +148,6 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                                     ))}
                                 </SelectContent>
                             </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" defaultValue={provider.email || ''} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="phone">Teléfono</Label>
@@ -162,6 +169,20 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                         </div>
                     </div>
                     
+                    <div className="space-y-2">
+                        <Label>Método de Gestión</Label>
+                        <RadioGroup name="managementType" value={managementType} onValueChange={(v) => setManagementType(v as ProviderManagementType)} className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="tasks" id="r-tasks-edit" />
+                                <Label htmlFor="r-tasks-edit">Por Tareas</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="liquidations" id="r-liquidations-edit" />
+                                <Label htmlFor="r-liquidations-edit">Por Liquidaciones</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+
                     {managementType === 'liquidations' && (
                         <div className="border-t pt-4 mt-2">
                             <h4 className="text-md font-medium mb-2 text-center">Facturación y Liquidación</h4>

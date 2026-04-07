@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Provider, ProviderCategory } from '@/lib/data';
+import { Provider, ProviderCategory, UserStatus } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
@@ -10,6 +11,8 @@ import ProvidersList from './providers-list';
 import { ProviderEditForm } from './provider-edit-form';
 
 type RatingFilter = 'all' | 'none' | '1' | '2' | '3' | '4' | '5';
+type StatusFilter = 'all' | UserStatus;
+
 
 interface ProvidersClientProps {
   initialProviders: Provider[];
@@ -22,6 +25,7 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
   const [providers, setProviders] = useState(initialProviders);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   
   const [editingProvider, setEditingProvider] = useState<Provider | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -32,7 +36,7 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
   };
 
   const filteredProviders = useMemo(() => {
-    let currentProviders = providers;
+    let currentProviders = initialProviders;
 
     // Filter by Category
     if (categoryFilter !== 'all') {
@@ -48,9 +52,14 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
         currentProviders = currentProviders.filter(provider => provider.rating === rating);
       }
     }
+
+    // Filter by Status
+    if (statusFilter !== 'all') {
+        currentProviders = currentProviders.filter(provider => provider.status === statusFilter);
+    }
     
     return currentProviders;
-  }, [providers, categoryFilter, ratingFilter]);
+  }, [initialProviders, categoryFilter, ratingFilter, statusFilter]);
 
   // Effect to update the count in the parent component
   useMemo(() => {
@@ -61,6 +70,7 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
   const handleClearFilters = () => {
     setCategoryFilter('all');
     setRatingFilter('all');
+    setStatusFilter('all');
   };
   
   return (
@@ -94,6 +104,19 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
                     <SelectItem value="3">3 Estrellas</SelectItem>
                     <SelectItem value="2">2 Estrellas</SelectItem>
                     <SelectItem value="1">1 Estrella</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+         <div className="grid gap-2">
+            <Label>Estado</Label>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filtrar por estado" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="active">Activo</SelectItem>
+                    <SelectItem value="pending">Pendiente</SelectItem>
                 </SelectContent>
             </Select>
         </div>

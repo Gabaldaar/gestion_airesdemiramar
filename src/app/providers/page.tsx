@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -43,7 +44,7 @@ export default function ProvidersPage() {
     }, [fetchData]);
 
     if (loading || !data) {
-        return <p>Cargando proveedores...</p>;
+        return <p>Cargando colaboradores...</p>;
     }
 
     const countDisplay = filteredProviderCount !== null 
@@ -55,13 +56,13 @@ export default function ProvidersPage() {
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
             <CardTitle className="flex items-center gap-2">
-                Proveedores
+                Colaboradores
                 <span className="text-sm font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-md">
                     {countDisplay}
                 </span>
             </CardTitle>
             <CardDescription>
-                Administra y filtra la información de tus proveedores de servicios.
+                Administra y filtra la información de tus colaboradores.
             </CardDescription>
             </div>
             <ProviderAddForm categories={data.categories} onProviderAdded={fetchData} />

@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -67,6 +68,7 @@ import {
   deleteManualAdjustmentDb,
   revertLiquidationDb,
   addLiquidationPaymentDb,
+  getProviderByEmail,
   Tenant,
   Booking,
   Expense,
@@ -89,7 +91,8 @@ import {
   DateBlock,
   WorkLog,
   ManualAdjustment,
-  Liquidation
+  Liquidation,
+  UserStatus
 } from './data';
 import { db } from './firebase';
 import { collection, doc, getDoc, getDocs, query, where, writeBatch, setDoc, addDoc, Timestamp, documentId } from 'firebase/firestore';
@@ -1424,7 +1427,7 @@ export async function addProvider(previousState: any, formData: FormData) {
   const rating = ratingStr ? parseInt(ratingStr, 10) : 0;
   const categoryIdValue = formData.get('categoryId') as string;
 
-  const newProvider: Omit<Provider, 'id'> = {
+  const newProvider: Omit<Provider, 'id' | 'userId'> = {
     name: formData.get('name') as string,
     categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
     email: formData.get('email') as string,
@@ -1438,12 +1441,24 @@ export async function addProvider(previousState: any, formData: FormData) {
     rateCurrency: (formData.get('rateCurrency') as 'ARS' | 'USD') || null,
     hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null,
     perVisitRate: formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null,
+    role: 'provider',
+    status: (formData.get('status') as UserStatus) || 'pending',
   };
+  
+  if (!newProvider.email) {
+      return { success: false, message: 'El email es obligatorio para registrar un colaborador.' };
+  }
 
   try {
+    // Check if email is already in use
+    const existingProvider = await getProviderByEmail(newProvider.email);
+    if (existingProvider) {
+        return { success: false, message: 'Este email ya está registrado para otro colaborador.' };
+    }
+
     await addProviderDb(newProvider);
     revalidatePath('/providers');
-    return { success: true, message: 'Proveedor añadido correctamente.' };
+    return { success: true, message: 'Colaborador añadido correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
@@ -1453,9 +1468,10 @@ export async function updateProvider(previousState: any, formData: FormData) {
   const ratingStr = formData.get('rating') as string;
   const rating = ratingStr ? parseInt(ratingStr, 10) : 0;
   const categoryIdValue = formData.get('categoryId') as string;
+  const providerId = formData.get('id') as string;
   
-  const updatedProvider: Provider = {
-    id: formData.get('id') as string,
+  const updatedProvider: Omit<Provider, 'userId'> = {
+    id: providerId,
     name: formData.get('name') as string,
     categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
     email: formData.get('email') as string,
@@ -1469,13 +1485,19 @@ export async function updateProvider(previousState: any, formData: FormData) {
     rateCurrency: (formData.get('rateCurrency') as 'ARS' | 'USD') || null,
     hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null,
     perVisitRate: formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null,
+    role: 'provider',
+    status: (formData.get('status') as UserStatus) || 'pending',
   };
+  
+   if (!updatedProvider.email) {
+      return { success: false, message: 'El email es un campo obligatorio.' };
+  }
 
   try {
     await updateProviderDb(updatedProvider);
     revalidatePath('/providers');
     revalidatePath('/tasks');
-    return { success: true, message: 'Proveedor actualizado correctamente.' };
+    return { success: true, message: 'Colaborador actualizado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
@@ -1988,3 +2010,47 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
         return { success: false, message: e.message };
     }
 }
+
+export async function getPendingBookingsCount(): Promise<number> {
+    const activeBookingsQuery = query(bookingsCollection, where('status', 'in', ['active', 'pending']));
+    const [bookingsSnapshot, paymentsSnapshot] = await Promise.all([
+        getDocs(activeBookingsQuery),
+        getDocs(paymentsCollection)
+    ]);
+    
+    const bookings = bookingsSnapshot.docs.map(processDoc) as Booking[];
+    const payments = paymentsSnapshot.docs.map(processDoc) as Payment[];
+
+    const paymentsByBookingId = new Map<string, Payment[]>();
+    payments.forEach(p => {
+        const existing = paymentsByBookingId.get(p.bookingId) || [];
+        existing.push(p);
+        paymentsByBookingId.set(p.bookingId, existing);
+    });
+
+    let pendingCount = 0;
+    bookings.forEach(booking => {
+        const bookingPayments = paymentsByBookingId.get(booking.id) || [];
+        const totalPaidInUSD = bookingPayments.reduce((acc, p) => acc + p.amount, 0);
+
+        let balance = 0;
+        if (booking.currency === 'USD') {
+            balance = booking.amount - totalPaidInUSD;
+        } else { // ARS
+            const totalPaidInArs = bookingPayments.reduce((acc, p) => {
+                if (p.originalArsAmount) {
+                    return acc + p.originalArsAmount;
+                }
+                return p.exchangeRate ? acc + (p.amount * p.exchangeRate) : acc;
+            }, 0);
+            balance = booking.amount - totalPaidInArs;
+        }
+
+        if (balance >= 1) {
+            pendingCount++;
+        }
+    });
+
+    return pendingCount;
+}
+

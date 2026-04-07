@@ -308,22 +308,20 @@ export type Provider = {
     id: string;
     name: string;
     categoryId?: string | null;
-    email?: string | null;
+    email: string;
     phone?: string | null;
     countryCode?: string | null;
     address?: string | null;
     notes?: string;
     rating?: number;
-    // New fields
     managementType: ProviderManagementType;
     billingType?: ProviderBillingType | null;
     rateCurrency?: 'ARS' | 'USD' | null;
     hourlyRate?: number | null;
     perVisitRate?: number | null;
-    // User fields
     userId?: string | null;
-    role?: UserRole;
-    status?: UserStatus;
+    role: UserRole;
+    status: UserStatus;
 };
 
 // New types for flexible task assignment
@@ -1430,7 +1428,7 @@ export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]>
     const snapshot = await getDocs(q);
     const pendingLogs = snapshot.docs.map(processDoc) as WorkLog[];
     pendingLogs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return await enrichItems(pendingLogs) as WorkLog[];
+    return await enrichItems(logs) as WorkLog[];
 }
 
 export async function getPendingManualAdjustments(providerId: string): Promise<ManualAdjustment[]> {

@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Provider, ProviderCategory } from "@/lib/data";
+import { Provider, ProviderCategory, UserStatus } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { ProviderDeleteForm } from "@/components/provider-delete-form";
 import { History, FileText, Mail, Phone, Pencil, Star, Wrench, Loader2 } from "lucide-react";
@@ -26,6 +26,7 @@ import { updateProviderRating } from '@/lib/actions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import { Badge } from "./ui/badge";
 
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -257,13 +258,10 @@ function ProviderRow({ provider, category, onDataChanged, onEditProvider, onHist
                     <InteractiveRating provider={provider} onRated={onDataChanged} />
                 </div>
             </TableCell>
-            <TableCell>{category ? category.name : 'N/A'}</TableCell>
             <TableCell>
-                {provider.email ? (
-                    <a href={`mailto:${provider.email}`} className="text-primary hover:underline">
-                        {provider.email}
-                    </a>
-                ) : null}
+                <a href={`mailto:${provider.email}`} className="text-primary hover:underline">
+                    {provider.email}
+                </a>
             </TableCell>
             <TableCell>
                 {waLink ? (
@@ -273,7 +271,12 @@ function ProviderRow({ provider, category, onDataChanged, onEditProvider, onHist
                     </a>
                 ) : (provider.phone ? `${provider.countryCode || '+54'} ${provider.phone}`: null)}
             </TableCell>
-            <TableCell className="hidden md:table-cell">{provider.address || ''}</TableCell>
+             <TableCell>
+                <Badge variant={provider.status === 'active' ? 'default' : 'secondary'} className={provider.status === 'active' ? 'bg-green-600' : 'bg-yellow-500'}>
+                    {provider.status === 'active' ? 'Activo' : 'Pendiente'}
+                </Badge>
+            </TableCell>
+            <TableCell className="hidden md:table-cell">{category ? category.name : 'N/A'}</TableCell>
             <TableCell className="text-right">
                 <ProviderActions provider={provider} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={onHistoryClick} />
             </TableCell>
@@ -288,10 +291,13 @@ function ProviderCard({ provider, category, onDataChanged, onEditProvider, onHis
             <CardHeader className="p-4">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-lg text-primary">{provider.name}</CardTitle>
-                    {category && (
-                         <span className="text-sm text-muted-foreground">{category.name}</span>
-                    )}
+                     <Badge variant={provider.status === 'active' ? 'default' : 'secondary'} className={provider.status === 'active' ? 'bg-green-600' : 'bg-yellow-500 text-black'}>
+                        {provider.status === 'active' ? 'Activo' : 'Pendiente'}
+                    </Badge>
                 </div>
+                 {category && (
+                    <CardDescription>{category.name}</CardDescription>
+                )}
             </CardHeader>
             <CardContent className="p-4 grid gap-2 text-sm">
                 <div className="flex justify-between">
@@ -363,10 +369,10 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
             <TableHeader>
                 <TableRow>
                     <TableHead>Nombre</TableHead>
-                    <TableHead>Categoría</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Teléfono</TableHead>
-                    <TableHead className="hidden md:table-cell">Dirección</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="hidden md:table-cell">Categoría</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
             </TableHeader>
