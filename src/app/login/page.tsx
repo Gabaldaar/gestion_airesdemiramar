@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/components/auth-provider';
@@ -7,7 +8,6 @@ import Image from 'next/image';
 import Logo from '@/assets/logo.png';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 export default function LoginPage() {
   const { signInWithGoogle, user, loading } = useAuth();
@@ -22,7 +22,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       await signInWithGoogle();
-      router.push('/');
+      // The auth provider and layout manager will handle redirection
     } catch (error) {
       console.error('Error during sign-in:', error);
     }
@@ -53,14 +53,6 @@ export default function LoginPage() {
             Iniciar sesión con Google
           </Button>
         </CardContent>
-        <CardFooter className="flex justify-center text-sm">
-            <p className="text-muted-foreground">
-                ¿Eres un nuevo colaborador?{' '}
-                <Link href="/register" className="text-primary hover:underline">
-                    Regístrate aquí
-                </Link>
-            </p>
-        </CardFooter>
       </Card>
     </div>
   );

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -6,7 +7,6 @@ import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 
-// Dynamically import MainLayout to avoid circular dependencies if it uses useAuth
 const MainLayout = dynamic(() => import('./main-layout'), {
   loading: () => <div className="flex h-screen items-center justify-center">Cargando Interfaz...</div>,
 });
@@ -18,68 +18,77 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   const router = useRouter();
 
   useEffect(() => {
-    // Don't do anything while auth state is loading
     if (loading) {
-      return;
+      return; // Do nothing while we are figuring out auth state
     }
 
-    const isPublicPage = pathname === '/login' || pathname === '/register' || pathname.startsWith('/contract');
+    const isPublicPage = pathname === '/login' || pathname.startsWith('/contract');
     const isStatusPage = pathname === '/pending-activation' || pathname === '/unauthorized';
 
-    // If user is not logged in and not on a public/status page, redirect to login
-    if (!user && !isPublicPage && !isStatusPage) {
-      router.push('/login');
+    // Logged out users
+    if (!user) {
+      if (!isPublicPage) {
+        router.push('/login');
+      }
       return;
     }
 
-    // If user is logged in, handle routing based on their app status
-    if (user && appUser) {
+    // --- User is logged in at this point ---
+
+    // The user has a specific profile in the database (provider or admin role)
+    if (appUser) {
       if (appUser.status === 'pending' && pathname !== '/pending-activation') {
         router.push('/pending-activation');
-        return;
+      } else if (appUser.status === 'active' && (isPublicPage || isStatusPage)) {
+         if (!pathname.startsWith('/contract')) {
+            router.push('/');
+         }
       }
-      
-      // If user is active but on a page they shouldn't be (like login), redirect to home
-      if (appUser.status === 'active' && (isPublicPage || isStatusPage)) {
-        if (!pathname.startsWith('/contract')) { // Contracts are public but need to be accessible while logged in
-          router.push('/');
-          return;
-        }
-      }
+    } 
+    // The user is logged in but has no profile in DB -> they are the default admin or unauthorized
+    else {
+      // Let's check if they are trying to access a provider-only page
+       if (isStatusPage) {
+         router.push('/unauthorized');
+       } else if (isPublicPage && !pathname.startsWith('/contract')) {
+         router.push('/');
+       }
+       // Otherwise, they are the admin on an admin page, so we let them be.
     }
 
-  // The dependency array is crucial. It re-runs the effect when these values change.
   }, [user, appUser, loading, pathname, router]);
-  
+
   // --- Render Logic ---
 
-  // 1. Primary Loading State: Show this while the AuthProvider is figuring out who the user is.
   if (loading) {
-     return (
+    return (
       <div className="flex h-screen items-center justify-center bg-muted/40">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-4 text-muted-foreground">Verificando acceso...</span>
       </div>
-     );
+    );
   }
   
-  const isPublicPage = pathname === '/login' || pathname === '/register' || pathname.startsWith('/contract');
-  const isStatusPage = pathname === '/pending-activation' || pathname === '/unauthorized';
+  const isAuthPage = pathname === '/login' || pathname === '/pending-activation' || pathname === '/unauthorized';
+  
+  // If user is logged in and everything is resolved, show the main app layout
+  if (user) {
+    // If the user is on a status page they shouldn't be, show loading while redirecting
+    if (appUser?.status === 'active' && isAuthPage) {
+         return (
+            <div className="flex h-screen items-center justify-center bg-muted/40">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+         );
+    }
+    // If user is pending and on the right page, or on an auth page while logged out
+    if ((appUser?.status === 'pending' && pathname === '/pending-activation') || (!appUser && pathname === '/unauthorized')) {
+        return <>{children}</>;
+    }
 
-  // 2. Public Pages: If on a public page, just render it. This allows login/register to be seen.
-  if (isPublicPage || isStatusPage) {
-    return <>{children}</>;
-  }
-
-  // 3. Authenticated User with Active Status: The user is logged in and cleared to see the app.
-  if (user && appUser?.status === 'active') {
     return <MainLayout>{children}</MainLayout>;
   }
 
-  // 4. Fallback: This renders a spinner during the brief moment of redirection, preventing flashes of incorrect content.
-  return (
-      <div className="flex h-screen items-center justify-center bg-muted/40">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  // If not logged in, show the children (which should be the login page)
+  return <>{children}</>;
 }

@@ -1,11 +1,11 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { getProviderByEmail, updateProviderDb, Provider, addProviderDb } from '@/lib/data';
-import { useRouter } from 'next/navigation';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { getProviderByEmail, addProviderDb, Provider } from '@/lib/data';
+import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 
 export type AppUser = Provider;
 
@@ -29,77 +29,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        let userProfile: AppUser | null = null;
-        
-        try {
+      try {
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          
           if (!firebaseUser.email) {
             throw new Error("El email del usuario de Google no está disponible.");
           }
 
-          // 1. Check if any admin exists at all
-          const adminQuery = query(collection(db, 'providers'), where('role', '==', 'admin'));
-          const adminSnapshot = await getDocs(adminQuery);
+          let userProfile = await getProviderByEmail(firebaseUser.email);
+          
+          // If user profile doesn't exist, check if they should be the first admin
+          if (!userProfile) {
+            const adminQuery = query(collection(db, 'providers'), where('role', '==', 'admin'), limit(1));
+            const adminSnapshot = await getDocs(adminQuery);
 
-          if (adminSnapshot.empty) {
-            // First user ever! Make them the admin.
-            console.log("No admins found. Promoting first user to admin.");
-            const newAdminProfile: Omit<Provider, 'id'> = {
-              name: firebaseUser.displayName || 'Admin',
-              email: firebaseUser.email,
-              role: 'admin',
-              status: 'active',
-              managementType: 'tasks',
-              userId: firebaseUser.uid,
-            };
-            const createdAdmin = await addProviderDb(newAdminProfile);
-            userProfile = createdAdmin;
-
-          } else {
-            // Admins exist, proceed with normal lookup
-            const providerProfile = await getProviderByEmail(firebaseUser.email);
-            if (providerProfile) {
-              userProfile = providerProfile;
-              // Link Firebase UID on first active login if not already present
-              if (providerProfile.status === 'active' && !providerProfile.userId) {
-                await updateProviderDb({ ...providerProfile, userId: firebaseUser.uid });
-              }
-            } else {
-              // User is not in the providers list, so they are not authorized.
-              userProfile = null;
+            if (adminSnapshot.empty) {
+              // This is the very first user, promote them to admin.
+              console.log("No admins found. Promoting first user to admin.");
+              const newAdminProfile: Omit<Provider, 'id'> = {
+                name: firebaseUser.displayName || 'Admin',
+                email: firebaseUser.email,
+                role: 'admin',
+                status: 'active',
+                managementType: 'tasks', 
+                userId: firebaseUser.uid,
+              };
+              userProfile = await addProviderDb(newAdminProfile);
             }
           }
-        } catch (error) {
-          console.error("Error during auth state change processing:", error);
-          userProfile = null; // Default to not authorized on error
-        }
-        
-        setAppUser(userProfile);
+          
+          // If still no profile, they are not authorized (unless it's you, the fallback admin)
+          // The final user object is set here.
+          setAppUser(userProfile);
 
-      } else {
-        // User is logged out
-        setUser(null);
+        } else {
+          // User is logged out
+          setUser(null);
+          setAppUser(null);
+        }
+      } catch (error) {
+        console.error("Critical error in AuthProvider:", error);
+        // On ANY error during auth, default to a state that doesn't lock out the primary user.
+        // The LayoutManager will interpret `user` but `!appUser` as the admin.
+        setUser(firebaseUser); // Keep the firebase user if it exists
         setAppUser(null);
+      } finally {
+        // This is crucial: ALWAYS stop loading, no matter what.
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    setLoading(true); // Show loading during sign-in process
+    setLoading(true);
     try {
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle the user state update
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       setLoading(false);
@@ -108,13 +99,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    try {
-      await firebaseSignOut(auth);
-      // onAuthStateChanged will handle clearing user state
-      router.push('/login');
-    } catch (error) {
-      console.error("Error signing out: ", error);
-    }
+    await firebaseSignOut(auth);
+    setUser(null);
+    setAppUser(null);
+    // Let the LayoutManager handle the redirect
   };
 
   const value = { user, appUser, loading, signInWithGoogle, signOut };
