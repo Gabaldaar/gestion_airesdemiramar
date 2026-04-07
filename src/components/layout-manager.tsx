@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,6 +7,9 @@ import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 
 const MainLayout = dynamic(() => import('./main-layout'), {
+  loading: () => <div className="flex h-screen items-center justify-center">Cargando Interfaz...</div>,
+});
+const ColaboradorDashboard = dynamic(() => import('./colaborador-dashboard'), {
   loading: () => <div className="flex h-screen items-center justify-center">Cargando Interfaz...</div>,
 });
 
@@ -24,6 +26,7 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
 
     const isPublicPage = pathname === '/login' || pathname.startsWith('/contract');
     const isStatusPage = pathname === '/pending-activation' || pathname === '/unauthorized';
+    const isCollaboratorDashboard = pathname.startsWith('/colaborador');
 
     // Logged out users
     if (!user) {
@@ -39,21 +42,24 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
     if (appUser) {
       if (appUser.status === 'pending' && pathname !== '/pending-activation') {
         router.push('/pending-activation');
-      } else if (appUser.status === 'active' && (isPublicPage || isStatusPage)) {
-         if (!pathname.startsWith('/contract')) {
+      } else if (appUser.status === 'active') {
+        if (appUser.role === 'provider' && !isCollaboratorDashboard) {
+            router.push('/colaborador/dashboard');
+        } else if (appUser.role === 'admin' && isCollaboratorDashboard) {
             router.push('/');
-         }
+        } else if (appUser.role === 'admin' && (isPublicPage || isStatusPage)) {
+            if (!pathname.startsWith('/contract')) {
+                router.push('/');
+             }
+        }
       }
     } 
-    // The user is logged in but has no profile in DB -> they are the default admin or unauthorized
     else {
-      // Let's check if they are trying to access a provider-only page
        if (isStatusPage) {
          router.push('/unauthorized');
        } else if (isPublicPage && !pathname.startsWith('/contract')) {
          router.push('/');
        }
-       // Otherwise, they are the admin on an admin page, so we let them be.
     }
 
   }, [user, appUser, loading, pathname, router]);
@@ -71,22 +77,28 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   
   const isAuthPage = pathname === '/login' || pathname === '/pending-activation' || pathname === '/unauthorized';
   
-  // If user is logged in and everything is resolved, show the main app layout
+  // If user is logged in and everything is resolved...
   if (user) {
-    // If the user is on a status page they shouldn't be, show loading while redirecting
-    if (appUser?.status === 'active' && isAuthPage) {
-         return (
-            <div className="flex h-screen items-center justify-center bg-muted/40">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-         );
+    if (appUser?.status === 'active') {
+        if (appUser.role === 'provider') {
+            // Render the collaborator layout directly
+            return <>{children}</>;
+        }
+        // If admin, show main layout
+        return <MainLayout>{children}</MainLayout>;
     }
-    // If user is pending and on the right page, or on an auth page while logged out
+    
+    // Handle pending/unauthorized users on their respective pages
     if ((appUser?.status === 'pending' && pathname === '/pending-activation') || (!appUser && pathname === '/unauthorized')) {
         return <>{children}</>;
     }
 
-    return <MainLayout>{children}</MainLayout>;
+    // Fallback loading state while redirecting
+    return (
+        <div className="flex h-screen items-center justify-center bg-muted/40">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
   }
 
   // If not logged in, show the children (which should be the login page)

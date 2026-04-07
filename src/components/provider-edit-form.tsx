@@ -139,7 +139,7 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                             <RadioGroup name="role" defaultValue={provider.role || 'provider'} className="flex items-center gap-4">
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="provider" id="r-edit-provider" />
-                                    <Label htmlFor="r-edit-provider">Proveedor</Label>
+                                    <Label htmlFor="r-edit-provider">Colaborador</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="admin" id="r-edit-admin" />
@@ -253,8 +253,12 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="notes">Notas</Label>
+                        <Label htmlFor="notes">Notas (Privadas)</Label>
                         <Textarea id="notes" name="notes" defaultValue={provider.notes || ''} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="adminNote">Nota para el Colaborador (Visible por él)</Label>
+                        <Textarea id="adminNote" name="adminNote" defaultValue={provider.adminNote || ''} />
                     </div>
               </div>
               <DialogFooter>

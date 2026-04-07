@@ -1433,6 +1433,7 @@ export async function addProvider(previousState: any, formData: FormData) {
     countryCode: formData.get('countryCode') as string,
     address: formData.get('address') as string,
     notes: (formData.get('notes') as string) || '',
+    adminNote: (formData.get('adminNote') as string) || '',
     rating: !isNaN(rating) ? rating : 0,
     managementType: (formData.get('managementType') as ProviderManagementType) || 'tasks',
     billingType: (formData.get('billingType') as ProviderBillingType) || null,
@@ -1508,6 +1509,7 @@ export async function updateProvider(previousState: any, formData: FormData) {
     dataToUpdate.countryCode = formData.get('countryCode') as string;
     dataToUpdate.address = formData.get('address') as string;
     dataToUpdate.notes = formData.get('notes') as string;
+    dataToUpdate.adminNote = formData.get('adminNote') as string;
     dataToUpdate.rating = !isNaN(rating) ? rating : 0;
     dataToUpdate.managementType = (formData.get('managementType') as ProviderManagementType) || 'tasks';
     dataToUpdate.billingType = (formData.get('billingType') as ProviderBillingType) || null;
@@ -2047,47 +2049,3 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
         return { success: false, message: e.message };
     }
 }
-
-export async function getPendingBookingsCount(): Promise<number> {
-    const activeBookingsQuery = query(bookingsCollection, where('status', 'in', ['active', 'pending']));
-    const [bookingsSnapshot, paymentsSnapshot] = await Promise.all([
-        getDocs(activeBookingsQuery),
-        getDocs(paymentsCollection)
-    ]);
-    
-    const bookings = bookingsSnapshot.docs.map(processDoc) as Booking[];
-    const payments = paymentsSnapshot.docs.map(processDoc) as Payment[];
-
-    const paymentsByBookingId = new Map<string, Payment[]>();
-    payments.forEach(p => {
-        const existing = paymentsByBookingId.get(p.bookingId) || [];
-        existing.push(p);
-        paymentsByBookingId.set(p.bookingId, existing);
-    });
-
-    let pendingCount = 0;
-    bookings.forEach(booking => {
-        const bookingPayments = paymentsByBookingId.get(booking.id) || [];
-        const totalPaidInUSD = bookingPayments.reduce((acc, p) => acc + p.amount, 0);
-
-        let balance = 0;
-        if (booking.currency === 'USD') {
-            balance = booking.amount - totalPaidInUSD;
-        } else { // ARS
-            const totalPaidInArs = bookingPayments.reduce((acc, p) => {
-                if (p.originalArsAmount) {
-                    return acc + p.originalArsAmount;
-                }
-                return p.exchangeRate ? acc + (p.amount * p.exchangeRate) : acc;
-            }, 0);
-            balance = booking.amount - totalPaidInArs;
-        }
-
-        if (balance >= 1) {
-            pendingCount++;
-        }
-    });
-
-    return pendingCount;
-}
-

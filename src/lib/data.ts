@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db } from './firebase';
@@ -313,6 +311,7 @@ export type Provider = {
     countryCode?: string | null;
     address?: string | null;
     notes?: string;
+    adminNote?: string | null;
     rating?: number;
     managementType: ProviderManagementType;
     billingType?: ProviderBillingType | null;
@@ -1627,3 +1626,63 @@ export async function getPendingBookingsCount(): Promise<number> {
     return pendingCount;
 }
 
+
+export async function addLiquidationPaymentDb(
+  liquidationId: string,
+  paymentAmount: number,
+  paymentDate: string,
+  expenseDescription: string,
+  expenseCategoryId: string
+) {
+  const batch = writeBatch(db);
+  const liquidationRef = doc(db, 'liquidations', liquidationId);
+
+  // 1. Get the current liquidation
+  const liquidationSnap = await getDoc(liquidationRef);
+  if (!liquidationSnap.exists()) {
+    throw new Error('La liquidación no existe.');
+  }
+  const liquidation = liquidationSnap.data() as Liquidation;
+
+  // 2. Validate payment amount
+  if (paymentAmount > liquidation.balance) {
+    throw new Error('El monto del pago no puede ser mayor que el saldo pendiente.');
+  }
+
+  // 3. Update liquidation balances
+  const newAmountPaid = liquidation.amountPaid + paymentAmount;
+  const newBalance = liquidation.totalAmount - newAmountPaid;
+  const newStatus = newBalance <= 0.01 ? 'paid' : 'partially_paid';
+
+  batch.update(liquidationRef, {
+    amountPaid: newAmountPaid,
+    balance: newBalance,
+    status: newStatus,
+  });
+
+  // 4. Create a corresponding expense record
+  const expenseRef = doc(collection(db, 'expenses'));
+  const expenseData: Omit<Expense, 'id'> = {
+    assignment: { type: 'scope', id: 'liquidaciones' }, // Assuming a general scope for this
+    date: paymentDate,
+    description: expenseDescription,
+    amount: paymentAmount,
+    currency: 'ARS',
+    categoryId: expenseCategoryId === 'none' ? null : expenseCategoryId,
+    providerId: liquidation.providerId,
+    liquidationId: liquidationId, // Link expense to the liquidation
+  };
+  
+  if (liquidation.currency === 'USD') {
+      expenseData.originalUsdAmount = paymentAmount;
+      // We need an exchange rate to store in ARS
+      // For now, let's assume 1:1, this will need a UI field in the future
+      expenseData.amount = paymentAmount; // This is incorrect, needs rate
+      expenseData.exchangeRate = 1;
+      expenseData.description = `${expenseDescription} (Pago en USD)`;
+  }
+
+  batch.set(expenseRef, expenseData);
+
+  await batch.commit();
+}

@@ -134,7 +134,7 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
                         <RadioGroup name="role" defaultValue="provider" className="flex items-center gap-4">
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="provider" id="r-add-provider" />
-                                <Label htmlFor="r-add-provider">Proveedor</Label>
+                                <Label htmlFor="r-add-provider">Colaborador</Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="admin" id="r-add-admin" />
@@ -248,8 +248,12 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="notes">Notas</Label>
+                    <Label htmlFor="notes">Notas (Privadas)</Label>
                     <Textarea id="notes" name="notes" />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="adminNote">Nota para el Colaborador (Visible por él)</Label>
+                    <Textarea id="adminNote" name="adminNote" />
                 </div>
             </div>
             <DialogFooter>

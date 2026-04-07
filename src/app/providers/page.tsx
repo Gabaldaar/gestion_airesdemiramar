@@ -62,7 +62,7 @@ export default function ProvidersPage() {
                 </span>
             </CardTitle>
             <CardDescription>
-                Administra y filtra la información de tus colaboradores.
+                Administra y filtra la información de tus colaboradores y administradores.
             </CardDescription>
             </div>
             <ProviderAddForm categories={data.categories} onProviderAdded={fetchData} />
