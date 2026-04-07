@@ -1,3 +1,4 @@
+
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -44,16 +45,16 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   const { user, appUser, loading, authError, signOut } = useAuth();
   const router = useRouter();
 
+  // This effect handles all redirection logic
   useEffect(() => {
-    // Don't run redirection logic if there's an error or we are still loading
     if (loading || authError) {
-      return;
+      return; // Stop if we're still loading or if there's an error
     }
 
     const isPublicPage = pathname === '/login' || pathname.startsWith('/contract');
     const isStatusPage = pathname === '/pending-activation' || pathname === '/unauthorized';
 
-    // 1. If not logged in, redirect to login unless it's a public page
+    // Case 1: User is NOT logged in
     if (!user) {
       if (!isPublicPage) {
         router.push('/login');
@@ -61,52 +62,41 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
       return;
     }
 
-    // --- User IS logged in from here ---
-    
-    // 2. If user is NOT in the database, they are unauthorized.
+    // Case 2: User IS logged in
     if (!appUser) {
-      if (pathname !== '/unauthorized') {
+      if (!isStatusPage) {
         router.push('/unauthorized');
       }
       return;
     }
-    
-    // 3. User IS in the database (appUser exists).
-    // Handle pending status
+
+    // Case 3: User has a profile but is pending
     if (appUser.status === 'pending') {
-        if (pathname !== '/pending-activation') {
-            router.push('/pending-activation');
-        }
-        return;
+      if (!isStatusPage) {
+        router.push('/pending-activation');
+      }
+      return;
     }
-
-    // Handle active status
+    
+    // Case 4: User is active and authorized
     if (appUser.status === 'active') {
-        // If an admin is on the collaborator page, redirect to home
         if (appUser.role === 'admin' && pathname.startsWith('/colaborador')) {
-            router.push('/');
-            return;
+          router.push('/');
+          return;
         }
-        // If a provider is NOT on their dashboard, redirect them there
+
         if (appUser.role === 'provider' && !pathname.startsWith('/colaborador')) {
-            router.push('/colaborador/dashboard');
-            return;
+          router.push('/colaborador/dashboard');
+          return;
         }
-        // If an active user lands on a public/status page, redirect home
+
         if (isPublicPage || isStatusPage) {
-            if (!pathname.startsWith('/contract')) {
-                 router.push('/');
-            }
+           if (!pathname.startsWith('/contract')) router.push('/');
         }
     }
-  }, [user, appUser, loading, authError, pathname, router]);
+  }, [user, appUser, loading, pathname, router, authError]);
 
-  // --- Render Logic ---
-  
-  if (authError) {
-      return <AuthErrorDisplay error={authError} onSignOut={signOut} />;
-  }
-
+  // This block handles what to RENDER based on the current state
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-muted/40">
@@ -116,21 +106,22 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
     );
   }
 
-  const isAuthPage = !pathname.startsWith('/login') && !pathname.startsWith('/contract');
-  const needsAuthData = isAuthPage && (!user || !appUser);
-
-  if(needsAuthData && pathname !== '/unauthorized' && pathname !== '/pending-activation') {
-      return (
-          <div className="flex h-screen items-center justify-center bg-muted/40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-4 text-muted-foreground">Verificando acceso...</span>
-          </div>
-      );
+  if (authError) {
+    return <AuthErrorDisplay error={authError} onSignOut={signOut} />;
   }
   
-  if (appUser?.role === 'admin' && !pathname.startsWith('/colaborador')) {
+  const needsMainLayout = user && appUser?.status === 'active' && appUser?.role === 'admin';
+  const isCollaboratorPage = user && appUser?.status === 'active' && appUser?.role === 'provider';
+  
+  // Decide which top-level layout to render
+  if (needsMainLayout && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract')) {
       return <MainLayout>{children}</MainLayout>;
   }
-
+  
+  if (isCollaboratorPage && pathname.startsWith('/colaborador')) {
+      return <>{children}</>;
+  }
+  
+  // For login, status pages, contract view, or during redirection, just render the page content.
   return <>{children}</>;
 }

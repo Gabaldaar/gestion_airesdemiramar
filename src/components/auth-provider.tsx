@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -34,50 +35,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Always start loading
       setLoading(true);
       setAuthError(null);
 
-      if (!firebaseUser || !firebaseUser.email) {
+      // No firebase user, so not logged in.
+      if (!firebaseUser) {
         setUser(null);
         setAppUser(null);
         setLoading(false);
         return;
       }
       
-      setUser(firebaseUser);
-
+      // Firebase user exists, now check our DB.
       try {
-        const userProfile = await getProviderByEmail(firebaseUser.email);
-
-        if (userProfile) {
-          setAppUser(userProfile);
-        } else {
-          // If no profile, check if this should be the first admin
-          const providersQuery = query(collection(db, 'providers'), limit(1));
-          const providersSnapshot = await getDocs(providersQuery);
-
-          if (providersSnapshot.empty) {
-            console.log("No providers found. Promoting first user to admin.");
-            const newAdminProfile: Omit<Provider, 'id'> = {
-              name: firebaseUser.displayName || 'Admin',
-              email: firebaseUser.email,
-              role: 'admin',
-              status: 'active',
-              managementType: 'tasks',
-              userId: firebaseUser.uid,
-            };
-            const createdAdmin = await addProviderDb(newAdminProfile);
-            setAppUser(createdAdmin);
-          } else {
-            // Not the first user, and not found in DB -> unauthorized.
-            setAppUser(null);
-          }
-        }
+        const userProfile = await getProviderByEmail(firebaseUser.email || '');
+        setUser(firebaseUser);
+        setAppUser(userProfile || null);
       } catch (error: any) {
         console.error("Auth Provider Error:", error);
+        setUser(firebaseUser);
         setAppUser(null);
-        setAuthError(error.message || "An unknown error occurred during authentication.");
+        setAuthError(error.message || "An unknown authentication error occurred.");
       } finally {
+        // CRITICAL: Always stop loading.
         setLoading(false);
       }
     });
@@ -91,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       await signInWithPopup(auth, provider);
+      // onAuthStateChanged will handle the rest
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       setAuthError((error as Error).message || "Failed to sign in.");
@@ -101,9 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await firebaseSignOut(auth);
-    setUser(null);
-    setAppUser(null);
-    setAuthError(null);
+    // onAuthStateChanged will handle the state clearing
   };
 
   const value = { user, appUser, loading, authError, signInWithGoogle, signOut };
