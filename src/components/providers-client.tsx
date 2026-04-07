@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Provider, ProviderCategory, UserStatus, UserRole } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
@@ -78,7 +78,7 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
     return currentProviders;
 
   }, [initialProviders, categoryFilter, ratingFilter, statusFilter]);
-
+  
   // Effect to update the count in the parent component
   useEffect(() => {
     onFilteredProvidersChange(filteredProviders.length);
@@ -160,3 +160,4 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
     </div>
   );
 }
+
