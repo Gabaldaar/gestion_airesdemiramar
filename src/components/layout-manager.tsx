@@ -45,58 +45,64 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   const { user, appUser, loading, authError, signOut } = useAuth();
   const router = useRouter();
 
-  // This effect handles all redirection logic
+  // This effect handles all redirection logic based on a stable auth state.
   useEffect(() => {
-    if (loading || authError) {
-      return; // Stop if we're still loading or if there's an error
+    // 1. Wait until authentication process is fully complete.
+    if (loading) {
+      return;
+    }
+
+    // 2. Handle Authentication Errors
+    if (authError) {
+        // The AuthErrorDisplay component will be shown, so no redirection is needed here.
+        return;
     }
 
     const isPublicPage = pathname === '/login' || pathname.startsWith('/contract');
     const isStatusPage = pathname === '/pending-activation' || pathname === '/unauthorized';
 
-    // Case 1: User is NOT logged in
+    // 3. State: User is not logged into Firebase.
     if (!user) {
       if (!isPublicPage) {
         router.push('/login');
       }
       return;
     }
+    
+    // --- From this point, we know a Firebase user exists. ---
 
-    // Case 2: User IS logged in
+    // 4. State: Firebase user exists, but no profile in our app's database.
     if (!appUser) {
-      if (!isStatusPage) {
+      if (!isStatusPage) { // Prevent redirect loop if already on a status page.
         router.push('/unauthorized');
       }
       return;
     }
 
-    // Case 3: User has a profile but is pending
+    // 5. State: User has a profile but is pending activation.
     if (appUser.status === 'pending') {
-      if (!isStatusPage) {
+      if (pathname !== '/pending-activation') {
         router.push('/pending-activation');
       }
       return;
     }
     
-    // Case 4: User is active and authorized
+    // 6. State: User is active and authorized.
     if (appUser.status === 'active') {
-        if (appUser.role === 'admin' && pathname.startsWith('/colaborador')) {
-          router.push('/');
-          return;
-        }
+        const isWrongDashboard = (appUser.role === 'admin' && pathname.startsWith('/colaborador')) ||
+                                 (appUser.role === 'provider' && !pathname.startsWith('/colaborador'));
 
-        if (appUser.role === 'provider' && !pathname.startsWith('/colaborador')) {
-          router.push('/colaborador/dashboard');
-          return;
-        }
-
-        if (isPublicPage || isStatusPage) {
-           if (!pathname.startsWith('/contract')) router.push('/');
+        // If user is on a public/status page or the wrong dashboard, redirect to their correct home.
+        if ((isPublicPage || isStatusPage || isWrongDashboard) && !pathname.startsWith('/contract')) {
+            const targetPath = appUser.role === 'admin' ? '/' : '/colaborador/dashboard';
+            router.push(targetPath);
         }
     }
+
   }, [user, appUser, loading, pathname, router, authError]);
 
-  // This block handles what to RENDER based on the current state
+
+  // This block handles what to RENDER based on the current state.
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-muted/40">
@@ -113,7 +119,6 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   const needsMainLayout = user && appUser?.status === 'active' && appUser?.role === 'admin';
   const isCollaboratorPage = user && appUser?.status === 'active' && appUser?.role === 'provider';
   
-  // Decide which top-level layout to render
   if (needsMainLayout && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract')) {
       return <MainLayout>{children}</MainLayout>;
   }
@@ -122,6 +127,6 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
       return <>{children}</>;
   }
   
-  // For login, status pages, contract view, or during redirection, just render the page content.
+  // For login, status pages, contract view, or during the brief moment of redirection, render the page content.
   return <>{children}</>;
 }
