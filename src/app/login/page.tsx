@@ -1,13 +1,13 @@
-
 'use client';
 
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import Logo from '@/assets/logo.png';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const { signInWithGoogle, user, loading } = useAuth();
@@ -25,7 +25,6 @@ export default function LoginPage() {
       router.push('/');
     } catch (error) {
       console.error('Error during sign-in:', error);
-      // Optionally, show an error message to the user
     }
   };
 
@@ -54,6 +53,14 @@ export default function LoginPage() {
             Iniciar sesión con Google
           </Button>
         </CardContent>
+        <CardFooter className="flex justify-center text-sm">
+            <p className="text-muted-foreground">
+                ¿Eres un nuevo colaborador?{' '}
+                <Link href="/register" className="text-primary hover:underline">
+                    Regístrate aquí
+                </Link>
+            </p>
+        </CardFooter>
       </Card>
     </div>
   );
