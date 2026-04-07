@@ -64,6 +64,39 @@ export default function ColaboradorDashboard({ properties, scopes }: { propertie
     const [editingWorkLog, setEditingWorkLog] = useState<WorkLog | undefined>(undefined);
     const [isEditFormOpen, setIsEditFormOpen] = useState(false);
 
+    useEffect(() => {
+        const performFetch = async () => {
+            if (!appUser?.id) {
+                // If there's no user while auth is finished, we stop loading.
+                // The layout manager will handle redirection if needed.
+                if (!authLoading) {
+                    setIsLoading(false);
+                }
+                return;
+            }
+            
+            // We have a user, start fetching data.
+            setIsLoading(true);
+            try {
+                const logs = await getPendingWorkLogs(appUser.id);
+                setWorkLogs(logs);
+            } catch (error) {
+                console.error("Failed to fetch work logs:", error);
+                toast({ title: "Error", description: "No se pudieron cargar las actividades.", variant: "destructive" });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        performFetch();
+    }, [appUser, authLoading, toast]);
+
+
+    const handleSignOut = async () => {
+        await signOut();
+        router.push('/login');
+    };
+    
     const fetchData = useCallback(async () => {
         if (appUser?.id) {
             setIsLoading(true);
@@ -78,14 +111,6 @@ export default function ColaboradorDashboard({ properties, scopes }: { propertie
         }
     }, [appUser?.id, toast]);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    const handleSignOut = async () => {
-        await signOut();
-        router.push('/login');
-    };
 
     const handleEdit = (log: WorkLog) => {
         setEditingWorkLog(log);
@@ -100,12 +125,21 @@ export default function ColaboradorDashboard({ properties, scopes }: { propertie
         return totals;
     }, [workLogs]);
 
-    if (authLoading || isLoading || !appUser) {
+    if (authLoading || isLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         );
+    }
+
+    if (!appUser) {
+        // This should be handled by the layout manager, but it's a safe fallback.
+        return (
+            <div className="flex h-screen items-center justify-center">
+               <p className="text-muted-foreground">Redirigiendo...</p>
+            </div>
+        )
     }
 
     return (
