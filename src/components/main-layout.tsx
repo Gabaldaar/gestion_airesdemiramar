@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -36,7 +35,7 @@ const mainNavItems = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/properties', label: 'Propiedades', icon: Building2 },
   { href: '/tenants', label: 'Inquilinos', icon: Users },
-  { href: '/providers', label: 'Proveedores', icon: Wrench },
+  { href: '/providers', label: 'Colaboradores', icon: Wrench },
   { href: '/bookings', label: 'Reservas', icon: Calendar, badge: 'bookings' },
   { href: '/tasks', label: 'Tareas', icon: ClipboardList },
   { href: '/payments', label: 'Pagos', icon: CreditCard },

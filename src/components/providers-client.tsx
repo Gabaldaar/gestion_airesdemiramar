@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Provider, ProviderCategory, UserStatus } from '@/lib/data';
+import { Provider, ProviderCategory, UserStatus, UserRole } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
@@ -58,7 +58,27 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
         currentProviders = currentProviders.filter(provider => provider.status === statusFilter);
     }
     
+    // Sort logic
+    const roleOrder: Record<UserRole, number> = { admin: 0, provider: 1 };
+    const statusOrder: Record<UserStatus, number> = { active: 0, pending: 1 };
+
+    currentProviders.sort((a, b) => {
+        // Sort by role first
+        if (roleOrder[a.role] !== roleOrder[b.role]) {
+            return roleOrder[a.role] - roleOrder[b.role];
+        }
+        // If roles are the same (must be 'provider'), sort by status
+        if (a.role === 'provider' && b.role === 'provider') {
+            if (statusOrder[a.status] !== statusOrder[b.status]) {
+                return statusOrder[a.status] - statusOrder[b.status];
+            }
+        }
+        // Finally, sort by name alphabetically
+        return a.name.localeCompare(b.name);
+    });
+
     return currentProviders;
+
   }, [initialProviders, categoryFilter, ratingFilter, statusFilter]);
 
   // Effect to update the count in the parent component

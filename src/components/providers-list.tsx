@@ -2,6 +2,8 @@
 
 'use client';
 
+import React, { useState, useTransition } from 'react';
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -10,12 +12,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Provider, ProviderCategory, UserStatus } from "@/lib/data";
+import { Provider, ProviderCategory, UserRole, UserStatus } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { ProviderDeleteForm } from "@/components/provider-delete-form";
 import { History, FileText, Mail, Phone, Pencil, Star, Wrench, Loader2 } from "lucide-react";
 import { NotesViewer } from "@/components/notes-viewer";
-import { useState, useTransition } from "react";
+import { Badge } from "./ui/badge";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "./ui/card";
 import useWindowSize from "@/hooks/use-window-size";
 import { cn } from "@/lib/utils";
@@ -26,7 +28,6 @@ import { updateProviderRating } from '@/lib/actions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Badge } from "./ui/badge";
 
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -40,6 +41,19 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     >
       <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
     </svg>
+);
+
+const ListSeparator = ({ children }: { children: React.ReactNode }) => (
+    <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center">
+            <span className="bg-background px-2 text-xs uppercase text-muted-foreground">
+                {children}
+            </span>
+        </div>
+    </div>
 );
 
 
@@ -132,7 +146,7 @@ function InteractiveRating({ provider, onRated }: { provider: Provider; onRated:
                         />
                     );
                 })}
-                 {currentRating === 0 && <span className="text-xs text-muted-foreground ml-1">Sin calificar</span>}
+                {currentRating === 0 && <span className="text-xs text-muted-foreground ml-1">Sin calificar</span>}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
@@ -226,7 +240,7 @@ function ProviderActions({ provider, onDataChanged, onEditProvider, onHistoryCli
                             <span className="sr-only">Editar Proveedor</span>
                         </Button>
                     </TooltipTrigger>
-                    <TooltipContent><p>Editar Proveedor</p></TooltipContent>
+                    <TooltipContent><p>Editar Colaborador</p></TooltipContent>
                 </Tooltip>
             </TooltipProvider>
 
@@ -254,7 +268,10 @@ function ProviderRow({ provider, category, onDataChanged, onEditProvider, onHist
         <TableRow key={provider.id}>
             <TableCell className="font-medium">
                 <div className="flex flex-col gap-1">
-                    <span className="text-primary">{provider.name}</span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-primary">{provider.name}</span>
+                        {provider.role === 'admin' && <Badge variant="secondary">Admin</Badge>}
+                    </div>
                     <InteractiveRating provider={provider} onRated={onDataChanged} />
                 </div>
             </TableCell>
@@ -272,7 +289,7 @@ function ProviderRow({ provider, category, onDataChanged, onEditProvider, onHist
                 ) : (provider.phone ? `${provider.countryCode || '+54'} ${provider.phone}`: null)}
             </TableCell>
              <TableCell>
-                <Badge variant={provider.status === 'active' ? 'default' : 'secondary'} className={provider.status === 'active' ? 'bg-green-600' : 'bg-yellow-500'}>
+                <Badge variant={provider.status === 'active' ? 'default' : 'secondary'} className={provider.status === 'active' ? 'bg-green-600' : 'bg-yellow-500 text-black'}>
                     {provider.status === 'active' ? 'Activo' : 'Pendiente'}
                 </Badge>
             </TableCell>
@@ -291,9 +308,12 @@ function ProviderCard({ provider, category, onDataChanged, onEditProvider, onHis
             <CardHeader className="p-4">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-lg text-primary">{provider.name}</CardTitle>
-                     <Badge variant={provider.status === 'active' ? 'default' : 'secondary'} className={provider.status === 'active' ? 'bg-green-600' : 'bg-yellow-500 text-black'}>
-                        {provider.status === 'active' ? 'Activo' : 'Pendiente'}
-                    </Badge>
+                     <div className="flex flex-col items-end gap-2">
+                        {provider.role === 'admin' && <Badge variant="secondary">Admin</Badge>}
+                        <Badge variant={provider.status === 'active' ? 'default' : 'secondary'} className={provider.status === 'active' ? 'bg-green-600' : 'bg-yellow-500 text-black'}>
+                            {provider.status === 'active' ? 'Activo' : 'Pendiente'}
+                        </Badge>
+                    </div>
                 </div>
                  {category && (
                     <CardDescription>{category.name}</CardDescription>
@@ -351,21 +371,61 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
     };
 
     if (providers.length === 0) {
-        return <p className="text-sm text-center text-muted-foreground py-8">No hay proveedores para mostrar con los filtros seleccionados.</p>;
+        return <p className="text-sm text-center text-muted-foreground py-8">No hay colaboradores para mostrar con los filtros seleccionados.</p>;
     }
 
     const categoriesMap = new Map(categories.map(o => [o.id, o]));
     
+    let lastRenderedRole: UserRole | null = null;
+    let lastRenderedStatus: UserStatus | null = null;
+
+    const renderProviderWithSeparator = (provider: Provider, index: number, isCardView: boolean) => {
+        const currentRole = provider.role;
+        const currentStatus = provider.status;
+
+        // Determine if a separator is needed
+        const showAdminSeparator = currentRole === 'admin' && lastRenderedRole !== 'admin';
+        const showActiveSeparator = currentRole === 'provider' && currentStatus === 'active' && (lastRenderedRole !== 'provider' || lastRenderedStatus !== 'active');
+        const showPendingSeparator = currentRole === 'provider' && currentStatus === 'pending' && (lastRenderedRole !== 'provider' || lastRenderedStatus !== 'pending');
+
+        lastRenderedRole = currentRole;
+        lastRenderedStatus = currentStatus;
+
+        const separator = (
+            <>
+                {showAdminSeparator && <ListSeparator>Administradores</ListSeparator>}
+                {showActiveSeparator && <ListSeparator>Colaboradores Activos</ListSeparator>}
+                {showPendingSeparator && <ListSeparator>Colaboradores Pendientes</ListSeparator>}
+            </>
+        );
+
+        const category = provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined;
+        
+        return (
+            <React.Fragment key={provider.id}>
+                {isCardView && separator}
+                {isCardView ? (
+                    <ProviderCard provider={provider} category={category} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
+                ) : (
+                    <>
+                        {showAdminSeparator && <TableRow><TableCell colSpan={6} className="p-0"><ListSeparator>Administradores</ListSeparator></TableCell></TableRow>}
+                        {showActiveSeparator && <TableRow><TableCell colSpan={6} className="p-0"><ListSeparator>Colaboradores Activos</ListSeparator></TableCell></TableRow>}
+                        {showPendingSeparator && <TableRow><TableCell colSpan={6} className="p-0"><ListSeparator>Colaboradores Pendientes</ListSeparator></TableCell></TableRow>}
+                        <ProviderRow provider={provider} category={category} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
+                    </>
+                )}
+            </React.Fragment>
+        );
+    };
+
     const CardView = () => (
-         <div className="space-y-4">
-            {providers.map((provider: Provider) => (
-                <ProviderCard key={provider.id} provider={provider} category={provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
-            ))}
+        <div className="space-y-4">
+            {providers.map((provider, index) => renderProviderWithSeparator(provider, index, true))}
         </div>
     );
 
     const TableView = () => (
-         <Table>
+        <Table>
             <TableHeader>
                 <TableRow>
                     <TableHead>Nombre</TableHead>
@@ -377,9 +437,7 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {providers.map((provider: Provider) => (
-                    <ProviderRow key={provider.id} provider={provider} category={provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
-                ))}
+                {providers.map((provider, index) => renderProviderWithSeparator(provider, index, false))}
             </TableBody>
         </Table>
     );
