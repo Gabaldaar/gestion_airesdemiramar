@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -35,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
-      setAuthError(null); // Reset error on each auth change
+      setAuthError(null);
 
       if (!firebaseUser || !firebaseUser.email) {
         setUser(null);
@@ -52,6 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userProfile) {
           setAppUser(userProfile);
         } else {
+          // If no profile, check if this should be the first admin
           const providersQuery = query(collection(db, 'providers'), limit(1));
           const providersSnapshot = await getDocs(providersQuery);
 
@@ -68,6 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const createdAdmin = await addProviderDb(newAdminProfile);
             setAppUser(createdAdmin);
           } else {
+            // Not the first user, and not found in DB -> unauthorized.
             setAppUser(null);
           }
         }
@@ -82,6 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
+
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
