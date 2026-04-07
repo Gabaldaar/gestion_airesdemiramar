@@ -1428,7 +1428,7 @@ export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]>
     const snapshot = await getDocs(q);
     const pendingLogs = snapshot.docs.map(processDoc) as WorkLog[];
     pendingLogs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return await enrichItems(logs) as WorkLog[];
+    return await enrichItems(pendingLogs) as WorkLog[];
 }
 
 export async function getPendingManualAdjustments(providerId: string): Promise<ManualAdjustment[]> {

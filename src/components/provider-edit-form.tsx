@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateProvider } from '@/lib/actions';
-import { Provider, ProviderCategory, ProviderManagementType, UserStatus } from '@/lib/data';
+import { Provider, ProviderCategory, ProviderManagementType, UserRole, UserStatus } from '@/lib/data';
 import { Loader2, Star } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -122,18 +122,33 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                             <Input id="email-display" type="email" defaultValue={provider.email} readOnly disabled className="bg-muted/50" />
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label>Estado</Label>
-                        <RadioGroup name="status" defaultValue={provider.status || 'pending'} className="flex items-center gap-4">
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="pending" id="r-edit-pending" />
-                                <Label htmlFor="r-edit-pending">Pendiente</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="active" id="r-edit-active" />
-                                <Label htmlFor="r-edit-active">Activo</Label>
-                            </div>
-                        </RadioGroup>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Estado</Label>
+                            <RadioGroup name="status" defaultValue={provider.status || 'pending'} className="flex items-center gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="pending" id="r-edit-pending" />
+                                    <Label htmlFor="r-edit-pending">Pendiente</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="active" id="r-edit-active" />
+                                    <Label htmlFor="r-edit-active">Activo</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Rol</Label>
+                            <RadioGroup name="role" defaultValue={provider.role || 'provider'} className="flex items-center gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="provider" id="r-edit-provider" />
+                                    <Label htmlFor="r-edit-provider">Proveedor</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="admin" id="r-edit-admin" />
+                                    <Label htmlFor="r-edit-admin">Administrador</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
                     </div>
 
                     <div className="border-t pt-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">

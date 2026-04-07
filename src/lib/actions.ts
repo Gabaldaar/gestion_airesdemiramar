@@ -92,7 +92,8 @@ import {
   WorkLog,
   ManualAdjustment,
   Liquidation,
-  UserStatus
+  UserStatus,
+  UserRole,
 } from './data';
 import { db } from './firebase';
 import { collection, doc, getDoc, getDocs, query, where, writeBatch, setDoc, addDoc, Timestamp, documentId } from 'firebase/firestore';
@@ -1441,7 +1442,7 @@ export async function addProvider(previousState: any, formData: FormData) {
     rateCurrency: (formData.get('rateCurrency') as 'ARS' | 'USD') || null,
     hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null,
     perVisitRate: formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null,
-    role: 'provider',
+    role: (formData.get('role') as UserRole) || 'provider',
     status: (formData.get('status') as UserStatus) || 'pending',
   };
   
@@ -1485,7 +1486,7 @@ export async function updateProvider(previousState: any, formData: FormData) {
     rateCurrency: (formData.get('rateCurrency') as 'ARS' | 'USD') || null,
     hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null,
     perVisitRate: formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null,
-    role: 'provider',
+    role: (formData.get('role') as UserRole) || 'provider',
     status: (formData.get('status') as UserStatus) || 'pending',
   };
   
@@ -1508,6 +1509,16 @@ export async function deleteProvider(previousState: any, formData: FormData) {
   if (!id) {
     return { success: false, message: 'ID de proveedor no válido.' };
   }
+
+  const providerToDelete = await getProviderById(id);
+  if (providerToDelete?.role === 'admin') {
+      const q = query(collection(db, 'providers'), where('role', '==', 'admin'));
+      const adminSnapshot = await getDocs(q);
+      if (adminSnapshot.size <= 1) {
+          return { success: false, message: 'No se puede eliminar al único administrador.' };
+      }
+  }
+
   try {
     await deleteProviderDb(id);
     revalidatePath('/providers');

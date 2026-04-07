@@ -20,7 +20,7 @@ import { addProvider } from '@/lib/actions';
 import { PlusCircle, Loader2, Star } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { ProviderCategory, ProviderManagementType, UserStatus } from '@/lib/data';
+import { ProviderCategory, ProviderManagementType, UserRole, UserStatus } from '@/lib/data';
 import { countries } from '@/lib/countries';
 import { cn } from '@/lib/utils';
 import { useToast } from './ui/use-toast';
@@ -115,18 +115,33 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
                         <Input id="email" name="email" type="email" required />
                     </div>
                 </div>
-                 <div className="space-y-2">
-                    <Label>Estado Inicial</Label>
-                    <RadioGroup name="status" defaultValue="pending" className="flex items-center gap-4">
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="pending" id="r-add-pending" />
-                            <Label htmlFor="r-add-pending">Pendiente</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="active" id="r-add-active" />
-                            <Label htmlFor="r-add-active">Activo</Label>
-                        </div>
-                    </RadioGroup>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Estado Inicial</Label>
+                        <RadioGroup name="status" defaultValue="pending" className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="pending" id="r-add-pending" />
+                                <Label htmlFor="r-add-pending">Pendiente</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="active" id="r-add-active" />
+                                <Label htmlFor="r-add-active">Activo</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Rol</Label>
+                        <RadioGroup name="role" defaultValue="provider" className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="provider" id="r-add-provider" />
+                                <Label htmlFor="r-add-provider">Proveedor</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="admin" id="r-add-admin" />
+                                <Label htmlFor="r-add-admin">Administrador</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
                 </div>
                 <div className="border-t pt-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                      <div className="space-y-2">

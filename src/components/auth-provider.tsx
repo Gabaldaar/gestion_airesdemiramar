@@ -2,9 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { getProviderByEmail, updateProviderDb, Provider } from '@/lib/data';
+import { auth, db } from '@/lib/firebase';
+import { getProviderByEmail, updateProviderDb, Provider, addProviderDb } from '@/lib/data';
 import { useRouter } from 'next/navigation';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
 export type AppUser = Provider;
 
@@ -33,38 +34,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // User is logged in, find their profile.
         setUser(firebaseUser);
         let userProfile: AppUser | null = null;
+        
         try {
           if (!firebaseUser.email) {
             throw new Error("El email del usuario de Google no está disponible.");
           }
-          // Check if the user is a registered provider
-          const providerProfile = await getProviderByEmail(firebaseUser.email);
-          if (providerProfile) {
-            userProfile = { ...providerProfile, role: 'provider' };
-            // Link Firebase UID on first active login if not already present
-            if (providerProfile.status === 'active' && !providerProfile.userId) {
-              await updateProviderDb({ ...providerProfile, userId: firebaseUser.uid });
+
+          // 1. Check if any admin exists at all
+          const adminQuery = query(collection(db, 'providers'), where('role', '==', 'admin'));
+          const adminSnapshot = await getDocs(adminQuery);
+
+          if (adminSnapshot.empty) {
+            // First user ever! Make them the admin.
+            console.log("No admins found. Promoting first user to admin.");
+            const newAdminProfile: Omit<Provider, 'id'> = {
+              name: firebaseUser.displayName || 'Admin',
+              email: firebaseUser.email,
+              role: 'admin',
+              status: 'active',
+              managementType: 'tasks',
+              userId: firebaseUser.uid,
+            };
+            const createdAdmin = await addProviderDb(newAdminProfile);
+            userProfile = createdAdmin;
+
+          } else {
+            // Admins exist, proceed with normal lookup
+            const providerProfile = await getProviderByEmail(firebaseUser.email);
+            if (providerProfile) {
+              userProfile = providerProfile;
+              // Link Firebase UID on first active login if not already present
+              if (providerProfile.status === 'active' && !providerProfile.userId) {
+                await updateProviderDb({ ...providerProfile, userId: firebaseUser.uid });
+              }
+            } else {
+              // User is not in the providers list, so they are not authorized.
+              userProfile = null;
             }
           }
         } catch (error) {
-          console.error("Error al buscar el perfil de proveedor. Se asumirá rol de admin. Error:", error);
+          console.error("Error during auth state change processing:", error);
+          userProfile = null; // Default to not authorized on error
         }
-
-        // If after all checks, userProfile is still null, it means the user is not a provider.
-        // In this app, that means they are the ADMIN. This is the failsafe.
-        if (!userProfile) {
-          userProfile = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'Admin',
-            email: firebaseUser.email || "",
-            role: 'admin',
-            status: 'active',
-            managementType: 'tasks'
-          };
-        }
+        
         setAppUser(userProfile);
 
       } else {
@@ -73,7 +87,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAppUser(null);
       }
       
-      // Crucially, set loading to false after all async operations are done.
       setLoading(false);
     });
 
