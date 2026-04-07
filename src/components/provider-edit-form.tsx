@@ -108,9 +108,7 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
           <form action={formAction}>
               <input type="hidden" name="id" value={provider.id} />
               <input type="hidden" name="rating" value={rating} />
-              {/* Pass email as a hidden field to preserve it, as it's read-only */}
-              <input type="hidden" name="email" value={provider.email} />
-
+              
               <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -118,8 +116,8 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                             <Input id="name" name="name" defaultValue={provider.name} required />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="email-display">Email (Identificador)</Label>
-                            <Input id="email-display" type="email" defaultValue={provider.email} readOnly disabled className="bg-muted/50" />
+                            <Label htmlFor="email">Email (de Google)</Label>
+                            <Input id="email" name="email" type="email" defaultValue={provider.email} required />
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -260,6 +258,7 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                     </div>
               </div>
               <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                   <SubmitButton />
               </DialogFooter>
           </form>

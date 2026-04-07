@@ -1409,19 +1409,16 @@ export async function deleteTask(previousState: any, formData: FormData) {
     }
 
     try {
-        const taskDoc = await getDoc(doc(db, 'tasks', id));
-        const task = taskDoc.data() as Task;
         await deleteTaskDb(id);
-        const propertyId = task.assignment?.type === 'property' ? task.assignment.id : null;
-        revalidatePathsAfterAction(propertyId);
-        return { success: true, message: 'Tarea eliminada.' };
+        revalidatePathsAfterAction();
+        return { success: true, message: 'Tarea y gastos asociados eliminados.' };
     } catch (error: any) {
         return { success: false, message: `Error de base de datos: ${error.message}` };
-  }
+    }
 }
 
 
-// --- Provider Actions ---
+// --- PROVIDER ACTIONS ---
 
 export async function addProvider(previousState: any, formData: FormData) {
   const ratingStr = formData.get('rating') as string;
@@ -1454,7 +1451,7 @@ export async function addProvider(previousState: any, formData: FormData) {
     // Check if email is already in use
     const existingProvider = await getProviderByEmail(newProvider.email);
     if (existingProvider) {
-        return { success: false, message: 'Este email ya está registrado para otro colaborador.' };
+        return { success: false, message: 'Este email ya está en uso por otro colaborador.' };
     }
 
     await addProviderDb(newProvider);
@@ -1466,40 +1463,69 @@ export async function addProvider(previousState: any, formData: FormData) {
 }
 
 export async function updateProvider(previousState: any, formData: FormData) {
-  const ratingStr = formData.get('rating') as string;
-  const rating = ratingStr ? parseInt(ratingStr, 10) : 0;
-  const categoryIdValue = formData.get('categoryId') as string;
   const providerId = formData.get('id') as string;
+  if (!providerId) {
+    return { success: false, message: 'ID de colaborador no proporcionado.' };
+  }
   
-  const updatedProvider: Omit<Provider, 'userId'> = {
-    id: providerId,
-    name: formData.get('name') as string,
-    categoryId: categoryIdValue === 'none' ? null : categoryIdValue,
-    email: formData.get('email') as string,
-    phone: formData.get('phone') as string,
-    countryCode: formData.get('countryCode') as string,
-    address: formData.get('address') as string,
-    notes: formData.get('notes') as string,
-    rating: !isNaN(rating) ? rating : 0,
-    managementType: (formData.get('managementType') as ProviderManagementType) || 'tasks',
-    billingType: (formData.get('billingType') as ProviderBillingType) || null,
-    rateCurrency: (formData.get('rateCurrency') as 'ARS' | 'USD') || null,
-    hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null,
-    perVisitRate: formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null,
-    role: (formData.get('role') as UserRole) || 'provider',
-    status: (formData.get('status') as UserStatus) || 'pending',
-  };
-  
-   if (!updatedProvider.email) {
+  const newEmail = formData.get('email') as string;
+  if (!newEmail) {
       return { success: false, message: 'El email es un campo obligatorio.' };
   }
 
   try {
-    await updateProviderDb(updatedProvider);
+    // 1. Get original provider
+    const originalProvider = await getProviderById(providerId);
+    if (!originalProvider) {
+        return { success: false, message: 'No se encontró el colaborador a actualizar.' };
+    }
+
+    // 2. Check if email is being changed
+    const emailChanged = newEmail.toLowerCase() !== originalProvider.email.toLowerCase();
+
+    // Data for update, will be modified if email changes
+    const dataToUpdate: Partial<Omit<Provider, 'id'>> = {};
+
+    if (emailChanged) {
+        // 2a. Check for email conflict
+        const existingProvider = await getProviderByEmail(newEmail);
+        if (existingProvider && existingProvider.id !== providerId) {
+            return { success: false, message: 'El nuevo email ya está en uso por otro colaborador.' };
+        }
+        // 2c. Reset userId to force re-linking on next login
+        dataToUpdate.userId = null;
+    }
+
+    // 3. Construct the rest of the update object
+    const ratingStr = formData.get('rating') as string;
+    const rating = ratingStr ? parseInt(ratingStr, 10) : 0;
+    const categoryIdValue = formData.get('categoryId') as string;
+
+    dataToUpdate.name = formData.get('name') as string;
+    dataToUpdate.email = newEmail;
+    dataToUpdate.categoryId = categoryIdValue === 'none' ? null : categoryIdValue;
+    dataToUpdate.phone = formData.get('phone') as string;
+    dataToUpdate.countryCode = formData.get('countryCode') as string;
+    dataToUpdate.address = formData.get('address') as string;
+    dataToUpdate.notes = formData.get('notes') as string;
+    dataToUpdate.rating = !isNaN(rating) ? rating : 0;
+    dataToUpdate.managementType = (formData.get('managementType') as ProviderManagementType) || 'tasks';
+    dataToUpdate.billingType = (formData.get('billingType') as ProviderBillingType) || null;
+    dataToUpdate.rateCurrency = (formData.get('rateCurrency') as 'ARS' | 'USD') || null;
+    dataToUpdate.hourlyRate = formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null;
+    dataToUpdate.perVisitRate = formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null;
+    dataToUpdate.role = (formData.get('role') as UserRole) || 'provider';
+    dataToUpdate.status = (formData.get('status') as UserStatus) || 'pending';
+
+    // 4. Perform the update
+    await updateProviderPartial(providerId, dataToUpdate);
+
     revalidatePath('/providers');
     revalidatePath('/tasks');
     return { success: true, message: 'Colaborador actualizado correctamente.' };
+
   } catch (error: any) {
+    console.error("Error updating provider:", error);
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
