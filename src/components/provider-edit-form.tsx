@@ -118,7 +118,7 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                             <Input id="name" name="name" defaultValue={provider.name} required />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="email-display">Email (de Google)</Label>
+                            <Label htmlFor="email-display">Email (Identificador)</Label>
                             <Input id="email-display" type="email" defaultValue={provider.email} readOnly disabled className="bg-muted/50" />
                         </div>
                     </div>
