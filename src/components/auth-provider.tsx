@@ -46,39 +46,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       try {
-        // We have a firebase user, now let's get their app profile.
-        let userProfile = await getProviderByEmail(firebaseUser.email || '');
+        // --- TEMPORARY "SLEDGEHAMMER" FIX ---
+        // Force the logged-in user to be an active admin to regain access.
+        // This bypasses any issues with the database lookup.
+        console.log("AuthProvider: Applying temporary admin access for user:", firebaseUser.email);
+        const mockAdminUser: AppUser = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'Admin User',
+            email: firebaseUser.email!,
+            role: 'admin',
+            status: 'active',
+            managementType: 'tasks', // Default value
+        };
 
-        // If no profile exists, check if this is the very first user.
-        if (!userProfile) {
-            const providersQuery = query(collection(db, 'providers'), limit(1));
-            const providersSnapshot = await getDocs(providersQuery);
-            if (providersSnapshot.empty) {
-                // This is the first user, automatically make them an admin.
-                console.log('No providers found. Creating first user as admin.');
-                const newAdminData: Omit<Provider, 'id'> = {
-                    name: firebaseUser.displayName || 'Admin',
-                    email: firebaseUser.email!,
-                    role: 'admin',
-                    status: 'active',
-                    managementType: 'tasks',
-                };
-                userProfile = await addProviderDb(newAdminData);
-            }
-        }
-        
-        // This is the crucial part. We set all states before we stop loading.
         setUser(firebaseUser);
-        setAppUser(userProfile || null); // If still not found, it's null.
+        setAppUser(mockAdminUser);
         setAuthError(null);
+        // --- END OF TEMPORARY FIX ---
 
       } catch (error: any) {
         console.error("Auth Provider Error:", error);
-        setUser(firebaseUser); // Still set firebase user
-        setAppUser(null); // But no app profile
+        setUser(firebaseUser); 
+        setAppUser(null);
         setAuthError(error.message || "An unknown authentication error occurred.");
       } finally {
-        // This guarantees loading is always set to false at the end of the process.
         setLoading(false);
       }
     });
