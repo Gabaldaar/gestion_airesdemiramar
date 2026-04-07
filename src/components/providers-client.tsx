@@ -1,14 +1,14 @@
-
-
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Provider, ProviderCategory, UserStatus, UserRole } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import ProvidersList from './providers-list';
 import { ProviderEditForm } from './provider-edit-form';
+import { Mail } from 'lucide-react';
+import { useToast } from './ui/use-toast';
 
 type RatingFilter = 'all' | 'none' | '1' | '2' | '3' | '4' | '5';
 type StatusFilter = 'all' | UserStatus;
@@ -28,6 +28,12 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
   
   const [editingProvider, setEditingProvider] = useState<Provider | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    // This effect can be used if we need to react to external changes to initialProviders
+    // For now, it's fine as is.
+  }, [initialProviders]);
 
   const handleEditProvider = (provider: Provider) => {
     setEditingProvider(provider);
@@ -57,21 +63,23 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
         currentProviders = currentProviders.filter(provider => provider.status === statusFilter);
     }
     
-    const roleOrder: Record<UserRole, number> = { admin: 0, provider: 1 };
-    const statusOrder: Record<UserStatus, number> = { active: 0, pending: 1 };
+    // Scoring function for robust sorting
+    const getSortScore = (provider: Provider): number => {
+        if (provider.role === 'admin') return 1;
+        if (provider.status === 'active') return 2;
+        if (provider.status === 'pending') return 3;
+        return 4; // Failsafe
+    };
 
     currentProviders.sort((a, b) => {
-        // Sort by role first
-        if (roleOrder[a.role] !== roleOrder[b.role]) {
-            return roleOrder[a.role] - roleOrder[b.role];
+        const scoreA = getSortScore(a);
+        const scoreB = getSortScore(b);
+
+        if (scoreA !== scoreB) {
+            return scoreA - scoreB;
         }
-        // If roles are the same (must be 'provider'), sort by status
-        if (a.role === 'provider' && b.role === 'provider') {
-            if (statusOrder[a.status] !== statusOrder[b.status]) {
-                return statusOrder[a.status] - statusOrder[b.status];
-            }
-        }
-        // Finally, sort by name alphabetically
+
+        // If scores are the same, sort by name
         return a.name.localeCompare(b.name);
     });
 
@@ -91,6 +99,29 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
     setStatusFilter('all');
   };
   
+  const handleEmailAll = () => {
+    const recipients = filteredProviders
+      .map(tenant => tenant.email)
+      .filter((email): email is string => !!email);
+    
+    const uniqueRecipients = [...new Set(recipients)];
+
+    if (uniqueRecipients.length > 0) {
+        let mailtoLink = `mailto:?bcc=${uniqueRecipients.join(',')}`;
+        const params = [];
+        params.push(`subject=${encodeURIComponent("Novedades Aires de Miramar")}`);
+        
+        mailtoLink += `&${params.join('&')}`;
+        window.location.href = mailtoLink;
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No hay colaboradores con email en la selección actual.",
+        });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/50 sm:flex-row sm:items-end flex-wrap">
@@ -140,6 +171,10 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
         </div>
         <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
+            <Button onClick={handleEmailAll}>
+                <Mail className="mr-2 h-4 w-4"/>
+                Email a Todos
+            </Button>
         </div>
       </div>
       <ProvidersList 
@@ -160,4 +195,3 @@ export default function ProvidersClient({ initialProviders, categories, onFilter
     </div>
   );
 }
-

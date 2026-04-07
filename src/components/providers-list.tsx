@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -375,47 +373,73 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
 
     const categoriesMap = new Map(categories.map(o => [o.id, o]));
     
-    let lastRenderedRole: UserRole | null = null;
-    let lastRenderedStatus: UserStatus | null = null;
-
-    const renderProviderWithSeparator = (provider: Provider, isCardView: boolean) => {
-        const currentRole = provider.role;
-        const currentStatus = provider.status;
-
-        let separator = null;
-        if (currentRole === 'admin' && lastRenderedRole !== 'admin') {
-            separator = <ListSeparator>Administradores</ListSeparator>;
-        } else if (currentRole === 'provider' && currentStatus === 'active' && (lastRenderedRole !== 'provider' || lastRenderedStatus !== 'active')) {
-            separator = <ListSeparator>Colaboradores Activos</ListSeparator>;
-        } else if (currentRole === 'provider' && currentStatus === 'pending' && (lastRenderedRole !== 'provider' || lastRenderedStatus !== 'pending')) {
-            separator = <ListSeparator>Colaboradores Pendientes</ListSeparator>;
+    // Group providers by their role and status
+    const groupedProviders = providers.reduce((acc, provider) => {
+        let group: string;
+        if (provider.role === 'admin') {
+            group = 'admins';
+        } else if (provider.status === 'active') {
+            group = 'active';
+        } else {
+            group = 'pending';
         }
+        if (!acc[group]) {
+            acc[group] = [];
+        }
+        acc[group].push(provider);
+        return acc;
+    }, {} as { [key: string]: Provider[] });
 
-        lastRenderedRole = currentRole;
-        lastRenderedStatus = currentStatus;
+    const groupOrder = ['admins', 'active', 'pending'];
+    const groupTitles: { [key: string]: string } = {
+        admins: 'Administradores',
+        active: 'Colaboradores',
+        pending: 'Colaboradores Pendientes',
+    };
 
-        const category = provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined;
-        
+    const renderGroup = (groupKey: string, isCardView: boolean) => {
+        const group = groupedProviders[groupKey];
+        if (!group || group.length === 0) return null;
+
         return (
-            <React.Fragment key={provider.id}>
-                {isCardView && separator}
-                {!isCardView && separator && (
+            <React.Fragment key={groupKey}>
+                {isCardView ? (
+                    <ListSeparator>{groupTitles[groupKey]}</ListSeparator>
+                ) : (
                     <TableRow>
-                        <TableCell colSpan={6} className="p-0 h-auto">{separator}</TableCell>
+                        <TableCell colSpan={6} className="p-0 h-auto">
+                            <ListSeparator>{groupTitles[groupKey]}</ListSeparator>
+                        </TableCell>
                     </TableRow>
                 )}
-                {isCardView ? (
-                    <ProviderCard provider={provider} category={category} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
-                ) : (
-                    <ProviderRow provider={provider} category={category} onDataChanged={onDataChanged} onEditProvider={onEditProvider} onHistoryClick={handleHistoryClick} />
-                )}
+                {group.map((provider) => (
+                    isCardView ? (
+                        <ProviderCard
+                            key={provider.id}
+                            provider={provider}
+                            category={provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined}
+                            onDataChanged={onDataChanged}
+                            onEditProvider={onEditProvider}
+                            onHistoryClick={handleHistoryClick}
+                        />
+                    ) : (
+                        <ProviderRow
+                            key={provider.id}
+                            provider={provider}
+                            category={provider.categoryId ? categoriesMap.get(provider.categoryId) : undefined}
+                            onDataChanged={onDataChanged}
+                            onEditProvider={onEditProvider}
+                            onHistoryClick={handleHistoryClick}
+                        />
+                    )
+                ))}
             </React.Fragment>
         );
     };
 
     const CardView = () => (
         <div className="space-y-4">
-            {providers.map((provider) => renderProviderWithSeparator(provider, true))}
+            {groupOrder.map(key => renderGroup(key, true))}
         </div>
     );
 
@@ -432,7 +456,7 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {providers.map((provider) => renderProviderWithSeparator(provider, false))}
+                {groupOrder.map(key => renderGroup(key, false))}
             </TableBody>
         </Table>
     );
