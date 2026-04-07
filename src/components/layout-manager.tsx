@@ -116,14 +116,10 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
     );
   }
 
-  // Determine what to render based on the current state.
-  // This logic is simplified to prevent flickering. We trust the useEffect to handle redirects.
-  
   const isAuthPage = !pathname.startsWith('/login') && !pathname.startsWith('/contract');
   const needsAuthData = isAuthPage && (!user || !appUser);
 
   if(needsAuthData && pathname !== '/unauthorized' && pathname !== '/pending-activation') {
-      // While the redirect is happening, show a loader.
       return (
           <div className="flex h-screen items-center justify-center bg-muted/40">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -131,13 +127,10 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
           </div>
       );
   }
-
-  // Render children, allowing the page to render while redirects occur.
-  // The MainLayout vs. simple children logic is handled inside the page route components.
+  
   if (appUser?.role === 'admin' && !pathname.startsWith('/colaborador')) {
       return <MainLayout>{children}</MainLayout>;
   }
 
-  // For /login, /unauthorized, /pending-activation, /colaborador/*
   return <>{children}</>;
 }
