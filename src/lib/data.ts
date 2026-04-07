@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from './firebase';
@@ -797,6 +798,193 @@ export async function getAllExpensesUnified(): Promise<ExpenseWithDetails[]> {
     return await enrichExpenses(allExpenses);
 }
 
+// --- REPORTING SUMMARY FUNCTIONS ---
+export async function getTenantsByOriginSummary(): Promise<TenantsByOriginSummary[]> {
+    const [tenants, origins] = await Promise.all([getTenants(), getOrigins()]);
+    const originsMap = new Map(origins.map(o => [o.id, { name: o.name, color: o.color }]));
+    const nullOrigin = { name: 'Sin Origen', color: '#808080' };
+    
+    const counts: { [key: string]: { count: number, fill: string } } = {};
+
+    tenants.forEach(tenant => {
+        const originInfo = tenant.originId ? originsMap.get(tenant.originId) : nullOrigin;
+        const key = originInfo?.name || 'Desconocido';
+        const color = originInfo?.color || '#cccccc';
+        
+        if (!counts[key]) {
+            counts[key] = { count: 0, fill: color };
+        }
+        counts[key].count++;
+    });
+
+    const totalTenants = tenants.length;
+    if (totalTenants === 0) return [];
+
+    return Object.entries(counts).map(([name, data]) => ({
+        name,
+        count: data.count,
+        percentage: (data.count / totalTenants) * 100,
+        fill: data.fill,
+    })).sort((a, b) => b.count - a.count);
+}
+
+export async function getExpensesByCategorySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByCategorySummary[]> {
+    const allExpenses = await getAllExpensesUnified();
+    
+    const startDate = options?.startDate;
+    const endDate = options?.endDate;
+    const fromDate = startDate ? new Date(startDate.replace(/-/g, '/')) : null;
+    if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
+    const toDate = endDate ? new Date(endDate.replace(/-/g, '/')) : null;
+    if (toDate) toDate.setUTCHours(23, 59, 59, 999);
+
+    const isWithinDateRange = (dateStr: string) => {
+        if (!dateStr || (!fromDate && !toDate)) return true;
+        const itemDate = new Date(dateStr.replace(/-/g, '/'));
+        if (fromDate && itemDate < fromDate) return false;
+        if (toDate && itemDate > toDate) return false;
+        return true;
+    };
+    
+    const filteredExpenses = allExpenses.filter(e => isWithinDateRange(e.date));
+
+    const totals: { [key: string]: number } = {};
+    filteredExpenses.forEach(expense => {
+        const categoryName = expense.categoryName || 'Sin Categoría';
+        const amountUSD = expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0);
+        totals[categoryName] = (totals[categoryName] || 0) + amountUSD;
+    });
+
+    const totalExpenses = Object.values(totals).reduce((sum, amount) => sum + amount, 0);
+    if (totalExpenses === 0) return [];
+    
+    const stringToColor = (str: string) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        let color = '#';
+        for (let i = 0; i < 3; i++) {
+            const value = (hash >> (i * 8)) & 0xFF;
+            color += ('00' + value.toString(16)).substr(-2);
+        }
+        return color;
+    }
+
+    return Object.entries(totals).map(([name, totalAmountUSD]) => ({
+        name,
+        totalAmountUSD,
+        percentage: (totalAmountUSD / totalExpenses) * 100,
+        fill: stringToColor(name),
+    })).sort((a,b) => b.totalAmountUSD - a.totalAmountUSD);
+}
+
+export async function getExpensesByPropertySummary(options?: { startDate?: string; endDate?: string }): Promise<ExpensesByPropertySummary[]> {
+    const allExpenses = await getAllExpensesUnified();
+
+    const startDate = options?.startDate;
+    const endDate = options?.endDate;
+    const fromDate = startDate ? new Date(startDate.replace(/-/g, '/')) : null;
+    if (fromDate) fromDate.setUTCHours(0, 0, 0, 0);
+    const toDate = endDate ? new Date(endDate.replace(/-/g, '/')) : null;
+    if (toDate) toDate.setUTCHours(23, 59, 59, 999);
+
+    const isWithinDateRange = (dateStr: string) => {
+        if (!dateStr || (!fromDate && !toDate)) return true;
+        const itemDate = new Date(dateStr.replace(/-/g, '/'));
+        if (fromDate && itemDate < fromDate) return false;
+        if (toDate && itemDate > toDate) return false;
+        return true;
+    };
+    
+    const filteredExpenses = allExpenses.filter(e => isWithinDateRange(e.date) && e.assignment.type === 'property');
+
+    const totals: { [key: string]: number } = {};
+    filteredExpenses.forEach(expense => {
+        const propertyName = expense.assignmentName || 'Desconocido';
+        const amountUSD = expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0);
+        totals[propertyName] = (totals[propertyName] || 0) + amountUSD;
+    });
+
+    const totalExpenses = Object.values(totals).reduce((sum, amount) => sum + amount, 0);
+    if (totalExpenses === 0) return [];
+    
+    const stringToColor = (str: string) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        let color = '#';
+        for (let i = 0; i < 3; i++) {
+            const value = (hash >> (i * 8)) & 0xFF;
+            color += ('00' + value.toString(16)).substr(-2);
+        }
+        return color;
+    }
+
+    return Object.entries(totals).map(([name, totalAmountUSD]) => ({
+        name,
+        totalAmountUSD,
+        percentage: (totalAmountUSD / totalExpenses) * 100,
+        fill: stringToColor(name),
+    })).sort((a,b) => b.totalAmountUSD - a.totalAmountUSD);
+}
+
+export async function getBookingsByOriginSummary(): Promise<BookingsByOriginSummary[]> {
+    const [bookings, origins] = await Promise.all([
+        getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]),
+        getOrigins()
+    ]);
+    const activeBookings = bookings.filter(b => (!b.status || b.status === 'active'));
+    
+    const originsMap = new Map(origins.map(o => [o.id, { name: o.name, color: o.color }]));
+    const nullOrigin = { name: 'Sin Origen', color: '#808080' };
+
+    const counts: { [key: string]: { count: number, fill: string } } = {};
+
+    activeBookings.forEach(booking => {
+        const originInfo = booking.originId ? originsMap.get(booking.originId) : nullOrigin;
+        const key = originInfo?.name || 'Desconocido';
+        const color = originInfo?.color || '#cccccc';
+        
+        if (!counts[key]) {
+            counts[key] = { count: 0, fill: color };
+        }
+        counts[key].count++;
+    });
+
+    const totalBookings = activeBookings.length;
+    if (totalBookings === 0) return [];
+
+    return Object.entries(counts).map(([name, data]) => ({
+        name,
+        count: data.count,
+        percentage: (data.count / totalBookings) * 100,
+        fill: data.fill,
+    })).sort((a, b) => b.count - a.count);
+}
+
+export async function getBookingStatusSummary(): Promise<BookingStatusSummary[]> {
+    const bookings = await getDocs(bookingsCollection).then(snap => snap.docs.map(processDoc) as Booking[]);
+
+    const counts = {
+        active: 0,
+        cancelled: 0,
+        pending: 0,
+    };
+    
+    bookings.forEach(booking => {
+        const status = booking.status || 'active'; // Default old bookings to 'active'
+        counts[status]++;
+    });
+
+    return [
+        { name: 'Activas', count: counts.active, fill: '#22c55e' },
+        { name: 'Canceladas', count: counts.cancelled, fill: '#ef4444' },
+        { name: 'En Espera', count: counts.pending, fill: '#f59e0b' },
+    ];
+}
+
 
 // --- FINANCIAL SUMMARY ---
 
@@ -831,7 +1019,7 @@ export async function getFinancialSummaryByProperty(options?: { startDate?: stri
         return isWithinDateRange(b.startDate); // Fallback to booking start date if no payment
     });
 
-    const activeBookings = bookingsWithPaymentDate.filter(b => b.status === 'active');
+    const activeBookings = bookingsWithPaymentDate.filter(b => b.status === 'active' || !b.status);
     
     const summaryByProperty: { [key: string]: FinancialSummary } = {};
     const summaryByPropertyArs: { [key: string]: FinancialSummary } = {};
