@@ -1515,10 +1515,6 @@ export async function getProviderById(id: string): Promise<Provider | undefined>
 export async function getProviderByEmail(email: string): Promise<Provider | undefined> {
   if (!email) return undefined;
 
-  // Firestore queries are case-sensitive. To ensure a case-insensitive match,
-  // we fetch all providers and filter in the application. This is acceptable
-  // for a reasonable number of providers. For very large-scale apps,
-  // storing a normalized, lowercase version of the email would be better.
   const snapshot = await getDocs(providersCollection);
   if (snapshot.empty) {
     return undefined;
