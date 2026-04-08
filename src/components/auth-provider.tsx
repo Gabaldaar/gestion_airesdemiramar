@@ -36,11 +36,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
+      setAuthError(null); // Reset error on each auth state change
       
       if (!firebaseUser) {
         setUser(null);
         setAppUser(null);
-        setAuthError(null);
         setLoading(false);
         return;
       }
@@ -52,7 +52,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // User exists in our DB
             setUser(firebaseUser);
             setAppUser(existingProvider);
-            setAuthError(null);
         } else {
             // User does not exist in our DB, check if it's the very first user
             const providersQuery = query(collection(db, 'providers'), limit(1));
@@ -60,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             if (providersSnapshot.empty) {
                 // This is the first user, create them as an admin
+                console.log("No providers found, creating first user as admin.");
                 const newAdmin: Omit<Provider, 'id'> = {
                     name: firebaseUser.displayName || 'Admin',
                     email: firebaseUser.email!,
@@ -70,19 +70,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const createdAdmin = await addProviderDb(newAdmin);
                 setUser(firebaseUser);
                 setAppUser(createdAdmin);
-                setAuthError(null);
             } else {
                 // Other users exist, but this one is not registered
-                setUser(firebaseUser);
-                setAppUser(null);
+                console.log(`User ${firebaseUser.email} not found in DB.`);
+                setUser(firebaseUser); // Keep firebase user but...
+                setAppUser(null);      // ...clear app user
                 setAuthError("Tu cuenta de Google no está registrada para acceder a esta aplicación.");
             }
         }
       } catch (error: any) {
         console.error("Auth Provider Error:", error);
-        setUser(firebaseUser); // Keep firebase user but...
-        setAppUser(null);      // ...clear app user
-        setAuthError(error.message || "An unknown authentication error occurred.");
+        setUser(firebaseUser);
+        setAppUser(null);
+        setAuthError(error.message || "Ocurrió un error desconocido durante la autenticación.");
       } finally {
         setLoading(false);
       }
@@ -94,13 +94,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    // This forces the account selection dialog to always appear.
+    // It's crucial for solving the issue where the popup closes automatically.
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
     setLoading(true);
     try {
       await signInWithPopup(auth, provider);
       // onAuthStateChanged will handle the rest
     } catch (error) {
       console.error("Error signing in with Google: ", error);
-      setAuthError((error as Error).message || "Failed to sign in.");
+      setAuthError((error as Error).message || "Falló el inicio de sesión.");
       setLoading(false);
       throw error;
     }
