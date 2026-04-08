@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateLiquidation } from '@/lib/actions';
 import { useToast } from './ui/use-toast';
-import { parseDateSafely } from '@/lib/utils';
+import { parseDateSafely, cn } from '@/lib/utils';
 import { WorkLogEditForm } from './worklog-edit-form';
 import { ManualAdjustmentEditForm } from './manual-adjustment-edit-form';
 import { WorkLogDeleteForm } from './worklog-delete-form';
@@ -24,15 +24,12 @@ import { LiquidationsHistoryList } from './liquidations-history-list';
 import useWindowSize from '@/hooks/use-window-size';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 
 const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     const date = parseDateSafely(dateString);
     if (!date) return 'Fecha Inválida';
-    // The date from firestore is already a string like '2024-07-26', which new Date() parses as UTC.
-    // To avoid timezone issues when formatting, we need to treat it as a local date.
-    return format(new Date(dateString.replace(/-/g, '/')), "dd-LLL-yy", { locale: es });
+    return format(date, "dd-LLL-yy", { locale: es });
 };
 
 const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {

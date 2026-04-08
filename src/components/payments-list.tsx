@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PaymentEditForm } from "./payment-edit-form";
 import { PaymentDeleteForm } from "./payment-delete-form";
+import { parseDateSafely } from '@/lib/utils';
 
 interface PaymentsListProps {
   payments: PaymentWithDetails[];
@@ -42,7 +43,9 @@ const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
 };
 
 const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
+    const date = parseDateSafely(dateString);
+    if (!date) return 'Fecha inválida';
+    return format(date, "dd 'de' LLL, yyyy", { locale: es });
 };
 
 function PaymentActions({ payment }: { payment: PaymentWithDetails }) {

@@ -23,12 +23,7 @@ export default function DashboardCurrentBookings({ bookings }: { bookings: Booki
   const formatDate = (dateString: string) => {
     const date = parseDateSafely(dateString);
     if (!date) return 'Fecha inv.';
-
-    const year = date.getUTCFullYear();
-    const month = date.getUTCMonth();
-    const day = date.getUTCDate();
-    const localDate = new Date(year, month, day);
-    return format(localDate, "dd 'de' LLL, yyyy", { locale: es });
+    return format(date, "dd 'de' LLL, yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {

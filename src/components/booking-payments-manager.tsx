@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, ReactNode, useMemo } from 'react';
@@ -29,7 +30,7 @@ import { PaymentDeleteForm } from './payment-delete-form';
 import { useToast } from '@/components/ui/use-toast';
 import { EmailSender } from './email-sender';
 import { BookingWithDetails } from '@/lib/data';
-import { cn } from '@/lib/utils';
+import { cn, parseDateSafely } from '@/lib/utils';
 
 interface BookingPaymentsManagerProps {
     bookingId: string;
@@ -109,7 +110,9 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
   }
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
+    const date = parseDateSafely(dateString);
+    if (!date) return "Fecha Inválida";
+    return format(date, "dd 'de' LLL, yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {

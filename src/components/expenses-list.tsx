@@ -21,7 +21,7 @@ import { ExpenseDeleteForm } from "./expense-delete-form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Wrench } from 'lucide-react';
 import useWindowSize from '@/hooks/use-window-size';
-
+import { parseDateSafely } from '@/lib/utils';
 
 interface ExpensesListProps {
   expenses: ExpenseWithDetails[];
@@ -31,7 +31,9 @@ interface ExpensesListProps {
 }
 
 const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd 'de' LLL, yyyy", { locale: es });
+    const date = parseDateSafely(dateString);
+    if (!date) return 'Fecha inválida';
+    return format(date, "dd 'de' LLL, yyyy", { locale: es });
 };
 
 const formatCurrency = (amount: number, currency: 'USD' | 'ARS') => {
