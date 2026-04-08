@@ -74,7 +74,8 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
     // 4. State: Firebase user exists, but no profile in our app's database.
     if (!appUser) {
       if (!isStatusPage) { // Prevent redirect loop if already on a status page.
-        router.push('/unauthorized');
+        // Redirect with email for debugging
+        router.push(`/unauthorized?email=${encodeURIComponent(user.email!)}`);
       }
       return;
     }
