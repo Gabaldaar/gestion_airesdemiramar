@@ -46,28 +46,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       try {
-        // --- TEMPORARY "SLEDGEHAMMER" FIX ---
-        // Force the logged-in user to be an active admin to regain access.
-        // This bypasses any issues with the database lookup.
-        console.log("AuthProvider: Applying temporary admin access for user:", firebaseUser.email);
-        const mockAdminUser: AppUser = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'Admin User',
-            email: firebaseUser.email!,
-            role: 'admin',
-            status: 'active',
-            managementType: 'tasks', // Default value
-        };
+        const existingProvider = await getProviderByEmail(firebaseUser.email!);
+        
+        if (existingProvider) {
+            // User exists in our DB
+            setUser(firebaseUser);
+            setAppUser(existingProvider);
+            setAuthError(null);
+        } else {
+            // User does not exist in our DB, check if it's the very first user
+            const providersQuery = query(collection(db, 'providers'), limit(1));
+            const providersSnapshot = await getDocs(providersQuery);
 
-        setUser(firebaseUser);
-        setAppUser(mockAdminUser);
-        setAuthError(null);
-        // --- END OF TEMPORARY FIX ---
-
+            if (providersSnapshot.empty) {
+                // This is the first user, create them as an admin
+                const newAdmin: Omit<Provider, 'id'> = {
+                    name: firebaseUser.displayName || 'Admin',
+                    email: firebaseUser.email!,
+                    role: 'admin',
+                    status: 'active',
+                    managementType: 'tasks', // Default value
+                };
+                const createdAdmin = await addProviderDb(newAdmin);
+                setUser(firebaseUser);
+                setAppUser(createdAdmin);
+                setAuthError(null);
+            } else {
+                // Other users exist, but this one is not registered
+                setUser(firebaseUser);
+                setAppUser(null);
+                setAuthError("Tu cuenta de Google no está registrada para acceder a esta aplicación.");
+            }
+        }
       } catch (error: any) {
         console.error("Auth Provider Error:", error);
-        setUser(firebaseUser); 
-        setAppUser(null);
+        setUser(firebaseUser); // Keep firebase user but...
+        setAppUser(null);      // ...clear app user
         setAuthError(error.message || "An unknown authentication error occurred.");
       } finally {
         setLoading(false);
