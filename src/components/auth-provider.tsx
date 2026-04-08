@@ -124,28 +124,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUser(firebaseUser);
                 setAppUser({ id: newUserRef.id, ...newAdminUser } as AppUser);
             } else {
-                // *** THIS IS THE DIAGNOSTIC SPOT ***
-                const allProviders = await getDocs(providersCollectionRef);
-                const providersData = allProviders.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                const debugMessage = `
-Intento de Depuración:
-=====================
-Objeto de Usuario de Google (lo que se recibe de Firebase):
----------------------------------------------------------
-${JSON.stringify(firebaseUser, null, 2)}
-
-=====================
-Colaboradores en Base de Datos (lo que se lee de Firestore):
-----------------------------------------------------------
-${JSON.stringify(providersData, null, 2)}
-`;
-                const originalError = `Tu cuenta de Google no está registrada para acceder a esta aplicación.`;
-                throw new Error(originalError + "\n\n" + debugMessage);
+                throw new Error(`Tu cuenta de Google (${firebaseUser.displayName || 'desconocido'}) no está registrada para acceder a esta aplicación.`);
             }
         }
       } catch (error: any) {
-        // The detailed error will be caught here and displayed.
         console.error("Auth Provider Error:", error);
         setUser(firebaseUser);
         setAppUser(null);
@@ -161,6 +143,7 @@ ${JSON.stringify(providersData, null, 2)}
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    provider.addScope('email');
     provider.setCustomParameters({
       prompt: 'select_account'
     });
