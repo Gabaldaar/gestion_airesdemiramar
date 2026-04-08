@@ -39,93 +39,87 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       setAuthError(null);
-      
+
       if (!firebaseUser) {
         setUser(null);
         setAppUser(null);
         setLoading(false);
         return;
       }
-      
+
       try {
-        let foundUser: AppUser | null = null;
+        const providersCollectionRef = collection(db, 'providers');
         
-        // Step 1: Find user by UID (most efficient)
-        const providersQueryByUid = query(collection(db, 'providers'), where('userId', '==', firebaseUser.uid), limit(1));
-        const uidSnapshot = await getDocs(providersQueryByUid);
-        
-        if (!uidSnapshot.empty) {
-            const userDoc = uidSnapshot.docs[0];
-            foundUser = { id: userDoc.id, ...userDoc.data() } as AppUser;
+        // Check if ANY provider exists to determine if this is a first-time setup.
+        const allProvidersSnapshot = await getDocs(query(providersCollectionRef, limit(1)));
+
+        if (allProvidersSnapshot.empty) {
+          // SCENARIO A: No providers exist. Create the first user as admin.
+          console.log("No providers found, creating first admin user.");
+          
+          const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
+          if (!userEmail) {
+            console.warn("Could not get email from Google account for first admin, but will proceed with UID.");
+          }
+
+          const newAdminUser: Omit<Provider, 'id'> = {
+            name: firebaseUser.displayName || 'Administrador Principal',
+            email: userEmail || '', // Store empty string if null, but it should be requested.
+            role: 'admin',
+            status: 'active',
+            userId: firebaseUser.uid, // The crucial link
+            managementType: 'tasks',
+            rating: 0
+          };
+          const newUserRef = await addDoc(providersCollectionRef, newAdminUser);
+          
+          setUser(firebaseUser);
+          setAppUser({ id: newUserRef.id, ...newAdminUser } as AppUser);
+          console.log("First admin user created and logged in.");
+
         } else {
-            // Step 2: If not found, try to link by email (for first-time logins)
-            const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
-            
-            if (userEmail) {
-                const snapshot = await getDocs(collection(db, 'providers'));
-                const providers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Provider));
-                const lowercasedEmail = userEmail.toLowerCase();
-                
-                const userDocMatch = providers.find(p => p.email && p.email.toLowerCase() === lowercasedEmail);
+          // SCENARIO B: Providers exist. Use the standard verification flow.
+          let foundUser: AppUser | null = null;
+          
+          // Step 1: Find user by UID (most efficient and secure)
+          const providersQueryByUid = query(collection(db, 'providers'), where('userId', '==', firebaseUser.uid), limit(1));
+          const uidSnapshot = await getDocs(providersQueryByUid);
 
-                if (userDocMatch) {
-                    await updateDoc(doc(db, 'providers', userDocMatch.id), { userId: firebaseUser.uid });
-                    foundUser = { ...userDocMatch, userId: firebaseUser.uid } as AppUser;
-                    console.log(`User account for ${userEmail} successfully linked via email.`);
-                }
-            }
-            // Step 3: Last resort, for cases where email is null, try display name.
-            else if (firebaseUser.displayName) {
-                const providersQueryByName = query(collection(db, 'providers'), where('name', '==', firebaseUser.displayName), limit(2));
-                const nameSnapshot = await getDocs(providersQueryByName);
-                
-                if (nameSnapshot.size === 1) {
-                    const userDoc = nameSnapshot.docs[0];
-                    await updateDoc(userDoc.ref, { userId: firebaseUser.uid });
-                    foundUser = { id: userDoc.id, ...userDoc.data(), userId: firebaseUser.uid } as AppUser;
-                    console.log(`User account for ${firebaseUser.displayName} successfully linked via display name.`);
-                } else if (nameSnapshot.size > 1) {
-                    throw new Error(`Error de vinculación: Se encontraron múltiples colaboradores con el nombre "${firebaseUser.displayName}". Por favor, contacte al administrador para resolverlo.`);
-                }
-            }
-        }
+          if (!uidSnapshot.empty) {
+              const userDoc = uidSnapshot.docs[0];
+              foundUser = { id: userDoc.id, ...userDoc.data() } as AppUser;
+          } else {
+              // Step 2: If not found by UID (first login), try to link by email.
+              const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
 
-        if (foundUser) {
-            if (foundUser.status === 'active') {
-                setUser(firebaseUser);
-                setAppUser(foundUser);
-            } else {
-                setUser(firebaseUser);
-                setAppUser(null);
-                router.push('/pending-activation');
-            }
-        } else {
-            // Step 4: Handle first-ever user for the app or throw error
-            const providersCollectionRef = collection(db, 'providers');
-            const allProvidersSnapshot = await getDocs(query(providersCollectionRef, limit(1)));
+              if (userEmail) {
+                  // Firestore queries are case-sensitive. We need to fetch and compare manually.
+                  const snapshot = await getDocs(providersCollectionRef);
+                  const providers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Provider));
+                  const lowercasedEmail = userEmail.toLowerCase();
+                  const userDocMatch = providers.find(p => p.email && p.email.toLowerCase() === lowercasedEmail);
 
-            if (allProvidersSnapshot.empty) {
-                console.log("No providers found, creating first admin user.");
-                const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
-                if (!userEmail) {
-                    throw new Error("No se pudo obtener la dirección de email de la cuenta de Google para crear el primer administrador.");
-                }
+                  if (userDocMatch) {
+                      await updateDoc(doc(db, 'providers', userDocMatch.id), { userId: firebaseUser.uid });
+                      foundUser = { ...userDocMatch, userId: firebaseUser.uid } as AppUser;
+                      console.log(`User account for ${userEmail} successfully linked via email.`);
+                  }
+              }
+          }
 
-                const newAdminUser: Omit<Provider, 'id'> = {
-                    name: firebaseUser.displayName || 'Administrador Principal',
-                    email: userEmail,
-                    role: 'admin',
-                    status: 'active',
-                    userId: firebaseUser.uid,
-                    managementType: 'tasks',
-                    rating: 0
-                };
-                const newUserRef = await addDoc(providersCollectionRef, newAdminUser);
-                setUser(firebaseUser);
-                setAppUser({ id: newUserRef.id, ...newAdminUser } as AppUser);
-            } else {
-                throw new Error(`Tu cuenta de Google (${firebaseUser.displayName || 'desconocido'}) no está registrada para acceder a esta aplicación.`);
-            }
+          // Step 3: Evaluate the found user
+          if (foundUser) {
+              if (foundUser.status === 'active') {
+                  setUser(firebaseUser);
+                  setAppUser(foundUser);
+              } else {
+                  setUser(firebaseUser);
+                  setAppUser(null);
+                  router.push('/pending-activation');
+              }
+          } else {
+              throw new Error(`Tu cuenta de Google (${firebaseUser.displayName || firebaseUser.email || 'desconocido'}) no está registrada para acceder a esta aplicación.`);
+          }
         }
       } catch (error: any) {
         console.error("Auth Provider Error:", error);
@@ -143,10 +137,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    provider.addScope('email');
+    // Force account selection every time.
     provider.setCustomParameters({
       prompt: 'select_account'
     });
+    // Explicitly request email scope.
+    provider.addScope('email');
     setLoading(true);
     try {
       await signInWithPopup(auth, provider);
