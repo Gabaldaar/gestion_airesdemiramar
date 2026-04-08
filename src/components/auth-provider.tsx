@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 console.log(`User ${firebaseUser.email} not found in DB.`);
                 setUser(firebaseUser); // Keep firebase user but...
                 setAppUser(null);      // ...clear app user
-                setAuthError("Tu cuenta de Google no está registrada para acceder a esta aplicación.");
+                setAuthError(`La cuenta de Google (${firebaseUser.email}) no está registrada para acceder a esta aplicación. Revisa que este sea el email correcto y contacta al administrador.`);
             }
         }
       } catch (error: any) {
