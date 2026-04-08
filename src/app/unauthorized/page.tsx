@@ -12,6 +12,8 @@ function UnauthorizedContent() {
     const { signOut } = useAuth();
     const searchParams = useSearchParams();
     const email = searchParams.get('email');
+    const displayName = searchParams.get('displayName');
+    const uid = searchParams.get('uid');
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -26,16 +28,21 @@ function UnauthorizedContent() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
-                    {email && (
-                        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                            <p className="text-sm text-destructive font-semibold">
-                                El email que se intentó usar es:
+                    {(email || displayName || uid) && (
+                        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-left text-sm">
+                            <p className="font-semibold text-destructive">
+                                Datos del intento de inicio de sesión:
                             </p>
-                            <p className="text-lg font-mono text-destructive">{email}</p>
+                            <ul className="list-disc pl-5 mt-2 font-mono text-destructive/80">
+                                {displayName && <li>Nombre: {displayName}</li>}
+                                {email && <li>Email: {email}</li>}
+                                {uid && <li>ID: {uid}</li>}
+                                {!email && <li className="font-semibold">El email no fue proporcionado por Google.</li>}
+                            </ul>
                         </div>
                     )}
                     <p className="text-muted-foreground">
-                        Por favor, confirma que este es el email correcto y contacta al administrador para que lo registre.
+                        Por favor, confirma que estos son los datos correctos y contacta al administrador para que registre tu cuenta.
                     </p>
                     <Button variant="outline" onClick={signOut}>
                         Volver al Inicio de Sesión

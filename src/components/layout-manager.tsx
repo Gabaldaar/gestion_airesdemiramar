@@ -14,9 +14,16 @@ const MainLayout = dynamic(() => import('./main-layout'), {
 });
 
 function AuthErrorDisplay({ error, onSignOut }: { error: string, onSignOut: () => void }) {
+    let parsedError;
+    try {
+        parsedError = JSON.parse(error);
+    } catch(e) {
+        // Not a JSON error, display as is.
+    }
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-muted/40">
-            <Card className="w-full max-w-md">
+            <Card className="w-full max-w-lg">
                 <CardHeader className="text-center">
                     <div className="flex justify-center mb-4">
                         <AlertTriangle className="h-12 w-12 text-destructive" />
@@ -27,10 +34,19 @@ function AuthErrorDisplay({ error, onSignOut }: { error: string, onSignOut: () =
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Detalle del error:</p>
-                    <pre className="text-xs p-2 bg-muted rounded-md whitespace-pre-wrap">
-                        {error}
-                    </pre>
+                    {parsedError ? (
+                        <>
+                            <p className="text-sm text-center text-destructive font-semibold">{parsedError.message}</p>
+                            <div className="text-xs p-2 bg-muted rounded-md whitespace-pre-wrap">
+                                <h4 className="font-bold mb-2">Datos de depuración:</h4>
+                                <pre><code>{JSON.stringify(parsedError.googleUser, null, 2)}</code></pre>
+                            </div>
+                        </>
+                    ) : (
+                         <pre className="text-xs p-2 bg-muted rounded-md whitespace-pre-wrap">
+                            {error}
+                        </pre>
+                    )}
                     <Button variant="outline" onClick={onSignOut} className="w-full">
                         Volver al Inicio de Sesión
                     </Button>
@@ -74,8 +90,11 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
     // 4. State: Firebase user exists, but no profile in our app's database.
     if (!appUser) {
       if (!isStatusPage) { // Prevent redirect loop if already on a status page.
-        // Redirect with email for debugging
-        router.push(`/unauthorized?email=${encodeURIComponent(user.email!)}`);
+        const debugParams = new URLSearchParams();
+        if (user.email) debugParams.set('email', user.email);
+        if (user.displayName) debugParams.set('displayName', user.displayName);
+        if (user.uid) debugParams.set('uid', user.uid);
+        router.push(`/unauthorized?${debugParams.toString()}`);
       }
       return;
     }

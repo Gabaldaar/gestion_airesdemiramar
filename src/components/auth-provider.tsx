@@ -5,8 +5,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, limit } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
 import { Provider } from '@/lib/data';
+import { useRouter } from 'next/navigation';
 
 export type AppUser = Provider;
 
@@ -53,29 +53,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Check if ANY provider exists to determine if this is a first-time setup.
         const allProvidersSnapshot = await getDocs(query(providersCollectionRef, limit(1)));
 
+        // SCENARIO A: No providers exist. Create the first user as admin.
         if (allProvidersSnapshot.empty) {
-          // SCENARIO A: No providers exist. Create the first user as admin.
-          console.log("No providers found, creating first admin user.");
+          console.log("No providers found, creating first admin user from Google Account.");
           
+          // The email might be null, but we cannot block the first admin.
+          // Create them with a blank email and let them fix it in the app later.
           const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
-          if (!userEmail) {
-            console.warn("Could not get email from Google account for first admin, but will proceed with UID.");
-          }
 
           const newAdminUser: Omit<Provider, 'id'> = {
             name: firebaseUser.displayName || 'Administrador Principal',
-            email: userEmail || '', // Store empty string if null, but it should be requested.
+            email: userEmail || '', // <-- KEY CHANGE: Use empty string if email is null
             role: 'admin',
             status: 'active',
             userId: firebaseUser.uid, // The crucial link
             managementType: 'tasks',
-            rating: 0
+            rating: 0,
+            phone: '',
+            countryCode: '+54',
+            address: '',
+            notes: 'Usuario creado automáticamente como primer administrador.',
+            adminNote: '',
+            billingType: null,
+            rateCurrency: null,
+            hourlyRate: null,
+            perVisitRate: null,
           };
           const newUserRef = await addDoc(providersCollectionRef, newAdminUser);
           
           setUser(firebaseUser);
           setAppUser({ id: newUserRef.id, ...newAdminUser } as AppUser);
-          console.log("First admin user created and logged in.");
+          console.log("First admin user created and logged in successfully.");
 
         } else {
           // SCENARIO B: Providers exist. Use the standard verification flow.
@@ -93,7 +101,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
 
               if (userEmail) {
-                  // Firestore queries are case-sensitive. We need to fetch and compare manually.
                   const snapshot = await getDocs(providersCollectionRef);
                   const providers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Provider));
                   const lowercasedEmail = userEmail.toLowerCase();
@@ -118,7 +125,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   router.push('/pending-activation');
               }
           } else {
-              throw new Error(`Tu cuenta de Google (${firebaseUser.displayName || firebaseUser.email || 'desconocido'}) no está registrada para acceder a esta aplicación.`);
+              // If still not found, it means they are not registered.
+              const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
+              const errorMessage = `Tu cuenta de Google no está registrada para acceder a esta aplicación.\n\nEl email que se intentó usar es:\n\n${userEmail}\n\nPor favor, confirma que este es el email correcto y contacta al administrador para que lo registre.`;
+              throw new Error(errorMessage);
           }
         }
       } catch (error: any) {
@@ -137,12 +147,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    // Force account selection every time.
+    provider.addScope('email');
     provider.setCustomParameters({
       prompt: 'select_account'
     });
-    // Explicitly request email scope.
-    provider.addScope('email');
     setLoading(true);
     try {
       await signInWithPopup(auth, provider);
