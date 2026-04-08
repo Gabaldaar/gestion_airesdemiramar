@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -14,6 +13,7 @@ import { updateWorkLog } from '@/lib/actions';
 import { Provider, Property, TaskScope, WorkLog } from '@/lib/data';
 import { useToast } from './ui/use-toast';
 import { parseDateSafely } from '@/lib/utils';
+import { useAuth } from './auth-provider';
 
 const initialState = { success: false, message: '' };
 
@@ -26,6 +26,9 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
     onOpenChange: (isOpen: boolean) => void;
     onActionComplete: () => void;
 }) {
+    const { appUser } = useAuth();
+    const isAdmin = appUser?.role === 'admin';
+
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -71,6 +74,8 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
     }, [isOpen, workLog]);
     
     useEffect(() => {
+        if (isAdmin) return; // If admin is editing, don't auto-calculate
+
         let newRate: number | '' = '';
         const isVisit = activityType === 'per_visit';
 
@@ -86,7 +91,7 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
 
         setRate(newRate);
         
-    }, [activityType, selectedAssignmentId, properties, provider]);
+    }, [activityType, selectedAssignmentId, properties, provider, isAdmin]);
 
     const showActivityTypeSelect = provider.billingType === 'hourly_or_visit';
     const quantityLabel = activityType === 'hourly' ? "Cantidad de Horas" : "Cantidad de Visitas";
@@ -121,7 +126,7 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
                                     <Label>Propiedades</Label>
                                     {properties.map(p => <SelectItem key={p.id} value={`property-${p.id}`}>{p.name}</SelectItem>)}
                                 </SelectGroup>
-                                {provider.billingType !== 'per_visit' && (
+                                {activityType === 'hourly' && (
                                     <SelectGroup>
                                         <Label>Ámbitos</Label>
                                         {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
@@ -153,7 +158,17 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="rate">{rateLabel}</Label>
-                            <Input id="rate" name="rate" type="number" step="0.01" value={rate} readOnly className="bg-muted/50" required />
+                            <Input 
+                                id="rate" 
+                                name="rate" 
+                                type="number" 
+                                step="0.01" 
+                                value={rate}
+                                onChange={(e) => setRate(parseFloat(e.target.value) || '')} 
+                                readOnly={!isAdmin} 
+                                className={!isAdmin ? "bg-muted/50" : ""} 
+                                required 
+                            />
                         </div>
                     </div>
 
