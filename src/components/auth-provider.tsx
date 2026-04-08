@@ -46,48 +46,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       try {
-        // Robustly get the email from the user object
-        const email = firebaseUser.email || (firebaseUser.providerData[0] && firebaseUser.providerData[0].email);
+        // --- DIAGNOSTIC LOGIC ---
+        // 1. Fetch all providers from Firestore
+        const providersQuery = query(collection(db, 'providers'));
+        const providersSnapshot = await getDocs(providersQuery);
+        const allProviders = providersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        if (!email) {
-            throw new Error("No se pudo obtener la dirección de email de la cuenta de Google.");
-        }
+        // 2. Construct a detailed diagnostic message
+        const diagnosticInfo = {
+            firebaseUserObject: JSON.stringify(firebaseUser, null, 2),
+            firestoreProviders: JSON.stringify(allProviders, null, 2),
+        };
 
-        const existingProvider = await getProviderByEmail(email);
-        
-        if (existingProvider) {
-            // User exists in our DB
-            setUser(firebaseUser);
-            setAppUser(existingProvider);
-        } else {
-            // User does not exist in our DB, check if it's the very first user
-            const providersQuery = query(collection(db, 'providers'), limit(1));
-            const providersSnapshot = await getDocs(providersQuery);
+        const diagnosticError = `
+Intento de Depuración:
+=====================
+Objeto de Usuario de Google (lo que se recibe de Firebase):
+---------------------------------------------------------
+${diagnosticInfo.firebaseUserObject}
 
-            if (providersSnapshot.empty) {
-                // This is the first user, create them as an admin
-                console.log("No providers found, creating first user as admin.");
-                const newAdmin: Omit<Provider, 'id'> = {
-                    name: firebaseUser.displayName || 'Admin',
-                    email: email, // Use the safe email
-                    role: 'admin',
-                    status: 'active',
-                    managementType: 'tasks', // Default value
-                };
-                const createdAdmin = await addProviderDb(newAdmin);
-                setUser(firebaseUser);
-                setAppUser(createdAdmin);
-            } else {
-                // Other users exist, but this one is not registered
-                console.log(`User ${email} not found in DB.`);
-                setUser(firebaseUser); // Keep firebase user but...
-                setAppUser(null);      // ...clear app user
-                setAuthError(`La cuenta de Google (${email}) no está registrada para acceder a esta aplicación. Revisa que este sea el email correcto y contacta al administrador.`);
-            }
-        }
+=====================
+Colaboradores en Base de Datos (lo que se lee de Firestore):
+----------------------------------------------------------
+${diagnosticInfo.firestoreProviders}
+        `;
+
+        // 3. Throw this error to display it on the screen
+        throw new Error(diagnosticError);
+        // --- END OF DIAGNOSTIC LOGIC ---
+
       } catch (error: any) {
-        console.error("Auth Provider Error:", error);
-        setUser(firebaseUser);
+        console.error("Auth Provider Diagnostic Error:", error);
+        setUser(firebaseUser); // Keep firebase user so the error screen has context
         setAppUser(null);
         setAuthError(error.message || "Ocurrió un error desconocido durante la autenticación.");
       } finally {
