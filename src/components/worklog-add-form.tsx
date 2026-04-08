@@ -93,12 +93,21 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
     const quantityPlaceholder = activityType === 'hourly' ? "Ej: 2.5" : "Ej: 1";
     const rateLabel = activityType === 'hourly' ? "Monto por Hora" : "Monto por Visita";
 
+    const dialogDescription =
+        provider.billingType === 'hourly_or_visit'
+            ? 'Añade las horas trabajadas o las visitas realizadas.'
+            : provider.billingType === 'hourly'
+            ? 'Añade las horas trabajadas.'
+            : provider.billingType === 'per_visit'
+            ? 'Añade las visitas realizadas.'
+            : 'Registra tu actividad.';
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Registrar Actividad para {provider.name}</DialogTitle>
-                    <DialogDescription>Añade las horas trabajadas o las visitas realizadas.</DialogDescription>
+                    <DialogDescription>{dialogDescription}</DialogDescription>
                 </DialogHeader>
                 <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
                     <input type="hidden" name="providerId" value={provider.id} />
@@ -148,7 +157,7 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="rate">{rateLabel}</Label>
-                            <Input id="rate" name="rate" type="number" step="0.01" value={rate} onChange={(e) => setRate(e.target.value === '' ? '' : parseFloat(e.target.value))} required />
+                            <Input id="rate" name="rate" type="number" step="0.01" value={rate} readOnly className="bg-muted/50" required />
                         </div>
                     </div>
 

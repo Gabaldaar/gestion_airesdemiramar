@@ -140,7 +140,7 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="rate">{rateLabel}</Label>
-                            <Input id="rate" name="rate" type="number" step="0.01" value={rate} onChange={(e) => setRate(e.target.value === '' ? '' : parseFloat(e.target.value))} required />
+                            <Input id="rate" name="rate" type="number" step="0.01" value={rate} readOnly className="bg-muted/50" required />
                         </div>
                     </div>
 

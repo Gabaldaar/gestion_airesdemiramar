@@ -138,6 +138,16 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   
   const needsMainLayout = user && appUser?.status === 'active' && appUser?.role === 'admin';
   const isCollaboratorPage = user && appUser?.status === 'active' && appUser?.role === 'provider';
+
+  // Prevent flicker for collaborators by showing a loader while redirecting
+  if (isCollaboratorPage && !pathname.startsWith('/colaborador')) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-muted/40">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-4 text-muted-foreground">Redirigiendo a tu panel...</span>
+      </div>
+    );
+  }
   
   if (needsMainLayout && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract')) {
       return <MainLayout>{children}</MainLayout>;

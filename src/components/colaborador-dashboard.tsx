@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Property, TaskScope, WorkLog, getPendingWorkLogs } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
-import { LogOut, PlusCircle, Loader2, Pencil } from 'lucide-react';
+import { LogOut, PlusCircle, Loader2, Pencil, Info } from 'lucide-react';
 import { WorkLogAddForm } from './worklog-add-form';
 import { WorkLogEditForm } from './worklog-edit-form';
 import { WorkLogDeleteForm } from './worklog-delete-form';
@@ -156,8 +157,9 @@ export default function ColaboradorDashboard({ properties, scopes }: { propertie
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
                 {appUser.adminNote && (
-                    <Alert variant="default" className="border-primary/50">
-                        <AlertTitle className="font-semibold">Nota del Administrador</AlertTitle>
+                    <Alert variant="default" className="border-blue-500 text-blue-800 dark:border-blue-400 dark:text-blue-300 [&>svg]:text-blue-500">
+                        <Info className="h-4 w-4" />
+                        <AlertTitle className="font-semibold text-blue-800 dark:text-blue-300">Nota del Administrador</AlertTitle>
                         <AlertDescription className="whitespace-pre-wrap">{appUser.adminNote}</AlertDescription>
                     </Alert>
                 )}
