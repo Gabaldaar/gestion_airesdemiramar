@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, useMemo } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -18,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { addProperty } from '@/lib/actions';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
+import { Provider } from '@/lib/data';
 
 const initialState = {
   message: '',
@@ -40,11 +42,15 @@ function SubmitButton() {
     )
 }
 
-export function PropertyAddForm() {
+export function PropertyAddForm({ providers }: { providers: Provider[] }) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const visitRateProviders = useMemo(() => {
+    return providers.filter(p => p.billingType === 'per_visit' || p.billingType === 'hourly_or_visit');
+  }, [providers]);
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -135,6 +141,18 @@ export function PropertyAddForm() {
                         </div>
                     </div>
                   ))}
+                </div>
+
+                <div className="col-span-4 border-t pt-4 mt-2">
+                  <h4 className="text-md font-medium mb-4 text-center">Tarifas de Visita por Colaborador</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                    {visitRateProviders.length > 0 ? visitRateProviders.map(p => (
+                        <div key={p.id} className='space-y-1'>
+                            <Label htmlFor={`visitRate_${p.id}`} className="text-sm">{p.name}</Label>
+                            <Input id={`visitRate_${p.id}`} name={`visitRate_${p.id}`} type="number" step="0.01" placeholder={`Tarifa para ${p.name}`} />
+                        </div>
+                    )) : <p className="text-sm text-muted-foreground text-center col-span-2">No hay colaboradores con facturación por visita.</p>}
+                  </div>
                 </div>
             </div>
             <DialogFooter>

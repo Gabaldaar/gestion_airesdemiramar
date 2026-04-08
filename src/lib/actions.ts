@@ -169,6 +169,17 @@ export async function registrarCobro(payload: RegistrarCobroPayload) {
 }
 
 export async function addProperty(previousState: any, formData: FormData) {
+  const visitRates: { [key: string]: number } = {};
+  for (const [key, value] of formData.entries()) {
+      if (key.startsWith('visitRate_') && value) {
+          const providerId = key.replace('visitRate_', '');
+          const rate = parseFloat(value as string);
+          if (!isNaN(rate) && rate > 0) {
+              visitRates[providerId] = rate;
+          }
+      }
+  }
+
   const newPropertyData = {
     name: formData.get('name') as string,
     address: formData.get('address') as string,
@@ -189,6 +200,7 @@ export async function addProperty(previousState: any, formData: FormData) {
     customField5Value: formData.get('customField5Value') as string,
     customField6Label: formData.get('customField6Label') as string,
     customField6Value: formData.get('customField6Value') as string,
+    visitRates,
   };
 
   if (!newPropertyData.name || !newPropertyData.address) {
@@ -211,6 +223,17 @@ export async function addProperty(previousState: any, formData: FormData) {
 }
 
 export async function updateProperty(previousState: any, formData: FormData) {
+  const visitRates: { [key: string]: number } = {};
+  for (const [key, value] of formData.entries()) {
+      if (key.startsWith('visitRate_') && value) {
+          const providerId = key.replace('visitRate_', '');
+          const rate = parseFloat(value as string);
+          if (!isNaN(rate) && rate >= 0) { // Allow 0 to unset
+              visitRates[providerId] = rate;
+          }
+      }
+  }
+
   const propertyData: Omit<Property, 'googleCalendarId'> = {
     id: formData.get('id') as string,
     name: formData.get('name') as string,
@@ -232,6 +255,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
     customField5Value: formData.get('customField5Value') as string,
     customField6Label: formData.get('customField6Label') as string,
     customField6Value: formData.get('customField6Value') as string,
+    visitRates,
   };
 
   if (!propertyData.id || !propertyData.name || !propertyData.address) {

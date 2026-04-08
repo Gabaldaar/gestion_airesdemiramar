@@ -65,6 +65,7 @@ export type Property = {
   customField5Value?: string;
   customField6Label?: string;
   customField6Value?: string;
+  visitRates?: { [providerId: string]: number };
 };
 
 export type Origin = {

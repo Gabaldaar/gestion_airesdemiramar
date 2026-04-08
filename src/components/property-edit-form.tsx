@@ -1,12 +1,13 @@
 
+
 'use client';
 
-import { useTransition, useState, useEffect } from 'react';
+import { useTransition, useState, useEffect, useMemo } from 'react';
 import { useFormStatus } from 'react-dom';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Property } from '@/lib/data';
+import { Property, Provider } from '@/lib/data';
 import { updateProperty } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
@@ -39,12 +40,16 @@ function SubmitButton() {
     )
 }
 
-export function PropertyEditForm({ property }: { property: Property }) {
+export function PropertyEditForm({ property, providers }: { property: Property; providers: Provider[] }) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const { width } = useWindowSize();
   const isMobile = width < 768;
+
+  const visitRateProviders = useMemo(() => {
+    return providers.filter(p => p.billingType === 'per_visit' || p.billingType === 'hourly_or_visit');
+  }, [providers]);
 
   const formAction = (formData: FormData) => {
     startTransition(async () => {
@@ -113,6 +118,18 @@ export function PropertyEditForm({ property }: { property: Property }) {
                         </div>
                     </div>
                   ))}
+                </div>
+
+                <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
+                  <h4 className="text-md font-medium mb-4 text-center">Tarifas de Visita por Colaborador</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                    {visitRateProviders.length > 0 ? visitRateProviders.map(p => (
+                        <div key={p.id} className='space-y-1'>
+                            <Label htmlFor={`visitRate_${p.id}`} className="text-sm">{p.name}</Label>
+                            <Input id={`visitRate_${p.id}`} name={`visitRate_${p.id}`} type="number" step="0.01" placeholder={`Tarifa para ${p.name}`} defaultValue={property.visitRates?.[p.id] || ''} />
+                        </div>
+                    )) : <p className="text-sm text-muted-foreground text-center col-span-2">No hay colaboradores con facturación por visita.</p>}
+                  </div>
                 </div>
             </div>
             <div className="flex justify-between items-center">

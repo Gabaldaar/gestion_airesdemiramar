@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -32,6 +33,8 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
     const [rate, setRate] = useState<number | ''>('');
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
+    const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(workLog.assignment.id);
+
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -62,19 +65,28 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
             setDate(parseDateSafely(workLog.date));
             setActivityType(workLog.activityType);
             setRate(workLog.rateApplied);
+            setSelectedAssignmentId(workLog.assignment.id);
             setState(initialState);
         }
     }, [isOpen, workLog]);
     
     useEffect(() => {
-        if (provider.billingType === 'hourly_or_visit') {
-            if (activityType === 'hourly') {
-                setRate(provider.hourlyRate || '');
-            } else {
-                setRate(provider.perVisitRate || '');
-            }
+        let newRate: number | '' = '';
+        const isVisit = activityType === 'per_visit';
+
+        if (isVisit && selectedAssignmentId) {
+             const selectedProperty = properties.find(p => p.id === selectedAssignmentId);
+             const specificRate = selectedProperty?.visitRates?.[provider.id];
+             newRate = specificRate ?? (provider.perVisitRate || '');
+        } else if (isVisit) {
+             newRate = provider.perVisitRate || '';
+        } else { // hourly
+            newRate = provider.hourlyRate || '';
         }
-    }, [activityType, provider]);
+
+        setRate(newRate);
+        
+    }, [activityType, selectedAssignmentId, properties, provider]);
 
     const showActivityTypeSelect = provider.billingType === 'hourly_or_visit';
     const quantityLabel = activityType === 'hourly' ? "Cantidad de Horas" : "Cantidad de Visitas";
@@ -102,7 +114,7 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
 
                     <div className="space-y-2">
                         <Label htmlFor="assignment">Imputar a</Label>
-                        <Select name="assignment" defaultValue={defaultAssignmentValue} required>
+                        <Select name="assignment" defaultValue={defaultAssignmentValue} onValueChange={(val) => setSelectedAssignmentId(val.split('-')[1])} required>
                             <SelectTrigger><SelectValue placeholder="Selecciona Propiedad o Ámbito..."/></SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>

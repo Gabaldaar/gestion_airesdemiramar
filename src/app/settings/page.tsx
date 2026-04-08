@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings, Origin, getOrigins, getAlertSettings, AlertSettings, getTaskCategories, TaskCategory, getProviderCategories, ProviderCategory, getTaskScopes, TaskScope } from "@/lib/data";
+import { getProperties, Property, getExpenseCategories, getEmailSettings, ExpenseCategory, EmailSettings, Origin, getOrigins, getAlertSettings, AlertSettings, getTaskCategories, TaskCategory, getProviderCategories, ProviderCategory, getTaskScopes, TaskScope, getProviders, Provider } from "@/lib/data";
 import { PropertyEditForm } from "@/components/property-edit-form";
 import { PropertyAddForm } from "@/components/property-add-form";
 import ExpenseCategoryManager from "@/components/expense-category-manager";
@@ -32,6 +32,7 @@ interface SettingsData {
     emailSettings: EmailSettings | null;
     alertSettings: AlertSettings | null;
     origins: Origin[];
+    providers: Provider[];
 }
 
 export default function SettingsPage() {
@@ -42,7 +43,7 @@ export default function SettingsPage() {
     const fetchData = useCallback(async () => {
         if (user) {
             setLoading(true);
-            const [properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins, taskScopes] = await Promise.all([
+            const [properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins, taskScopes, providers] = await Promise.all([
                 getProperties(),
                 getExpenseCategories(),
                 getTaskCategories(),
@@ -51,8 +52,9 @@ export default function SettingsPage() {
                 getAlertSettings(),
                 getOrigins(),
                 getTaskScopes(),
+                getProviders(),
             ]);
-            setData({ properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins, taskScopes });
+            setData({ properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins, taskScopes, providers });
             setLoading(false);
         }
     }, [user]);
@@ -65,7 +67,7 @@ export default function SettingsPage() {
         return <p>Cargando configuración...</p>
     }
     
-    const { properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins, taskScopes } = data;
+    const { properties, expenseCategories, taskCategories, providerCategories, emailSettings, alertSettings, origins, taskScopes, providers } = data;
 
   return (
     <Tabs defaultValue="properties" className="space-y-4">
@@ -95,13 +97,13 @@ export default function SettingsPage() {
                         Administra los datos de tus propiedades.
                         </CardDescription>
                     </div>
-                    <PropertyAddForm />
+                    <PropertyAddForm providers={providers} />
                 </CardHeader>
                 <CardContent>
                     {properties.length > 0 ? (
                         properties.map((property: Property) => (
                             <div key={property.id} className="border-t">
-                                <PropertyEditForm property={property} />
+                                <PropertyEditForm property={property} providers={providers} />
                             </div>
                         ))
                     ) : (
