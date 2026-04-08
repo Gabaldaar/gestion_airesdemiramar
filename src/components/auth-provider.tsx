@@ -4,8 +4,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { getProviderByEmail, addProviderDb, Provider } from '@/lib/data';
-import { collection, getDocs, query, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, limit } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
+import { Provider } from '@/lib/data';
 
 export type AppUser = Provider;
 
@@ -32,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -46,38 +48,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       try {
-        // --- DIAGNOSTIC LOGIC ---
-        // 1. Fetch all providers from Firestore
-        const providersQuery = query(collection(db, 'providers'));
-        const providersSnapshot = await getDocs(providersQuery);
-        const allProviders = providersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let foundUser: AppUser | null = null;
+        
+        const providersQueryByUid = query(collection(db, 'providers'), where('userId', '==', firebaseUser.uid), limit(1));
+        const uidSnapshot = await getDocs(providersQueryByUid);
+        
+        if (!uidSnapshot.empty) {
+            const userDoc = uidSnapshot.docs[0];
+            foundUser = { id: userDoc.id, ...userDoc.data() } as AppUser;
+        } else {
+            const providersQueryByName = query(collection(db, 'providers'), where('name', '==', firebaseUser.displayName), limit(2));
+            const nameSnapshot = await getDocs(providersQueryByName);
+            
+            if (nameSnapshot.size === 1) {
+                const userDoc = nameSnapshot.docs[0];
+                await updateDoc(userDoc.ref, { userId: firebaseUser.uid });
+                foundUser = { id: userDoc.id, ...userDoc.data(), userId: firebaseUser.uid } as AppUser;
+                console.log(`User account for ${firebaseUser.displayName} successfully linked via display name.`);
+            } else if (nameSnapshot.size > 1) {
+                throw new Error(`Error de vinculación: Se encontraron múltiples colaboradores con el nombre "${firebaseUser.displayName}". Por favor, contacte al administrador para resolverlo.`);
+            }
+        }
 
-        // 2. Construct a detailed diagnostic message
-        const diagnosticInfo = {
-            firebaseUserObject: JSON.stringify(firebaseUser, null, 2),
-            firestoreProviders: JSON.stringify(allProviders, null, 2),
-        };
+        if (foundUser) {
+            if (foundUser.status === 'active') {
+                setUser(firebaseUser);
+                setAppUser(foundUser);
+            } else {
+                setUser(firebaseUser);
+                setAppUser(null);
+                router.push('/pending-activation');
+            }
+        } else {
+            const providersCollectionRef = collection(db, 'providers');
+            const allProvidersSnapshot = await getDocs(query(providersCollectionRef, limit(1)));
 
-        const diagnosticError = `
-Intento de Depuración:
-=====================
-Objeto de Usuario de Google (lo que se recibe de Firebase):
----------------------------------------------------------
-${diagnosticInfo.firebaseUserObject}
+            if (allProvidersSnapshot.empty) {
+                console.log("No providers found, creating first admin user.");
+                const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
+                if (!userEmail) {
+                    // Fallback if email is still null somehow, though unlikely for a new user
+                    throw new Error("No se pudo obtener el email de la cuenta de Google para crear el primer administrador.");
+                }
 
-=====================
-Colaboradores en Base de Datos (lo que se lee de Firestore):
-----------------------------------------------------------
-${diagnosticInfo.firestoreProviders}
-        `;
-
-        // 3. Throw this error to display it on the screen
-        throw new Error(diagnosticError);
-        // --- END OF DIAGNOSTIC LOGIC ---
-
+                const newAdminUser: Omit<Provider, 'id'> = {
+                    name: firebaseUser.displayName || 'Administrador Principal',
+                    email: userEmail,
+                    role: 'admin',
+                    status: 'active',
+                    userId: firebaseUser.uid,
+                    managementType: 'tasks',
+                    rating: 0
+                };
+                const newUserRef = await addDoc(providersCollectionRef, newAdminUser);
+                setUser(firebaseUser);
+                setAppUser({ id: newUserRef.id, ...newAdminUser } as AppUser);
+            } else {
+                throw new Error(`Tu cuenta de Google (${firebaseUser.displayName}) no está registrada para acceder a esta aplicación.`);
+            }
+        }
       } catch (error: any) {
-        console.error("Auth Provider Diagnostic Error:", error);
-        setUser(firebaseUser); // Keep firebase user so the error screen has context
+        console.error("Auth Provider Error:", error);
+        setUser(firebaseUser);
         setAppUser(null);
         setAuthError(error.message || "Ocurrió un error desconocido durante la autenticación.");
       } finally {
@@ -86,7 +118,7 @@ ${diagnosticInfo.firestoreProviders}
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
 
   const signInWithGoogle = async () => {
@@ -97,7 +129,6 @@ ${diagnosticInfo.firestoreProviders}
     setLoading(true);
     try {
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle the rest
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       setAuthError((error as Error).message || "Falló el inicio de sesión.");
@@ -108,7 +139,6 @@ ${diagnosticInfo.firestoreProviders}
 
   const signOut = async () => {
     await firebaseSignOut(auth);
-    // onAuthStateChanged will handle the state clearing
   };
 
   const value = { user, appUser, loading, authError, signInWithGoogle, signOut };
