@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
-      setAuthError(null); // Reset error on each auth state change
+      setAuthError(null);
       
       if (!firebaseUser) {
         setUser(null);
@@ -46,7 +46,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       try {
-        const existingProvider = await getProviderByEmail(firebaseUser.email!);
+        // Robustly get the email from the user object
+        const email = firebaseUser.email || (firebaseUser.providerData[0] && firebaseUser.providerData[0].email);
+
+        if (!email) {
+            throw new Error("No se pudo obtener la dirección de email de la cuenta de Google.");
+        }
+
+        const existingProvider = await getProviderByEmail(email);
         
         if (existingProvider) {
             // User exists in our DB
@@ -62,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 console.log("No providers found, creating first user as admin.");
                 const newAdmin: Omit<Provider, 'id'> = {
                     name: firebaseUser.displayName || 'Admin',
-                    email: firebaseUser.email!,
+                    email: email, // Use the safe email
                     role: 'admin',
                     status: 'active',
                     managementType: 'tasks', // Default value
@@ -72,10 +79,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setAppUser(createdAdmin);
             } else {
                 // Other users exist, but this one is not registered
-                console.log(`User ${firebaseUser.email} not found in DB.`);
+                console.log(`User ${email} not found in DB.`);
                 setUser(firebaseUser); // Keep firebase user but...
                 setAppUser(null);      // ...clear app user
-                setAuthError(`La cuenta de Google (${firebaseUser.email}) no está registrada para acceder a esta aplicación. Revisa que este sea el email correcto y contacta al administrador.`);
+                setAuthError(`La cuenta de Google (${email}) no está registrada para acceder a esta aplicación. Revisa que este sea el email correcto y contacta al administrador.`);
             }
         }
       } catch (error: any) {
@@ -94,8 +101,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    // This forces the account selection dialog to always appear.
-    // It's crucial for solving the issue where the popup closes automatically.
     provider.setCustomParameters({
       prompt: 'select_account'
     });
