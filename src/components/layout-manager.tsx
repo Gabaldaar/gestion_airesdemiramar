@@ -63,6 +63,12 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
 
   // This effect handles all redirection logic based on a stable auth state.
   useEffect(() => {
+    // Prevent redirection if the user is performing a "soft exit"
+    if (sessionStorage.getItem('soft_exit') === 'true' && pathname === '/login') {
+      sessionStorage.removeItem('soft_exit');
+      return; // Early exit to stay on the login page
+    }
+
     // 1. Wait until authentication process is fully complete.
     if (loading) {
       return;
@@ -70,7 +76,6 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
 
     // 2. Handle Authentication Errors
     if (authError) {
-        // The AuthErrorDisplay component will be shown, so no redirection is needed here.
         return;
     }
 
@@ -139,12 +144,13 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   const needsMainLayout = user && appUser?.status === 'active' && appUser?.role === 'admin';
   const isCollaboratorPage = user && appUser?.status === 'active' && appUser?.role === 'provider';
 
-  // Prevent flicker for collaborators by showing a loader while redirecting
-  if (isCollaboratorPage && !pathname.startsWith('/colaborador')) {
-    return (
+  // If the user is a collaborator, and they are not on a collaborator page or contract page, show a loader
+  // while the useEffect redirects them. This avoids showing the admin layout.
+  if (isCollaboratorPage && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract')) {
+     return (
       <div className="flex h-screen items-center justify-center bg-muted/40">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-4 text-muted-foreground">Redirigiendo a tu panel...</span>
+        <span className="ml-4 text-muted-foreground">Redirigiendo...</span>
       </div>
     );
   }
@@ -153,10 +159,6 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
       return <MainLayout>{children}</MainLayout>;
   }
   
-  if (isCollaboratorPage && pathname.startsWith('/colaborador')) {
-      return <>{children}</>;
-  }
-  
-  // For login, status pages, contract view, or during the brief moment of redirection, render the page content.
+  // For collaborator dashboard, login, status pages, contract view.
   return <>{children}</>;
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -105,6 +106,7 @@ export default function ColaboradorDashboard({ properties, scopes }: { propertie
     };
     
     const handleSoftExit = () => {
+        sessionStorage.setItem('soft_exit', 'true');
         router.push('/login');
     };
 
@@ -180,13 +182,17 @@ export default function ColaboradorDashboard({ properties, scopes }: { propertie
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
-                {appUser.adminNote && (
-                    <Alert variant="default" className="border-blue-500 text-blue-800 dark:border-blue-400 dark:text-blue-300 [&>svg]:text-blue-500">
-                        <Info className="h-4 w-4" />
-                        <AlertTitle className="font-semibold text-blue-800 dark:text-blue-300">Nota del Administrador</AlertTitle>
-                        <AlertDescription className="whitespace-pre-wrap">{appUser.adminNote}</AlertDescription>
-                    </Alert>
-                )}
+                 <Alert variant="default" className="border-blue-500 text-blue-800 dark:border-blue-400 dark:text-blue-300 [&>svg]:text-blue-500">
+                    <Info className="h-4 w-4" />
+                    {appUser.adminNote ? (
+                        <>
+                            <AlertTitle className="font-semibold text-blue-800 dark:text-blue-300">Nota del Administrador</AlertTitle>
+                            <AlertDescription className="whitespace-pre-wrap">{appUser.adminNote}</AlertDescription>
+                        </>
+                    ) : (
+                         <AlertDescription>No hay notas del administrador.</AlertDescription>
+                    )}
+                </Alert>
 
                 <Card>
                     <CardHeader className="p-4">
