@@ -50,6 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         let foundUser: AppUser | null = null;
         
+        // Step 1: Try to find user by UID first (most efficient)
         const providersQueryByUid = query(collection(db, 'providers'), where('userId', '==', firebaseUser.uid), limit(1));
         const uidSnapshot = await getDocs(providersQueryByUid);
         
@@ -57,16 +58,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const userDoc = uidSnapshot.docs[0];
             foundUser = { id: userDoc.id, ...userDoc.data() } as AppUser;
         } else {
-            const providersQueryByName = query(collection(db, 'providers'), where('name', '==', firebaseUser.displayName), limit(2));
-            const nameSnapshot = await getDocs(providersQueryByName);
+            // Step 2: If not found by UID, try to link by email (for first-time logins)
+            const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
             
-            if (nameSnapshot.size === 1) {
-                const userDoc = nameSnapshot.docs[0];
-                await updateDoc(userDoc.ref, { userId: firebaseUser.uid });
-                foundUser = { id: userDoc.id, ...userDoc.data(), userId: firebaseUser.uid } as AppUser;
-                console.log(`User account for ${firebaseUser.displayName} successfully linked via display name.`);
-            } else if (nameSnapshot.size > 1) {
-                throw new Error(`Error de vinculación: Se encontraron múltiples colaboradores con el nombre "${firebaseUser.displayName}". Por favor, contacte al administrador para resolverlo.`);
+            if (userEmail) {
+                const snapshot = await getDocs(collection(db, 'providers'));
+                const providers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Provider));
+                const lowercasedEmail = userEmail.toLowerCase();
+                
+                const userDocMatch = providers.find(p => p.email && p.email.toLowerCase() === lowercasedEmail);
+
+                if (userDocMatch) {
+                    await updateDoc(doc(db, 'providers', userDocMatch.id), { userId: firebaseUser.uid });
+                    foundUser = { ...userDocMatch, userId: firebaseUser.uid } as AppUser;
+                    console.log(`User account for ${userEmail} successfully linked via email.`);
+                }
+            } else if (firebaseUser.displayName) {
+                // Step 3: Last resort, for cases where email is null, try to link by display name.
+                const providersQueryByName = query(collection(db, 'providers'), where('name', '==', firebaseUser.displayName), limit(2));
+                const nameSnapshot = await getDocs(providersQueryByName);
+                
+                if (nameSnapshot.size === 1) {
+                    const userDoc = nameSnapshot.docs[0];
+                    await updateDoc(userDoc.ref, { userId: firebaseUser.uid });
+                    foundUser = { id: userDoc.id, ...userDoc.data(), userId: firebaseUser.uid } as AppUser;
+                    console.log(`User account for ${firebaseUser.displayName} successfully linked via display name.`);
+                } else if (nameSnapshot.size > 1) {
+                    throw new Error(`Error de vinculación: Se encontraron múltiples colaboradores con el nombre "${firebaseUser.displayName}". Por favor, contacte al administrador para resolverlo.`);
+                }
             }
         }
 
@@ -80,6 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 router.push('/pending-activation');
             }
         } else {
+            // Step 4: Handle first-ever user for the app
             const providersCollectionRef = collection(db, 'providers');
             const allProvidersSnapshot = await getDocs(query(providersCollectionRef, limit(1)));
 
@@ -87,7 +107,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 console.log("No providers found, creating first admin user.");
                 const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
                 if (!userEmail) {
-                    // Fallback if email is still null somehow, though unlikely for a new user
                     throw new Error("No se pudo obtener el email de la cuenta de Google para crear el primer administrador.");
                 }
 
@@ -104,7 +123,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUser(firebaseUser);
                 setAppUser({ id: newUserRef.id, ...newAdminUser } as AppUser);
             } else {
-                throw new Error(`Tu cuenta de Google (${firebaseUser.displayName}) no está registrada para acceder a esta aplicación.`);
+                // If not first user and not found, then they are not authorized.
+                const attemptedEmail = firebaseUser.email || (firebaseUser.providerData[0] && firebaseUser.providerData[0].email) || 'desconocido';
+                throw new Error(`Tu cuenta de Google (${attemptedEmail}) no está registrada para acceder a esta aplicación.`);
             }
         }
       } catch (error: any) {
