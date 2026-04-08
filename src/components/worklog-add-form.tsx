@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
@@ -127,10 +126,12 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
                                     <Label>Propiedades</Label>
                                     {properties.map(p => <SelectItem key={p.id} value={`property-${p.id}`}>{p.name}</SelectItem>)}
                                 </SelectGroup>
-                                <SelectGroup>
-                                    <Label>Ámbitos</Label>
-                                    {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
-                                </SelectGroup>
+                                {provider.billingType !== 'per_visit' && (
+                                    <SelectGroup>
+                                        <Label>Ámbitos</Label>
+                                        {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
+                                    </SelectGroup>
+                                )}
                             </SelectContent>
                         </Select>
                     </div>
