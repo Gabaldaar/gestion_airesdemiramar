@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, useMemo } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -219,10 +219,6 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
                             <div className="space-y-2">
                                 <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
                                 <Input id="hourlyRate" name="hourlyRate" type="number" step="0.01" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="perVisitRate">Tarifa por Visita</Label>
-                                <Input id="perVisitRate" name="perVisitRate" type="number" step="0.01" />
                             </div>
                         </div>
                     </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -74,8 +75,6 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
     }, [isOpen, workLog]);
     
     useEffect(() => {
-        if (isAdmin) return; // If admin is editing, don't auto-calculate
-
         let newRate: number | '' = '';
         const isVisit = activityType === 'per_visit';
 
@@ -91,7 +90,7 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
 
         setRate(newRate);
         
-    }, [activityType, selectedAssignmentId, properties, provider, isAdmin]);
+    }, [activityType, selectedAssignmentId, properties, provider]);
 
     const showActivityTypeSelect = provider.billingType === 'hourly_or_visit';
     const quantityLabel = activityType === 'hourly' ? "Cantidad de Horas" : "Cantidad de Visitas";
