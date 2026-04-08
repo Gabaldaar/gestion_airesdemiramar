@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         let foundUser: AppUser | null = null;
         
-        // Step 1: Try to find user by UID first (most efficient)
+        // Step 1: Find user by UID (most efficient)
         const providersQueryByUid = query(collection(db, 'providers'), where('userId', '==', firebaseUser.uid), limit(1));
         const uidSnapshot = await getDocs(providersQueryByUid);
         
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const userDoc = uidSnapshot.docs[0];
             foundUser = { id: userDoc.id, ...userDoc.data() } as AppUser;
         } else {
-            // Step 2: If not found by UID, try to link by email (for first-time logins)
+            // Step 2: If not found, try to link by email (for first-time logins)
             const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
             
             if (userEmail) {
@@ -73,8 +73,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     foundUser = { ...userDocMatch, userId: firebaseUser.uid } as AppUser;
                     console.log(`User account for ${userEmail} successfully linked via email.`);
                 }
-            } else if (firebaseUser.displayName) {
-                // Step 3: Last resort, for cases where email is null, try to link by display name.
+            }
+            // Step 3: Last resort, for cases where email is null, try display name.
+            else if (firebaseUser.displayName) {
                 const providersQueryByName = query(collection(db, 'providers'), where('name', '==', firebaseUser.displayName), limit(2));
                 const nameSnapshot = await getDocs(providersQueryByName);
                 
@@ -99,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 router.push('/pending-activation');
             }
         } else {
-            // Step 4: Handle first-ever user for the app
+            // Step 4: Handle first-ever user for the app or throw error
             const providersCollectionRef = collection(db, 'providers');
             const allProvidersSnapshot = await getDocs(query(providersCollectionRef, limit(1)));
 
@@ -107,7 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 console.log("No providers found, creating first admin user.");
                 const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
                 if (!userEmail) {
-                    throw new Error("No se pudo obtener el email de la cuenta de Google para crear el primer administrador.");
+                    throw new Error("No se pudo obtener la dirección de email de la cuenta de Google para crear el primer administrador.");
                 }
 
                 const newAdminUser: Omit<Provider, 'id'> = {
@@ -123,12 +124,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUser(firebaseUser);
                 setAppUser({ id: newUserRef.id, ...newAdminUser } as AppUser);
             } else {
-                // If not first user and not found, then they are not authorized.
-                const attemptedEmail = firebaseUser.email || (firebaseUser.providerData[0] && firebaseUser.providerData[0].email) || 'desconocido';
-                throw new Error(`Tu cuenta de Google (${attemptedEmail}) no está registrada para acceder a esta aplicación.`);
+                // *** THIS IS THE DIAGNOSTIC SPOT ***
+                const allProviders = await getDocs(providersCollectionRef);
+                const providersData = allProviders.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                const debugMessage = `
+Intento de Depuración:
+=====================
+Objeto de Usuario de Google (lo que se recibe de Firebase):
+---------------------------------------------------------
+${JSON.stringify(firebaseUser, null, 2)}
+
+=====================
+Colaboradores en Base de Datos (lo que se lee de Firestore):
+----------------------------------------------------------
+${JSON.stringify(providersData, null, 2)}
+`;
+                const originalError = `Tu cuenta de Google no está registrada para acceder a esta aplicación.`;
+                throw new Error(originalError + "\n\n" + debugMessage);
             }
         }
       } catch (error: any) {
+        // The detailed error will be caught here and displayed.
         console.error("Auth Provider Error:", error);
         setUser(firebaseUser);
         setAppUser(null);
