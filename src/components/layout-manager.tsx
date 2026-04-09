@@ -147,7 +147,7 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
 
   // If the user is a collaborator, and they are not on a collaborator page or contract page, show a loader
   // while the useEffect redirects them. This avoids showing the admin layout.
-  if (isCollaboratorPage && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract') && !isPrintPage) {
+  if (isCollaboratorPage && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract') && !isPrintPage && pathname !== '/login') {
      return (
       <div className="flex h-screen items-center justify-center bg-muted/40">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
