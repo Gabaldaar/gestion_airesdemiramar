@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -33,8 +34,8 @@ const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
 
 interface PrintPageData {
     liquidation: Liquidation;
-    workLogs: WorkLog[];
-    adjustments: ManualAdjustment[];
+    workLogs: (WorkLog & { assignmentName?: string; })[];
+    adjustments: (ManualAdjustment & { categoryName?: string; notes?: string; })[];
     provider: Provider;
 }
 
@@ -65,7 +66,12 @@ function PrintPageLoader() {
 
                 if (!provider) throw new Error("Proveedor no encontrado.");
 
-                setData({ liquidation, workLogs, adjustments, provider });
+                setData({ 
+                    liquidation, 
+                    workLogs: workLogs as (WorkLog & { assignmentName?: string; })[], 
+                    adjustments: adjustments as (ManualAdjustment & { categoryName?: string; notes?: string; })[], 
+                    provider 
+                });
             } catch (err: any) {
                 setError(err.message || 'Error al cargar los datos de la liquidación.');
             } finally {
@@ -126,12 +132,13 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
 
                 <main className="mt-8 print:mt-4">
                     <h1 className="text-2xl font-bold text-center mb-4">Comprobante de Liquidación</h1>
-                    <div className="grid grid-cols-2 gap-4 mb-8 text-sm">
+                    <div className="grid grid-cols-2 gap-4 mb-8">
                         <div className="space-y-1">
-                            <p><span className="font-semibold">Para:</span> {provider.name}</p>
-                            {provider.email && <p><span className="font-semibold">Email:</span> {provider.email}</p>}
+                            <p className="text-sm text-muted-foreground">Para:</p>
+                            <p className="text-lg font-bold">{provider.name}</p>
+                            {provider.email && <p className="text-sm text-muted-foreground">{provider.email}</p>}
                         </div>
-                        <div className="space-y-1 text-right">
+                        <div className="space-y-1 text-right text-sm">
                              <p><span className="font-semibold">Fecha Liquidación:</span> {formatDate(liquidation.dateGenerated)}</p>
                              <p><span className="font-semibold">ID Liquidación:</span> {liquidation.id}</p>
                         </div>
@@ -178,7 +185,7 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Fecha</TableHead>
-                                        <TableHead colSpan={3}>Descripción</TableHead>
+                                        <TableHead colSpan={3}>Categoría / Notas</TableHead>
                                         <TableHead className="text-right">Monto</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -186,7 +193,10 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
                                     {adjustments.map(adj => (
                                         <TableRow key={adj.id}>
                                             <TableCell>{formatDate(adj.date)}</TableCell>
-                                            <TableCell colSpan={3}>{adj.description}</TableCell>
+                                            <TableCell colSpan={3}>
+                                                <p className="font-medium">{adj.categoryName || 'Ajuste'}</p>
+                                                {adj.notes && <p className="text-sm text-muted-foreground">{adj.notes}</p>}
+                                            </TableCell>
                                             <TableCell className={`text-right ${adj.amount < 0 ? 'text-red-600' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
                                         </TableRow>
                                     ))}
