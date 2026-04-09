@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, Pencil } from 'lucide-react';
+import { Loader2, PlusCircle, Pencil, Info } from 'lucide-react';
 import { WorkLogAddForm } from './worklog-add-form';
 import { ManualAdjustmentAddForm } from './manual-adjustment-add-form';
 import { Checkbox } from './ui/checkbox';
@@ -25,6 +25,8 @@ import { LiquidationsHistoryList } from './liquidations-history-list';
 import useWindowSize from '@/hooks/use-window-size';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Alert, AlertTitle, AlertDescription } from './ui/alert';
+import { ProviderAdminNoteEditor } from './provider-admin-note-editor';
 
 const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
@@ -264,18 +266,34 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                 <CardHeader>
                     <CardTitle>Selección de Colaborador</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <Label htmlFor="provider-select">Colaborador</Label>
-                    <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
-                        <SelectTrigger id="provider-select">
-                            <SelectValue placeholder="Selecciona un colaborador..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {liquidationProviders.map(p => (
-                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                <CardContent className="space-y-4">
+                    <div>
+                        <Label htmlFor="provider-select">Colaborador</Label>
+                        <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+                            <SelectTrigger id="provider-select">
+                                <SelectValue placeholder="Selecciona un colaborador..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {liquidationProviders.map(p => (
+                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {selectedProvider && (
+                        <div className="border rounded-lg p-4 bg-muted/50">
+                            <div className="flex justify-between items-start">
+                                <div className="space-y-1">
+                                    <Label>Nota para el Colaborador</Label>
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                        {selectedProvider.adminNote || 'No hay notas para este colaborador.'}
+                                    </p>
+                                </div>
+                                <ProviderAdminNoteEditor provider={selectedProvider} onActionComplete={handleDataChange} />
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

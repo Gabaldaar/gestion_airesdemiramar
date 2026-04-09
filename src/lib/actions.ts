@@ -1513,7 +1513,7 @@ export async function addProvider(previousState: any, formData: FormData) {
     billingType: (formData.get('billingType') as ProviderBillingType) || null,
     rateCurrency: (formData.get('rateCurrency') as 'ARS' | 'USD') || null,
     hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null,
-    perVisitRate: formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null,
+    perVisitRate: null, // Obsolete field, always set to null
     role: (formData.get('role') as UserRole) || 'provider',
     status: (formData.get('status') as UserStatus) || 'pending',
   };
@@ -1589,7 +1589,7 @@ export async function updateProvider(previousState: any, formData: FormData) {
     dataToUpdate.billingType = (formData.get('billingType') as ProviderBillingType) || null;
     dataToUpdate.rateCurrency = (formData.get('rateCurrency') as 'ARS' | 'USD') || null;
     dataToUpdate.hourlyRate = formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : null;
-    dataToUpdate.perVisitRate = formData.get('perVisitRate') ? parseFloat(formData.get('perVisitRate') as string) : null;
+    dataToUpdate.perVisitRate = null; // Obsolete field
     dataToUpdate.role = (formData.get('role') as UserRole) || 'provider';
     dataToUpdate.status = (formData.get('status') as UserStatus) || 'pending';
 
@@ -1746,6 +1746,25 @@ export async function updateProviderRating(previousState: any, formData: FormDat
     } catch (error: any) {
         return { success: false, message: `Error de base de datos: ${error.message}` };
     }
+}
+
+export async function updateProviderAdminNote(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const adminNote = formData.get('adminNote') as string;
+
+  if (!id) {
+    return { success: false, message: 'ID de colaborador no proporcionado.' };
+  }
+
+  try {
+    await updateProviderPartial(id, { adminNote });
+    revalidatePath('/liquidations');
+    revalidatePath('/providers');
+    return { success: true, message: 'Nota actualizada correctamente.' };
+  } catch (error: any) {
+    console.error('Error updating provider admin note:', error);
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
 }
 
 // --- DATE BLOCKS ---
@@ -1943,7 +1962,7 @@ export async function generateLiquidation(previousState: any, formData: FormData
         const adjustmentsSnap = await getDocs(adjustmentsQuery);
         for (const doc of adjustmentsSnap.docs) {
             const adj = { id: doc.id, ...doc.data() } as ManualAdjustment;
-            if (adj.status !== 'pending_liquidation') throw new Error(`El ajuste ${adj.description} ya ha sido liquidado.`);
+            if (adj.status !== 'pending_liquidation') throw new Error(`El ajuste ${adj.notes} ya ha sido liquidado.`);
             if (adj.currency !== currency) throw new Error('No se pueden mezclar monedas en una liquidación.');
             totalAmount += adj.amount;
             adjustmentsToUpdate.push(adj);
@@ -1979,7 +1998,7 @@ export async function generateLiquidation(previousState: any, formData: FormData
         const key = `${adj.assignment.type}-${adj.assignment.id}`;
         const existing = expensesByAssignment.get(key) || { amount: 0, assignment: adj.assignment, descriptions: [] };
         existing.amount += adj.amount;
-        existing.descriptions.push(adj.description);
+        existing.descriptions.push(adj.notes || `Ajuste del ${adj.date}`);
         expensesByAssignment.set(key, existing);
     });
     
@@ -2161,4 +2180,5 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
         return { success: false, message: e.message };
     }
 }
+
 
