@@ -13,13 +13,14 @@ import {
 } from '@/components/ui/dialog';
 import { LiquidationWithProvider, WorkLog, ManualAdjustment, getWorkLogsByLiquidationId, getManualAdjustmentsByLiquidationId } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Printer } from 'lucide-react';
+import { Loader2, Printer, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDateSafely } from '@/lib/utils';
 import { Button } from './ui/button';
 import Link from 'next/link';
 import { Card, CardContent } from './ui/card';
+import { useToast } from './ui/use-toast';
 
 const formatDate = (dateString: string) => {
     const date = parseDateSafely(dateString);
@@ -76,6 +77,7 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
 }) {
     const [details, setDetails] = useState<{ workLogs: WorkLog[], adjustments: ManualAdjustment[] } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
 
     useEffect(() => {
         if (isOpen) {
@@ -93,14 +95,59 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
         }
     }, [isOpen, liquidation.id]);
 
+    const handleCopyForWhatsApp = () => {
+        if (!details) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Los detalles no se han cargado todavía.",
+            });
+            return;
+        }
+
+        let text = `*Liquidación para ${liquidation.providerName}*\n`;
+        text += `*Fecha:* ${formatDate(liquidation.dateGenerated)}\n\n`;
+
+        if (details.workLogs.length > 0) {
+            text += "*Actividades:*\n";
+            details.workLogs.forEach(log => {
+                const logAsAny = log as any;
+                text += `- ${logAsAny.assignmentName || 'N/A'}: ${log.description} (${log.quantity} ${log.activityType === 'hourly' ? 'hs' : 'visita(s)'}) - *${formatCurrency(log.calculatedCost, log.costCurrency)}*\n`;
+            });
+            text += '\n';
+        }
+
+        if (details.adjustments.length > 0) {
+            text += "*Ajustes:*\n";
+            details.adjustments.forEach(adj => {
+                const adjAsAny = adj as any;
+                const sign = adj.amount > 0 ? '+' : '';
+                const notesText = adjAsAny.notes ? ` (${adjAsAny.notes})` : '';
+                text += `- ${adjAsAny.categoryName || 'Ajuste'}${notesText} - *${sign}${formatCurrency(adj.amount, adj.currency)}*\n`;
+            });
+            text += '\n';
+        }
+
+        text += `*Total a Pagar:* ${formatCurrency(liquidation.totalAmount, liquidation.currency)}\n`;
+        text += `*Pagado:* ${formatCurrency(liquidation.amountPaid, liquidation.currency)}\n`;
+        text += `*SALDO:* ${formatCurrency(liquidation.balance, liquidation.currency)}`;
+
+        navigator.clipboard.writeText(text);
+
+        toast({
+            title: "Copiado",
+            description: "El detalle de la liquidación se ha copiado al portapapeles.",
+        });
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Detalle de Liquidación</DialogTitle>
-                    <DialogDescription>
+                    <p className="text-lg font-bold text-primary pt-2">
                         Liquidación para {liquidation.providerName} del {formatDate(liquidation.dateGenerated)}.
-                    </DialogDescription>
+                    </p>
                 </DialogHeader>
                 {isLoading ? (
                     <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -189,6 +236,10 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                     <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
                         Cerrar
                     </Button>
+                     <Button variant="outline" onClick={handleCopyForWhatsApp}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar para WhatsApp
+                    </Button>
                     <Button asChild variant="outline">
                         <Link href={`/liquidations/${liquidation.id}/print`} target="_blank">
                             <Printer className="mr-2 h-4 w-4" />
@@ -200,4 +251,5 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
         </Dialog>
     );
 }
+
 

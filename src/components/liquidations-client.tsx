@@ -282,17 +282,18 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                     </div>
 
                     {selectedProvider && (
-                        <div className="border rounded-lg p-4 bg-muted/50">
+                        <Alert variant="default" className="border-blue-500 text-blue-800 dark:border-blue-400 dark:text-blue-300 [&>svg]:text-blue-500">
+                            <Info className="h-4 w-4" />
                             <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <Label>Nota para el Colaborador</Label>
-                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                <div>
+                                    <AlertTitle className="font-semibold text-blue-800 dark:text-blue-300">Nota para el Colaborador</AlertTitle>
+                                    <AlertDescription className="whitespace-pre-wrap">
                                         {selectedProvider.adminNote || 'No hay notas para este colaborador.'}
-                                    </p>
+                                    </AlertDescription>
                                 </div>
                                 <ProviderAdminNoteEditor provider={selectedProvider} onActionComplete={handleDataChange} />
                             </div>
-                        </div>
+                        </Alert>
                     )}
                 </CardContent>
             </Card>
@@ -459,4 +460,5 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
         </div>
     );
 }
+
 
