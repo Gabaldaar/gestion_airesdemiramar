@@ -95,22 +95,12 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
     const { liquidation, workLogs, adjustments, provider } = data;
 
     useEffect(() => {
-        // This effect triggers the print dialog automatically
-        // and tries to close the window afterwards.
-        const handleAfterPrint = () => {
-            window.close();
-        };
-        window.addEventListener('afterprint', handleAfterPrint);
-
-        // Set a short timeout to let the page render before printing
+        // Give the page a moment to render before triggering print
         const timer = setTimeout(() => {
             window.print();
         }, 500);
 
-        return () => {
-            clearTimeout(timer);
-            window.removeEventListener('afterprint', handleAfterPrint);
-        };
+        return () => clearTimeout(timer);
     }, []);
 
 
@@ -125,7 +115,10 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
                         <Image src={LogoCont} alt="Logo" width={225} height={60} placeholder="blur" />
                     </div>
                     <div className="print:hidden flex items-center gap-2">
-                         <Button variant="outline" onClick={() => window.close()}>
+                         <Button variant="outline" onClick={() => window.print()}>
+                            <Printer className="mr-2 h-4 w-4" /> Imprimir
+                        </Button>
+                         <Button variant="secondary" onClick={() => window.close()}>
                             <XIcon className="mr-2 h-4 w-4" /> Cerrar
                         </Button>
                     </div>

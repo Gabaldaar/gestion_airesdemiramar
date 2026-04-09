@@ -84,7 +84,7 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
 
     // 3. State: User is not logged into Firebase.
     if (!user) {
-      if (!isPublicPage) {
+      if (!isPublicPage && !pathname.includes('/print')) {
         router.push('/login');
       }
       return;
@@ -118,7 +118,7 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
                                  (appUser.role === 'provider' && !pathname.startsWith('/colaborador'));
 
         // If user is on a public/status page or the wrong dashboard, redirect to their correct home.
-        if ((isPublicPage || isStatusPage || isWrongDashboard) && !pathname.startsWith('/contract')) {
+        if ((isPublicPage || isStatusPage || isWrongDashboard) && !pathname.startsWith('/contract') && !pathname.includes('/print')) {
             const targetPath = appUser.role === 'admin' ? '/' : '/colaborador/dashboard';
             router.push(targetPath);
         }
@@ -143,10 +143,11 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
   
   const needsMainLayout = user && appUser?.status === 'active' && appUser?.role === 'admin';
   const isCollaboratorPage = user && appUser?.status === 'active' && appUser?.role === 'provider';
+  const isPrintPage = pathname.includes('/print');
 
   // If the user is a collaborator, and they are not on a collaborator page or contract page, show a loader
   // while the useEffect redirects them. This avoids showing the admin layout.
-  if (isCollaboratorPage && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract')) {
+  if (isCollaboratorPage && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract') && !isPrintPage) {
      return (
       <div className="flex h-screen items-center justify-center bg-muted/40">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -155,10 +156,10 @@ export default function LayoutManager({ children }: { children: React.ReactNode 
     );
   }
   
-  if (needsMainLayout && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract')) {
+  if (needsMainLayout && !pathname.startsWith('/colaborador') && !pathname.startsWith('/contract') && !isPrintPage) {
       return <MainLayout>{children}</MainLayout>;
   }
   
-  // For collaborator dashboard, login, status pages, contract view.
+  // For collaborator dashboard, login, status pages, contract view, and print pages.
   return <>{children}</>;
 }
