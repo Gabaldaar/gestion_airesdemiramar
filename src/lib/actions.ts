@@ -72,6 +72,7 @@ import {
   addAdjustmentCategoryDb,
   updateAdjustmentCategoryDb,
   deleteAdjustmentCategoryDb,
+  getAdjustmentCategories,
   Tenant,
   Booking,
   Expense,
@@ -1871,12 +1872,31 @@ export async function addManualAdjustment(previousState: any, formData: FormData
         }
         const [assignmentType, assignmentId] = assignmentValue.split('-') as ['property' | 'scope', string];
         
+        const categoryId = formData.get('categoryId') as string;
+        if (!categoryId) {
+             return { success: false, message: 'Debe seleccionar una categoría de ajuste.' };
+        }
+
+        const categories = await getAdjustmentCategories();
+        const category = categories.find(c => c.id === categoryId);
+        if (!category) {
+             return { success: false, message: 'La categoría seleccionada no es válida.' };
+        }
+
+        let amount = parseFloat(formData.get('amount') as string);
+        if (category.type === 'deduction') {
+            amount = -Math.abs(amount);
+        } else {
+            amount = Math.abs(amount);
+        }
+
         const adjustmentData: Omit<ManualAdjustment, 'id' | 'status'> = {
             providerId: formData.get('providerId') as string,
             date: formData.get('date') as string,
-            amount: parseFloat(formData.get('amount') as string),
+            amount: amount,
             currency: formData.get('currency') as 'ARS' | 'USD',
-            description: formData.get('description') as string,
+            categoryId: categoryId,
+            notes: formData.get('notes') as string,
             assignment: { type: assignmentType, id: assignmentId },
         };
         await addManualAdjustmentDb(adjustmentData);
@@ -2092,11 +2112,30 @@ export async function updateManualAdjustment(previousState: any, formData: FormD
         const assignmentValue = formData.get('assignment') as string;
         const [assignmentType, assignmentId] = assignmentValue.split('-') as ['property' | 'scope', string];
 
-        const adjustmentData: Partial<ManualAdjustment> = {
+        const categoryId = formData.get('categoryId') as string;
+        if (!categoryId) {
+            return { success: false, message: 'Debe seleccionar una categoría de ajuste.' };
+        }
+
+        const categories = await getAdjustmentCategories();
+        const category = categories.find(c => c.id === categoryId);
+        if (!category) {
+            return { success: false, message: 'La categoría seleccionada no es válida.' };
+        }
+
+        let amount = parseFloat(formData.get('amount') as string);
+        if (category.type === 'deduction') {
+            amount = -Math.abs(amount);
+        } else {
+            amount = Math.abs(amount);
+        }
+
+        const adjustmentData: Partial<Omit<ManualAdjustment, 'id'>> = {
             date: formData.get('date') as string,
-            description: formData.get('description') as string,
-            amount: parseFloat(formData.get('amount') as string),
+            notes: formData.get('notes') as string,
+            amount: amount,
             currency: formData.get('currency') as 'ARS' | 'USD',
+            categoryId: categoryId,
             assignment: {
                 type: assignmentType,
                 id: assignmentId,
@@ -2122,3 +2161,4 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
         return { success: false, message: e.message };
     }
 }
+

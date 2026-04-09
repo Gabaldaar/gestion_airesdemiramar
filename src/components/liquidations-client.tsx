@@ -367,6 +367,7 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                                                                     <TableHead>Fecha</TableHead>
                                                                     <TableHead>Categoría</TableHead>
                                                                     <TableHead>Imputado a</TableHead>
+                                                                    <TableHead>Notas</TableHead>
                                                                     <TableHead className="text-right">Monto</TableHead>
                                                                     <TableHead className="text-right">Acciones</TableHead>
                                                                 </TableRow>
@@ -378,6 +379,7 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                                                                         <TableCell>{formatDate(adj.date)}</TableCell>
                                                                         <TableCell>{adj.categoryName || 'Ajuste'}</TableCell>
                                                                         <TableCell>{adj.assignmentName || 'N/A'}</TableCell>
+                                                                        <TableCell>{adj.notes || '-'}</TableCell>
                                                                         <TableCell className={`text-right font-medium ${adj.amount < 0 ? 'text-red-500' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
                                                                         <TableCell className="text-right">
                                                                             <div className="flex items-center justify-end">
@@ -387,7 +389,7 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                                                                         </TableCell>
                                                                     </TableRow>
                                                                 ))}
-                                                                {providerData?.adjustments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No hay ajustes pendientes.</TableCell></TableRow>}
+                                                                {providerData?.adjustments.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">No hay ajustes pendientes.</TableCell></TableRow>}
                                                             </TableBody>
                                                         </Table>
                                                     </div>
@@ -439,3 +441,4 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
         </div>
     );
 }
+

@@ -200,3 +200,4 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
         </Dialog>
     );
 }
+
