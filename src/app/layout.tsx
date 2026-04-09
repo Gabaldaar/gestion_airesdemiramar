@@ -3,8 +3,19 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import LayoutManager from "@/components/layout-manager";
-import { AuthProvider } from "@/components/auth-provider";
 import PwaSetup from "@/components/pwa-setup";
+import dynamic from 'next/dynamic';
+import { Loader2 } from "lucide-react";
+
+const AuthProvider = dynamic(() => import('@/components/auth-provider').then(mod => mod.AuthProvider), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-screen w-full items-center justify-center bg-muted/40">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-4 text-muted-foreground">Cargando Autenticación...</span>
+    </div>
+  )
+});
 
 
 const inter = Inter({ subsets: ["latin"] });
