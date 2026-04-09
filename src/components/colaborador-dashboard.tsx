@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Property, TaskScope, WorkLog, getPendingWorkLogs } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
-import { PlusCircle, Loader2, Pencil, Info, X } from 'lucide-react';
+import { PlusCircle, Loader2, Pencil, Info, XCircle, User, LogOut } from 'lucide-react';
 import { WorkLogAddForm } from './worklog-add-form';
 import { WorkLogEditForm } from './worklog-edit-form';
 import { WorkLogDeleteForm } from './worklog-delete-form';
@@ -16,7 +16,15 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDateSafely, cn } from '@/lib/utils';
 import { useToast } from './ui/use-toast';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 const formatDate = (dateString: string) => {
     const date = parseDateSafely(dateString);
@@ -155,19 +163,26 @@ export default function ColaboradorDashboard({ properties, scopes }: { propertie
                 <h1 className="text-lg font-semibold truncate">
                     Hola, <span className="text-primary">{appUser.name.split(' ')[0]}</span>
                 </h1>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="outline" size="icon" onClick={handleSoftExit}>
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Salir del Panel</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Salir del Panel</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" size="icon" className="rounded-full">
+                            <User className="h-5 w-5" />
+                            <span className="sr-only">Menú de usuario</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Menú</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleSoftExit}>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            <span>Salir del Panel</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={handleSignOut}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Cerrar Sesión</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">

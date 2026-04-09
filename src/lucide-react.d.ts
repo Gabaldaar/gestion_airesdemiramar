@@ -44,6 +44,7 @@ declare module 'lucide-react' {
     export const Send: LucideIcon;
     export const Save: LucideIcon;
     export const X: LucideIcon;
+    export const XCircle: LucideIcon;
     export const Shield: LucideIcon;
     export const RefreshCw: LucideIcon;
     export const Search: LucideIcon;
