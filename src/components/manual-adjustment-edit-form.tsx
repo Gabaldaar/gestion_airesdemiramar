@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
@@ -11,7 +12,7 @@ import { DatePicker } from './ui/date-picker';
 import { Textarea } from './ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { updateManualAdjustment } from '@/lib/actions';
-import { Provider, Property, TaskScope, ManualAdjustment } from '@/lib/data';
+import { Provider, Property, TaskScope, ManualAdjustment, AdjustmentCategory, getAdjustmentCategories } from '@/lib/data';
 import { useToast } from './ui/use-toast';
 import { parseDateSafely } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
+    const [categories, setCategories] = useState<AdjustmentCategory[]>([]);
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
@@ -59,6 +61,7 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
     useEffect(() => {
         if (isOpen) {
             setDate(parseDateSafely(adjustment.date));
+            getAdjustmentCategories().then(setCategories);
             setState(initialState);
         }
     }, [isOpen, adjustment]);
@@ -83,14 +86,21 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
                     </div>
                     
                     <div className="space-y-2">
-                        <Label htmlFor="description">Descripción</Label>
-                        <Textarea id="description" name="description" defaultValue={adjustment.description} required />
+                        <Label htmlFor="categoryId">Categoría del Ajuste</Label>
+                        <Select name="categoryId" defaultValue={adjustment.categoryId} required>
+                             <SelectTrigger><SelectValue placeholder="Selecciona una categoría..."/></SelectTrigger>
+                             <SelectContent>
+                                {categories.map(cat => (
+                                    <SelectItem key={cat.id} value={cat.id}>{cat.name} ({cat.type === 'addition' ? 'Suma' : 'Resta'})</SelectItem>
+                                ))}
+                             </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="amount">Monto</Label>
-                            <Input id="amount" name="amount" type="number" step="0.01" defaultValue={adjustment.amount} required />
+                            <Input id="amount" name="amount" type="number" step="0.01" defaultValue={Math.abs(adjustment.amount)} required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="currency">Moneda</Label>
@@ -119,6 +129,11 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="notes">Notas (Opcional)</Label>
+                        <Textarea id="notes" name="notes" defaultValue={adjustment.notes || ''} />
                     </div>
 
                     <DialogFooter>

@@ -362,6 +362,12 @@ export type TaskWithDetails = Task & {
 }
 
 // LIQUIDATIONS MODULE
+export type AdjustmentCategory = {
+    id: string;
+    name: string;
+    type: 'addition' | 'deduction';
+};
+
 export type WorkLog = {
     id: string;
     providerId: string;
@@ -384,7 +390,8 @@ export type ManualAdjustment = {
     date: string;
     amount: number; // Can be negative for deductions
     currency: 'ARS' | 'USD';
-    description: string;
+    categoryId: string;
+    notes?: string;
     status: 'pending_liquidation' | 'liquidated';
     liquidationId?: string;
 }
@@ -426,6 +433,7 @@ const dateBlocksCollection = collection(db, 'dateBlocks');
 const workLogsCollection = collection(db, 'workLogs');
 const manualAdjustmentsCollection = collection(db, 'manualAdjustments');
 const liquidationsCollection = collection(db, 'liquidations');
+const adjustmentCategoriesCollection = collection(db, 'adjustmentCategories');
 
 
 // Helper function to add default data only if the collection is empty
@@ -462,10 +470,19 @@ const initializeDefaultData = async () => {
         }
     ];
 
+    const defaultAdjustmentCategories = [
+        { name: 'Adelanto de Sueldo', type: 'deduction' },
+        { name: 'Bono por Desempeño', type: 'addition' },
+        { name: 'Reintegro de Gastos', type: 'addition' },
+        { name: 'Descuento (General)', type: 'deduction' },
+        { name: 'Otro Ingreso', type: 'addition' },
+    ];
+
     try {
         await addDefaultData(emailTemplatesCollection, defaultTemplates);
+        await addDefaultData(adjustmentCategoriesCollection, defaultAdjustmentCategories);
     } catch (error) {
-        console.error("Error adding default email templates:", error);
+        console.error("Error adding default data:", error);
     }
 };
 
@@ -1596,13 +1613,15 @@ export async function deleteDateBlockDb(id: string): Promise<void> {
 // --- LIQUIDATIONS ---
 
 // Helper to enrich logs and adjustments
-async function enrichItems(items: (WorkLog | ManualAdjustment)[]): Promise<(WorkLog | ManualAdjustment)[]> {
-    const [properties, scopes] = await Promise.all([
+async function enrichItems(items: (WorkLog | ManualAdjustment)[]): Promise<(WorkLog | ManualAdjustment & { categoryName?: string, categoryType?: 'addition' | 'deduction' })[]> {
+    const [properties, scopes, adjustmentCategories] = await Promise.all([
         getProperties(),
         getTaskScopes(),
+        getAdjustmentCategories(),
     ]);
     const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
     const scopesMap = new Map(scopes.map(s => [s.id, s.name]));
+    const adjustmentCategoriesMap = new Map(adjustmentCategories.map(cat => [cat.id, cat]));
 
     return items.map(item => {
         let assignmentName = 'N/A';
@@ -1613,6 +1632,12 @@ async function enrichItems(items: (WorkLog | ManualAdjustment)[]): Promise<(Work
                 assignmentName = scopesMap.get(item.assignment.id) || 'Ámbito Desconocido';
             }
         }
+        
+        if ('categoryId' in item && item.categoryId) {
+            const category = adjustmentCategoriesMap.get(item.categoryId);
+            return { ...item, assignmentName, categoryName: category?.name, categoryType: category?.type };
+        }
+
         return { ...item, assignmentName };
     });
 }
@@ -1734,11 +1759,12 @@ export async function getWorkLogsByLiquidationId(liquidationId: string): Promise
     return await enrichItems(logs) as WorkLog[];
 }
 
-export async function getManualAdjustmentsByLiquidationId(liquidationId: string): Promise<ManualAdjustment[]> {
+export async function getManualAdjustmentsByLiquidationId(liquidationId: string): Promise<(ManualAdjustment & { categoryName?: string })[]> {
     const q = query(manualAdjustmentsCollection, where('liquidationId', '==', liquidationId));
     const snapshot = await getDocs(q);
     const adjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
-    return await enrichItems(adjustments) as ManualAdjustment[];
+    const enriched = await enrichItems(adjustments);
+    return enriched as (ManualAdjustment & { categoryName?: string })[];
 }
 
 export async function revertLiquidationDb(liquidationId: string): Promise<void> {
@@ -1880,4 +1906,35 @@ export async function addLiquidationPaymentDb(
   batch.set(expenseRef, expenseData);
 
   await batch.commit();
+}
+
+
+// Adjustment Categories
+export async function getAdjustmentCategories(): Promise<AdjustmentCategory[]> {
+    await initializeDefaultData(); // Ensure defaults exist
+    const q = query(adjustmentCategoriesCollection, orderBy("name"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(processDoc) as AdjustmentCategory[];
+}
+
+export async function addAdjustmentCategoryDb(category: Omit<AdjustmentCategory, 'id'>): Promise<AdjustmentCategory> {
+    const docRef = await addDoc(adjustmentCategoriesCollection, category);
+    return { id: docRef.id, ...category };
+}
+
+export async function updateAdjustmentCategoryDb(updatedCategory: AdjustmentCategory): Promise<AdjustmentCategory> {
+    const { id, ...data } = updatedCategory;
+    const docRef = doc(db, 'adjustmentCategories', id);
+    await updateDoc(docRef, data);
+    return updatedCategory;
+}
+
+export async function deleteAdjustmentCategoryDb(id: string): Promise<void> {
+    const q = query(manualAdjustmentsCollection, where('categoryId', '==', id));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+        throw new Error(`No se puede eliminar. La categoría está siendo utilizada por ${snapshot.size} ajuste(s).`);
+    }
+    const docRef = doc(db, 'adjustmentCategories', id);
+    await deleteDoc(docRef);
 }

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -49,18 +50,19 @@ function WorkLogDetailCard({ log }: { log: WorkLog & { assignmentName?: string }
     );
 }
 
-function AdjustmentDetailCard({ adj }: { adj: ManualAdjustment & { assignmentName?: string } }) {
+function AdjustmentDetailCard({ adj }: { adj: ManualAdjustment & { assignmentName?: string, categoryName?: string, notes?: string } }) {
     return (
         <Card>
             <CardContent className="p-3 text-sm space-y-1">
                 <div className="flex justify-between items-start">
                      <div className="flex-1">
-                        <p className="font-semibold">{adj.assignmentName}</p>
+                        <p className="font-semibold">{adj.categoryName || 'Ajuste'}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(adj.date)}</p>
                     </div>
                     <p className={`font-bold ${adj.amount < 0 ? 'text-destructive' : 'text-primary'}`}>{formatCurrency(adj.amount, adj.currency)}</p>
                 </div>
-                 <p>{adj.description}</p>
+                 <p className="italic text-muted-foreground">{adj.assignmentName || 'N/A'}</p>
+                 {adj.notes && <p>{adj.notes}</p>}
             </CardContent>
         </Card>
     );
@@ -153,17 +155,19 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Fecha</TableHead>
-                                                <TableHead>Asignación</TableHead>
-                                                <TableHead>Descripción</TableHead>
+                                                <TableHead>Categoría</TableHead>
+                                                <TableHead>Imputado a</TableHead>
+                                                <TableHead>Notas</TableHead>
                                                 <TableHead className="text-right">Monto</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {details.adjustments.map(adj => (
+                                            {details.adjustments.map((adj: any) => (
                                                 <TableRow key={adj.id}>
                                                     <TableCell>{formatDate(adj.date)}</TableCell>
-                                                    <TableCell>{(adj as any).assignmentName || 'N/A'}</TableCell>
-                                                    <TableCell>{adj.description}</TableCell>
+                                                    <TableCell>{adj.categoryName || 'Ajuste'}</TableCell>
+                                                    <TableCell>{adj.assignmentName || 'N/A'}</TableCell>
+                                                    <TableCell>{adj.notes || '-'}</TableCell>
                                                     <TableCell className={`text-right ${adj.amount < 0 ? 'text-destructive' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
                                                 </TableRow>
                                             ))}

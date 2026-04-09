@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,7 @@ import { DatePicker } from './ui/date-picker';
 import { Textarea } from './ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { addManualAdjustment } from '@/lib/actions';
-import { Provider, Property, TaskScope } from '@/lib/data';
+import { Provider, Property, TaskScope, AdjustmentCategory, getAdjustmentCategories } from '@/lib/data';
 import { useToast } from './ui/use-toast';
 
 const initialState = { success: false, message: '' };
@@ -27,6 +28,7 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
+    const [categories, setCategories] = useState<AdjustmentCategory[]>([]);
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
@@ -56,7 +58,8 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
     }, [state]);
     
     useEffect(() => {
-        if (!isOpen) {
+        if (isOpen) {
+            getAdjustmentCategories().then(setCategories);
             formRef.current?.reset();
             setDate(new Date());
             setState(initialState);
@@ -80,14 +83,21 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
                     </div>
                     
                     <div className="space-y-2">
-                        <Label htmlFor="description">Descripción</Label>
-                        <Textarea id="description" name="description" placeholder="Ej: Bono por desempeño, Adelanto" required />
+                        <Label htmlFor="categoryId">Categoría del Ajuste</Label>
+                        <Select name="categoryId" required>
+                             <SelectTrigger><SelectValue placeholder="Selecciona una categoría..."/></SelectTrigger>
+                             <SelectContent>
+                                {categories.map(cat => (
+                                    <SelectItem key={cat.id} value={cat.id}>{cat.name} ({cat.type === 'addition' ? 'Suma' : 'Resta'})</SelectItem>
+                                ))}
+                             </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="amount">Monto</Label>
-                            <Input id="amount" name="amount" type="number" step="0.01" placeholder="Usar negativo para adelantos" required />
+                            <Input id="amount" name="amount" type="number" step="0.01" placeholder="Monto en positivo" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="currency">Moneda</Label>
@@ -116,6 +126,11 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <Label htmlFor="notes">Notas (Opcional)</Label>
+                        <Textarea id="notes" name="notes" placeholder="Ej: Detalle de gasto reintegrado, motivo del bono..." />
                     </div>
 
                     <DialogFooter>

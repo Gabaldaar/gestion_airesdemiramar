@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Provider, Property, TaskScope, WorkLog, ManualAdjustment, getPendingWorkLogs, getPendingManualAdjustments, LiquidationWithProvider } from '@/lib/data';
+import { Provider, Property, TaskScope, WorkLog, ManualAdjustment, getPendingWorkLogs, getPendingManualAdjustments, LiquidationWithProvider, AdjustmentCategory, getAdjustmentCategories } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -75,7 +76,7 @@ function WorkLogCard({ log, onEdit, onDelete, onSelectionChange, isSelected }: {
 }
 
 function ManualAdjustmentCard({ adj, onEdit, onDelete, onSelectionChange, isSelected }: {
-    adj: ManualAdjustment & { assignmentName?: string };
+    adj: ManualAdjustment & { assignmentName?: string, categoryName?: string, notes?: string };
     onEdit: (adj: ManualAdjustment) => void;
     onDelete: (adj: ManualAdjustment) => void;
     onSelectionChange: (checked: boolean) => void;
@@ -91,7 +92,7 @@ function ManualAdjustmentCard({ adj, onEdit, onDelete, onSelectionChange, isSele
                 />
                 <div className="flex-1">
                     <CardTitle className="text-base">
-                        {adj.assignmentName || 'N/A'}
+                        {adj.categoryName || 'Ajuste'}
                     </CardTitle>
                     <CardDescription>{formatDate(adj.date)}</CardDescription>
                 </div>
@@ -100,7 +101,8 @@ function ManualAdjustmentCard({ adj, onEdit, onDelete, onSelectionChange, isSele
                 </div>
             </CardHeader>
             <CardContent className="px-4 pb-2 text-sm">
-                <p>{adj.description}</p>
+                 <p className="italic text-muted-foreground">{adj.assignmentName || 'N/A'}</p>
+                {adj.notes && <p>{adj.notes}</p>}
             </CardContent>
             <CardFooter className="p-2 justify-end">
                 <Button variant="ghost" size="icon" onClick={() => onEdit(adj)}><Pencil className="h-4 w-4" /></Button>
@@ -352,7 +354,7 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                                                  {isMobile ? (
                                                     <div className="space-y-2">
                                                         {providerData?.adjustments.map(adj => (
-                                                            <ManualAdjustmentCard key={adj.id} adj={adj} onEdit={handleEditAdjustment} onDelete={handleDataChange} onSelectionChange={(checked) => setSelectedAdjustmentIds(prev => checked ? [...prev, adj.id] : prev.filter(id => id !== adj.id))} isSelected={selectedAdjustmentIds.includes(adj.id)} />
+                                                            <ManualAdjustmentCard key={adj.id} adj={adj as any} onEdit={handleEditAdjustment} onDelete={handleDataChange} onSelectionChange={(checked) => setSelectedAdjustmentIds(prev => checked ? [...prev, adj.id] : prev.filter(id => id !== adj.id))} isSelected={selectedAdjustmentIds.includes(adj.id)} />
                                                         ))}
                                                         {providerData?.adjustments.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">No hay ajustes pendientes.</p>}
                                                     </div>
@@ -363,19 +365,19 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                                                                 <TableRow>
                                                                     <TableHead className="w-10"><Checkbox onCheckedChange={(checked) => setSelectedAdjustmentIds(checked ? providerData?.adjustments.map(a => a.id) || [] : [])} checked={providerData?.adjustments.length ? selectedAdjustmentIds.length === providerData.adjustments.length : false} /></TableHead>
                                                                     <TableHead>Fecha</TableHead>
-                                                                    <TableHead>Descripción</TableHead>
+                                                                    <TableHead>Categoría</TableHead>
                                                                     <TableHead>Imputado a</TableHead>
                                                                     <TableHead className="text-right">Monto</TableHead>
                                                                     <TableHead className="text-right">Acciones</TableHead>
                                                                 </TableRow>
                                                             </TableHeader>
                                                             <TableBody>
-                                                                {providerData?.adjustments.map(adj => (
+                                                                {providerData?.adjustments.map((adj: any) => (
                                                                     <TableRow key={adj.id}>
                                                                         <TableCell><Checkbox checked={selectedAdjustmentIds.includes(adj.id)} onCheckedChange={(checked) => setSelectedAdjustmentIds(prev => checked ? [...prev, adj.id] : prev.filter(id => id !== adj.id))} /></TableCell>
                                                                         <TableCell>{formatDate(adj.date)}</TableCell>
-                                                                        <TableCell>{adj.description}</TableCell>
-                                                                        <TableCell>{(adj as any).assignmentName || 'N/A'}</TableCell>
+                                                                        <TableCell>{adj.categoryName || 'Ajuste'}</TableCell>
+                                                                        <TableCell>{adj.assignmentName || 'N/A'}</TableCell>
                                                                         <TableCell className={`text-right font-medium ${adj.amount < 0 ? 'text-red-500' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
                                                                         <TableCell className="text-right">
                                                                             <div className="flex items-center justify-end">
