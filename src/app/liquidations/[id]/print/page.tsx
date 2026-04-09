@@ -100,16 +100,6 @@ function PrintPageLoader() {
 function PrintPageComponent({ data }: { data: PrintPageData }) {
     const { liquidation, workLogs, adjustments, provider } = data;
 
-    useEffect(() => {
-        // Give the page a moment to render before triggering print
-        const timer = setTimeout(() => {
-            window.print();
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, []);
-
-
     const totalWorkLogs = workLogs.reduce((sum, log) => sum + log.calculatedCost, 0);
     const totalAdjustments = adjustments.reduce((sum, adj) => sum + adj.amount, 0);
 
@@ -181,29 +171,30 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
                     {adjustments.length > 0 && (
                         <div className="mb-8">
                             <h2 className="text-lg font-semibold border-b pb-2 mb-2">Detalle de Ajustes</h2>
-                            <Table>
+                             <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Fecha</TableHead>
-                                        <TableHead colSpan={3}>Categoría / Notas</TableHead>
+                                        <TableHead>Categoría / Asignación</TableHead>
                                         <TableHead className="text-right">Monto</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {adjustments.map(adj => (
                                         <TableRow key={adj.id}>
-                                            <TableCell>{formatDate(adj.date)}</TableCell>
-                                            <TableCell colSpan={3}>
+                                            <TableCell className="align-top">{formatDate(adj.date)}</TableCell>
+                                            <TableCell>
                                                 <p className="font-medium">{adj.categoryName || 'Ajuste'}</p>
-                                                {adj.notes && <p className="text-sm text-muted-foreground">{adj.notes}</p>}
+                                                {adj.assignmentName && <p className="text-xs text-muted-foreground italic">({adj.assignmentName})</p>}
+                                                {adj.notes && <p className="text-sm mt-1">{adj.notes}</p>}
                                             </TableCell>
-                                            <TableCell className={`text-right ${adj.amount < 0 ? 'text-red-600' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
+                                            <TableCell className={`text-right align-top ${adj.amount < 0 ? 'text-red-600' : ''}`}>{formatCurrency(adj.amount, adj.currency)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                                  <TableFooter>
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-right font-bold">Total Ajustes</TableCell>
+                                        <TableCell colSpan={2} className="text-right font-bold">Total Ajustes</TableCell>
                                         <TableCell className="text-right font-bold">{formatCurrency(totalAdjustments, liquidation.currency)}</TableCell>
                                     </TableRow>
                                 </TableFooter>
