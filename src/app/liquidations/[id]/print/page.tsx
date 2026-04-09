@@ -15,8 +15,7 @@ import {
 } from '@/lib/data';
 import Image from 'next/image';
 import LogoCont from '@/assets/logocont.png';
-import { Button } from '@/components/ui/button';
-import { Printer, X as XIcon, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDateSafely } from '@/lib/utils';
@@ -100,6 +99,16 @@ function PrintPageLoader() {
 function PrintPageComponent({ data }: { data: PrintPageData }) {
     const { liquidation, workLogs, adjustments, provider } = data;
 
+    useEffect(() => {
+        // Automatically trigger the print dialog when the component mounts
+        // A small timeout can help ensure all content is rendered before printing
+        const timer = setTimeout(() => {
+            window.print();
+        }, 500); 
+        
+        return () => clearTimeout(timer);
+    }, []);
+
     const totalWorkLogs = workLogs.reduce((sum, log) => sum + log.calculatedCost, 0);
     const totalAdjustments = adjustments.reduce((sum, adj) => sum + adj.amount, 0);
 
@@ -110,14 +119,6 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
                     <div>
                         <Image src={LogoCont} alt="Logo" width={225} height={60} placeholder="blur" />
                     </div>
-                    <div className="print:hidden flex items-center gap-2">
-                         <Button variant="outline" onClick={() => window.print()}>
-                            <Printer className="mr-2 h-4 w-4" /> Imprimir
-                        </Button>
-                         <Button variant="secondary" onClick={() => window.close()}>
-                            <XIcon className="mr-2 h-4 w-4" /> Cerrar
-                        </Button>
-                    </div>
                 </header>
 
                 <main className="mt-8 print:mt-4">
@@ -125,7 +126,7 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
                     <div className="grid grid-cols-2 gap-4 mb-8">
                         <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Para:</p>
-                            <p className="text-lg font-bold">{provider.name}</p>
+                            <p className="text-xl font-bold text-primary">{provider.name}</p>
                             {provider.email && <p className="text-sm text-muted-foreground">{provider.email}</p>}
                         </div>
                         <div className="space-y-1 text-right text-sm">

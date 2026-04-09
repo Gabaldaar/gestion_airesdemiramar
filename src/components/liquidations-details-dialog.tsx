@@ -141,51 +141,7 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
     };
 
     const handlePrint = () => {
-        const url = `/liquidations/${liquidation.id}/print`;
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        iframe.title = "print-frame";
-        document.body.appendChild(iframe);
-        
-        iframe.onload = function() {
-            try {
-                if (iframe.contentWindow) {
-                    iframe.contentWindow.focus();
-                    iframe.contentWindow.print();
-                } else {
-                    throw new Error("No se pudo acceder al contenido para imprimir.");
-                }
-            } catch (e) {
-                console.error("Printing failed", e);
-                toast({
-                    variant: "destructive",
-                    title: "Error de Impresión",
-                    description: e instanceof Error ? e.message : "No se pudo abrir el diálogo de impresión.",
-                });
-            } finally {
-                setTimeout(() => {
-                    if (document.body.contains(iframe)) {
-                         document.body.removeChild(iframe);
-                    }
-                }, 1000);
-            }
-        };
-
-        iframe.onerror = function() {
-             toast({
-                variant: "destructive",
-                title: "Error de Carga",
-                description: "No se pudo cargar la página de impresión.",
-            });
-             if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-            }
-        }
-        
-        iframe.src = url;
+        window.open(`/liquidations/${liquidation.id}/print`, '_blank');
     };
 
 
