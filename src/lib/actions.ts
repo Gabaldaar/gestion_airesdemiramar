@@ -69,6 +69,9 @@ import {
   revertLiquidationDb,
   addLiquidationPaymentDb,
   getProviderByEmail,
+  addAdjustmentCategoryDb,
+  updateAdjustmentCategoryDb,
+  deleteAdjustmentCategoryDb,
   Tenant,
   Booking,
   Expense,
@@ -1290,6 +1293,52 @@ export async function deleteTaskScope(previousState: any, formData: FormData) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
 }
+
+export async function addAdjustmentCategory(previousState: any, formData: FormData) {
+  const name = formData.get('name') as string;
+  const type = formData.get('type') as 'addition' | 'deduction';
+  if (!name || !type) {
+    return { success: false, message: 'El nombre y el tipo son obligatorios.' };
+  }
+  try {
+    await addAdjustmentCategoryDb({ name, type });
+    revalidatePath('/settings');
+    return { success: true, message: 'Categoría añadida.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function updateAdjustmentCategory(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const name = formData.get('name') as string;
+  const type = formData.get('type') as 'addition' | 'deduction';
+  if (!id || !name || !type) {
+    return { success: false, message: 'Faltan datos para actualizar la categoría.' };
+  }
+  try {
+    await updateAdjustmentCategoryDb({ id, name, type });
+    revalidatePath('/settings');
+    return { success: true, message: 'Categoría actualizada.' };
+  } catch (error: any) {
+    return { success: false, message: `Error de base de datos: ${error.message}` };
+  }
+}
+
+export async function deleteAdjustmentCategory(previousState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  if (!id) {
+    return { success: false, message: 'ID de categoría no válido.' };
+  }
+  try {
+    await deleteAdjustmentCategoryDb(id);
+    revalidatePath('/settings');
+    return { success: true, message: 'Categoría de ajuste eliminada.' };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
 
 export async function addTask(previousState: any, formData: FormData) {
   const assignmentValue = formData.get('assignment') as string;
