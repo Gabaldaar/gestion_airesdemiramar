@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -261,8 +262,16 @@ function ProviderActions({ provider, onDataChanged, onEditProvider, onHistoryCli
 
 function ProviderRow({ provider, category, onDataChanged, onEditProvider, onHistoryClick }: { provider: Provider, category?: ProviderCategory, onDataChanged: () => void, onEditProvider: (provider: Provider) => void, onHistoryClick: (provider: Provider) => void }) {
     const waLink = formatWhatsAppLink(provider.phone, provider.countryCode);
+    
+    let rowClassName = "";
+    if (provider.role === 'admin') {
+        rowClassName = "bg-green-100/50 dark:bg-green-900/20";
+    } else if (provider.status === 'active') {
+        rowClassName = "bg-blue-100/50 dark:bg-blue-900/20";
+    }
+
     return (
-        <TableRow key={provider.id}>
+        <TableRow key={provider.id} className={rowClassName}>
             <TableCell className="font-medium">
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
@@ -300,8 +309,16 @@ function ProviderRow({ provider, category, onDataChanged, onEditProvider, onHist
 
 function ProviderCard({ provider, category, onDataChanged, onEditProvider, onHistoryClick }: { provider: Provider, category?: ProviderCategory, onDataChanged: () => void, onEditProvider: (provider: Provider) => void, onHistoryClick: (provider: Provider) => void }) {
     const waLink = formatWhatsAppLink(provider.phone, provider.countryCode);
+    
+    let cardClassName = "";
+    if (provider.role === 'admin') {
+        cardClassName = "bg-green-100/50 dark:bg-green-900/20";
+    } else if (provider.status === 'active') {
+        cardClassName = "bg-blue-100/50 dark:bg-blue-900/20";
+    }
+    
     return (
-        <Card>
+        <Card className={cn("flex flex-col w-full", cardClassName)}>
             <CardHeader className="p-4">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-lg text-primary">{provider.name}</CardTitle>
@@ -394,7 +411,7 @@ export default function ProvidersList({ providers, categories, onDataChanged, on
     const groupTitles: { [key: string]: string } = {
         admins: 'Administradores',
         active: 'Colaboradores',
-        pending: 'Colaboradores Pendientes',
+        pending: 'Proveedores',
     };
 
     const renderGroup = (groupKey: string, isCardView: boolean) => {
