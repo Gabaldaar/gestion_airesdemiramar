@@ -110,10 +110,10 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
   }
 
   return (
-    <Card className="bg-muted/50">
+    <Card className="bg-blue-100/50 dark:bg-blue-900/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-6 w-6" />
+            <Search className="h-6 w-6" />
             Buscar Disponibilidad y Precios
         </CardTitle>
         <CardDescription>

@@ -196,7 +196,7 @@ export default function PaymentCalculator({ booking, onRegisterPayment, showTabs
     }
 
     return (
-        <Card className="bg-muted/50">
+        <Card className="bg-green-100/50 dark:bg-green-900/20">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Calculator className="h-6 w-6" />
