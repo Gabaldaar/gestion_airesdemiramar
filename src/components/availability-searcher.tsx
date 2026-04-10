@@ -110,7 +110,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
   }
 
   return (
-    <Card>
+    <Card className="bg-muted/50">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
             <Calculator className="h-6 w-6" />
