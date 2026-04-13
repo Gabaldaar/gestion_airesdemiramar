@@ -66,11 +66,31 @@ export function PropertyNotesForm({ property }: { property: Property }) {
           </DialogDescription>
         </DialogHeader>
         <form id={formId} action={formAction} className="space-y-4">
+          {/* --- Hidden fields to preserve all property data --- */}
           <input type="hidden" name="id" value={property.id} />
-          {/* Pass all existing property data to avoid accidental deletion */}
           <input type="hidden" name="name" defaultValue={property.name} />
           <input type="hidden" name="address" defaultValue={property.address} />
-          <input type="hidden" name="imageUrl" defaultValue={property.imageUrl} />
+          <input type="hidden" name="imageUrl" defaultValue={property.imageUrl || ''} />
+          <input type="hidden" name="propertyUrl" defaultValue={property.propertyUrl || ''} />
+          <input type="hidden" name="priceSheetName" defaultValue={property.priceSheetName || ''} />
+          <input type="hidden" name="contractTemplate" defaultValue={property.contractTemplate || ''} />
+          <input type="hidden" name="customField1Label" defaultValue={property.customField1Label || ''} />
+          <input type="hidden" name="customField1Value" defaultValue={property.customField1Value || ''} />
+          <input type="hidden" name="customField2Label" defaultValue={property.customField2Label || ''} />
+          <input type="hidden" name="customField2Value" defaultValue={property.customField2Value || ''} />
+          <input type="hidden" name="customField3Label" defaultValue={property.customField3Label || ''} />
+          <input type="hidden" name="customField3Value" defaultValue={property.customField3Value || ''} />
+          <input type="hidden" name="customField4Label" defaultValue={property.customField4Label || ''} />
+          <input type="hidden" name="customField4Value" defaultValue={property.customField4Value || ''} />
+          <input type="hidden" name="customField5Label" defaultValue={property.customField5Label || ''} />
+          <input type="hidden" name="customField5Value" defaultValue={property.customField5Value || ''} />
+          <input type="hidden" name="customField6Label" defaultValue={property.customField6Label || ''} />
+          <input type="hidden" name="customField6Value" defaultValue={property.customField6Value || ''} />
+          {property.visitRates && Object.entries(property.visitRates).map(([providerId, rate]) => (
+            <input key={providerId} type="hidden" name={`visitRate_${providerId}`} defaultValue={rate} />
+          ))}
+          {/* --- End of hidden fields --- */}
+          
           <Textarea
             name="notes"
             defaultValue={property.notes}
