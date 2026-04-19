@@ -1902,24 +1902,78 @@ export async function addManualAdjustment(previousState: any, formData: FormData
              return { success: false, message: 'La categoría seleccionada no es válida.' };
         }
 
-        let amount = parseFloat(formData.get('amount') as string);
-        if (category.type === 'deduction') {
-            amount = -Math.abs(amount);
-        } else {
-            amount = Math.abs(amount);
+        const amount = parseFloat(formData.get('amount') as string);
+        const currency = formData.get('currency') as 'ARS' | 'USD';
+        
+        if (isNaN(amount) || amount <= 0) {
+            return { success: false, message: 'El monto debe ser un número positivo.' };
         }
+
+        const adjustmentAmount = category.type === 'deduction' ? -Math.abs(amount) : Math.abs(amount);
 
         const adjustmentData: Omit<ManualAdjustment, 'id' | 'status'> = {
             providerId: formData.get('providerId') as string,
             date: formData.get('date') as string,
-            amount: amount,
-            currency: formData.get('currency') as 'ARS' | 'USD',
+            amount: adjustmentAmount,
+            currency: currency,
             categoryId: categoryId,
             notes: formData.get('notes') as string,
             assignment: { type: assignmentType, id: assignmentId },
         };
-        await addManualAdjustmentDb(adjustmentData);
-        revalidatePath('/liquidations');
+
+        // If it's a deduction, also create an expense record
+        if (category.type === 'deduction') {
+            const batch = writeBatch(db);
+
+            // 1. Create the adjustment
+            const adjustmentRef = doc(collection(db, 'manualAdjustments'));
+            batch.set(adjustmentRef, { ...adjustmentData, status: 'pending_liquidation' });
+
+            // 2. Create the corresponding expense
+            const expenseAmount = Math.abs(amount);
+            const expenseDate = formData.get('date') as string;
+            const providerId = formData.get('providerId') as string;
+            const notes = formData.get('notes') as string;
+            const categoryName = category.name;
+            const expenseRef = doc(collection(db, 'expenses'));
+            
+            const expenseData: Omit<Expense, 'id'> = {
+                assignment: { type: assignmentType, id: assignmentId },
+                date: expenseDate,
+                description: `Adelanto/Deducción (${categoryName}): ${notes || 'Sin notas'}`,
+                providerId,
+                currency: 'ARS', // Expense currency is always ARS
+                amount: 0, // This will be calculated below
+                manualAdjustmentId: adjustmentRef.id, // Link expense to adjustment
+                categoryId: null, // Or some default "Adelanto" expense category if it exists
+                taskId: null,
+                liquidationId: null,
+            };
+
+            if (currency === 'USD') {
+                const exchangeRateStr = formData.get('exchangeRate') as string;
+                const rate = parseFloat(exchangeRateStr);
+                if (!rate || rate <= 0) {
+                  throw new Error(
+                    'El valor del USD es obligatorio para registrar una deducción en USD como gasto.'
+                  );
+                }
+                expenseData.originalUsdAmount = expenseAmount;
+                expenseData.exchangeRate = rate;
+                expenseData.amount = expenseAmount * rate;
+            } else { // ARS
+                expenseData.amount = expenseAmount;
+            }
+
+            batch.set(expenseRef, expenseData);
+            await batch.commit();
+
+        } else {
+            // If it's just an addition, create the adjustment normally
+            await addManualAdjustmentDb(adjustmentData);
+        }
+        
+        revalidatePathsAfterAction();
         return { success: true, message: 'Ajuste registrado correctamente.' };
     } catch (error: any) {
         return { success: false, message: error.message };
@@ -2069,7 +2123,6 @@ export async function revertLiquidation(previousState: any, liquidationId: strin
     revalidatePath('/liquidations');
     revalidatePath('/expenses');
     return { success: true, message: 'Liquidación revertida con éxito.' };
-
   } catch (error: any) {
     console.error('Error reverting liquidation:', error);
     return { success: false, message: `Error al revertir: ${error.message}` };
@@ -2173,12 +2226,24 @@ export async function deleteManualAdjustment(previousState: any, formData: FormD
     const id = formData.get('id') as string;
     if (!id) return { success: false, message: 'ID no válido.' };
     try {
-        await deleteManualAdjustmentDb(id);
-        revalidatePath('/liquidations');
-        return { success: true, message: 'Ajuste eliminado.' };
+        const batch = writeBatch(db);
+        
+        // 1. Delete the adjustment
+        const adjustmentRef = doc(db, 'manualAdjustments', id);
+        batch.delete(adjustmentRef);
+
+        // 2. Find and delete the corresponding expense, if it exists
+        const expensesQuery = query(collection(db, 'expenses'), where('manualAdjustmentId', '==', id));
+        const expensesSnap = await getDocs(expensesQuery);
+        expensesSnap.forEach(expenseDoc => {
+            batch.delete(expenseDoc.ref);
+        });
+
+        await batch.commit();
+
+        revalidatePathsAfterAction();
+        return { success: true, message: 'Ajuste y gasto asociado eliminados.' };
     } catch (e: any) {
         return { success: false, message: e.message };
     }
 }
-
-

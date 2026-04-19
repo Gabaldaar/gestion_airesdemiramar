@@ -172,6 +172,7 @@ export type Expense = {
     taskId?: string | null;
     providerId?: string | null;
     liquidationId?: string | null;
+    manualAdjustmentId?: string | null;
 }
 
 export type ExpenseWithDetails = Expense & {

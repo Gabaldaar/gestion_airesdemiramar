@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup } from '@/components/ui/select';
 import { DatePicker } from './ui/date-picker';
 import { Textarea } from './ui/textarea';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { addManualAdjustment } from '@/lib/actions';
 import { Provider, Property, TaskScope, AdjustmentCategory, getAdjustmentCategories } from '@/lib/data';
 import { useToast } from './ui/use-toast';
@@ -32,6 +32,10 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
+    const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS');
+    const [exchangeRate, setExchangeRate] = useState('');
+    const [isFetchingRate, setIsFetchingRate] = useState(false);
+
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
@@ -39,6 +43,33 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
             const result = await addManualAdjustment(initialState, formData);
             setState(result);
         });
+    };
+
+    const fetchRate = async () => {
+        setIsFetchingRate(true);
+        try {
+            const response = await fetch('/api/dollar-rate');
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            setExchangeRate(data.venta.toString());
+        } catch (error) {
+            console.error("Failed to fetch dollar rate:", error);
+            toast({
+                title: 'Error',
+                description: 'No se pudo obtener el valor del dólar.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsFetchingRate(false);
+        }
+    };
+
+    const handleCurrencyChange = (value: string) => {
+        const newCurrency = value as 'ARS' | 'USD';
+        setCurrency(newCurrency);
+        if (newCurrency === 'ARS') {
+            setExchangeRate('');
+        }
     };
 
     useEffect(() => {
@@ -63,6 +94,8 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
             formRef.current?.reset();
             setDate(new Date());
             setState(initialState);
+            setCurrency('ARS');
+            setExchangeRate('');
         }
     }, [isOpen]);
 
@@ -101,7 +134,7 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="currency">Moneda</Label>
-                             <Select name="currency" defaultValue="ARS" required>
+                             <Select name="currency" value={currency} onValueChange={handleCurrencyChange} required>
                                 <SelectTrigger><SelectValue/></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="ARS">ARS</SelectItem>
@@ -110,6 +143,27 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
                             </Select>
                         </div>
                     </div>
+
+                     {currency === 'USD' && (
+                        <div className="space-y-2">
+                            <Label htmlFor="exchangeRate">Valor USD (para registrar el gasto en ARS)</Label>
+                            <div className="flex items-center gap-2">
+                                <Input 
+                                    id="exchangeRate" 
+                                    name="exchangeRate" 
+                                    type="number" 
+                                    step="0.01" 
+                                    placeholder="Valor del USD en ARS" 
+                                    required 
+                                    value={exchangeRate} 
+                                    onChange={(e) => setExchangeRate(e.target.value)} 
+                                />
+                                <Button type="button" variant="outline" size="icon" onClick={fetchRate} disabled={isFetchingRate}>
+                                    {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label htmlFor="assignment">Imputar a</Label>
