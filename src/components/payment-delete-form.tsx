@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useActionState, useEffect, useState, useTransition } from 'react';
@@ -37,7 +38,7 @@ function DeleteButton({ isPending }: { isPending: boolean }) {
     )
 }
 
-export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: string; onPaymentDeleted: () => void }) {
+export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: string; onPaymentDeleted: () => void; }) {
   const [isOpen, setIsOpen] = useState(false);
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
@@ -76,7 +77,7 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
           <Trash2 className="h-4 w-4" />
-          <span className="sr-only">Borrar Pago</span>
+          <span className="sr-only">Borrar Cobro</span>
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -85,7 +86,7 @@ export function PaymentDeleteForm({ paymentId, onPaymentDeleted }: { paymentId: 
           <DialogHeader>
             <DialogTitle>¿Estás seguro?</DialogTitle>
             <DialogDescription>
-              Esta acción no se puede deshacer. El pago será eliminado permanentemente.
+              Esta acción no se puede deshacer. El cobro será eliminado permanentemente.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className='mt-4'>

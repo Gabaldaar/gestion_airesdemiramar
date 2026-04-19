@@ -123,15 +123,15 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children }: Payment
         {children || (
           <Button variant="ghost" size="icon">
             <Pencil className="h-4 w-4" />
-            <span className="sr-only">Editar Pago</span>
+            <span className="sr-only">Editar Cobro</span>
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Editar Pago</DialogTitle>
+          <DialogTitle>Editar Cobro</DialogTitle>
           <DialogDescription>
-            Modifica los datos del pago para la reserva de <span className="font-semibold text-foreground">{payment.tenantName || 'N/A'}</span> en <span className="font-semibold text-foreground">{payment.propertyName || 'N/A'}</span>.
+            Modifica los datos del cobro para la reserva de <span className="font-semibold text-foreground">{payment.tenantName || 'N/A'}</span> en <span className="font-semibold text-foreground">{payment.propertyName || 'N/A'}</span>.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction}>
@@ -204,7 +204,7 @@ export function PaymentEditForm({ payment, onPaymentUpdated, children }: Payment
                     <Label htmlFor="description" className="text-right pt-2">
                         Descripción
                     </Label>
-                    <Textarea id="description" name="description" defaultValue={payment.description?.split('|')[0].trim()} className="col-span-3" placeholder="Comentarios sobre el pago..." />
+                    <Textarea id="description" name="description" defaultValue={payment.description?.split('|')[0].trim()} className="col-span-3" placeholder="Comentarios sobre el cobro..." />
                 </div>
             </div>
             <DialogFooter>

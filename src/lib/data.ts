@@ -460,9 +460,9 @@ const addDefaultData = async (collRef: any, data: any[]) => {
 const initializeDefaultData = async () => {
     const defaultTemplates = [
         {
-            name: 'Confirmación de Pago',
-            subject: 'Confirmación de tu pago para la reserva en {{propiedad.nombre}}',
-            body: `Hola {{inquilino.nombre}},\n\nTe escribimos para confirmar que hemos recibido tu pago de {{montoPago}} con fecha {{fechaPago}} para la reserva en {{propiedad.nombre}}.\n\nDetalles de la reserva:\n- Check-in: {{fechaCheckIn}}\n- Check-out: {{fechaCheckOut}}\n- Monto total: {{montoReserva}}\n- Saldo pendiente actualizado: {{saldoReserva}}\n\n¡Muchas gracias por tu pago!\n\nSaludos cordiales.`
+            name: 'Confirmación de Cobro',
+            subject: 'Confirmación de tu cobro para la reserva en {{propiedad.nombre}}',
+            body: `Hola {{inquilino.nombre}},\n\nTe escribimos para confirmar que hemos recibido tu cobro de {{montoPago}} con fecha {{fechaPago}} para la reserva en {{propiedad.nombre}}.\n\nDetalles de la reserva:\n- Check-in: {{fechaCheckIn}}\n- Check-out: {{fechaCheckOut}}\n- Monto total: {{montoReserva}}\n- Saldo pendiente actualizado: {{saldoReserva}}\n\n¡Muchas gracias por tu cobro!\n\nSaludos cordiales.`
         },
         {
             name: 'Confirmación de Garantía',
@@ -1648,7 +1648,7 @@ export async function getPendingWorkLogs(providerId: string): Promise<WorkLog[]>
     const snapshot = await getDocs(q);
     const pendingLogs = snapshot.docs.map(processDoc) as WorkLog[];
     pendingLogs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return await enrichItems(pendingLogs) as WorkLog[];
+    return await enrichItems(logs) as WorkLog[];
 }
 
 export async function getPendingManualAdjustments(providerId: string): Promise<ManualAdjustment[]> {
@@ -1868,7 +1868,7 @@ export async function addLiquidationPaymentDb(
 
   // 2. Validate payment amount
   if (paymentAmount > liquidation.balance) {
-    throw new Error('El monto del pago no puede ser mayor que el saldo pendiente.');
+    throw new Error('El monto del cobro no puede ser mayor que el saldo pendiente.');
   }
 
   // 3. Update liquidation balances

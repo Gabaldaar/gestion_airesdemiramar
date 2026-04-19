@@ -155,7 +155,7 @@ export async function registrarCobro(payload: RegistrarCobroPayload) {
 
     if (!response.ok) {
       throw new Error(
-        responseData.error || `Error ${response.status} al registrar el pago.`
+        responseData.error || `Error ${response.status} al registrar el cobro.`
       );
     }
 
@@ -167,7 +167,7 @@ export async function registrarCobro(payload: RegistrarCobroPayload) {
     }
     return {
       success: false,
-      error: 'Un error desconocido ocurrió al registrar el pago.',
+      error: 'Un error desconocido ocurrió al registrar el cobro.',
     };
   }
 }
@@ -744,13 +744,13 @@ export async function addPayment(previousState: any, formData: FormData) {
     return {
       success: false,
       message:
-        'Faltan campos obligatorios para el pago.',
+        'Faltan campos obligatorios para el cobro.',
     };
   }
   
   const hasFinanceFields = categoria_id && cuenta_id && billetera_id;
   if (!hasFinanceFields) {
-      console.warn("Faltan campos de finanzas, el pago no será sincronizado.");
+      console.warn("Faltan campos de finanzas, el cobro no será sincronizado.");
   }
 
 
@@ -778,7 +778,7 @@ export async function addPayment(previousState: any, formData: FormData) {
       return {
         success: false,
         message:
-          'El valor del USD es obligatorio y debe ser mayor a cero para pagos en ARS.',
+          'El valor del USD es obligatorio y debe ser mayor a cero para cobros en ARS.',
       };
     }
     paymentPayload.exchangeRate = rate;
@@ -795,7 +795,7 @@ export async function addPayment(previousState: any, formData: FormData) {
       style: 'currency',
       currency: 'ARS',
     }).format(paymentPayload.exchangeRate);
-    const autoDescription = `El pago se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
+    const autoDescription = `El cobro se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
     paymentPayload.description = description
       ? `${description} | ${autoDescription}`
       : autoDescription;
@@ -825,7 +825,7 @@ export async function addPayment(previousState: any, formData: FormData) {
         categoria_id: categoria_id,
         cuenta_id: cuenta_id,
         billetera_id: billetera_id,
-        descripcion: `Pago reserva ${property?.name || ''} - ${
+        descripcion: `Cobro reserva ${property?.name || ''} - ${
           tenant?.name || ''
         }`,
       };
@@ -840,18 +840,18 @@ export async function addPayment(previousState: any, formData: FormData) {
         if (!financeApiResult.success) {
              return {
                 success: true, // The payment was saved locally
-                message: `Pago guardado, pero falló la sincronización: ${financeApiResult.error || 'Error desconocido'}.`,
+                message: `Cobro guardado, pero falló la sincronización: ${financeApiResult.error || 'Error desconocido'}.`,
              };
         }
         return {
             success: true,
-            message: "Pago guardado y sincronizado con la app de finanzas.",
+            message: "Cobro guardado y sincronizado con la app de finanzas.",
         };
     }
 
     return { 
         success: true, 
-        message: 'Pago guardado localmente. No se sincronizó con finanzas por falta de datos.' 
+        message: 'Cobro guardado localmente. No se sincronizó con finanzas por falta de datos.' 
     };
 
   } catch (error: any) {
@@ -897,7 +897,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
       return {
         success: false,
         message:
-          'El valor del USD es obligatorio y debe ser mayor a cero para pagos en ARS.',
+          'El valor del USD es obligatorio y debe ser mayor a cero para cobros en ARS.',
       };
     }
     paymentPayload.exchangeRate = rate;
@@ -912,7 +912,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
       style: 'currency',
       currency: 'ARS',
     }).format(paymentPayload.exchangeRate);
-    const autoDescription = `El pago se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
+    const autoDescription = `El cobro se realizó en ARS - Total: ${arsFormatted} - Valor USD: ${rateFormatted}`;
     paymentPayload.description = description
       ? `${description} | ${autoDescription}`
       : autoDescription;
@@ -928,7 +928,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
     if (booking) {
       revalidatePathsAfterAction(booking.propertyId);
     }
-    return { success: true, message: 'Pago actualizado correctamente.' };
+    return { success: true, message: 'Cobro actualizado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }
@@ -937,7 +937,7 @@ export async function updatePayment(previousState: any, formData: FormData) {
 export async function deletePayment(previousState: any, formData: FormData) {
   const id = formData.get('id') as string;
   if (!id) {
-    return { success: false, message: 'ID de pago no válido.' };
+    return { success: false, message: 'ID de cobro no válido.' };
   }
 
   try {
@@ -945,7 +945,7 @@ export async function deletePayment(previousState: any, formData: FormData) {
     const paymentDoc = await getDoc(paymentDocRef);
 
     if (!paymentDoc.exists()) {
-      return { success: false, message: 'No se encontró el pago para eliminar.' };
+      return { success: false, message: 'No se encontró el cobro para eliminar.' };
     }
     const bookingId = paymentDoc.data()?.bookingId;
 
@@ -958,7 +958,7 @@ export async function deletePayment(previousState: any, formData: FormData) {
       }
     }
 
-    return { success: true, message: 'Pago eliminado correctamente.' };
+    return { success: true, message: 'Cobro eliminado correctamente.' };
   } catch (error: any) {
     return { success: false, message: `Error de base de datos: ${error.message}` };
   }

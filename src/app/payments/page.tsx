@@ -38,15 +38,15 @@ export default function PaymentsPage() {
     }, [user]);
 
     if (loading || !data) {
-        return <p>Cargando pagos...</p>;
+        return <p>Cargando cobros...</p>;
     }
 
 
   return (
     <Card>
     <CardHeader>
-        <CardTitle>Pagos</CardTitle>
-        <CardDescription>Consulta y filtra todos los pagos recibidos.</CardDescription>
+        <CardTitle>Cobros</CardTitle>
+        <CardDescription>Consulta y filtra todos los cobros recibidos.</CardDescription>
     </CardHeader>
     <CardContent>
         <PaymentsClient 

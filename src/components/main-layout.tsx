@@ -38,7 +38,7 @@ const mainNavItems = [
   { href: '/providers', label: 'Colaboradores', icon: Wrench },
   { href: '/bookings', label: 'Reservas', icon: Calendar, badge: 'bookings' },
   { href: '/tasks', label: 'Tareas', icon: ClipboardList },
-  { href: '/payments', label: 'Pagos', icon: CreditCard },
+  { href: '/payments', label: 'Cobros', icon: CreditCard },
   { href: '/liquidations', label: 'Liquidaciones', icon: Briefcase, badge: 'liquidations' },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
   { href: '/informes', label: 'Informes', icon: BarChart3 },

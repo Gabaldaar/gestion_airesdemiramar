@@ -64,7 +64,7 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
         toast({
             variant: "destructive",
             title: "Error",
-            description: "No se pudieron cargar los datos de pagos.",
+            description: "No se pudieron cargar los datos de cobros.",
         });
     } finally {
         setIsLoading(false);
@@ -154,10 +154,10 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
         <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Pagos de la Reserva</DialogTitle>
+            <DialogTitle>Cobros de la Reserva</DialogTitle>
             {booking && (
               <DialogDescription>
-                Gestiona los pagos recibidos para la reserva de{' '}
+                Gestiona los cobros recibidos para la reserva de{' '}
                 <span className="font-semibold text-foreground">{booking.tenant?.name || 'N/A'}</span> en{' '}
                 <span className="font-semibold text-foreground">{booking.property?.name || 'N/A'}</span>.
               </DialogDescription>
@@ -165,11 +165,11 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
           </DialogHeader>
           
            <div className="flex justify-end">
-                <Button onClick={handleAddNewPayment}>+ Añadir Pago</Button>
+                <Button onClick={handleAddNewPayment}>+ Añadir Cobro</Button>
           </div>
 
           {isLoading ? (
-            <p>Cargando pagos...</p>
+            <p>Cargando cobros...</p>
           ) : (
             <Table>
               <TableHeader>
@@ -191,7 +191,7 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
                         <div className="flex items-center justify-end gap-2">
                             <Button variant="ghost" size="icon" onClick={() => openEmailSender(payment)} disabled={!booking?.tenant?.email}>
                                 <Mail className="h-4 w-4" />
-                                <span className="sr-only">Enviar confirmación de pago</span>
+                                <span className="sr-only">Enviar confirmación de cobro</span>
                             </Button>
                             <PaymentEditForm payment={payment} onPaymentUpdated={handlePaymentAction} />
                             <PaymentDeleteForm paymentId={payment.id} onPaymentDeleted={handlePaymentAction} />
@@ -202,14 +202,14 @@ export function BookingPaymentsManager({ bookingId, children, isOpen, onOpenChan
                 ) : (
                     <TableRow>
                         <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                            No hay pagos registrados.
+                            No hay cobros registrados.
                         </TableCell>
                     </TableRow>
                 )}
               </TableBody>
               <TableFooter>
                   <TableRow>
-                      <TableCell colSpan={2} className="font-bold text-right">Total Pagado</TableCell>
+                      <TableCell colSpan={2} className="font-bold text-right">Total Cobrado</TableCell>
                       <TableCell className="text-right font-bold">{formatCurrency(totalAmount, 'USD')}</TableCell>
                       <TableCell></TableCell>
                   </TableRow>

@@ -62,7 +62,7 @@ function SubmitButton({ isPending, disabled }: { isPending: boolean; disabled?: 
           Añadiendo...
         </>
       ) : (
-        'Añadir Pago'
+        'Añadir Cobro'
       )}
     </Button>
   );
@@ -283,13 +283,13 @@ export function PaymentAddForm({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Añadir Pago</DialogTitle>
+          <DialogTitle>Añadir Cobro</DialogTitle>
            {isFetchingBooking ? (
                 <DialogDescription>Cargando detalles de la reserva...</DialogDescription>
             ) : booking ? (
                 <>
                     <DialogDescription>
-                        Registra un pago para la reserva de{' '}
+                        Registra un cobro para la reserva de{' '}
                         <span className="font-semibold text-foreground">{booking.tenant?.name || 'N/A'}</span> en{' '}
                         <span className="font-semibold text-foreground">{booking.property?.name || 'N/A'}</span>.
                     </DialogDescription>
@@ -310,7 +310,7 @@ export function PaymentAddForm({
                 </>
             ) : (
                  <DialogDescription>
-                    Completa los datos del pago. Se registrará en esta app y se intentará sincronizar con el sistema de finanzas.
+                    Completa los datos del cobro. Se registrará en esta app y se intentará sincronizar con el sistema de finanzas.
                  </DialogDescription>
             )}
         </DialogHeader>
@@ -427,7 +427,7 @@ export function PaymentAddForm({
                 id="description"
                 name="description"
                 className="col-span-3"
-                placeholder="Comentarios sobre el pago..."
+                placeholder="Comentarios sobre el cobro..."
               />
             </div>
 

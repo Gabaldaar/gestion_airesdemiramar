@@ -91,7 +91,7 @@ function PaymentCard({ payment }: { payment: PaymentWithDetails }) {
 
 export default function PaymentsList({ payments }: PaymentsListProps) {
   if (payments.length === 0) {
-    return <p className="text-sm text-center text-muted-foreground py-8">No hay pagos para mostrar con los filtros seleccionados.</p>;
+    return <p className="text-sm text-center text-muted-foreground py-8">No hay cobros para mostrar con los filtros seleccionados.</p>;
   }
 
   const totalAmountUSD = payments.reduce((acc, payment) => acc + payment.amount, 0);
