@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { UnifiedExpense, Property, ExpenseCategory, getAllExpensesUnified, Provider } from '@/lib/data';
 import ExpensesList from '@/components/expenses-list';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -18,9 +18,10 @@ interface ExpensesClientProps {
   properties: Property[];
   categories: ExpenseCategory[];
   providers: Provider[];
+  onDataChanged: () => void;
 }
 
-export default function ExpensesClient({ initialExpenses, properties, categories, providers }: ExpensesClientProps) {
+export default function ExpensesClient({ initialExpenses, properties, categories, providers, onDataChanged }: ExpensesClientProps) {
   const [expenses, setExpenses] = useState<UnifiedExpense[]>(initialExpenses);
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
@@ -29,10 +30,9 @@ export default function ExpensesClient({ initialExpenses, properties, categories
   const [typeFilter, setTypeFilter] = useState<ExpenseTypeFilter>('all');
   const [categoryIdFilter, setCategoryIdFilter] = useState<string>('all');
 
-  const refreshExpenses = useCallback(async () => {
-    const updatedExpenses = await getAllExpensesUnified();
-    setExpenses(updatedExpenses);
-  }, []);
+  useEffect(() => {
+    setExpenses(initialExpenses);
+  }, [initialExpenses]);
 
 
   const filteredExpenses = useMemo(() => {
@@ -163,7 +163,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
           <Button variant="outline" onClick={handleClearFilters}>Limpiar Filtros</Button>
         </div>
       </div>
-      <ExpensesList expenses={filteredExpenses} categories={categories} providers={providers} onDataChanged={refreshExpenses} />
+      <ExpensesList expenses={filteredExpenses} categories={categories} providers={providers} onDataChanged={onDataChanged} />
     </div>
   );
 }

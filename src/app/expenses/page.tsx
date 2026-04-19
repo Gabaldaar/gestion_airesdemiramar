@@ -11,7 +11,7 @@ import {
 import { getProperties, getAllExpensesUnified, getExpenseCategories, UnifiedExpense, Property, ExpenseCategory, Provider, getProviders } from "@/lib/data";
 import ExpensesClient from "@/components/expenses-client";
 import { useAuth } from "@/components/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface ExpensesData {
     allExpenses: UnifiedExpense[];
@@ -25,20 +25,28 @@ export default function ExpensesPage() {
     const [data, setData] = useState<ExpensesData | null>(null);
     const [loading, setLoading] = useState(true);
     
-    useEffect(() => {
+    const fetchData = useCallback(async () => {
         if (user) {
             setLoading(true);
-            Promise.all([
-                getAllExpensesUnified(),
-                getProperties(),
-                getExpenseCategories(),
-                getProviders(),
-            ]).then(([allExpenses, properties, categories, providers]) => {
+            try {
+                const [allExpenses, properties, categories, providers] = await Promise.all([
+                    getAllExpensesUnified(),
+                    getProperties(),
+                    getExpenseCategories(),
+                    getProviders(),
+                ]);
                 setData({ allExpenses, properties, categories, providers });
+            } catch (error) {
+                console.error("Failed to fetch expenses data:", error);
+            } finally {
                 setLoading(false);
-            });
+            }
         }
     }, [user]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     if (loading || !data) {
         return <p>Cargando gastos...</p>;
@@ -56,6 +64,7 @@ export default function ExpensesPage() {
         properties={data.properties} 
         categories={data.categories}
         providers={data.providers}
+        onDataChanged={fetchData}
         />
     </CardContent>
     </Card>
