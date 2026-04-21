@@ -47,6 +47,7 @@ export function PropertyAddForm({ providers }: { providers: Provider[] }) {
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
   const visitRateProviders = useMemo(() => {
     return providers.filter(p => p.billingType === 'per_visit' || p.billingType === 'hourly_or_visit');
@@ -107,53 +108,61 @@ export function PropertyAddForm({ providers }: { providers: Provider[] }) {
                     </Label>
                     <Input id="propertyUrl" name="propertyUrl" placeholder="Ej: https://airbnb.com/h/mi-depto" className="col-span-3" />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="priceSheetName" className="text-right">
-                    Nombre en Hoja de Precios
-                    </Label>
-                    <Input id="priceSheetName" name="priceSheetName" placeholder="Nombre exacto en la App Script" className="col-span-3" />
-                </div>
+                {isPersonalFlavor && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="priceSheetName" className="text-right">
+                        Nombre en Hoja de Precios
+                        </Label>
+                        <Input id="priceSheetName" name="priceSheetName" placeholder="Nombre exacto en la App Script" className="col-span-3" />
+                    </div>
+                )}
                  <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="notes" className="text-right pt-2">
                         Notas
                     </Label>
                     <Textarea id="notes" name="notes" className="col-span-3" />
                 </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="contractTemplate" className="text-right pt-2">
-                        Plantilla de Contrato
-                    </Label>
-                    <Textarea id="contractTemplate" name="contractTemplate" className="col-span-3 h-32" />
-                </div>
+                {isPersonalFlavor && (
+                    <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="contractTemplate" className="text-right pt-2">
+                            Plantilla de Contrato
+                        </Label>
+                        <Textarea id="contractTemplate" name="contractTemplate" className="col-span-3 h-32" />
+                    </div>
+                )}
                 
                 {/* Custom Fields */}
-                <div className="col-span-4 border-t pt-4 mt-2">
-                  <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados</h4>
-                  {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="grid grid-cols-2 gap-4 mb-4">
-                        <div className='space-y-1'>
-                            <Label htmlFor={`customField${i}Label`} className="text-sm">Etiqueta Campo {i}</Label>
-                            <Input id={`customField${i}Label`} name={`customField${i}Label`} placeholder={`Ej: WiFi Pass`} />
-                        </div>
-                        <div className='space-y-1'>
-                            <Label htmlFor={`customField${i}Value`} className="text-sm">Valor Campo {i}</Label>
-                            <Input id={`customField${i}Value`} name={`customField${i}Value`} placeholder="Valor" />
+                {isPersonalFlavor && (
+                    <div className="col-span-4 border-t pt-4 mt-2">
+                        <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados</h4>
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="grid grid-cols-2 gap-4 mb-4">
+                                <div className='space-y-1'>
+                                    <Label htmlFor={`customField${i}Label`} className="text-sm">Etiqueta Campo {i}</Label>
+                                    <Input id={`customField${i}Label`} name={`customField${i}Label`} placeholder={`Ej: WiFi Pass`} />
+                                </div>
+                                <div className='space-y-1'>
+                                    <Label htmlFor={`customField${i}Value`} className="text-sm">Valor Campo {i}</Label>
+                                    <Input id={`customField${i}Value`} name={`customField${i}Value`} placeholder="Valor" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {isPersonalFlavor && (
+                    <div className="col-span-4 border-t pt-4 mt-2">
+                        <h4 className="text-md font-medium mb-4 text-center">Tarifas de Visita por Colaborador</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                            {visitRateProviders.length > 0 ? visitRateProviders.map(p => (
+                                <div key={p.id} className='space-y-1'>
+                                    <Label htmlFor={`visitRate_${p.id}`} className="text-sm">{p.name}</Label>
+                                    <Input id={`visitRate_${p.id}`} name={`visitRate_${p.id}`} type="number" step="0.01" placeholder={`Tarifa para ${p.name}`} />
+                                </div>
+                            )) : <p className="text-sm text-muted-foreground text-center col-span-2">No hay colaboradores con facturación por visita.</p>}
                         </div>
                     </div>
-                  ))}
-                </div>
-
-                <div className="col-span-4 border-t pt-4 mt-2">
-                  <h4 className="text-md font-medium mb-4 text-center">Tarifas de Visita por Colaborador</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                    {visitRateProviders.length > 0 ? visitRateProviders.map(p => (
-                        <div key={p.id} className='space-y-1'>
-                            <Label htmlFor={`visitRate_${p.id}`} className="text-sm">{p.name}</Label>
-                            <Input id={`visitRate_${p.id}`} name={`visitRate_${p.id}`} type="number" step="0.01" placeholder={`Tarifa para ${p.name}`} />
-                        </div>
-                    )) : <p className="text-sm text-muted-foreground text-center col-span-2">No hay colaboradores con facturación por visita.</p>}
-                  </div>
-                </div>
+                )}
             </div>
             <DialogFooter>
                 <SubmitButton />

@@ -35,14 +35,14 @@ const mainNavItems = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/properties', label: 'Propiedades', icon: Building2 },
   { href: '/tenants', label: 'Inquilinos', icon: Users },
-  { href: '/providers', label: 'Colaboradores', icon: Wrench },
+  { href: '/providers', label: 'Colaboradores', icon: Wrench, personalOnly: true },
   { href: '/bookings', label: 'Reservas', icon: Calendar, badge: 'bookings' },
   { href: '/tasks', label: 'Tareas', icon: ClipboardList },
   { href: '/payments', label: 'Cobros', icon: CreditCard },
-  { href: '/liquidations', label: 'Liquidaciones', icon: Briefcase, badge: 'liquidations' },
+  { href: '/liquidations', label: 'Liquidaciones', icon: Briefcase, badge: 'liquidations', personalOnly: true },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
   { href: '/informes', label: 'Informes', icon: BarChart3 },
-  { href: '/templates', label: 'Plantillas', icon: Mail },
+  { href: '/templates', label: 'Plantillas', icon: Mail, personalOnly: true },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
 
@@ -51,6 +51,9 @@ const helpNavItem = { href: '/help', label: 'Ayuda', icon: CircleHelp };
 function SidebarNav({ onLinkClick, isCollapsed, pendingLiquidationsCount, pendingBookingsCount }: { onLinkClick?: () => void, isCollapsed: boolean, pendingLiquidationsCount: number, pendingBookingsCount: number }) {
   const pathname = usePathname();
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION;
+  const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
+
+  const navItems = mainNavItems.filter(item => isPersonalFlavor || !item.personalOnly);
 
   const badgeCounts = {
       bookings: pendingBookingsCount,
@@ -118,7 +121,7 @@ function SidebarNav({ onLinkClick, isCollapsed, pendingLiquidationsCount, pendin
     <div className="flex flex-col justify-between h-full">
         <div>
             <nav className={cn("grid items-start text-sm font-medium", isCollapsed ? "grid-flow-row justify-center gap-2 px-2" : "px-2 lg:px-4")}>
-                {mainNavItems.map(renderLink)}
+                {navItems.map(renderLink)}
             </nav>
         </div>
         <div>

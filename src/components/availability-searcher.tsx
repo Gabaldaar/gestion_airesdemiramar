@@ -26,6 +26,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
   const [searchError, setSearchError] = useState<string | null>(null);
   const [results, setResults] = useState<{ property: Property, priceResult: PriceResult }[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
   const handleSearch = async () => {
     if (!fromDate || !toDate) {
@@ -42,15 +43,10 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
     setHasSearched(true);
     setResults([]);
 
-    try {
-      // 1. Fetch pricing configurations
-      const response = await fetch('/api/get-price-configurations');
-      if (!response.ok) {
-        throw new Error('No se pudieron obtener las configuraciones de precios.');
-      }
-      const priceConfigs: Record<string, PriceConfig> = await response.json();
+    const nights = differenceInDays(toDate, fromDate);
 
-      // 2. Find available properties
+    try {
+      // 1. Find available properties (common logic)
       const available = allProperties.filter(property => {
         const propertyBookings = allBookings.filter(
           b => b.propertyId === property.id && (!b.status || b.status === 'active')
@@ -75,16 +71,38 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
 
         return !hasBlockConflict;
       });
+      
+      let resultsWithPrices: { property: Property, priceResult: PriceResult }[] = [];
 
-      // 3. Calculate price for each available property
-      const resultsWithPrices = available.map(property => {
-        const lookupName = property.priceSheetName || property.name;
-        const propertyRules = priceConfigs[lookupName];
-        let priceResult: PriceResult;
-        
-        priceResult = calculatePriceForStay(propertyRules, fromDate, toDate);
-        return { property, priceResult };
-      });
+      // 2. Calculate prices only for personal flavor
+      if (isPersonalFlavor) {
+          const response = await fetch('/api/get-price-configurations');
+          if (!response.ok) {
+            throw new Error('No se pudieron obtener las configuraciones de precios.');
+          }
+          const priceConfigs: Record<string, PriceConfig> = await response.json();
+          
+          resultsWithPrices = available.map(property => {
+            const lookupName = property.priceSheetName || property.name;
+            const propertyRules = priceConfigs[lookupName];
+            let priceResult: PriceResult;
+            
+            priceResult = calculatePriceForStay(propertyRules, fromDate, toDate);
+            return { property, priceResult };
+          });
+      } else {
+          // For commercial flavor, just return availability without price
+          resultsWithPrices = available.map(property => ({
+              property,
+              priceResult: {
+                  totalPrice: 0,
+                  currency: 'USD',
+                  nights,
+                  error: 'Cálculo de precio no disponible',
+                  breakdown: { rawPrice: 0, appliedDiscount: null, minNightsRequired: 0, priceConfigUsed: null }
+              }
+          }));
+      }
       
       setResults(resultsWithPrices);
 
@@ -117,7 +135,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
             Buscar Disponibilidad y Precios
         </CardTitle>
         <CardDescription>
-          Encuentra propiedades libres en un rango de fechas y calcula el costo de la estadía.
+          Encuentra propiedades libres en un rango de fechas {isPersonalFlavor && "y calcula el costo de la estadía."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -161,7 +179,7 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
             {isSearching && results.length === 0 ? (
                 <div className="flex items-center justify-center p-8 text-muted-foreground">
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    <span>Calculando precios...</span>
+                    <span>Calculando...</span>
                 </div>
             ) : results.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -200,15 +218,17 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
                                     </span>
                                 </div>
                                 
-                                <div className="text-xs text-muted-foreground space-y-1 pl-2 border-l-2">
-                                   <p>Precio sin dto: {formatCurrency(Math.round(priceResult.breakdown.rawPrice), priceResult.currency)}</p>
-                                    {priceResult.breakdown.appliedDiscount ? (
-                                        <p className="text-green-600 font-semibold">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
-                                    ) : (
-                                        <p>No se aplicaron descuentos.</p>
-                                    )}
-                                    <p>Estadía mínima requerida: {priceResult.breakdown.minNightsRequired} noches</p>
-                                </div>
+                                {isPersonalFlavor && (
+                                    <div className="text-xs text-muted-foreground space-y-1 pl-2 border-l-2">
+                                       <p>Precio sin dto: {formatCurrency(Math.round(priceResult.breakdown.rawPrice), priceResult.currency)}</p>
+                                        {priceResult.breakdown.appliedDiscount ? (
+                                            <p className="text-green-600 font-semibold">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
+                                        ) : (
+                                            <p>No se aplicaron descuentos.</p>
+                                        )}
+                                        <p>Estadía mínima requerida: {priceResult.breakdown.minNightsRequired} noches</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                       </CardFooter>

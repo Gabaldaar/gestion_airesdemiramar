@@ -46,6 +46,7 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
   const { toast } = useToast();
   const { width } = useWindowSize();
   const isMobile = width < 768;
+  const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
   const visitRateProviders = useMemo(() => {
     return providers.filter(p => p.billingType === 'per_visit' || p.billingType === 'hourly_or_visit');
@@ -90,47 +91,55 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                     <Label htmlFor={`propertyUrl-${property.id}`}>Web de la Propiedad</Label>
                     <Input id={`propertyUrl-${property.id}`} type="text" name="propertyUrl" defaultValue={property.propertyUrl} placeholder="Ej: https://airbnb.com/h/mi-depto"/>
                 </div>
-                <div className="col-span-1">
-                    <Label htmlFor={`priceSheetName-${property.id}`}>Nombre en Hoja de Precios</Label>
-                    <Input id={`priceSheetName-${property.id}`} type="text" name="priceSheetName" defaultValue={property.priceSheetName} placeholder="Nombre exacto en la App Script"/>
-                </div>
+                {isPersonalFlavor && (
+                    <div className="col-span-1">
+                        <Label htmlFor={`priceSheetName-${property.id}`}>Nombre en Hoja de Precios</Label>
+                        <Input id={`priceSheetName-${property.id}`} type="text" name="priceSheetName" defaultValue={property.priceSheetName} placeholder="Nombre exacto en la App Script"/>
+                    </div>
+                )}
                 <div className="col-span-1 md:col-span-2">
                     <Label htmlFor={`notes-${property.id}`}>Notas</Label>
                     <Textarea id={`notes-${property.id}`} name="notes" defaultValue={property.notes} />
                 </div>
-                <div className="col-span-1 md:col-span-2">
-                    <Label htmlFor={`contractTemplate-${property.id}`}>Plantilla de Contrato</Label>
-                    <Textarea id={`contractTemplate-${property.id}`} name="contractTemplate" defaultValue={property.contractTemplate} className="h-40" />
-                </div>
+                {isPersonalFlavor && (
+                    <div className="col-span-1 md:col-span-2">
+                        <Label htmlFor={`contractTemplate-${property.id}`}>Plantilla de Contrato</Label>
+                        <Textarea id={`contractTemplate-${property.id}`} name="contractTemplate" defaultValue={property.contractTemplate} className="h-40" />
+                    </div>
+                )}
                 
                 {/* Custom Fields */}
-                <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
-                  <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados</h4>
-                  {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                        <div className='space-y-1'>
-                            <Label htmlFor={`customField${i}Label-${property.id}`} className="text-sm">Etiqueta Campo {i}</Label>
-                            <Input id={`customField${i}Label-${property.id}`} name={`customField${i}Label`} defaultValue={property[`customField${i}Label` as keyof Property] as string} placeholder={`Ej: WiFi Pass`} />
-                        </div>
-                        <div className='space-y-1'>
-                            <Label htmlFor={`customField${i}Value-${property.id}`} className="text-sm">Valor Campo {i}</Label>
-                            <Input id={`customField${i}Value-${property.id}`} name={`customField${i}Value`} defaultValue={property[`customField${i}Value` as keyof Property] as string} placeholder="Valor" />
+                {isPersonalFlavor && (
+                    <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
+                        <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados</h4>
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                <div className='space-y-1'>
+                                    <Label htmlFor={`customField${i}Label-${property.id}`} className="text-sm">Etiqueta Campo {i}</Label>
+                                    <Input id={`customField${i}Label-${property.id}`} name={`customField${i}Label`} defaultValue={property[`customField${i}Label` as keyof Property] as string} placeholder={`Ej: WiFi Pass`} />
+                                </div>
+                                <div className='space-y-1'>
+                                    <Label htmlFor={`customField${i}Value-${property.id}`} className="text-sm">Valor Campo {i}</Label>
+                                    <Input id={`customField${i}Value-${property.id}`} name={`customField${i}Value`} defaultValue={property[`customField${i}Value` as keyof Property] as string} placeholder="Valor" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {isPersonalFlavor && (
+                    <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
+                        <h4 className="text-md font-medium mb-4 text-center">Tarifas de Visita por Colaborador</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                            {visitRateProviders.length > 0 ? visitRateProviders.map(p => (
+                                <div key={p.id} className='space-y-1'>
+                                    <Label htmlFor={`visitRate_${p.id}`} className="text-sm">{p.name}</Label>
+                                    <Input id={`visitRate_${p.id}`} name={`visitRate_${p.id}`} type="number" step="0.01" placeholder={`Tarifa para ${p.name}`} defaultValue={property.visitRates?.[p.id] || ''} />
+                                </div>
+                            )) : <p className="text-sm text-muted-foreground text-center col-span-2">No hay colaboradores con facturación por visita.</p>}
                         </div>
                     </div>
-                  ))}
-                </div>
-
-                <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
-                  <h4 className="text-md font-medium mb-4 text-center">Tarifas de Visita por Colaborador</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                    {visitRateProviders.length > 0 ? visitRateProviders.map(p => (
-                        <div key={p.id} className='space-y-1'>
-                            <Label htmlFor={`visitRate_${p.id}`} className="text-sm">{p.name}</Label>
-                            <Input id={`visitRate_${p.id}`} name={`visitRate_${p.id}`} type="number" step="0.01" placeholder={`Tarifa para ${p.name}`} defaultValue={property.visitRates?.[p.id] || ''} />
-                        </div>
-                    )) : <p className="text-sm text-muted-foreground text-center col-span-2">No hay colaboradores con facturación por visita.</p>}
-                  </div>
-                </div>
+                )}
             </div>
             <div className="flex justify-between items-center">
                 <PropertyDeleteForm propertyId={property.id} propertyName={property.name} />
