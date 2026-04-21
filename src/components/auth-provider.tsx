@@ -4,7 +4,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, limit, setDoc, Timestamp } from 'firebase/firestore';
 import { Provider } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 
@@ -28,6 +28,8 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 });
 
+const PERSONAL_WORKSPACE_ID = "miramar-personal-workspace";
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
@@ -48,25 +50,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
-        const providersCollectionRef = collection(db, 'providers');
+        const personalWorkspaceRef = doc(db, 'workspaces', PERSONAL_WORKSPACE_ID);
+        const membersCollectionRef = collection(personalWorkspaceRef, 'members');
         
-        // Check if ANY provider exists to determine if this is a first-time setup.
-        const allProvidersSnapshot = await getDocs(query(providersCollectionRef, limit(1)));
+        // Ensure workspace doc exists
+        const workspaceSnap = await getDoc(personalWorkspaceRef);
+        if (!workspaceSnap.exists()) {
+            await setDoc(personalWorkspaceRef, { name: 'Personal Workspace', createdAt: Timestamp.now() });
+            console.log("Personal workspace document created.");
+        }
 
-        // SCENARIO A: No providers exist. Create the first user as admin.
-        if (allProvidersSnapshot.empty) {
-          console.log("No providers found, creating first admin user from Google Account.");
+        const allMembersSnapshot = await getDocs(query(membersCollectionRef, limit(1)));
+
+        // SCENARIO A: No members exist in the personal workspace. Create the first user as admin.
+        if (allMembersSnapshot.empty) {
+          console.log("No members found in personal workspace, creating first admin user from Google Account.");
           
-          // The email might be null, but we cannot block the first admin.
-          // Create them with a blank email and let them fix it in the app later.
           const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
-
           const newAdminUser: Omit<Provider, 'id'> = {
             name: firebaseUser.displayName || 'Administrador Principal',
-            email: userEmail || '', // <-- KEY CHANGE: Use empty string if email is null
+            email: userEmail || '',
             role: 'admin',
             status: 'active',
-            userId: firebaseUser.uid, // The crucial link
+            userId: firebaseUser.uid,
             managementType: 'tasks',
             rating: 0,
             phone: '',
@@ -79,42 +85,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             hourlyRate: null,
             perVisitRate: null,
           };
-          const newUserRef = await addDoc(providersCollectionRef, newAdminUser);
+          const newUserRef = await addDoc(membersCollectionRef, newAdminUser);
           
           setUser(firebaseUser);
           setAppUser({ id: newUserRef.id, ...newAdminUser } as AppUser);
           console.log("First admin user created and logged in successfully.");
 
         } else {
-          // SCENARIO B: Providers exist. Use the standard verification flow.
+          // SCENARIO B: Members exist. Use the standard verification flow for the personal workspace.
           let foundUser: AppUser | null = null;
           
-          // Step 1: Find user by UID (most efficient and secure)
-          const providersQueryByUid = query(collection(db, 'providers'), where('userId', '==', firebaseUser.uid), limit(1));
-          const uidSnapshot = await getDocs(providersQueryByUid);
+          const memberDocRef = doc(membersCollectionRef, firebaseUser.uid);
+          const memberDocSnap = await getDoc(memberDocRef);
 
-          if (!uidSnapshot.empty) {
-              const userDoc = uidSnapshot.docs[0];
-              foundUser = { id: userDoc.id, ...userDoc.data() } as AppUser;
+          if (memberDocSnap.exists()) {
+              foundUser = { id: memberDocSnap.id, ...memberDocSnap.data() } as AppUser;
           } else {
-              // Step 2: If not found by UID (first login), try to link by email.
+              // Fallback: try to link by email if UID not found (first login for an existing provider)
               const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
-
               if (userEmail) {
-                  const snapshot = await getDocs(providersCollectionRef);
-                  const providers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Provider));
-                  const lowercasedEmail = userEmail.toLowerCase();
-                  const userDocMatch = providers.find(p => p.email && p.email.toLowerCase() === lowercasedEmail);
+                  const q = query(membersCollectionRef, where('email', '==', userEmail.toLowerCase()), limit(1));
+                  const snapshot = await getDocs(q);
+                  if (!snapshot.empty) {
+                      const userDoc = snapshot.docs[0];
+                      // Re-create doc with UID as ID, and delete the old one.
+                      const oldDocRef = doc(membersCollectionRef, userDoc.id);
+                      const newDocRefWithUid = doc(membersCollectionRef, firebaseUser.uid);
+                      
+                      const batch = writeBatch(db);
+                      batch.set(newDocRefWithUid, { ...userDoc.data(), userId: firebaseUser.uid });
+                      batch.delete(oldDocRef);
+                      await batch.commit();
 
-                  if (userDocMatch) {
-                      await updateDoc(doc(db, 'providers', userDocMatch.id), { userId: firebaseUser.uid });
-                      foundUser = { ...userDocMatch, userId: firebaseUser.uid } as AppUser;
-                      console.log(`User account for ${userEmail} successfully linked via email.`);
+                      foundUser = { id: newDocRefWithUid.id, ...userDoc.data(), userId: firebaseUser.uid } as AppUser;
+                      console.log(`User account for ${userEmail} successfully linked via email using UID as doc ID.`);
                   }
               }
           }
 
-          // Step 3: Evaluate the found user
           if (foundUser) {
               if (foundUser.status === 'active') {
                   setUser(firebaseUser);
@@ -125,9 +133,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   router.push('/pending-activation');
               }
           } else {
-              // If still not found, it means they are not registered.
+              // Commercial user flow would go here. For now, they are unauthorized.
               const userEmail = firebaseUser.email || firebaseUser.providerData[0]?.email;
-              const errorMessage = `Tu cuenta de Google no está registrada para acceder a esta aplicación.\n\nEl email que se intentó usar es:\n\n${userEmail}\n\nPor favor, confirma que este es el email correcto y contacta al administrador para que lo registre.`;
+              const errorMessage = `Tu cuenta de Google (${userEmail}) no está registrada para acceder a este espacio de trabajo.`;
               throw new Error(errorMessage);
           }
         }

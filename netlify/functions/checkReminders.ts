@@ -1,4 +1,3 @@
-
 // netlify/functions/checkReminders.ts
 'use server';
 
@@ -32,6 +31,8 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+const PERSONAL_WORKSPACE_ID = "miramar-personal-workspace"; // Workspace ID for the personal app version
+const workspaceRef = db.collection('workspaces').doc(PERSONAL_WORKSPACE_ID);
 
 // ==================================================================
 // ESTA ES LA SECCIÓN QUE DEBES ADAPTAR PARA TU NUEVA APLICACIÓN
@@ -64,7 +65,7 @@ async function checkAndSendNotifications() {
     let notificationsSent = 0;
     
     // --- OBTENER CONFIGURACIÓN DE ALERTAS DINÁMICAMENTE ---
-    const alertSettingsSnap = await db.collection('settings').doc('alerts').get();
+    const alertSettingsSnap = await workspaceRef.collection('settings').doc('alerts').get();
     const alertSettings = alertSettingsSnap.data();
 
     // Usar valores dinámicos o por defecto si no existen
@@ -74,9 +75,9 @@ async function checkAndSendNotifications() {
 
     // --- OBTENER DATOS DE CONTEXTO (OPTIMIZACIÓN) ---
     const [propertiesSnap, tenantsSnap, paymentsSnap] = await Promise.all([
-        db.collection('properties').get(),
-        db.collection('tenants').get(),
-        db.collection('payments').get()
+        workspaceRef.collection('properties').get(),
+        workspaceRef.collection('tenants').get(),
+        workspaceRef.collection('payments').get()
     ]);
     const propertiesMap = new Map(propertiesSnap.docs.map(doc => [doc.id, doc.data()]));
     const tenantsMap = new Map(tenantsSnap.docs.map(doc => [doc.id, doc.data()]));
@@ -96,7 +97,7 @@ async function checkAndSendNotifications() {
     const today = startOfToday();
 
     // Consulta corregida: Obtener todas las reservas que NO estén canceladas.
-    const bookingsSnap = await db.collection('bookings').where('status', '!=', 'cancelled').get();
+    const bookingsSnap = await workspaceRef.collection('bookings').where('status', '!=', 'cancelled').get();
 
 
     if (bookingsSnap.empty) {
