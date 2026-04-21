@@ -4,7 +4,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, limit, setDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, limit, setDoc, Timestamp, writeBatch } from 'firebase/firestore';
 import { Provider } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 
