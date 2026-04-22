@@ -2,34 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    function isMember(workspaceId) {
-      // Check if the user is a document in the members subcollection.
-      return get(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(request.auth.uid)) != null;
-    }
-    
-    // The workspace document itself can be read or created by any authenticated user.
-    match /workspaces/{workspaceId} {
+    // --- REGLAS SIMPLIFICADAS PARA APP PERSONAL ---
+    // Permite que cualquier usuario autenticado pueda leer y escribir
+    // en cualquier documento dentro del workspace personal.
+    // Esto soluciona el bloqueo de "permisos insuficientes" al iniciar sesión por primera vez.
+    match /workspaces/miramar-personal-workspace/{document=**} {
       allow read, write: if request.auth != null;
-    }
-
-    // --- REGLAS CORREGIDAS PARA MIEMBROS ---
-    match /workspaces/{workspaceId}/members/{userId} {
-      // Cualquier usuario autenticado puede LEER la información de los miembros.
-      // Esto es necesario para la búsqueda de email durante el inicio de sesión.
-      allow read: if request.auth != null;
-      // Solo el propio usuario puede ESCRIBIR (crear/actualizar) su documento.
-      allow write: if request.auth.uid == userId;
-    }
-    
-    // Permite que un usuario autenticado LISTE la colección de miembros.
-    match /workspaces/{workspaceId}/members {
-        allow list: if request.auth != null;
-    }
-    // --- FIN DE REGLAS CORREGIDAS ---
-
-    // Para TODAS LAS OTRAS colecciones, el usuario debe ser un miembro.
-    match /workspaces/{workspaceId}/{collection}/{docId=**} {
-      allow read, write: if collection != 'members' && isMember(workspaceId);
     }
     
     // Reglas para suscripciones push.
