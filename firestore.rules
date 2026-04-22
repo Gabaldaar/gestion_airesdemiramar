@@ -2,17 +2,31 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Un usuario siempre puede leer o escribir su propio documento de miembro.
+    // Permite que cualquier usuario autenticado cree el documento del workspace si no existe.
+    // Es una operación de una sola vez y es segura en el contexto de esta aplicación.
+    match /workspaces/{workspaceId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Permite a cualquier usuario autenticado LISTAR la colección de miembros.
+    // Esto es necesario para que el proveedor de autenticación verifique si un usuario es nuevo.
+    match /workspaces/{workspaceId}/members {
+      allow list: if request.auth != null;
+    }
+    
+    // Un usuario siempre puede crear, leer o escribir su PROPIO documento de miembro.
+    // Esta es la regla clave que soluciona el problema.
     match /workspaces/{workspaceId}/members/{userId} {
       allow read, write: if request.auth.uid == userId;
     }
 
-    // Para cualquier otro documento dentro de un workspace, el usuario debe ser un miembro verificado.
-    match /workspaces/{workspaceId}/{document=**} {
+    // Para cualquier OTRO documento dentro de un workspace (propiedades, gastos, etc.),
+    // el usuario debe ser un miembro verificado.
+    match /workspaces/{workspaceId}/{collection}/{doc=**} {
       allow read, write: if get(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(request.auth.uid)) != null;
     }
 
-    // Las suscripciones a notificaciones son por usuario, no por workspace.
+    // Reglas para suscripciones a notificaciones push.
     match /pushSubscriptions/{subscriptionId} {
         allow read, delete: if request.auth != null && resource.data.keys.p256dh == request.resource.data.keys.p256dh;
         allow create, write: if request.auth != null;

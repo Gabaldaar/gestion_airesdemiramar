@@ -1,16 +1,16 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow read access to everyone for all files, as images need to be public.
+    // Permite que cualquiera lea las imágenes (necesario para mostrarlas en la app)
     allow read;
 
-    // Allow write access only to authenticated users,
-    // and enforce file size and type constraints.
-    // The specific path is secured by the application logic creating the upload path.
+    // Permite que CUALQUIER usuario autenticado pueda escribir archivos.
+    // Esto es seguro porque la ruta del archivo se genera en el código
+    // y no puede ser manipulada por el usuario.
     match /{allPaths=**} {
       allow write: if request.auth != null
-                   && request.resource.size < 5 * 1024 * 1024 // 5MB limit
-                   && request.resource.contentType.matches('image/.*'); // Only images
+                   && request.resource.size < 5 * 1024 * 1024 // Límite de 5MB
+                   && request.resource.contentType.matches('image/.*'); // Solo imágenes
     }
   }
 }
