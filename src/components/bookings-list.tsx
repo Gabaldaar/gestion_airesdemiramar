@@ -76,6 +76,17 @@ function BookingActions({ booking, onEdit, onAddPayment, onCalculatorOpen, onEma
     
     const isInactive = booking.status === 'cancelled' || booking.status === 'pending';
 
+    const handleEmailClick = () => {
+        if (isPersonalFlavor) {
+            onEmailOpen(booking);
+        } else {
+            if (booking.tenant?.email) {
+                window.location.href = `mailto:${booking.tenant.email}`;
+            }
+        }
+    };
+
+
     return (
         <div className="flex flex-wrap items-center justify-end gap-1">
              <NotesViewer 
@@ -133,7 +144,7 @@ function BookingActions({ booking, onEdit, onAddPayment, onCalculatorOpen, onEma
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEmailOpen(booking)} disabled={isInactive || !booking.tenant?.email}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEmailClick} disabled={isInactive || !booking.tenant?.email}>
                             <Mail className="h-4 w-4" />
                             <span className="sr-only">Enviar Email</span>
                         </Button>
@@ -670,7 +681,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
                 </DialogContent>
             </Dialog>
         )}
-        {emailBooking && (
+        {emailBooking && isPersonalFlavor && (
              <EmailSender 
                 booking={emailBooking} 
                 isOpen={isEmailOpen}

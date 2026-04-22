@@ -81,7 +81,7 @@ export default function SettingsPage() {
                 <h2 className="text-3xl font-bold tracking-tight text-primary">Configuración</h2>
                 <p className="text-muted-foreground">Administra los datos de tu aplicación.</p>
             </div>
-            <TabsList className="grid w-full sm:w-auto grid-cols-5 sm:grid-cols-5 lg:grid-cols-9 mb-4 sm:mb-0">
+            <TabsList className="grid w-full sm:w-auto grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 mb-4 sm:mb-0">
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 {isPersonalFlavor && <TabsTrigger value="origins">Orígenes</TabsTrigger>}
                 <TabsTrigger value="expense-categories">Cat. Gastos</TabsTrigger>
@@ -89,8 +89,8 @@ export default function SettingsPage() {
                 <TabsTrigger value="task-categories">Cat. Tareas</TabsTrigger>
                 {isPersonalFlavor && <TabsTrigger value="adjustment-categories">Cat. Ajustes</TabsTrigger>}
                 {isPersonalFlavor && <TabsTrigger value="task-scopes">Ámbitos</TabsTrigger>}
-                <TabsTrigger value="email">Email</TabsTrigger>
-                <TabsTrigger value="alerts">Alertas</TabsTrigger>
+                {isPersonalFlavor && <TabsTrigger value="email">Email</TabsTrigger>}
+                {isPersonalFlavor && <TabsTrigger value="alerts">Alertas</TabsTrigger>}
             </TabsList>
         </div>
 
@@ -207,32 +207,36 @@ export default function SettingsPage() {
                 </Card>
             </TabsContent>
         )}
-        <TabsContent value="email">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Configuración de Email</CardTitle>
-                    <CardDescription>
-                        Gestiona las opciones de envío de correo electrónico.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <EmailSettingsManager initialSettings={emailSettings} />
-                </CardContent>
-            </Card>
-        </TabsContent>
-        <TabsContent value="alerts">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Configuración de Alertas</CardTitle>
-                    <CardDescription>
-                        Define con cuántos días de anticipación quieres ver las alertas en el Dashboard.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <AlertSettingsManager initialSettings={alertSettings} />
-                </CardContent>
-            </Card>
-        </TabsContent>
+        {isPersonalFlavor && (
+            <TabsContent value="email">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Configuración de Email</CardTitle>
+                        <CardDescription>
+                            Gestiona las opciones de envío de correo electrónico.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <EmailSettingsManager initialSettings={emailSettings} />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        )}
+        {isPersonalFlavor && (
+            <TabsContent value="alerts">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Configuración de Alertas</CardTitle>
+                        <CardDescription>
+                            Define con cuántos días de anticipación quieres ver las alertas en el Dashboard.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <AlertSettingsManager initialSettings={alertSettings} />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        )}
     </Tabs>
   );
 }
