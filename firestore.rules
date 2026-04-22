@@ -12,23 +12,27 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Specific rules for the members collection to break the circular dependency
+    // --- REGLAS CORREGIDAS PARA MIEMBROS ---
     match /workspaces/{workspaceId}/members/{userId} {
-      // A user can ALWAYS create, read, or update their own member document.
-      allow read, write: if request.auth.uid == userId;
+      // Cualquier usuario autenticado puede LEER la información de los miembros.
+      // Esto es necesario para la búsqueda de email durante el inicio de sesión.
+      allow read: if request.auth != null;
+      // Solo el propio usuario puede ESCRIBIR (crear/actualizar) su documento.
+      allow write: if request.auth.uid == userId;
     }
     
-    // Allow authenticated users to LIST members, which is needed by the auth provider to check for new users.
+    // Permite que un usuario autenticado LISTE la colección de miembros.
     match /workspaces/{workspaceId}/members {
         allow list: if request.auth != null;
     }
+    // --- FIN DE REGLAS CORREGIDAS ---
 
-    // For ALL OTHER collections inside a workspace, the user must be a member.
+    // Para TODAS LAS OTRAS colecciones, el usuario debe ser un miembro.
     match /workspaces/{workspaceId}/{collection}/{docId=**} {
       allow read, write: if collection != 'members' && isMember(workspaceId);
     }
     
-    // Rules for push subscriptions are separate
+    // Reglas para suscripciones push.
     match /pushSubscriptions/{subscriptionId} {
       allow create, write: if request.auth != null;
       allow read, delete: if request.auth != null && resource.data.keys.p256dh == request.resource.data.keys.p256dh;
