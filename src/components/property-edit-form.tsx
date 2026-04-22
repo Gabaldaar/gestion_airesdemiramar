@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useTransition, useState, useEffect, useMemo } from 'react';
@@ -115,26 +114,33 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                         <strong>Fechas:</strong> <code>&#123;&#123;fechaCheckIn&#125;&#125;</code>, <code>&#123;&#123;fechaCheckOut&#125;&#125;</code>, <code>&#123;&#123;fechaActual&#125;&#125;</code>.
                         <br />
                         <strong>Montos:</strong> <code>&#123;&#123;monto&#125;&#125;</code>, <code>&#123;&#123;montoEnLetras&#125;&#125;</code>, <code>&#123;&#123;montoGarantia&#125;&#125;</code>, <code>&#123;&#123;montoGarantiaEnLetras&#125;&#125;</code>, <code>&#123;&#123;monedaGarantia&#125;&#125;</code>.
-                        <br />
-                        <strong>Campos Personalizados:</strong> <code>&#123;&#123;propiedad.customField1Label&#125;&#125;</code>, <code>&#123;&#123;propiedad.customField1Value&#125;&#125;</code>, etc. (del 1 al 6).
+                        {isPersonalFlavor && (
+                            <>
+                                <br />
+                                <strong>Campos Personalizados:</strong> <code>&#123;&#123;propiedad.customField1Label&#125;&#125;</code>, <code>&#123;&#123;propiedad.customField1Value&#125;&#125;</code>, etc. (del 1 al 6).
+                            </>
+                        )}
                     </p>
                 </div>
                 
-                <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
-                    <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados (Para Contratos y Emails)</h4>
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div className='space-y-1'>
-                                <Label htmlFor={`customField${i}Label-${property.id}`} className="text-sm">Etiqueta Campo {i}</Label>
-                                <Input id={`customField${i}Label-${property.id}`} name={`customField${i}Label`} defaultValue={property[`customField${i}Label` as keyof Property] as string} placeholder={`Ej: WiFi Pass`} />
+                {/* Custom Fields */}
+                {isPersonalFlavor && (
+                    <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
+                        <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados (Para Contratos y Emails)</h4>
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                <div className='space-y-1'>
+                                    <Label htmlFor={`customField${i}Label-${property.id}`} className="text-sm">Etiqueta Campo {i}</Label>
+                                    <Input id={`customField${i}Label-${property.id}`} name={`customField${i}Label`} defaultValue={property[`customField${i}Label` as keyof Property] as string} placeholder={`Ej: WiFi Pass`} />
+                                </div>
+                                <div className='space-y-1'>
+                                    <Label htmlFor={`customField${i}Value-${property.id}`} className="text-sm">Valor Campo {i}</Label>
+                                    <Input id={`customField${i}Value-${property.id}`} name={`customField${i}Value`} defaultValue={property[`customField${i}Value` as keyof Property] as string} placeholder="Valor" />
+                                </div>
                             </div>
-                            <div className='space-y-1'>
-                                <Label htmlFor={`customField${i}Value-${property.id}`} className="text-sm">Valor Campo {i}</Label>
-                                <Input id={`customField${i}Value-${property.id}`} name={`customField${i}Value`} defaultValue={property[`customField${i}Value` as keyof Property] as string} placeholder="Valor" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
 
                 {isPersonalFlavor && (
                     <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">

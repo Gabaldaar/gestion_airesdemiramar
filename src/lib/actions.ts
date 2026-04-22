@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -227,54 +226,65 @@ export async function addProperty(previousState: any, formData: FormData) {
 }
 
 export async function updateProperty(previousState: any, formData: FormData) {
-  const visitRates: { [key: string]: number } = {};
-  for (const [key, value] of formData.entries()) {
-      if (key.startsWith('visitRate_') && value) {
-          const providerId = key.replace('visitRate_', '');
-          const rate = parseFloat(value as string);
-          if (!isNaN(rate) && rate >= 0) { // Allow 0 to unset
-              visitRates[providerId] = rate;
-          }
-      }
-  }
-
-  const propertyData: Omit<Property, 'googleCalendarId'> = {
-    id: formData.get('id') as string,
-    name: formData.get('name') as string,
-    address: formData.get('address') as string,
-    imageUrl: formData.get('imageUrl') as string,
-    propertyUrl: formData.get('propertyUrl') as string,
-    priceSheetName: formData.get('priceSheetName') as string,
-    notes: formData.get('notes') as string,
-    contractTemplate: formData.get('contractTemplate') as string,
-    customField1Label: formData.get('customField1Label') as string,
-    customField1Value: formData.get('customField1Value') as string,
-    customField2Label: formData.get('customField2Label') as string,
-    customField2Value: formData.get('customField2Value') as string,
-    customField3Label: formData.get('customField3Label') as string,
-    customField3Value: formData.get('customField3Value') as string,
-    customField4Label: formData.get('customField4Label') as string,
-    customField4Value: formData.get('customField4Value') as string,
-    customField5Label: formData.get('customField5Label') as string,
-    customField5Value: formData.get('customField5Value') as string,
-    customField6Label: formData.get('customField6Label') as string,
-    customField6Value: formData.get('customField6Value') as string,
-    visitRates,
-  };
-
-  if (!propertyData.id || !propertyData.name || !propertyData.address) {
+  const id = formData.get('id') as string;
+  if (!id) {
     return {
       success: false,
       message: 'Faltan datos para actualizar la propiedad.',
     };
   }
 
+  const dataToUpdate: Partial<Omit<Property, 'id'>> = {
+    name: formData.get('name') as string,
+    address: formData.get('address') as string,
+    imageUrl: (formData.get('imageUrl') as string) || '',
+    propertyUrl: (formData.get('propertyUrl') as string) || '',
+    notes: (formData.get('notes') as string) || '',
+    contractTemplate: (formData.get('contractTemplate') as string) || '',
+  };
+
+  // Conditionally add fields that might not be present in all flavors
+  if (formData.has('priceSheetName')) {
+    dataToUpdate.priceSheetName = formData.get('priceSheetName') as string;
+  }
+  
+  for (let i = 1; i <= 6; i++) {
+    if (formData.has(`customField${i}Label`)) {
+      dataToUpdate[`customField${i}Label` as keyof typeof dataToUpdate] = formData.get(`customField${i}Label`) as string;
+    }
+    if (formData.has(`customField${i}Value`)) {
+        dataToUpdate[`customField${i}Value` as keyof typeof dataToUpdate] = formData.get(`customField${i}Value`) as string;
+    }
+  }
+
+  const visitRateKeysExist = Array.from(formData.keys()).some(k => k.startsWith('visitRate_'));
+  if (visitRateKeysExist) {
+    const visitRates: { [key: string]: number } = {};
+    for (const [key, value] of formData.entries()) {
+        if (key.startsWith('visitRate_') && value) {
+            const providerId = key.replace('visitRate_', '');
+            const rate = parseFloat(value as string);
+            if (!isNaN(rate) && rate >= 0) {
+                visitRates[providerId] = rate;
+            }
+        }
+    }
+    dataToUpdate.visitRates = visitRates;
+  }
+  
+  if (!dataToUpdate.name || !dataToUpdate.address) {
+    return {
+      success: false,
+      message: 'El nombre y la dirección son obligatorios.',
+    };
+  }
+
   try {
-    await updatePropertyDb(propertyData);
+    await updatePropertyDb({ id, ...dataToUpdate });
     revalidatePath('/settings');
     revalidatePath('/properties');
-    revalidatePath(`/properties/${propertyData.id}`);
-    revalidatePath(`/api/ical/${propertyData.id}`);
+    revalidatePath(`/properties/${id}`);
+    revalidatePath(`/api/ical/${id}`);
     revalidatePath('/');
     revalidatePath('/bookings');
     revalidatePath('/expenses');
@@ -749,7 +759,9 @@ export async function addPayment(previousState: any, formData: FormData) {
   }
   
   const hasFinanceFields = categoria_id && cuenta_id && billetera_id;
-  if (!hasFinanceFields) {
+  const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
+
+  if (isPersonalFlavor && !hasFinanceFields) {
       console.warn("Faltan campos de finanzas, el cobro no será sincronizado.");
   }
 
@@ -810,7 +822,7 @@ export async function addPayment(previousState: any, formData: FormData) {
     const booking = await getBookingById(bookingId);
 
     let financeApiResult;
-    if (booking && hasFinanceFields) {
+    if (isPersonalFlavor && booking && hasFinanceFields) {
       const tenant = await getTenantById(booking.tenantId);
       const property = await getPropertyById(booking.propertyId);
 
@@ -836,7 +848,7 @@ export async function addPayment(previousState: any, formData: FormData) {
       revalidatePathsAfterAction(booking.propertyId);
     }
     
-    if (hasFinanceFields && financeApiResult) {
+    if (isPersonalFlavor && hasFinanceFields && financeApiResult) {
         if (!financeApiResult.success) {
              return {
                 success: true, // The payment was saved locally
@@ -851,7 +863,7 @@ export async function addPayment(previousState: any, formData: FormData) {
 
     return { 
         success: true, 
-        message: 'Cobro guardado localmente. No se sincronizó con finanzas por falta de datos.' 
+        message: 'Cobro guardado correctamente.' 
     };
 
   } catch (error: any) {
