@@ -67,4 +67,5 @@ declare module 'lucide-react' {
     export const Star: LucideIcon;
     export const Wrench: LucideIcon;
     export const Briefcase: LucideIcon;
+    export const Upload: LucideIcon;
 }

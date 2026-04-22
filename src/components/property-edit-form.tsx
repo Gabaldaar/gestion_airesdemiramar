@@ -1,21 +1,25 @@
 
+
 'use client';
 
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { useFormStatus } from 'react-dom';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Property, Provider } from '@/lib/data';
 import { updateProperty } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Card, CardContent } from './ui/card';
 import { PropertyDeleteForm } from './property-delete-form';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import useWindowSize from '@/hooks/use-window-size';
 import { useToast } from './ui/use-toast';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import Image from 'next/image';
 
 
 const initialState = {
@@ -39,6 +43,8 @@ function SubmitButton() {
     )
 }
 
+const PERSONAL_WORKSPACE_ID = "miramar-personal-workspace";
+
 export function PropertyEditForm({ property, providers }: { property: Property; providers: Provider[] }) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
@@ -46,6 +52,9 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
   const { width } = useWindowSize();
   const isMobile = width < 768;
   const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
+
+  const [imageUrl, setImageUrl] = useState(property.imageUrl || '');
+  const [isUploading, setIsUploading] = useState(false);
 
   const visitRateProviders = useMemo(() => {
     return providers.filter(p => p.billingType === 'per_visit' || p.billingType === 'hourly_or_visit');
@@ -57,6 +66,45 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
         setState(result);
     });
   }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({
+        title: "Archivo demasiado grande",
+        description: "La imagen no debe superar los 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    const filePath = `workspaces/${PERSONAL_WORKSPACE_ID}/properties/${property.id}/main_image.jpg`;
+    const storageRef = ref(storage, filePath);
+
+    try {
+      const uploadTask = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(uploadTask.ref);
+      setImageUrl(downloadURL); // Update state, which updates the input value
+      toast({
+        title: "¡Éxito!",
+        description: "La imagen se ha subido. Guarda los cambios para que sea permanente.",
+      });
+    } catch (error: any) {
+      console.error("Image upload failed:", error);
+      toast({
+        title: "Error al subir la imagen",
+        description: error.message || "No se pudo completar la subida. Revisa las reglas de Storage.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
 
   useEffect(() => {
     if (state.message) {
@@ -73,29 +121,74 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
         <form action={formAction} className="space-y-4">
             <input type="hidden" name="id" value={property.id} />
              <h4 className="text-lg font-semibold text-primary">{property.name}</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-1">
-                    <Label htmlFor={`name-${property.id}`}>Nombre</Label>
-                    <Input id={`name-${property.id}`} type="text" name="name" defaultValue={property.name} />
-                </div>
-                <div className="col-span-1">
-                    <Label htmlFor={`address-${property.id}`}>Dirección</Label>
-                    <Input id={`address-${property.id}`} type="text" name="address" defaultValue={property.address} />
-                </div>
-                <div className="col-span-1">
-                    <Label htmlFor={`imageUrl-${property.id}`}>URL de Foto</Label>
-                    <Input id={`imageUrl-${property.id}`} type="text" name="imageUrl" defaultValue={property.imageUrl} />
-                </div>
-                <div className="col-span-1">
-                    <Label htmlFor={`propertyUrl-${property.id}`}>Web de la Propiedad</Label>
-                    <Input id={`propertyUrl-${property.id}`} type="text" name="propertyUrl" defaultValue={property.propertyUrl} placeholder="Ej: https://airbnb.com/h/mi-depto"/>
-                </div>
-                {isPersonalFlavor && (
-                    <div className="col-span-1">
-                        <Label htmlFor={`priceSheetName-${property.id}`}>Nombre en Hoja de Precios</Label>
-                        <Input id={`priceSheetName-${property.id}`} type="text" name="priceSheetName" defaultValue={property.priceSheetName} placeholder="Nombre exacto en la App Script"/>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div className="col-span-1 md:col-span-2 lg:col-span-1 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor={`name-${property.id}`}>Nombre</Label>
+                        <Input id={`name-${property.id}`} type="text" name="name" defaultValue={property.name} />
                     </div>
-                )}
+                    <div className="space-y-2">
+                        <Label htmlFor={`address-${property.id}`}>Dirección</Label>
+                        <Input id={`address-${property.id}`} type="text" name="address" defaultValue={property.address} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor={`propertyUrl-${property.id}`}>Web de la Propiedad</Label>
+                        <Input id={`propertyUrl-${property.id}`} type="text" name="propertyUrl" defaultValue={property.propertyUrl} placeholder="Ej: https://airbnb.com/h/mi-depto"/>
+                    </div>
+                    {isPersonalFlavor && (
+                        <div className="space-y-2">
+                            <Label htmlFor={`priceSheetName-${property.id}`}>Nombre en Hoja de Precios</Label>
+                            <Input id={`priceSheetName-${property.id}`} type="text" name="priceSheetName" defaultValue={property.priceSheetName} placeholder="Nombre exacto en la App Script"/>
+                        </div>
+                    )}
+                </div>
+
+                <div className="col-span-1 md:col-span-2 lg:col-span-1">
+                    <Label>Imagen de la Propiedad</Label>
+                    <div className="relative aspect-video w-full overflow-hidden rounded-lg border mt-2">
+                        <Image
+                        src={imageUrl || 'https://picsum.photos/600/400'}
+                        alt="Vista previa de la propiedad"
+                        fill
+                        className="object-cover"
+                        data-ai-hint="apartment building"
+                        />
+                        {isUploading && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-white" />
+                        </div>
+                        )}
+                    </div>
+                    <div className="mt-2">
+                        <Label htmlFor={`image-upload-${property.id}`} className={cn(
+                            buttonVariants({ variant: 'outline' }),
+                            "cursor-pointer w-full md:w-auto",
+                            isUploading && "cursor-not-allowed opacity-50"
+                        )}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            {isUploading ? 'Subiendo...' : 'Cambiar Imagen'}
+                        </Label>
+                        <Input 
+                            id={`image-upload-${property.id}`}
+                            type="file" 
+                            className="hidden" 
+                            onChange={handleFileChange}
+                            accept="image/png, image/jpeg, image/webp"
+                            disabled={isUploading}
+                        />
+                    </div>
+                    <Label htmlFor={`imageUrl-${property.id}`} className="mt-4 block text-xs text-muted-foreground">URL de la imagen (auto-generado)</Label>
+                    <Input 
+                        id={`imageUrl-${property.id}`}
+                        name="imageUrl" 
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        readOnly 
+                        className="bg-muted/50 mt-1"
+                    />
+                </div>
+
                 <div className="col-span-1 md:col-span-2">
                     <Label htmlFor={`notes-${property.id}`}>Notas</Label>
                     <Textarea id={`notes-${property.id}`} name="notes" defaultValue={property.notes} />
@@ -114,16 +207,9 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                         <strong>Fechas:</strong> <code>&#123;&#123;fechaCheckIn&#125;&#125;</code>, <code>&#123;&#123;fechaCheckOut&#125;&#125;</code>, <code>&#123;&#123;fechaActual&#125;&#125;</code>.
                         <br />
                         <strong>Montos:</strong> <code>&#123;&#123;monto&#125;&#125;</code>, <code>&#123;&#123;montoEnLetras&#125;&#125;</code>, <code>&#123;&#123;montoGarantia&#125;&#125;</code>, <code>&#123;&#123;montoGarantiaEnLetras&#125;&#125;</code>, <code>&#123;&#123;monedaGarantia&#125;&#125;</code>.
-                        {isPersonalFlavor && (
-                            <>
-                                <br />
-                                <strong>Campos Personalizados:</strong> <code>&#123;&#123;propiedad.customField1Label&#125;&#125;</code>, <code>&#123;&#123;propiedad.customField1Value&#125;&#125;</code>, etc. (del 1 al 6).
-                            </>
-                        )}
                     </p>
                 </div>
                 
-                {/* Custom Fields */}
                 {isPersonalFlavor && (
                     <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
                         <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados (Para Contratos y Emails)</h4>
