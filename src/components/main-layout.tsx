@@ -39,7 +39,7 @@ const mainNavItems = [
   { href: '/bookings', label: 'Reservas', icon: Calendar, badge: 'bookings' },
   { href: '/payments', label: 'Cobros', icon: CreditCard },
   { href: '/liquidations', label: 'Liquidaciones', icon: Briefcase, badge: 'liquidations', personalOnly: true },
-  { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
+  { href: '/expenses', label: 'Gastos', icon: ShoppingCart, personalOnly: true },
   { href: '/informes', label: 'Informes', icon: BarChart3, personalOnly: true },
   { href: '/templates', label: 'Plantillas', icon: Mail, personalOnly: true },
   { href: '/settings', label: 'Configuración', icon: Settings },
@@ -55,7 +55,6 @@ function SidebarNav({ onLinkClick, isCollapsed, pendingLiquidationsCount, pendin
   const navItems = mainNavItems.filter(item => {
     if (!isPersonalFlavor) {
       if (item.personalOnly) return false;
-      if (item.href === '/tasks') return false; // Hide Tasks for commercial
     }
     return true;
   });
