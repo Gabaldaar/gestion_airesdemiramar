@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -230,69 +231,71 @@ export async function updateProperty(previousState: any, formData: FormData) {
   if (!id) {
     return {
       success: false,
-      message: 'Faltan datos para actualizar la propiedad.',
-    };
-  }
-
-  const dataToUpdate: Partial<Omit<Property, 'id'>> = {
-    name: formData.get('name') as string,
-    address: formData.get('address') as string,
-    imageUrl: (formData.get('imageUrl') as string) || '',
-    propertyUrl: (formData.get('propertyUrl') as string) || '',
-    notes: (formData.get('notes') as string) || '',
-    contractTemplate: (formData.get('contractTemplate') as string) || '',
-  };
-
-  // Conditionally add fields that might not be present in all flavors
-  if (formData.has('priceSheetName')) {
-    dataToUpdate.priceSheetName = formData.get('priceSheetName') as string;
-  }
-  
-  for (let i = 1; i <= 6; i++) {
-    if (formData.has(`customField${i}Label`)) {
-      dataToUpdate[`customField${i}Label` as keyof typeof dataToUpdate] = formData.get(`customField${i}Label`) as string;
-    }
-    if (formData.has(`customField${i}Value`)) {
-        dataToUpdate[`customField${i}Value` as keyof typeof dataToUpdate] = formData.get(`customField${i}Value`) as string;
-    }
-  }
-
-  const visitRateKeysExist = Array.from(formData.keys()).some(k => k.startsWith('visitRate_'));
-  if (visitRateKeysExist) {
-    const visitRates: { [key: string]: number } = {};
-    for (const [key, value] of formData.entries()) {
-        if (key.startsWith('visitRate_') && value) {
-            const providerId = key.replace('visitRate_', '');
-            const rate = parseFloat(value as string);
-            if (!isNaN(rate) && rate >= 0) {
-                visitRates[providerId] = rate;
-            }
-        }
-    }
-    dataToUpdate.visitRates = visitRates;
-  }
-  
-  if (!dataToUpdate.name || !dataToUpdate.address) {
-    return {
-      success: false,
-      message: 'El nombre y la dirección son obligatorios.',
+      message: 'ID de propiedad no válido.',
     };
   }
 
   try {
+    // Build a data object with only the fields present in the form
+    const dataToUpdate: { [key: string]: any } = {};
+
+    // Helper to add field if it exists
+    const addField = (key: string) => {
+        if (formData.has(key)) {
+            dataToUpdate[key] = formData.get(key) as string;
+        }
+    };
+    
+    addField('name');
+    addField('address');
+    addField('imageUrl');
+    addField('propertyUrl');
+    addField('notes');
+    addField('contractTemplate');
+    addField('priceSheetName');
+
+    for (let i = 1; i <= 6; i++) {
+        addField(`customField${i}Label`);
+        addField(`customField${i}Value`);
+    }
+
+    // Process visitRates map
+    const visitRates: { [key: string]: number } = {};
+    let hasVisitRateKeys = false;
+    for (const [key, value] of formData.entries()) {
+        if (key.startsWith('visitRate_')) {
+            hasVisitRateKeys = true;
+            const providerId = key.replace('visitRate_', '');
+            if (value) {
+                const rate = parseFloat(value as string);
+                if (!isNaN(rate) && rate >= 0) {
+                    visitRates[providerId] = rate;
+                }
+            }
+        }
+    }
+
+    // Only include visitRates in the update if rate fields were present in the form
+    if (hasVisitRateKeys) {
+        dataToUpdate.visitRates = visitRates;
+    }
+    
+    if (Object.keys(dataToUpdate).length === 0) {
+        return { success: true, message: 'No se detectaron cambios para guardar.' };
+    }
+    
+    if (!dataToUpdate.name || !dataToUpdate.address) {
+        return {
+          success: false,
+          message: 'El nombre y la dirección son obligatorios.',
+        };
+    }
+
     await updatePropertyDb({ id, ...dataToUpdate });
-    revalidatePath('/settings');
-    revalidatePath('/properties');
-    revalidatePath(`/properties/${id}`);
-    revalidatePath(`/api/ical/${id}`);
-    revalidatePath('/');
-    revalidatePath('/bookings');
-    revalidatePath('/expenses');
-    revalidatePath('/payments');
-    revalidatePath('/reports');
-    revalidatePath('/informes');
+
+    revalidatePathsAfterAction(id);
     return { success: true, message: 'Propiedad actualizada.' };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating property:', error);
     return { success: false, message: 'Error al actualizar la propiedad.' };
   }
