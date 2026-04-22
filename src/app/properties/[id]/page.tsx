@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Image from 'next/image';
@@ -143,7 +141,7 @@ export default function PropertyDetailPage() {
     if (user && propertyId) {
         setLoading(true);
         try {
-            const [property, properties, tenants, bookings, blocks, expenses, expenseCategories, tasks, taskCategories, providers, origins, taskScopes, payments] = await Promise.all([
+            const [property, properties, tenants, bookings, blocks, expenses, expenseCategories, tasks, taskCategories, providers, origins, payments] = await Promise.all([
                 getPropertyById(propertyId),
                 getProperties(),
                 getTenants(),
@@ -155,9 +153,10 @@ export default function PropertyDetailPage() {
                 getTaskCategories(),
                 getProviders(),
                 getOrigins(),
-                getTaskScopes(),
                 getAllPaymentsWithDetails(),
             ]);
+
+            const taskScopes = isPersonalFlavor ? await getTaskScopes() : [];
 
             if (!property) {
                 setData(null);
@@ -442,7 +441,7 @@ export default function PropertyDetailPage() {
                         properties={properties}
                         providers={providers} 
                         categories={taskCategories} 
-                        scopes={scopes}
+                        scopes={taskScopes}
                         isOpen={isTaskAddOpen} 
                         onOpenChange={setIsTaskAddOpen} 
                         onTaskAdded={handleDataChanged}>
@@ -453,7 +452,7 @@ export default function PropertyDetailPage() {
                     </TaskAddForm>
                 </CardHeader>
                 <CardContent>
-                    <TasksList tasks={tasks} properties={properties} providers={providers} categories={taskCategories} scopes={scopes} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
+                    <TasksList tasks={tasks} properties={properties} providers={providers} categories={taskCategories} scopes={taskScopes} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
                 </CardContent>
             </Card>
             </TabsContent>
