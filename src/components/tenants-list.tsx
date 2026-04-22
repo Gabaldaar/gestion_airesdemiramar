@@ -367,12 +367,12 @@ export default function TenantsList({ tenants, origins, onDataChanged, onEditTen
         return <p className="text-sm text-center text-muted-foreground py-8">No hay inquilinos para mostrar con los filtros seleccionados.</p>;
     }
 
-    const originsMap = new Map(origins.map(o => [o.id, o]));
+    const originsMap = (origins && isPersonalFlavor) ? new Map(origins.map(o => [o.id, o])) : new Map();
     
     const CardView = () => (
          <div className="space-y-4">
             {tenants.map((tenant: Tenant) => (
-                <TenantCard key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
+                <TenantCard key={tenant.id} tenant={tenant} origin={isPersonalFlavor && tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
             ))}
         </div>
     );
@@ -392,7 +392,7 @@ export default function TenantsList({ tenants, origins, onDataChanged, onEditTen
             </TableHeader>
             <TableBody>
                 {tenants.map((tenant: Tenant) => (
-                    <TenantRow key={tenant.id} tenant={tenant} origin={tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
+                    <TenantRow key={tenant.id} tenant={tenant} origin={isPersonalFlavor && tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
                 ))}
             </TableBody>
         </Table>

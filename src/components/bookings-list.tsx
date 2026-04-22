@@ -286,13 +286,13 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onCal
                )}
           </div>
       </TableCell>
-      <TableCell className={cn("hidden md:table-cell", (isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
+      {isPersonalFlavor && <TableCell className={cn("hidden md:table-cell", (isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
         {origin ? (
             <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
                 {origin.name}
             </Badge>
         ) : null}
-      </TableCell>
+      </TableCell>}
       <TableCell className={cn((isCancelled || isPending || isPastBooking) && "text-muted-foreground")}>
         <TooltipProvider>
             <Tooltip>
@@ -478,7 +478,7 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onCa
                        )}
                     </div>
                 </div>
-                {origin && (
+                {isPersonalFlavor && origin && (
                     <div className="flex justify-between col-span-2">
                         <span className="text-muted-foreground">Origen</span>
                         <Badge style={{ backgroundColor: origin.color, color: 'white' }}>{origin.name}</Badge>
@@ -534,7 +534,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
     return <p className="text-sm text-muted-foreground">No hay reservas para mostrar.</p>;
   }
 
-  const originsMap = origins ? new Map(origins.map(o => [o.id, o])) : new Map();
+  const originsMap = (origins && isPersonalFlavor) ? new Map(origins.map(o => [o.id, o])) : new Map();
 
   const handleEditClick = (booking: BookingWithDetails) => {
     setEditingBooking(booking);
@@ -579,7 +579,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
             key={booking.id}
             booking={booking}
             showProperty={showProperty}
-            origin={booking.originId ? originsMap.get(booking.originId) : undefined}
+            origin={isPersonalFlavor && booking.originId ? originsMap.get(booking.originId) : undefined}
             onEdit={handleEditClick}
             onAddPayment={handleAddPaymentClick}
             onCalculatorOpen={handleCalculatorOpen}
@@ -597,7 +597,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
             {showProperty && <TableHead>Propiedad</TableHead>}
             <TableHead>Inquilino</TableHead>
             <TableHead>Estadía</TableHead>
-            <TableHead className="hidden md:table-cell">Origen</TableHead>
+            {isPersonalFlavor && <TableHead className="hidden md:table-cell">Origen</TableHead>}
             <TableHead>Contrato</TableHead>
             <TableHead className="hidden lg:table-cell">Garantía</TableHead>
             <TableHead>Monto</TableHead>
@@ -611,7 +611,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
                     key={booking.id}
                     booking={booking} 
                     showProperty={showProperty} 
-                    origin={booking.originId ? originsMap.get(booking.originId) : undefined}
+                    origin={isPersonalFlavor && booking.originId ? originsMap.get(booking.originId) : undefined}
                     onEdit={handleEditClick}
                     onAddPayment={handleAddPaymentClick}
                     onCalculatorOpen={handleCalculatorOpen}
@@ -680,7 +680,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
         {selectedTenant && (
             <TenantDetailsDialog
                 tenant={selectedTenant}
-                origin={selectedTenant.originId ? originsMap.get(selectedTenant.originId) : undefined}
+                origin={isPersonalFlavor && selectedTenant.originId ? originsMap.get(selectedTenant.originId) : undefined}
                 isOpen={isTenantDetailOpen}
                 onOpenChange={setIsTenantDetailOpen}
             />
