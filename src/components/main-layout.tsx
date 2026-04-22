@@ -37,7 +37,7 @@ const mainNavItems = [
   { href: '/tenants', label: 'Inquilinos', icon: Users },
   { href: '/providers', label: 'Colaboradores', icon: Wrench, personalOnly: true },
   { href: '/bookings', label: 'Reservas', icon: Calendar, badge: 'bookings' },
-  { href: '/payments', label: 'Cobros', icon: CreditCard },
+  { href: '/payments', label: 'Cobros', icon: CreditCard, personalOnly: true },
   { href: '/liquidations', label: 'Liquidaciones', icon: Briefcase, badge: 'liquidations', personalOnly: true },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart, personalOnly: true },
   { href: '/informes', label: 'Informes', icon: BarChart3, personalOnly: true },

@@ -18,7 +18,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getPropertyById, getTenants, getBookings, getExpensesByAssignmentId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, ExpenseWithDetails, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories, getProviders, Provider, getTaskScopes, TaskScope, DateBlock, getDateBlocks, getDateBlocksByPropertyId } from "@/lib/data";
+import { getPropertyById, getTenants, getBookings, getExpensesByAssignmentId, getProperties, getExpenseCategories, Property, Tenant, BookingWithDetails, ExpenseWithDetails, ExpenseCategory, Origin, getOrigins, getTasksByPropertyId, TaskWithDetails, TaskCategory, getTaskCategories, getProviders, Provider, getTaskScopes, TaskScope, DateBlock, getDateBlocks, getDateBlocksByPropertyId, getAllPaymentsWithDetails, PaymentWithDetails } from "@/lib/data";
 import { BookingAddForm } from '@/components/booking-add-form';
 import BookingsList from '@/components/bookings-list';
 import ExpensesList from '@/components/expenses-list';
@@ -42,6 +42,7 @@ import { parseDateSafely } from '@/lib/utils';
 import { TaskAddForm } from '@/components/task-add-form';
 import { DateBlockAddForm } from '@/components/date-block-add-form';
 import DateBlocksList from '@/components/date-blocks-list';
+import PaymentsList from '@/components/payments-list';
 
 
 interface PropertyDetailData {
@@ -51,6 +52,7 @@ interface PropertyDetailData {
     bookings: BookingWithDetails[];
     blocks: DateBlock[];
     expenses: ExpenseWithDetails[];
+    payments: PaymentWithDetails[];
     expenseCategories: ExpenseCategory[];
     tasks: TaskWithDetails[];
     taskCategories: TaskCategory[];
@@ -58,6 +60,8 @@ interface PropertyDetailData {
     providers: Provider[];
     origins: Origin[];
 }
+
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> = (dayProps) => {
     const { date, activeModifiers, data, ...rest } = dayProps;
@@ -139,7 +143,7 @@ export default function PropertyDetailPage() {
     if (user && propertyId) {
         setLoading(true);
         try {
-            const [property, properties, tenants, bookings, blocks, expenses, expenseCategories, tasks, taskCategories, providers, origins, taskScopes] = await Promise.all([
+            const [property, properties, tenants, bookings, blocks, expenses, expenseCategories, tasks, taskCategories, providers, origins, taskScopes, payments] = await Promise.all([
                 getPropertyById(propertyId),
                 getProperties(),
                 getTenants(),
@@ -152,12 +156,13 @@ export default function PropertyDetailPage() {
                 getProviders(),
                 getOrigins(),
                 getTaskScopes(),
+                getAllPaymentsWithDetails(),
             ]);
 
             if (!property) {
                 setData(null);
             } else {
-                setData({ property, properties, tenants, bookings, blocks, expenses, expenseCategories, tasks, taskCategories, providers, origins, taskScopes });
+                setData({ property, properties, tenants, bookings, blocks, expenses, payments, expenseCategories, tasks, taskCategories, providers, origins, taskScopes });
             }
         } catch (error) {
             console.error("Error fetching property details:", error);
@@ -190,6 +195,11 @@ export default function PropertyDetailPage() {
     const bookingsForThisProperty = useMemo(() => {
         if (!data) return [];
         return data.bookings.filter(b => b.propertyId === propertyId);
+    }, [data, propertyId]);
+
+    const paymentsForThisProperty = useMemo(() => {
+        if (!data) return [];
+        return data.payments.filter(p => p.propertyId === propertyId);
     }, [data, propertyId]);
     
     const blocksForThisProperty = useMemo(() => {
@@ -256,7 +266,7 @@ export default function PropertyDetailPage() {
     return <p>Propiedad no encontrada o error al cargar los datos.</p>;
   }
   
-  const { property, properties, tenants, bookings, blocks, expenses, expenseCategories, tasks, taskCategories, taskScopes, providers, origins } = data;
+  const { property, properties, tenants, bookings, blocks, expenses, payments, expenseCategories, tasks, taskCategories, taskScopes, providers, origins } = data;
   
   const icalUrl = `${baseUrl}/api/ical/${property.id}`;
   
@@ -346,11 +356,12 @@ export default function PropertyDetailPage() {
         <div className="lg:col-span-1">
         <Tabs defaultValue="bookings" className="space-y-4">
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <TabsList className="grid w-full sm:w-auto grid-cols-5">
+                <TabsList className="grid w-full sm:w-auto grid-cols-3 sm:grid-cols-6">
                     <TabsTrigger value="bookings">Reservas</TabsTrigger>
                     <TabsTrigger value="blocks">Bloqueos</TabsTrigger>
                     <TabsTrigger value="tasks">Tareas</TabsTrigger>
                     <TabsTrigger value="expenses">Gastos</TabsTrigger>
+                    <TabsTrigger value="payments">Cobros</TabsTrigger>
                     <TabsTrigger value="calendar">Calendario</TabsTrigger>
                 </TabsList>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center w-full md:w-auto gap-2">
@@ -431,7 +442,7 @@ export default function PropertyDetailPage() {
                         properties={properties}
                         providers={providers} 
                         categories={taskCategories} 
-                        scopes={taskScopes}
+                        scopes={scopes}
                         isOpen={isTaskAddOpen} 
                         onOpenChange={setIsTaskAddOpen} 
                         onTaskAdded={handleDataChanged}>
@@ -442,7 +453,7 @@ export default function PropertyDetailPage() {
                     </TaskAddForm>
                 </CardHeader>
                 <CardContent>
-                    <TasksList tasks={tasks} properties={properties} providers={providers} categories={taskCategories} scopes={taskScopes} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
+                    <TasksList tasks={tasks} properties={properties} providers={providers} categories={taskCategories} scopes={scopes} onDataChanged={handleDataChanged} onRegisterExpense={handleOpenExpenseFormWithData} propertyId={propertyId} />
                 </CardContent>
             </Card>
             </TabsContent>
@@ -474,6 +485,19 @@ export default function PropertyDetailPage() {
                     <ExpensesList expenses={expenses} categories={expenseCategories} providers={providers} onDataChanged={handleDataChanged} />
                 </CardContent>
             </Card>
+            </TabsContent>
+            <TabsContent value="payments" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Historial de Cobros</CardTitle>
+                  <CardDescription>
+                    Todos los cobros registrados para las reservas de esta propiedad.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PaymentsList payments={paymentsForThisProperty} />
+                </CardContent>
+              </Card>
             </TabsContent>
             <TabsContent value="calendar" className="space-y-4">
             <Card>
