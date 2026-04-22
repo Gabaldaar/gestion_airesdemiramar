@@ -120,26 +120,32 @@ export function TaskAddForm({
         <form action={formAction} ref={formRef}>
             <input type="hidden" name="dueDate" value={dueDate?.toISOString().split('T')[0] || ''} />
             <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                    <Label htmlFor="assignment">Asignar a</Label>
-                    <Select name="assignment" defaultValue={propertyId ? `property-${propertyId}` : undefined} required>
-                        <SelectTrigger><SelectValue placeholder={isPersonalFlavor ? "Selecciona Propiedad o Ámbito..." : "Selecciona una Propiedad..."}/></SelectTrigger>
-                        <SelectContent>
-                           {properties && (
-                             <SelectGroup>
-                                <Label>Propiedades</Label>
-                                {properties.map(p => <SelectItem key={p.id} value={`property-${p.id}`}>{p.name}</SelectItem>)}
-                            </SelectGroup>
-                           )}
-                           {isPersonalFlavor && scopes && scopes.length > 0 && (
-                                <SelectGroup>
-                                    <Label>Ámbitos</Label>
-                                    {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
-                               </SelectGroup>
-                           )}
-                        </SelectContent>
-                    </Select>
-                </div>
+                
+                {isPersonalFlavor || !propertyId ? (
+                  <div className="space-y-2">
+                      <Label htmlFor="assignment">Asignar a</Label>
+                      <Select name="assignment" defaultValue={propertyId ? `property-${propertyId}` : undefined} required>
+                          <SelectTrigger><SelectValue placeholder={isPersonalFlavor ? "Selecciona Propiedad o Ámbito..." : "Selecciona una Propiedad..."}/></SelectTrigger>
+                          <SelectContent>
+                            {properties && (
+                              <SelectGroup>
+                                  <Label>Propiedades</Label>
+                                  {properties.map(p => <SelectItem key={p.id} value={`property-${p.id}`}>{p.name}</SelectItem>)}
+                              </SelectGroup>
+                            )}
+                            {isPersonalFlavor && scopes && scopes.length > 0 && (
+                                  <SelectGroup>
+                                      <Label>Ámbitos</Label>
+                                      {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
+                                </SelectGroup>
+                            )}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                ) : (
+                  <input type="hidden" name="assignment" value={`property-${propertyId}`} />
+                )}
+
 
                 <div className="space-y-2">
                     <Label htmlFor="description">Descripción</Label>

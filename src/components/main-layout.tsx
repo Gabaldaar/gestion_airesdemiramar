@@ -34,14 +34,14 @@ import { getPendingLiquidationsCount, getPendingBookingsCount, getUnliquidatedIt
 const mainNavItems = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/properties', label: 'Propiedades', icon: Building2 },
-  { href: '/tenants', label: 'Inquilinos', icon: Users },
+  { href: '/tenants', label: 'Inquilinos', icon: Users, personalOnly: true },
   { href: '/providers', label: 'Colaboradores', icon: Wrench, personalOnly: true },
   { href: '/bookings', label: 'Reservas', icon: Calendar, badge: 'bookings' },
   { href: '/tasks', label: 'Tareas', icon: ClipboardList },
   { href: '/payments', label: 'Cobros', icon: CreditCard },
   { href: '/liquidations', label: 'Liquidaciones', icon: Briefcase, badge: 'liquidations', personalOnly: true },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
-  { href: '/informes', label: 'Informes', icon: BarChart3 },
+  { href: '/informes', label: 'Informes', icon: BarChart3, personalOnly: true },
   { href: '/templates', label: 'Plantillas', icon: Mail, personalOnly: true },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
@@ -53,7 +53,13 @@ function SidebarNav({ onLinkClick, isCollapsed, pendingLiquidationsCount, pendin
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION;
   const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
-  const navItems = mainNavItems.filter(item => isPersonalFlavor || !item.personalOnly);
+  const navItems = mainNavItems.filter(item => {
+    if (!isPersonalFlavor) {
+      if (item.personalOnly) return false;
+      if (item.href === '/tasks') return false; // Hide Tasks for commercial
+    }
+    return true;
+  });
 
   const badgeCounts = {
       bookings: pendingBookingsCount,
