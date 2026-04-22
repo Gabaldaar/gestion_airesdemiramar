@@ -3,7 +3,6 @@
 
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { useFormStatus } from 'react-dom';
-import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Property, Provider } from '@/lib/data';
@@ -26,7 +25,7 @@ const initialState = {
   success: false,
 };
 
-function SubmitButton() {
+function MainSubmitButton() {
     const { pending } = useFormStatus();
     return (
          <Button type="submit" disabled={pending}>
@@ -42,6 +41,28 @@ function SubmitButton() {
     )
 }
 
+function UnsavedChangesBar({ isDirty, onDiscard, formId }: { isDirty: boolean; onDiscard: () => void; formId: string; }) {
+    const { pending } = useFormStatus();
+
+    if (!isDirty || pending) {
+        return null;
+    }
+
+    return (
+        <div className="fixed bottom-6 inset-x-0 z-50 mx-auto w-fit">
+            <Card className="bg-primary/95 text-primary-foreground backdrop-blur-sm animate-in fade-in-50 slide-in-from-bottom-10 duration-300">
+                <CardContent className="p-3 flex items-center justify-between gap-4">
+                     <p className="text-sm font-semibold">Tienes cambios sin guardar.</p>
+                     <div className="flex items-center gap-2">
+                         <Button variant="ghost" onClick={onDiscard} className="hover:bg-primary/80">Descartar</Button>
+                         <Button variant="secondary" form={formId} type="submit">Guardar</Button>
+                     </div>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
 export function PropertyEditForm({ property, providers }: { property: Property; providers: Provider[] }) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
@@ -52,6 +73,18 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
 
   const [imageUrl, setImageUrl] = useState(property.imageUrl || '');
   const [isUploading, setIsUploading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const formId = `property-edit-form-${property.id}`;
+
+  const handleMakeDirty = () => {
+    if (!isDirty) {
+        setIsDirty(true);
+    }
+  };
+
+  const handleDiscard = () => {
+      window.location.reload();
+  };
 
   const visitRateProviders = useMemo(() => {
     return providers.filter(p => p.billingType === 'per_visit' || p.billingType === 'hourly_or_visit');
@@ -61,6 +94,9 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
     startTransition(async () => {
         const result = await updateProperty(initialState, formData);
         setState(result);
+         if (result.success) {
+            setIsDirty(false);
+        }
     });
   }
 
@@ -85,7 +121,8 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
     try {
       const uploadTask = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(uploadTask.ref);
-      setImageUrl(downloadURL); // Update state, which updates the input value
+      setImageUrl(downloadURL);
+      handleMakeDirty();
       toast({
         title: "¡Éxito!",
         description: "La imagen se ha subido. Guarda los cambios para que sea permanente.",
@@ -120,8 +157,9 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
   }, [state, toast]);
 
   return (
-    <div className="py-4">
-        <form action={formAction} className="space-y-4">
+    <div className="py-4 relative">
+        <UnsavedChangesBar isDirty={isDirty} onDiscard={handleDiscard} formId={formId} />
+        <form id={formId} action={formAction} className="space-y-4">
             <input type="hidden" name="id" value={property.id} />
              <h4 className="text-lg font-semibold text-primary">{property.name}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -129,20 +167,20 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                 <div className="col-span-1 md:col-span-2 lg:col-span-1 space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor={`name-${property.id}`}>Nombre</Label>
-                        <Input id={`name-${property.id}`} type="text" name="name" defaultValue={property.name} />
+                        <Input id={`name-${property.id}`} type="text" name="name" defaultValue={property.name} onChange={handleMakeDirty} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor={`address-${property.id}`}>Dirección</Label>
-                        <Input id={`address-${property.id}`} type="text" name="address" defaultValue={property.address} />
+                        <Input id={`address-${property.id}`} type="text" name="address" defaultValue={property.address} onChange={handleMakeDirty} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor={`propertyUrl-${property.id}`}>Web de la Propiedad</Label>
-                        <Input id={`propertyUrl-${property.id}`} type="text" name="propertyUrl" defaultValue={property.propertyUrl} placeholder="Ej: https://airbnb.com/h/mi-depto"/>
+                        <Input id={`propertyUrl-${property.id}`} type="text" name="propertyUrl" defaultValue={property.propertyUrl} placeholder="Ej: https://airbnb.com/h/mi-depto" onChange={handleMakeDirty}/>
                     </div>
                     {isPersonalFlavor && (
                         <div className="space-y-2">
                             <Label htmlFor={`priceSheetName-${property.id}`}>Nombre en Hoja de Precios</Label>
-                            <Input id={`priceSheetName-${property.id}`} type="text" name="priceSheetName" defaultValue={property.priceSheetName} placeholder="Nombre exacto en la App Script"/>
+                            <Input id={`priceSheetName-${property.id}`} type="text" name="priceSheetName" defaultValue={property.priceSheetName} placeholder="Nombre exacto en la App Script" onChange={handleMakeDirty}/>
                         </div>
                     )}
                 </div>
@@ -186,19 +224,19 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                         id={`imageUrl-${property.id}`}
                         name="imageUrl" 
                         value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        className="bg-muted/50 mt-1"
+                        readOnly
+                        className="bg-muted/50 cursor-default focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
                 </div>
 
                 <div className="col-span-1 md:col-span-2">
                     <Label htmlFor={`notes-${property.id}`}>Notas</Label>
-                    <Textarea id={`notes-${property.id}`} name="notes" defaultValue={property.notes} />
+                    <Textarea id={`notes-${property.id}`} name="notes" defaultValue={property.notes} onChange={handleMakeDirty} />
                 </div>
                 
                 <div className="col-span-1 md:col-span-2">
                     <Label htmlFor={`contractTemplate-${property.id}`}>Plantilla de Contrato</Label>
-                    <Textarea id={`contractTemplate-${property.id}`} name="contractTemplate" defaultValue={property.contractTemplate} className="h-40" />
+                    <Textarea id={`contractTemplate-${property.id}`} name="contractTemplate" defaultValue={property.contractTemplate} className="h-40" onChange={handleMakeDirty} />
                     <p className="text-xs text-muted-foreground mt-2">
                         Usa los siguientes marcadores para insertar datos dinámicos en el contrato. Se reemplazarán automáticamente al generarlo.
                         <br />
@@ -219,11 +257,11 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                             <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 <div className='space-y-1'>
                                     <Label htmlFor={`customField${i}Label-${property.id}`} className="text-sm">Etiqueta Campo {i}</Label>
-                                    <Input id={`customField${i}Label-${property.id}`} name={`customField${i}Label`} defaultValue={property[`customField${i}Label` as keyof Property] as string} placeholder={`Ej: WiFi Pass`} />
+                                    <Input id={`customField${i}Label-${property.id}`} name={`customField${i}Label`} defaultValue={property[`customField${i}Label` as keyof Property] as string} placeholder={`Ej: WiFi Pass`} onChange={handleMakeDirty} />
                                 </div>
                                 <div className='space-y-1'>
                                     <Label htmlFor={`customField${i}Value-${property.id}`} className="text-sm">Valor Campo {i}</Label>
-                                    <Input id={`customField${i}Value-${property.id}`} name={`customField${i}Value`} defaultValue={property[`customField${i}Value` as keyof Property] as string} placeholder="Valor" />
+                                    <Input id={`customField${i}Value-${property.id}`} name={`customField${i}Value`} defaultValue={property[`customField${i}Value` as keyof Property] as string} placeholder="Valor" onChange={handleMakeDirty} />
                                 </div>
                             </div>
                         ))}
@@ -237,16 +275,16 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                             {visitRateProviders.length > 0 ? visitRateProviders.map(p => (
                                 <div key={p.id} className='space-y-1'>
                                     <Label htmlFor={`visitRate_${p.id}`} className="text-sm">{p.name}</Label>
-                                    <Input id={`visitRate_${p.id}`} name={`visitRate_${p.id}`} type="number" step="0.01" placeholder={`Tarifa para ${p.name}`} defaultValue={property.visitRates?.[p.id] || ''} />
+                                    <Input id={`visitRate_${p.id}`} name={`visitRate_${p.id}`} type="number" step="0.01" placeholder={`Tarifa para ${p.name}`} defaultValue={property.visitRates?.[p.id] || ''} onChange={handleMakeDirty} />
                                 </div>
                             )) : <p className="text-sm text-muted-foreground text-center col-span-2">No hay colaboradores con facturación por visita.</p>}
                         </div>
                     </div>
                 )}
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center pt-4 border-t">
                 <PropertyDeleteForm propertyId={property.id} propertyName={property.name} />
-                <SubmitButton />
+                {isDirty && <MainSubmitButton />}
             </div>
              {state.message && !state.success && (
                 <p className="text-red-500 text-sm mt-2">{state.message}</p>
@@ -255,7 +293,3 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
     </div>
   );
 }
-
-    
-
-    
