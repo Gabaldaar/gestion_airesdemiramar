@@ -1,53 +1,62 @@
 # Instrucciones para Corregir Error de Carga de Imágenes (CORS)
 
-Si la subida de imágenes se queda "colgada" en "Subiendo..." y no muestra ningún error, es casi seguro que se debe a que la política de CORS (Cross-Origin Resource Sharing) no está configurada en tu bucket de Firebase Storage.
+¡Ups! El error "NotFoundException: 404 The specified bucket does not exist" indica que el nombre del bucket que te di era incorrecto, o que tu CLI está apuntando a otro proyecto. ¡Mis disculpas por eso!
 
-Por seguridad, los navegadores bloquean las subidas de archivos a un dominio diferente (como el de Firebase Storage) a menos que ese dominio lo permita explícitamente.
+Para solucionarlo, necesitamos encontrar el nombre correcto de tu bucket en la consola de Firebase y usar ese.
 
-Sigue estos pasos para solucionarlo:
+Sigue estos pasos actualizados:
 
 ---
 
-## 1. Instala la CLI de Google Cloud
+## 1. Encuentra el Nombre Correcto de tu Bucket
+
+Antes de ejecutar cualquier comando, necesitas saber el nombre exacto de tu bucket de almacenamiento.
+
+-   **Abre la Consola de Firebase:** Ve a [https://console.firebase.google.com/](https://console.firebase.google.com/) y selecciona tu proyecto.
+-   **Ve a Storage:** En el menú de la izquierda, haz clic en "Storage" (o "Almacenamiento").
+-   **Copia la URL del Bucket:** En la parte superior de la página de Storage (en la pestaña "Files" o "Archivos"), verás una URL que comienza con `gs://`. **Copia esa URL completa.** Se verá algo como `gs://tu-proyecto-12345.appspot.com`.
+
+---
+
+## 2. Instala y Configura la CLI de Google Cloud
 
 Si aún no la tienes, esta herramienta de línea de comandos es la forma más rápida y sencilla de gestionar la configuración de tu proyecto.
 
 -   **Descarga e instala la Google Cloud SDK:** [Sigue las instrucciones oficiales aquí.](https://cloud.google.com/sdk/docs/install)
 -   **Inicia sesión:** Una vez instalada, abre tu terminal y ejecuta `gcloud auth login`.
--   **Configura tu proyecto:** Ejecuta `gcloud config set project miramar-rentals-manager` (reemplaza `miramar-rentals-manager` con tu ID de proyecto si es diferente).
+-   **Configura tu proyecto:** Ejecuta `gcloud config set project <TU_ID_DE_PROYECTO>` (reemplaza `<TU_ID_DE_PROYECTO>` con el ID de tu proyecto de Firebase, que puedes ver en la configuración del proyecto en la consola de Firebase).
 
 ---
 
-## 2. Crea un Archivo de Configuración CORS
+## 3. Crea/Verifica tu Archivo de Configuración CORS
 
-En la raíz de tu proyecto, crea un nuevo archivo llamado `cors.json` con el siguiente contenido exacto:
+En la raíz de tu proyecto, asegúrate de tener un archivo llamado `cors.json` con el siguiente contenido:
 
 ```json
 [
   {
     "origin": ["*"],
     "method": ["GET", "PUT", "POST", "DELETE"],
-    "responseHeader": ["Content-Type"],
+    "responseHeader": ["Content-Type", "Authorization"],
     "maxAgeSeconds": 3600
   }
 ]
 ```
 
-**Nota:** `origin: ["*"]` permite la subida desde cualquier dominio, lo cual es útil para el desarrollo. Para producción, es más seguro reemplazar `"*"` con el dominio de tu aplicación (ej. `https://mi-app.com`).
+**Nota:** `origin: ["*"]` permite la subida desde cualquier dominio. Para producción, es más seguro reemplazar `"*"` con el dominio de tu aplicación (ej. `https://mi-app.com`).
 
 ---
 
-## 3. Aplica la Configuración al Bucket
+## 4. Aplica la Configuración al Bucket Correcto
 
-En tu terminal, estando en la misma carpeta donde creaste `cors.json`, ejecuta el siguiente comando:
+En tu terminal, estando en la misma carpeta donde está `cors.json`, ejecuta el siguiente comando. **Asegúrate de reemplazar `<URL_DE_TU_BUCKET_COPIADA_EN_PASO_1>` con la URL completa que copiaste de la consola de Firebase.**
 
 ```bash
-gsutil cors set cors.json gs://miramar-rentals-manager.appspot.com
+gsutil cors set cors.json <URL_DE_TU_BUCKET_COPIADA_EN_PASO_1>
 ```
 
-**Importante:**
-- Reemplaza `miramar-rentals-manager.appspot.com` con el nombre de tu bucket si es diferente. Puedes encontrarlo en tu archivo `src/lib/firebase.ts` bajo la clave `storageBucket`.
-- `gsutil` es parte de la Google Cloud SDK que instalaste.
+**Ejemplo:** Si tu bucket se llama `mi-app-genial.appspot.com`, el comando sería:
+`gsutil cors set cors.json gs://mi-app-genial.appspot.com`
 
 ---
 
