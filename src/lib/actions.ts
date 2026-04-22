@@ -236,59 +236,51 @@ export async function updateProperty(previousState: any, formData: FormData) {
   }
 
   try {
-    // Build a data object with only the fields present in the form
     const dataToUpdate: { [key: string]: any } = {};
 
-    // Helper to add field if it exists
-    const addField = (key: string) => {
-        if (formData.has(key)) {
-            dataToUpdate[key] = formData.get(key) as string;
-        }
-    };
-    
-    addField('name');
-    addField('address');
-    addField('imageUrl');
-    addField('propertyUrl');
-    addField('notes');
-    addField('contractTemplate');
-    addField('priceSheetName');
+    const fields = [
+        'name', 'address', 'imageUrl', 'propertyUrl', 'notes', 'contractTemplate', 
+        'priceSheetName', 'customField1Label', 'customField1Value', 
+        'customField2Label', 'customField2Value', 'customField3Label', 'customField3Value', 
+        'customField4Label', 'customField4Value', 'customField5Label', 'customField5Value', 
+        'customField6Label', 'customField6Value'
+    ];
 
-    for (let i = 1; i <= 6; i++) {
-        addField(`customField${i}Label`);
-        addField(`customField${i}Value`);
+    // Read all regular fields from the form
+    for (const field of fields) {
+        const value = formData.get(field);
+        if (value !== null) {
+            dataToUpdate[field] = value;
+        }
     }
 
-    // Process visitRates map
+    if (!dataToUpdate.name || !dataToUpdate.address) {
+        return {
+          success: false,
+          message: 'El nombre y la dirección son obligatorios.',
+        };
+    }
+    
+    // Process visitRates map carefully
     const visitRates: { [key: string]: number } = {};
-    let hasVisitRateKeys = false;
+    let ratesFoundInForm = false;
     for (const [key, value] of formData.entries()) {
         if (key.startsWith('visitRate_')) {
-            hasVisitRateKeys = true;
+            ratesFoundInForm = true;
             const providerId = key.replace('visitRate_', '');
-            if (value) {
-                const rate = parseFloat(value as string);
+            const rateValue = value as string;
+
+            if (rateValue.trim() !== '') {
+                const rate = parseFloat(rateValue);
                 if (!isNaN(rate) && rate >= 0) {
                     visitRates[providerId] = rate;
                 }
             }
         }
     }
-
-    // Only include visitRates in the update if rate fields were present in the form
-    if (hasVisitRateKeys) {
-        dataToUpdate.visitRates = visitRates;
-    }
     
-    if (Object.keys(dataToUpdate).length === 0) {
-        return { success: true, message: 'No se detectaron cambios para guardar.' };
-    }
-    
-    if (!dataToUpdate.name || !dataToUpdate.address) {
-        return {
-          success: false,
-          message: 'El nombre y la dirección son obligatorios.',
-        };
+    if(ratesFoundInForm) {
+      dataToUpdate.visitRates = visitRates;
     }
 
     await updatePropertyDb({ id, ...dataToUpdate });
@@ -296,10 +288,11 @@ export async function updateProperty(previousState: any, formData: FormData) {
     revalidatePathsAfterAction(id);
     return { success: true, message: 'Propiedad actualizada.' };
   } catch (error: any) {
-    console.error('Error updating property:', error);
-    return { success: false, message: 'Error al actualizar la propiedad.' };
+    console.error('Detailed error updating property:', error);
+    return { success: false, message: `Error al actualizar: ${error.message}` };
   }
 }
+
 
 export async function deleteProperty(previousState: any, formData: FormData) {
   const id = formData.get('id') as string;
