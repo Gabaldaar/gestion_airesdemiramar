@@ -2,6 +2,7 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     // Un usuario solo puede escribir en las propiedades de su workspace.
+    // La regla `get` es más robusta que `exists` en este contexto.
     match /workspaces/{workspaceId}/properties/{propertyId}/{fileName} {
       // Permite a cualquiera leer las imágenes, ya que se mostrarán en la app.
       allow read;
