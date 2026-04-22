@@ -8,10 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle, Info } from 'lucide-react';
+import { Search, BedDouble, CalendarX, Calculator, Tag, Loader2, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { calculatePriceForStay, PriceResult, parseDateSafely } from '@/lib/utils';
+import { differenceInDays } from 'date-fns';
 
 interface AvailabilitySearcherProps {
     allProperties: Property[];
@@ -98,7 +99,6 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
                   totalPrice: 0,
                   currency: 'USD',
                   nights,
-                  error: 'Cálculo de precio no disponible',
                   breakdown: { rawPrice: 0, appliedDiscount: null, minNightsRequired: 0, priceConfigUsed: null }
               }
           }));
@@ -132,10 +132,10 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
             <Search className="h-6 w-6" />
-            Buscar Disponibilidad y Precios
+            {isPersonalFlavor ? "Buscar Disponibilidad y Precios" : "Buscar Disponibilidad"}
         </CardTitle>
         <CardDescription>
-          Encuentra propiedades libres en un rango de fechas {isPersonalFlavor && "y calcula el costo de la estadía."}
+          {isPersonalFlavor ? "Encuentra propiedades libres en un rango de fechas y calcula el costo de la estadía." : "Encuentra propiedades libres en un rango de fechas."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -202,33 +202,40 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
                           <CardDescription>{property.address}</CardDescription>
                       </CardContent>
                       <CardFooter className="flex flex-col items-start p-4 border-t bg-muted/50">
-                        {priceResult.error ? (
-                            <span className="text-sm font-semibold text-destructive">{priceResult.error}</span>
-                        ) : priceResult.minNightsError ? (
-                            <span className="text-sm font-semibold text-yellow-600">{priceResult.minNightsError}</span>
-                        ) : (
-                            <div className="w-full space-y-2 text-sm">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5 font-semibold">
-                                        <Tag className="h-4 w-4 text-muted-foreground" />
-                                        <span>{priceResult.nights} {priceResult.nights === 1 ? 'noche' : 'noches'}</span>
-                                    </div>
-                                    <span className="text-lg font-bold text-primary">
-                                        {formatCurrency(Math.round(priceResult.totalPrice), priceResult.currency)}
-                                    </span>
-                                </div>
-                                
-                                {isPersonalFlavor && (
-                                    <div className="text-xs text-muted-foreground space-y-1 pl-2 border-l-2">
-                                       <p>Precio sin dto: {formatCurrency(Math.round(priceResult.breakdown.rawPrice), priceResult.currency)}</p>
-                                        {priceResult.breakdown.appliedDiscount ? (
-                                            <p className="text-green-600 font-semibold">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
-                                        ) : (
-                                            <p>No se aplicaron descuentos.</p>
-                                        )}
-                                        <p>Estadía mínima requerida: {priceResult.breakdown.minNightsRequired} noches</p>
+                        {isPersonalFlavor ? (
+                            <>
+                                {priceResult.error ? (
+                                    <span className="text-sm font-semibold text-destructive">{priceResult.error}</span>
+                                ) : priceResult.minNightsError ? (
+                                    <span className="text-sm font-semibold text-yellow-600">{priceResult.minNightsError}</span>
+                                ) : (
+                                    <div className="w-full space-y-2 text-sm">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-1.5 font-semibold">
+                                                <Tag className="h-4 w-4 text-muted-foreground" />
+                                                <span>{priceResult.nights} {priceResult.nights === 1 ? 'noche' : 'noches'}</span>
+                                            </div>
+                                            <span className="text-lg font-bold text-primary">
+                                                {formatCurrency(Math.round(priceResult.totalPrice), priceResult.currency)}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="text-xs text-muted-foreground space-y-1 pl-2 border-l-2">
+                                        <p>Precio sin dto: {formatCurrency(Math.round(priceResult.breakdown.rawPrice), priceResult.currency)}</p>
+                                            {priceResult.breakdown.appliedDiscount ? (
+                                                <p className="text-green-600 font-semibold">Descuento aplicado: {priceResult.breakdown.appliedDiscount.percentage}% por {priceResult.breakdown.appliedDiscount.nights}+ noches</p>
+                                            ) : (
+                                                <p>No se aplicaron descuentos.</p>
+                                            )}
+                                            <p>Estadía mínima requerida: {priceResult.breakdown.minNightsRequired} noches</p>
+                                        </div>
                                     </div>
                                 )}
+                            </>
+                        ) : (
+                            <div className="flex items-center text-sm font-semibold text-green-600">
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                <span>Disponible</span>
                             </div>
                         )}
                       </CardFooter>
@@ -251,3 +258,4 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
     </Card>
   );
 }
+
