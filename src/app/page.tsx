@@ -33,6 +33,8 @@ interface DashboardData {
     pendingBookingsCount: number;
 }
 
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const [data, setData] = useState<DashboardData | null>(null);
@@ -482,7 +484,7 @@ export default function DashboardPage() {
         
         <AvailabilitySearcher allProperties={properties} allBookings={bookings} allBlocks={blocks} />
         
-        <PaymentCalculator showTabs={true} />
+        {isPersonalFlavor && <PaymentCalculator showTabs={true} />}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-1 lg:col-span-4">

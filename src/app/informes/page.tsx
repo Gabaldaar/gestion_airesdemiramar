@@ -76,6 +76,7 @@ const reportLabels: Record<keyof ReportVisibility, string> = {
     showUSD: 'Mostrar USD',
 };
 
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 function InformesPageContent() {
   const { user } = useAuth();
@@ -207,7 +208,7 @@ function InformesPageContent() {
             </CardContent>
         </Card>
 
-        <PaymentCalculator showTabs={true} />
+        {isPersonalFlavor && <PaymentCalculator showTabs={true} />}
 
         <Card>
              <CardHeader>

@@ -51,6 +51,8 @@ interface BookingsListProps {
   onDataChanged: () => void;
 }
 
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
+
 const contractStatusMap: Record<ContractStatus, { text: string, className: string }> = {
     not_sent: { text: 'S/Enviar', className: 'bg-gray-500 hover:bg-gray-600' },
     sent: { text: 'Enviado', className: 'bg-blue-500 hover:bg-blue-600' },
@@ -95,17 +97,19 @@ function BookingActions({ booking, onEdit, onAddPayment, onCalculatorOpen, onEma
                 </TooltipProvider>
             </NotesViewer>
               
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onCalculatorOpen(booking)} disabled={isInactive}>
-                            <Calculator className="h-4 w-4" />
-                            <span className="sr-only">Calcular Pago</span>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Calcular Pago</p></TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+            {isPersonalFlavor && (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onCalculatorOpen(booking)} disabled={isInactive}>
+                                <Calculator className="h-4 w-4" />
+                                <span className="sr-only">Calcular Pago</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Calcular Pago</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
 
             <BookingPaymentsManager 
                 bookingId={booking.id} 
@@ -651,7 +655,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
                 preloadData={paymentPreloadData}
             />
         )}
-        {calculatorBooking && (
+        {isPersonalFlavor && calculatorBooking && (
             <Dialog open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -684,4 +688,3 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
     </div>
   );
 }
-
