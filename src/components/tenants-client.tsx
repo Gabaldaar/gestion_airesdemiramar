@@ -17,6 +17,8 @@ import { parseDateSafely } from '@/lib/utils';
 type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'cancelled' | 'pending';
 type RatingFilter = 'all' | 'none' | '1' | '2' | '3' | '4' | '5';
 
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
+
 interface TenantsClientProps {
   initialTenants: Tenant[];
   allBookings: BookingWithDetails[];
@@ -172,20 +174,22 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
                 </SelectContent>
             </Select>
         </div>
-         <div className="grid gap-2">
-            <Label>Origen</Label>
-            <Select value={originFilter} onValueChange={setOriginFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Filtrar por origen" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {origins.map(origin => (
-                      <SelectItem key={origin.id} value={origin.id}>{origin.name}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
+        {isPersonalFlavor && (
+            <div className="grid gap-2">
+                <Label>Origen</Label>
+                <Select value={originFilter} onValueChange={setOriginFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="Filtrar por origen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        {origins.map(origin => (
+                        <SelectItem key={origin.id} value={origin.id}>{origin.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        )}
         <div className="grid gap-2">
             <Label>Calificación</Label>
             <Select value={ratingFilter} onValueChange={(value) => setRatingFilter(value as RatingFilter)}>
@@ -230,3 +234,4 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
 }
 
     
+

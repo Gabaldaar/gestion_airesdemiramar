@@ -37,6 +37,8 @@ interface SettingsData {
     providers: Provider[];
 }
 
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
+
 export default function SettingsPage() {
     const { user } = useAuth();
     const [data, setData] = useState<SettingsData | null>(null);
@@ -81,7 +83,7 @@ export default function SettingsPage() {
             </div>
             <TabsList className="grid w-full sm:w-auto grid-cols-5 sm:grid-cols-5 lg:grid-cols-9 mb-4 sm:mb-0">
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
-                <TabsTrigger value="origins">Orígenes</TabsTrigger>
+                {isPersonalFlavor && <TabsTrigger value="origins">Orígenes</TabsTrigger>}
                 <TabsTrigger value="expense-categories">Cat. Gastos</TabsTrigger>
                 <TabsTrigger value="provider-categories">Cat. Prov.</TabsTrigger>
                 <TabsTrigger value="task-categories">Cat. Tareas</TabsTrigger>
@@ -119,19 +121,21 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
         </TabsContent>
-        <TabsContent value="origins">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Orígenes de Inquilinos</CardTitle>
-                    <CardDescription>
-                        Crea y gestiona las fuentes de tus inquilinos (ej. Airbnb, Booking.com).
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <OriginManager initialOrigins={origins} onOriginsChanged={fetchData} />
-                </CardContent>
-            </Card>
-        </TabsContent>
+        {isPersonalFlavor && (
+            <TabsContent value="origins">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Orígenes de Inquilinos</CardTitle>
+                        <CardDescription>
+                            Crea y gestiona las fuentes de tus inquilinos (ej. Airbnb, Booking.com).
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <OriginManager initialOrigins={origins} onOriginsChanged={fetchData} />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        )}
         <TabsContent value="expense-categories">
             <Card>
                 <CardHeader>

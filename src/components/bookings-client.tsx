@@ -43,6 +43,7 @@ const initialStatusFilters: StatusFilters = {
     pending: false,
 };
 
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 interface BookingsClientProps {
   initialBookings: BookingWithDetails[];
@@ -386,21 +387,23 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
                 </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-2">
-              <Label>Origen</Label>
-              <Select value={originIdFilter} onValueChange={setOriginIdFilter}>
-                  <SelectTrigger>
-                      <SelectValue placeholder="Origen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="none">Sin Origen</SelectItem>
-                      {origins.map(o => (
-                          <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-                      ))}
-                  </SelectContent>
-              </Select>
-          </div>
+          {isPersonalFlavor && (
+            <div className="grid gap-2">
+                <Label>Origen</Label>
+                <Select value={originIdFilter} onValueChange={setOriginIdFilter}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Origen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="none">Sin Origen</SelectItem>
+                        {origins.map(o => (
+                            <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+          )}
           <div className="grid gap-2">
               <Label>Ordenar Por</Label>
               <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrder)}>

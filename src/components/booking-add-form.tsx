@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useMemo, useTransition } from 'react';
@@ -69,6 +70,8 @@ function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
         </Button>
     )
 }
+
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 export function BookingAddForm({
   propertyId,
@@ -187,12 +190,16 @@ export function BookingAddForm({
         }
     };
     
-    calculateAndSetPrice();
+    if (isPersonalFlavor) {
+        calculateAndSetPrice();
+    }
   }, [date, bookingsForSelectedProperty, blocksForSelectedProperty, selectedPropertyId]);
   
    useEffect(() => {
     if (isOpen) {
-      getOrigins().then(setOrigins);
+      if (isPersonalFlavor) {
+        getOrigins().then(setOrigins);
+      }
       // Reset form state when dialog opens
       resetForm();
     }
@@ -381,22 +388,24 @@ export function BookingAddForm({
                     <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
                     <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="originId">Origen</Label>
-                    <Select name="originId">
-                        <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un origen" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">Ninguno</SelectItem>
-                            {origins.map(origin => (
-                                <SelectItem key={origin.id} value={origin.id}>
-                                    {origin.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                {isPersonalFlavor && (
+                    <div className="space-y-2">
+                        <Label htmlFor="originId">Origen</Label>
+                        <Select name="originId">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un origen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Ninguno</SelectItem>
+                                {origins.map(origin => (
+                                    <SelectItem key={origin.id} value={origin.id}>
+                                        {origin.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                 <div className="flex gap-4">
                     <div className="space-y-2 flex-1">
                         <Label htmlFor="amount">Monto</Label>

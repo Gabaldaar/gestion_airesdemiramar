@@ -13,7 +13,6 @@ import { differenceInDays, startOfToday } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info, Copy, Banknote, ShieldCheck, ShieldAlert, Briefcase, ClipboardList } from "lucide-react";
 import AvailabilitySearcher from "@/components/availability-searcher";
-import PaymentCalculator from "@/components/payment-calculator";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { parseDateSafely } from "@/lib/utils";
@@ -305,7 +304,7 @@ export default function DashboardPage() {
             </div>
         </div>
 
-        {pendingLiquidationsCount > 0 && (
+        {isPersonalFlavor && pendingLiquidationsCount > 0 && (
             <Alert variant="default" className="border-orange-500 text-orange-800 dark:border-orange-400 dark:text-orange-300 [&>svg]:text-orange-500">
                 <Briefcase className="h-4 w-4" />
                 <div className="flex justify-between items-start w-full">
@@ -324,7 +323,7 @@ export default function DashboardPage() {
             </Alert>
         )}
         
-        {unliquidatedItemsCount > 0 && (
+        {isPersonalFlavor && unliquidatedItemsCount > 0 && (
             <Alert variant="default" className="border-blue-500 text-blue-800 dark:border-blue-400 dark:text-blue-300 [&>svg]:text-blue-500">
                 <ClipboardList className="h-4 w-4" />
                 <div className="flex justify-between items-start w-full">
@@ -484,8 +483,6 @@ export default function DashboardPage() {
         
         <AvailabilitySearcher allProperties={properties} allBookings={bookings} allBlocks={blocks} />
         
-        {isPersonalFlavor && <PaymentCalculator showTabs={true} />}
-
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-1 lg:col-span-4">
             <CardHeader>

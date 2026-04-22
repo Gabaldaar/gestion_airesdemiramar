@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useMemo, ReactNode, useTransition } from 'react';
@@ -81,6 +82,7 @@ interface BookingEditFormProps {
     onBookingUpdated: () => void;
 }
 
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 export function BookingEditForm({ booking, tenants, properties, allBookings, allBlocks, children, isOpen, onOpenChange, onBookingUpdated }: BookingEditFormProps) {
   const [state, setState] = useState(initialState);
@@ -148,7 +150,9 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, all
 
   useEffect(() => {
     if (isOpen) {
-      getOrigins().then(setOrigins);
+      if (isPersonalFlavor) {
+        getOrigins().then(setOrigins);
+      }
     }
   }, [isOpen]);
 
@@ -357,22 +361,24 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, all
                         <input type="hidden" name="startDate" value={date?.from?.toISOString() || ''} />
                         <input type="hidden" name="endDate" value={date?.to?.toISOString() || ''} />
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="originId">Origen</Label>
-                        <Select name="originId" defaultValue={booking.originId || undefined}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecciona un origen" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">Ninguno</SelectItem>
-                                {origins.map(origin => (
-                                    <SelectItem key={origin.id} value={origin.id}>
-                                        {origin.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {isPersonalFlavor && (
+                        <div className="space-y-2">
+                            <Label htmlFor="originId">Origen</Label>
+                            <Select name="originId" defaultValue={booking.originId || undefined}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecciona un origen" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Ninguno</SelectItem>
+                                    {origins.map(origin => (
+                                        <SelectItem key={origin.id} value={origin.id}>
+                                            {origin.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <Label htmlFor="amount">Monto</Label>
                         <Input id="amount" name="amount" type="number" step="0.01" defaultValue={booking.amount} required />

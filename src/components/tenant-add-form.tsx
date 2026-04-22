@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -44,6 +45,8 @@ function SubmitButton() {
     )
 }
 
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
+
 export function TenantAddForm() {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
@@ -68,7 +71,7 @@ export function TenantAddForm() {
   }, [state]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isPersonalFlavor) {
       getOrigins().then(setOrigins);
     }
   }, [isOpen]);
@@ -154,24 +157,26 @@ export function TenantAddForm() {
                     </Label>
                     <Input id="country" name="country" defaultValue="Argentina" className="col-span-3" />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="originId" className="text-right">
-                        Origen
-                    </Label>
-                    <Select name="originId">
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Selecciona un origen" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">Ninguno</SelectItem>
-                            {origins.map(origin => (
-                                <SelectItem key={origin.id} value={origin.id}>
-                                    {origin.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                {isPersonalFlavor && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="originId" className="text-right">
+                            Origen
+                        </Label>
+                        <Select name="originId">
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Selecciona un origen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Ninguno</SelectItem>
+                                {origins.map(origin => (
+                                    <SelectItem key={origin.id} value={origin.id}>
+                                        {origin.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="rating" className="text-right">
                         Calificación

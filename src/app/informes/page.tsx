@@ -39,7 +39,6 @@ import BookingStatusChart from "@/components/booking-status-chart";
 import NetIncomeDistributionChart from "@/components/net-income-distribution-chart";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import PaymentCalculator from "@/components/payment-calculator";
 
 interface InformesData {
     financialSummary: FinancialSummaryByCurrency;
@@ -218,22 +217,27 @@ function InformesPageContent() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {(Object.keys(reportVisibility) as Array<keyof ReportVisibility>).map(key => (
-                    <div key={key} className="flex items-center space-x-2">
-                        <Switch 
-                            id={key}
-                            checked={reportVisibility[key]}
-                            onCheckedChange={(checked) => handleVisibilityChange(key, checked)}
-                        />
-                        <Label htmlFor={key}>{reportLabels[key]}</Label>
-                    </div>
-                ))}
+                {(Object.keys(reportVisibility) as Array<keyof ReportVisibility>).map(key => {
+                    if (!isPersonalFlavor && (key === 'tenantsByOrigin' || key === 'bookingsByOrigin')) {
+                        return null;
+                    }
+                    return (
+                        <div key={key} className="flex items-center space-x-2">
+                            <Switch 
+                                id={key}
+                                checked={reportVisibility[key]}
+                                onCheckedChange={(checked) => handleVisibilityChange(key, checked)}
+                            />
+                            <Label htmlFor={key}>{reportLabels[key]}</Label>
+                        </div>
+                    );
+                })}
             </CardContent>
         </Card>
 
         {/* --- Responsive Grid for General Charts --- */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {reportVisibility.tenantsByOrigin && (
+            {isPersonalFlavor && reportVisibility.tenantsByOrigin && (
                 <Card>
                     <CardHeader>
                         <CardTitle>Inquilinos por Origen</CardTitle>
@@ -243,7 +247,7 @@ function InformesPageContent() {
                     </CardContent>
                 </Card>
             )}
-            {reportVisibility.bookingsByOrigin && (
+            {isPersonalFlavor && reportVisibility.bookingsByOrigin && (
                 <Card>
                     <CardHeader>
                         <CardTitle>Reservas por Origen</CardTitle>

@@ -2,6 +2,7 @@
 
 'use client';
 
+import React, { useState, useTransition } from 'react';
 import Link from "next/link";
 import {
   Table,
@@ -16,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { TenantDeleteForm } from "@/components/tenant-delete-form";
 import { History, FileText, Mail, Phone, Pencil, Star, Loader2 } from "lucide-react";
 import { NotesViewer } from "@/components/notes-viewer";
-import { useState, useTransition } from "react";
 import { Badge } from "./ui/badge";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
 import useWindowSize from "@/hooks/use-window-size";
@@ -42,6 +42,7 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 interface TenantsListProps {
     tenants: Tenant[];
@@ -261,13 +262,15 @@ function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Te
                     <InteractiveRating tenant={tenant} onRated={onDataChanged} />
                 </div>
             </TableCell>
-            <TableCell>
-                {origin ? (
-                    <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
-                        {origin.name}
-                    </Badge>
-                ) : null}
-            </TableCell>
+            {isPersonalFlavor && (
+                <TableCell>
+                    {origin ? (
+                        <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
+                            {origin.name}
+                        </Badge>
+                    ) : null}
+                </TableCell>
+            )}
             <TableCell className="hidden md:table-cell">{tenant.dni}</TableCell>
             <TableCell>
                 {tenant.email ? (
@@ -303,7 +306,7 @@ function TenantCard({ tenant, origin, onDataChanged, onEditTenant }: { tenant: T
                             {tenant.name}
                         </a>
                     </CardTitle>
-                    {origin && (
+                    {isPersonalFlavor && origin && (
                          <Badge style={{ backgroundColor: origin.color, color: 'white' }}>
                             {origin.name}
                         </Badge>
@@ -379,7 +382,7 @@ export default function TenantsList({ tenants, origins, onDataChanged, onEditTen
             <TableHeader>
                 <TableRow>
                     <TableHead>Nombre</TableHead>
-                    <TableHead>Origen</TableHead>
+                    {isPersonalFlavor && <TableHead>Origen</TableHead>}
                     <TableHead className="hidden md:table-cell">DNI</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Teléfono</TableHead>
