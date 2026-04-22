@@ -15,7 +15,7 @@ service cloud.firestore {
     }
     
     // Un usuario siempre puede crear, leer o escribir su PROPIO documento de miembro.
-    // Esta es la regla clave que soluciona el problema.
+    // Esta es la regla clave que soluciona el problema de inicio de sesión.
     match /workspaces/{workspaceId}/members/{userId} {
       allow read, write: if request.auth.uid == userId;
     }
