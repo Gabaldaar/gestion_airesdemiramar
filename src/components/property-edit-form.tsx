@@ -42,8 +42,6 @@ function SubmitButton() {
     )
 }
 
-const PERSONAL_WORKSPACE_ID = "miramar-personal-workspace";
-
 export function PropertyEditForm({ property, providers }: { property: Property; providers: Provider[] }) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
@@ -81,7 +79,7 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
 
     setIsUploading(true);
 
-    const filePath = `workspaces/${PERSONAL_WORKSPACE_ID}/properties/${property.id}/main_image.jpg`;
+    const filePath = `property_images/${property.id}/main_image.jpg`;
     const storageRef = ref(storage, filePath);
 
     try {
@@ -258,3 +256,5 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
     </div>
   );
 }
+
+    
