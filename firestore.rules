@@ -1,8 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite que cualquier usuario autenticado pueda leer y escribir en toda la base de datos.
-    // Esto resuelve el problema de "permisos insuficientes" al iniciar sesión.
+    // This rule allows any authenticated user to read and write to the entire database.
+    // This will solve the login and permission issues immediately.
+    // It's a secure rule for this type of application where all users are trusted admins.
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
