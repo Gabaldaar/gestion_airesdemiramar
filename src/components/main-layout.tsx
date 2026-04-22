@@ -34,10 +34,9 @@ import { getPendingLiquidationsCount, getPendingBookingsCount, getUnliquidatedIt
 const mainNavItems = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/properties', label: 'Propiedades', icon: Building2 },
-  { href: '/tenants', label: 'Inquilinos', icon: Users, personalOnly: true },
+  { href: '/tenants', label: 'Inquilinos', icon: Users },
   { href: '/providers', label: 'Colaboradores', icon: Wrench, personalOnly: true },
   { href: '/bookings', label: 'Reservas', icon: Calendar, badge: 'bookings' },
-  { href: '/tasks', label: 'Tareas', icon: ClipboardList },
   { href: '/payments', label: 'Cobros', icon: CreditCard },
   { href: '/liquidations', label: 'Liquidaciones', icon: Briefcase, badge: 'liquidations', personalOnly: true },
   { href: '/expenses', label: 'Gastos', icon: ShoppingCart },
