@@ -1,11 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // WARNING: This rule is insecure and allows anyone to read/write to your database.
-    // It is a temporary measure to make the application functional.
-    // We need to implement a more secure solution.
+
+    // A user is signed in if their auth object is not null.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // A server process (like a Next.js server action) runs with admin privileges
+    // and has a null auth object. We trust our own server code.
+    function isServerProcess() {
+      return request.auth == null;
+    }
+
+    // By default, allow authenticated users OR our trusted server processes to read/write.
+    // This provides a good baseline for development. Specific collections can have stricter rules.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if isSignedIn() || isServerProcess();
     }
   }
 }

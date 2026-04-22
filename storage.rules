@@ -3,9 +3,10 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
-      // WARNING: This rule is insecure and allows anyone to upload/delete files.
-      // It is a temporary measure to make the application functional.
-      allow read, write: if true;
+      // Allow public read access so anyone can see the images.
+      allow read;
+      // Allow write access (uploads, deletes) only to authenticated users.
+      allow write: if request.auth != null;
     }
   }
 }
