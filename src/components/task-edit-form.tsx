@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -38,6 +39,8 @@ const initialState: { message: string; success: boolean } = {
   message: '',
   success: false,
 };
+
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -167,16 +170,18 @@ export function TaskEditForm({
                 <div className="space-y-2">
                     <Label htmlFor="assignment">Asignar a</Label>
                     <Select name="assignment" defaultValue={defaultAssignmentValue} required>
-                        <SelectTrigger><SelectValue placeholder="Selecciona Propiedad o Ámbito..."/></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={isPersonalFlavor ? "Selecciona Propiedad o Ámbito..." : "Selecciona una Propiedad..."}/></SelectTrigger>
                         <SelectContent>
                            <SelectGroup>
                                 <Label>Propiedades</Label>
                                 {properties.map(p => <SelectItem key={p.id} value={`property-${p.id}`}>{p.name}</SelectItem>)}
                             </SelectGroup>
-                           <SelectGroup>
-                                <Label>Ámbitos</Label>
-                                {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
-                           </SelectGroup>
+                           {isPersonalFlavor && scopes && scopes.length > 0 && (
+                                <SelectGroup>
+                                    <Label>Ámbitos</Label>
+                                    {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
+                               </SelectGroup>
+                           )}
                         </SelectContent>
                     </Select>
                 </div>

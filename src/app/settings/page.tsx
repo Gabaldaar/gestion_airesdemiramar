@@ -85,10 +85,10 @@ export default function SettingsPage() {
                 <TabsTrigger value="properties">Propiedades</TabsTrigger>
                 {isPersonalFlavor && <TabsTrigger value="origins">Orígenes</TabsTrigger>}
                 <TabsTrigger value="expense-categories">Cat. Gastos</TabsTrigger>
-                <TabsTrigger value="provider-categories">Cat. Prov.</TabsTrigger>
+                {isPersonalFlavor && <TabsTrigger value="provider-categories">Cat. Prov.</TabsTrigger>}
                 <TabsTrigger value="task-categories">Cat. Tareas</TabsTrigger>
-                <TabsTrigger value="adjustment-categories">Cat. Ajustes</TabsTrigger>
-                <TabsTrigger value="task-scopes">Ámbitos</TabsTrigger>
+                {isPersonalFlavor && <TabsTrigger value="adjustment-categories">Cat. Ajustes</TabsTrigger>}
+                {isPersonalFlavor && <TabsTrigger value="task-scopes">Ámbitos</TabsTrigger>}
                 <TabsTrigger value="email">Email</TabsTrigger>
                 <TabsTrigger value="alerts">Alertas</TabsTrigger>
             </TabsList>
@@ -149,19 +149,21 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
         </TabsContent>
-        <TabsContent value="provider-categories">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Categorías de Proveedores</CardTitle>
-                    <CardDescription>
-                        Crea y gestiona las especialidades de tus proveedores (ej. Plomería, Electricidad).
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ProviderCategoryManager initialCategories={providerCategories} onCategoriesChanged={fetchData} />
-                </CardContent>
-            </Card>
-        </TabsContent>
+        {isPersonalFlavor && (
+            <TabsContent value="provider-categories">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Categorías de Proveedores</CardTitle>
+                        <CardDescription>
+                            Crea y gestiona las especialidades de tus proveedores (ej. Plomería, Electricidad).
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ProviderCategoryManager initialCategories={providerCategories} onCategoriesChanged={fetchData} />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        )}
         <TabsContent value="task-categories">
             <Card>
                 <CardHeader>
@@ -175,32 +177,36 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
         </TabsContent>
-        <TabsContent value="adjustment-categories">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Categorías de Ajuste</CardTitle>
-                    <CardDescription>
-                        Define los tipos de ajustes manuales para las liquidaciones (ej: bonos, adelantos).
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <AdjustmentCategoryManager initialCategories={adjustmentCategories} onCategoriesChanged={fetchData} />
-                </CardContent>
-            </Card>
-        </TabsContent>
-        <TabsContent value="task-scopes">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Ámbitos de Tareas</CardTitle>
-                    <CardDescription>
-                        Crea y gestiona los contextos para tareas no asociadas a una propiedad (ej. Contabilidad, Marketing).
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <TaskScopeManager initialScopes={taskScopes} onScopesChanged={fetchData} />
-                </CardContent>
-            </Card>
-        </TabsContent>
+        {isPersonalFlavor && (
+            <TabsContent value="adjustment-categories">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Categorías de Ajuste</CardTitle>
+                        <CardDescription>
+                            Define los tipos de ajustes manuales para las liquidaciones (ej: bonos, adelantos).
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <AdjustmentCategoryManager initialCategories={adjustmentCategories} onCategoriesChanged={fetchData} />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        )}
+        {isPersonalFlavor && (
+            <TabsContent value="task-scopes">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Ámbitos de Tareas</CardTitle>
+                        <CardDescription>
+                            Crea y gestiona los contextos para tareas no asociadas a una propiedad (ej. Contabilidad, Marketing).
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <TaskScopeManager initialScopes={taskScopes} onScopesChanged={fetchData} />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        )}
         <TabsContent value="email">
             <Card>
                 <CardHeader>

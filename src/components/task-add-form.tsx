@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
@@ -27,6 +28,8 @@ const initialState = {
   message: '',
   success: false,
 };
+
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -120,7 +123,7 @@ export function TaskAddForm({
                 <div className="space-y-2">
                     <Label htmlFor="assignment">Asignar a</Label>
                     <Select name="assignment" defaultValue={propertyId ? `property-${propertyId}` : undefined} required>
-                        <SelectTrigger><SelectValue placeholder="Selecciona Propiedad o Ámbito..."/></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={isPersonalFlavor ? "Selecciona Propiedad o Ámbito..." : "Selecciona una Propiedad..."}/></SelectTrigger>
                         <SelectContent>
                            {properties && (
                              <SelectGroup>
@@ -128,10 +131,12 @@ export function TaskAddForm({
                                 {properties.map(p => <SelectItem key={p.id} value={`property-${p.id}`}>{p.name}</SelectItem>)}
                             </SelectGroup>
                            )}
-                           <SelectGroup>
-                                <Label>Ámbitos</Label>
-                                {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
-                           </SelectGroup>
+                           {isPersonalFlavor && scopes && scopes.length > 0 && (
+                                <SelectGroup>
+                                    <Label>Ámbitos</Label>
+                                    {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
+                               </SelectGroup>
+                           )}
                         </SelectContent>
                     </Select>
                 </div>

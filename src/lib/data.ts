@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from './firebase';
@@ -744,7 +745,7 @@ export async function deleteExpenseCategoryDb(id: string): Promise<void> {
 export async function getExpensesByAssignmentId(assignmentId: string): Promise<ExpenseWithDetails[]> {
     const snapshot = await getDocs(query(expensesCollection, orderBy('date', 'desc')));
     const allExpenses = snapshot.docs.map(processDoc) as Expense[];
-    const filteredExpenses = allExpenses.filter(expense => expense.assignment?.id === assignmentId);
+    const filteredExpenses = allExpenses.filter(expense => expense.assignment?.type === 'property' && expense.assignment?.id === assignmentId);
     return await enrichExpenses(filteredExpenses);
 }
 
@@ -782,7 +783,7 @@ async function enrichExpenses(expenses: Expense[]): Promise<ExpenseWithDetails[]
 
     const detailedExpenses = expenses.map(expense => {
         let assignmentName = 'N/A';
-        let assignmentColor: string | undefined;
+        let assignmentColor: string | undefined = undefined;
 
         if (expense.assignment) {
             if (expense.assignment.type === 'property') {

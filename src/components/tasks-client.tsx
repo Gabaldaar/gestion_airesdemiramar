@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -20,6 +21,8 @@ interface TasksClientProps {
   expenseCategories: ExpenseCategory[];
   onDataChanged: () => void;
 }
+
+const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 export default function TasksClient({ initialTasks, properties, providers, categories, scopes, expenseCategories, onDataChanged }: TasksClientProps) {
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
@@ -46,19 +49,23 @@ export default function TasksClient({ initialTasks, properties, providers, categ
   const filteredTasks = useMemo(() => {
     let currentTasks = tasks.filter(task => {
         
-      // Assignment Type Filter
-      if (assignmentTypeFilter !== 'all') {
-        if (assignmentTypeFilter === 'unassigned') {
-          if (task.assignment && task.assignment.id) return false;
+        if (!isPersonalFlavor) {
+            // Commercial flavor: only properties are assignments
+            if (task.assignment?.type !== 'property') return false;
+            if (assignmentIdFilter !== 'all' && task.assignment.id !== assignmentIdFilter) return false;
         } else {
-          if (task.assignment?.type !== assignmentTypeFilter) return false;
+            // Personal flavor logic
+            if (assignmentTypeFilter !== 'all') {
+                if (assignmentTypeFilter === 'unassigned') {
+                if (task.assignment && task.assignment.id) return false;
+                } else {
+                if (task.assignment?.type !== assignmentTypeFilter) return false;
+                }
+            }
+            if (assignmentIdFilter !== 'all') {
+                if (task.assignment?.id !== assignmentIdFilter) return false;
+            }
         }
-      }
-
-      // Assignment ID Filter (for property or scope)
-      if (assignmentIdFilter !== 'all') {
-        if (task.assignment?.id !== assignmentIdFilter) return false;
-      }
       
       // Provider Filter
       if (providerIdFilter !== 'all') {
@@ -164,40 +171,59 @@ export default function TasksClient({ initialTasks, properties, providers, categ
     <div className="space-y-4">
       <div className="p-4 border rounded-lg bg-muted/50">
         <div className="flex flex-wrap items-end justify-center gap-4">
-            <div className="grid gap-2 flex-1 min-w-[180px]">
-                <Label>Tipo de Asignación</Label>
-                <Select value={assignmentTypeFilter} onValueChange={(val) => {
-                    setAssignmentTypeFilter(val as 'all' | 'property' | 'scope' | 'unassigned');
-                    setAssignmentIdFilter('all'); // Reset specific filter when type changes
-                }}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos los Tipos</SelectItem>
-                        <SelectItem value="property">Propiedad</SelectItem>
-                        <SelectItem value="scope">Ámbito</SelectItem>
-                        <SelectItem value="unassigned">Sin Asignar</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            
-            {(assignmentTypeFilter === 'property' || assignmentTypeFilter === 'scope') && (
+            {isPersonalFlavor ? (
+                <>
+                    <div className="grid gap-2 flex-1 min-w-[180px]">
+                        <Label>Tipo de Asignación</Label>
+                        <Select value={assignmentTypeFilter} onValueChange={(val) => {
+                            setAssignmentTypeFilter(val as 'all' | 'property' | 'scope' | 'unassigned');
+                            setAssignmentIdFilter('all'); // Reset specific filter when type changes
+                        }}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los Tipos</SelectItem>
+                                <SelectItem value="property">Propiedad</SelectItem>
+                                <SelectItem value="scope">Ámbito</SelectItem>
+                                <SelectItem value="unassigned">Sin Asignar</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    
+                    {(assignmentTypeFilter === 'property' || assignmentTypeFilter === 'scope') && (
+                        <div className="grid gap-2 flex-1 min-w-[180px]">
+                            <Label>{assignmentTypeFilter === 'property' ? 'Propiedad Específica' : 'Ámbito Específico'}</Label>
+                            <Select value={assignmentIdFilter} onValueChange={setAssignmentIdFilter}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccionar..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        {assignmentTypeFilter === 'property' ? 'Todas las Propiedades' : 'Todos los Ámbitos'}
+                                    </SelectItem>
+                                    {assignmentTypeFilter === 'property' && properties.map(p => (
+                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                    ))}
+                                    {assignmentTypeFilter === 'scope' && scopes.map(s => (
+                                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+                </>
+            ) : (
                 <div className="grid gap-2 flex-1 min-w-[180px]">
-                    <Label>{assignmentTypeFilter === 'property' ? 'Propiedad Específica' : 'Ámbito Específico'}</Label>
+                    <Label>Propiedad</Label>
                     <Select value={assignmentIdFilter} onValueChange={setAssignmentIdFilter}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar..." />
+                            <SelectValue placeholder="Todas las propiedades" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">
-                                {assignmentTypeFilter === 'property' ? 'Todas las Propiedades' : 'Todos los Ámbitos'}
-                            </SelectItem>
-                            {assignmentTypeFilter === 'property' && properties.map(p => (
+                            <SelectItem value="all">Todas las Propiedades</SelectItem>
+                            {properties.map(p => (
                                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                            {assignmentTypeFilter === 'scope' && scopes.map(s => (
-                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
