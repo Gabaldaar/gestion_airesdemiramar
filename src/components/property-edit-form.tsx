@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useTransition, useState, useEffect, useMemo } from 'react';
@@ -95,9 +94,15 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
       });
     } catch (error: any) {
       console.error("Image upload failed:", error);
+      let description = "No se pudo completar la subida. Revisa la consola para más detalles.";
+      if (error.code === 'storage/unauthorized') {
+          description = "Error de permisos. Asegúrate de que Firebase Storage esté habilitado en tu proyecto y que las reglas de seguridad permitan la escritura.";
+      } else {
+          description = error.message || description;
+      }
       toast({
         title: "Error al subir la imagen",
-        description: error.message || "No se pudo completar la subida. Revisa las reglas de Storage.",
+        description: description,
         variant: "destructive",
       });
     } finally {
