@@ -2,8 +2,9 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
-      // TEMPORARY: Allow all read and write access for debugging.
-      // This is insecure and must be changed back.
+      // ADVERTENCIA: Regla temporalmente permisiva para depuración.
+      // Permite a cualquier usuario leer y escribir.
+      // Se debe asegurar antes de pasar a producción.
       allow read, write;
     }
   }
