@@ -2,34 +2,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Permite que cualquier usuario autenticado cree el documento del workspace si no existe.
-    // Es una operación de una sola vez y es segura en el contexto de esta aplicación.
+    function isMember(workspaceId) {
+      // Check if the user is a document in the members subcollection.
+      return get(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(request.auth.uid)) != null;
+    }
+    
+    // The workspace document itself can be read or created by any authenticated user.
     match /workspaces/{workspaceId} {
       allow read, write: if request.auth != null;
     }
 
-    // Permite a cualquier usuario autenticado LISTAR la colección de miembros.
-    // Esto es necesario para que el proveedor de autenticación verifique si un usuario es nuevo.
-    match /workspaces/{workspaceId}/members {
-      allow list: if request.auth != null;
-    }
-    
-    // Un usuario siempre puede crear, leer o escribir su PROPIO documento de miembro.
-    // Esta es la regla clave que soluciona el problema de inicio de sesión.
+    // Specific rules for the members collection to break the circular dependency
     match /workspaces/{workspaceId}/members/{userId} {
+      // A user can ALWAYS create, read, or update their own member document.
       allow read, write: if request.auth.uid == userId;
     }
-
-    // Para cualquier OTRO documento dentro de un workspace (propiedades, gastos, etc.),
-    // el usuario debe ser un miembro verificado.
-    match /workspaces/{workspaceId}/{collection}/{doc=**} {
-      allow read, write: if get(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(request.auth.uid)) != null;
+    
+    // Allow authenticated users to LIST members, which is needed by the auth provider to check for new users.
+    match /workspaces/{workspaceId}/members {
+        allow list: if request.auth != null;
     }
 
-    // Reglas para suscripciones a notificaciones push.
+    // For ALL OTHER collections inside a workspace, the user must be a member.
+    match /workspaces/{workspaceId}/{collection}/{docId=**} {
+      allow read, write: if collection != 'members' && isMember(workspaceId);
+    }
+    
+    // Rules for push subscriptions are separate
     match /pushSubscriptions/{subscriptionId} {
-        allow read, delete: if request.auth != null && resource.data.keys.p256dh == request.resource.data.keys.p256dh;
-        allow create, write: if request.auth != null;
+      allow create, write: if request.auth != null;
+      allow read, delete: if request.auth != null && resource.data.keys.p256dh == request.resource.data.keys.p256dh;
     }
   }
 }
