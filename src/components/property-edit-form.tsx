@@ -187,7 +187,6 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                         name="imageUrl" 
                         value={imageUrl}
                         onChange={(e) => setImageUrl(e.target.value)}
-                        readOnly 
                         className="bg-muted/50 mt-1"
                     />
                 </div>
@@ -256,5 +255,7 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
     </div>
   );
 }
+
+    
 
     
