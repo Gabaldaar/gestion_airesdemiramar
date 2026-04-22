@@ -85,10 +85,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             hourlyRate: null,
             perVisitRate: null,
           };
-          const newUserRef = await addDoc(membersCollectionRef, newAdminUser);
+          
+          // Use setDoc with the user's UID as the document ID
+          const newAdminUserRef = doc(membersCollectionRef, firebaseUser.uid);
+          await setDoc(newAdminUserRef, newAdminUser);
           
           setUser(firebaseUser);
-          setAppUser({ id: newUserRef.id, ...newAdminUser } as AppUser);
+          setAppUser({ id: newAdminUserRef.id, ...newAdminUser } as AppUser);
           console.log("First admin user created and logged in successfully.");
 
         } else {
