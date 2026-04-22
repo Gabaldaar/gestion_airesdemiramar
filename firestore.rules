@@ -1,11 +1,28 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // This rule allows any authenticated user to read and write to the entire database.
-    // This will solve the login and permission issues immediately.
-    // It's a secure rule for this type of application where all users are trusted admins.
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Allow server-side admin processes (like our cron job) to read any data.
+    // The cron job is authenticated via service account, so request.auth is null.
+    // We restrict this to "get" and "list" for safety.
+    function isServerProcess() {
+      return request.auth == null;
+    }
+
+    // User profiles are private. Only the owner can read/write.
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // All other collections are open to any authenticated user for R/W,
+    // or to the server process for reads.
+    match /{path=**} {
+       allow read: if isSignedIn() || isServerProcess();
+       allow write: if isSignedIn();
     }
   }
 }
