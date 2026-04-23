@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -33,8 +34,8 @@ const formatCurrency = (amount: number, currency: 'ARS' | 'USD') => {
 
 interface PrintPageData {
     liquidation: Liquidation;
-    workLogs: (WorkLog & { assignmentName?: string; })[];
-    adjustments: (ManualAdjustment & { categoryName?: string; notes?: string; })[];
+    workLogs: WorkLog[];
+    adjustments: ManualAdjustment[];
     provider: Provider;
 }
 
@@ -67,8 +68,8 @@ function PrintPageLoader() {
 
                 setData({ 
                     liquidation, 
-                    workLogs: workLogs as (WorkLog & { assignmentName?: string; })[], 
-                    adjustments: adjustments as (ManualAdjustment & { categoryName?: string; notes?: string; })[], 
+                    workLogs, 
+                    adjustments, 
                     provider 
                 });
             } catch (err: any) {
@@ -222,3 +223,4 @@ export default function LiquidationPrintPage() {
         </Suspense>
     );
 }
+

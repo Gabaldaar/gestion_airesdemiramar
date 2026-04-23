@@ -384,6 +384,7 @@ export type WorkLog = {
     calculatedCost: number;
     status: 'pending_liquidation' | 'liquidated';
     liquidationId?: string;
+    assignmentName?: string;
 }
 
 export type ManualAdjustment = {
@@ -397,6 +398,8 @@ export type ManualAdjustment = {
     notes?: string;
     status: 'pending_liquidation' | 'liquidated';
     liquidationId?: string;
+    assignmentName?: string;
+    categoryName?: string;
 }
 
 export type Liquidation = {
@@ -1312,162 +1315,31 @@ export async function updateTaskScopeDb(updatedScope: TaskScope): Promise<TaskSc
 }
 
 export async function deleteTaskScopeDb(id: string): Promise<void> {
+    const q = query(tasksCollection, where('assignment.id', '==', id), where('assignment.type', '==', 'scope'));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      throw new Error(`No se puede eliminar. El ámbito está siendo utilizado por ${snapshot.size} tarea(s).`);
+    }
     const docRef = doc(db, 'taskScopes', id);
     await deleteDoc(docRef);
 }
 
-
-async function getTaskDetails(task: Task, propertiesMap: Map<string, Property>, scopesMap: Map<string, TaskScope>, categoriesMap: Map<string, string>, providersMap: Map<string, string>): Promise<TaskWithDetails> {
-    // Re-calculate actualCost on the fly by summing related expenses
-    const expensesQuery = query(expensesCollection, where('taskId', '==', task.id));
-    const expensesSnapshot = await getDocs(expensesQuery);
-    const actualCost = expensesSnapshot.docs.reduce((sum, doc) => {
-        const expense = doc.data() as Expense;
-        // Sum based on the task's currency
-        if (task.costCurrency === 'USD') {
-            return sum + (expense.originalUsdAmount || (expense.exchangeRate ? expense.amount / expense.exchangeRate : 0));
-        }
-        return sum + expense.amount; // Default to ARS
-    }, 0);
-
-    let assignmentName = 'Sin Asignar';
-    let assignmentColor: string | undefined = undefined;
-    let finalAssignment = task.assignment;
-
-    // Compatibility for old tasks that only have propertyId
-    if (!finalAssignment && task.propertyId) {
-        finalAssignment = {
-            type: 'property',
-            id: task.propertyId,
-        };
-    }
-
-    if (finalAssignment) {
-        if (finalAssignment.type === 'property') {
-            assignmentName = propertiesMap.get(finalAssignment.id)?.name || 'Propiedad Desconocida';
-        } else if (finalAssignment.type === 'scope') {
-            const scope = scopesMap.get(finalAssignment.id);
-            assignmentName = scope?.name || 'Ámbito Desconocido';
-            assignmentColor = scope?.color;
-        }
-    }
-    
-    const detailedTask: TaskWithDetails = {
-        ...task,
-        assignment: finalAssignment, // Ensure the normalized assignment is on the object
-        actualCost: actualCost,
-        assignmentName,
-        assignmentColor,
-        categoryName: task.categoryId ? categoriesMap.get(task.categoryId) : undefined,
-        providerName: task.providerId ? providersMap.get(task.providerId) : undefined,
-    };
-    
-    // Clean up legacy field if it exists
-    delete (detailedTask as any).propertyId;
-
-    return detailedTask;
-}
-
-export async function getTasks(): Promise<TaskWithDetails[]> {
-    const [tasksSnap, properties, scopes, categories, providers] = await Promise.all([
-        getDocs(tasksCollection),
-        getProperties(),
-        getTaskScopes(),
-        getTaskCategories(),
-        getProviders(),
-    ]);
-
-    const propertiesMap = new Map(properties.map(p => [p.id, p]));
-    const scopesMap = new Map(scopes.map(s => [s.id, s]));
-    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
-    const providersMap = new Map(providers.map(p => [p.id, p.name]));
-    
-    const allTasks = tasksSnap.docs.map(processDoc) as Task[];
-    const detailedTasks = await Promise.all(allTasks.map(task => getTaskDetails(task, propertiesMap, scopesMap, categoriesMap, providersMap)));
-
-    return detailedTasks;
-}
-
-export async function getTasksByPropertyId(propertyId: string): Promise<TaskWithDetails[]> {
-    const [tasksSnap, properties, scopes, categories, providers] = await Promise.all([
-        getDocs(tasksCollection),
-        getProperties(),
-        getTaskScopes(),
-        getTaskCategories(),
-        getProviders(),
-    ]);
-
-    const propertiesMap = new Map(properties.map(p => [p.id, p]));
-    const scopesMap = new Map(scopes.map(s => [s.id, s]));
-    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
-    const providersMap = new Map(providers.map(p => [p.id, p.name]));
-    
-    const allTasks = tasksSnap.docs.map(processDoc) as Task[];
-
-    const propertyTasks = allTasks.filter(task => {
-        // Handle new tasks with assignment object
-        if (task.assignment?.type === 'property' && task.assignment.id === propertyId) {
-            return true;
-        }
-        // Legacy support for old tasks with propertyId
-        if (!task.assignment && task.propertyId === propertyId) {
-            return true;
-        }
-        return false;
-    });
-
-    const detailedTasks = await Promise.all(propertyTasks.map(task => getTaskDetails(task, propertiesMap, scopesMap, categoriesMap, providersMap)));
-    return detailedTasks;
-}
-
-
-export async function getTasksByProviderId(providerId: string): Promise<TaskWithDetails[]> {
-    const [properties, scopes, categories, providers] = await Promise.all([
-        getProperties(),
-        getTaskScopes(),
-        getTaskCategories(),
-        getProviders(),
-    ]);
-    const propertiesMap = new Map(properties.map(p => [p.id, p]));
-    const scopesMap = new Map(scopes.map(s => [s.id, s]));
-    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
-    const providersMap = new Map(providers.map(p => [p.id, p.name]));
-
-    const q = query(tasksCollection, where('providerId', '==', providerId));
-    const snapshot = await getDocs(q);
-    const providerTasks = snapshot.docs.map(processDoc) as Task[];
-    
-    const detailedTasks = await Promise.all(providerTasks.map(task => getTaskDetails(task, propertiesMap, scopesMap, categoriesMap, providersMap)));
-    
-    // Sort manually to avoid needing a composite index
-    detailedTasks.sort((a, b) => {
-        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
-        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
-        return dateB - dateA;
-    });
-
-    return detailedTasks;
-}
-
-
 export async function addTaskDb(task: Omit<Task, 'id'>): Promise<Task> {
-    const docRef = await addDoc(tasksCollection, task);
-    return { id: docRef.id, ...task };
+  const docRef = await addDoc(tasksCollection, task);
+  return { id: docRef.id, ...task };
 }
+
 
 export async function updateTaskDb(updatedTask: Partial<Task>): Promise<Task | null> {
     const { id, ...data } = updatedTask;
     if (!id) throw new Error("Update task requires an ID.");
     const docRef = doc(db, 'tasks', id);
-    await updateDoc(docRef, data);
+    await updateDoc(docRef, data as any); // Cast to any to handle partial data
     const newDoc = await getDoc(docRef);
     return newDoc.exists() ? processDoc(newDoc) as Task : null;
 }
 
-export async function reassignTaskExpenses(taskId: string, newAssignment: TaskAssignment): Promise<void> {
-    if (!taskId || !newAssignment) {
-        throw new Error("Task ID and new assignment are required.");
-    }
+export async function reassignTaskExpenses(taskId: string, newAssignment: TaskAssignment) {
     const expensesQuery = query(expensesCollection, where('taskId', '==', taskId));
     const expensesSnapshot = await getDocs(expensesQuery);
     
@@ -1476,32 +1348,66 @@ export async function reassignTaskExpenses(taskId: string, newAssignment: TaskAs
     }
 
     const batch = writeBatch(db);
-    expensesSnapshot.forEach(expenseDoc => {
-        const expenseRef = doc(db, 'expenses', expenseDoc.id);
-        batch.update(expenseRef, { assignment: newAssignment });
+    expensesSnapshot.forEach(doc => {
+        batch.update(doc.ref, { assignment: newAssignment });
     });
-    
     await batch.commit();
 }
 
 
-export async function deleteTaskDb(id: string): Promise<void> {
-    const batch = writeBatch(db);
-    
-    // Delete the task
-    const taskRef = doc(db, 'tasks', id);
-    batch.delete(taskRef);
-
-    // Delete associated expenses
-    const expensesQuery = query(expensesCollection, where('taskId', '==', id));
-    const expensesSnapshot = await getDocs(expensesQuery);
-    expensesSnapshot.forEach(expenseDoc => {
-        batch.delete(doc(db, 'expenses', expenseDoc.id));
-    });
-
-    await batch.commit();
+export async function getTasks(): Promise<TaskWithDetails[]> {
+    const q = query(tasksCollection, orderBy("dueDate"));
+    const snapshot = await getDocs(q);
+    const tasks = snapshot.docs.map(processDoc) as Task[];
+    return await enrichTasks(tasks);
 }
 
+export async function getTasksByPropertyId(propertyId: string): Promise<TaskWithDetails[]> {
+    const q = query(tasksCollection, where('assignment.type', '==', 'property'), where('assignment.id', '==', propertyId));
+    const snapshot = await getDocs(q);
+    const tasks = snapshot.docs.map(processDoc) as Task[];
+    return await enrichTasks(tasks);
+}
+
+
+async function enrichTasks(tasks: Task[]): Promise<TaskWithDetails[]> {
+    const [properties, scopes, categories, providers] = await Promise.all([
+        getProperties(),
+        getTaskScopes(),
+        getTaskCategories(),
+        getProviders(),
+    ]);
+
+    const propertiesMap = new Map(properties.map(p => [p.id, p.name]));
+    const scopesMap = new Map(scopes.map(s => [s.id, { name: s.name, color: s.color }]));
+    const categoriesMap = new Map(categories.map(c => [c.id, c.name]));
+    const providersMap = new Map(providers.map(p => [p.id, p.name]));
+
+    const detailedTasks = tasks.map(task => {
+        let assignmentName = 'N/A';
+        let assignmentColor: string | undefined = undefined;
+
+        if (task.assignment) {
+            if (task.assignment.type === 'property') {
+                assignmentName = propertiesMap.get(task.assignment.id) || 'Propiedad Desconocida';
+            } else if (task.assignment.type === 'scope') {
+                const scope = scopesMap.get(task.assignment.id);
+                assignmentName = scope?.name || 'Ámbito Desconocido';
+                assignmentColor = scope?.color;
+            }
+        }
+        
+        return {
+            ...task,
+            assignmentName,
+            assignmentColor,
+            categoryName: task.categoryId ? categoriesMap.get(task.categoryId) : undefined,
+            providerName: task.providerId ? providersMap.get(task.providerId) : undefined,
+        };
+    });
+
+    return detailedTasks;
+}
 
 // --- PROVIDER CATEGORIES ---
 export async function getProviderCategories(): Promise<ProviderCategory[]> {
@@ -1626,7 +1532,7 @@ export async function deleteDateBlockDb(id: string): Promise<void> {
 // --- LIQUIDATIONS ---
 
 // Helper to enrich logs and adjustments
-async function enrichItems(items: (WorkLog | ManualAdjustment)[]): Promise<(WorkLog | ManualAdjustment & { categoryName?: string, categoryType?: 'addition' | 'deduction' })[]> {
+async function enrichItems(items: (WorkLog | ManualAdjustment)[]): Promise<(WorkLog | ManualAdjustment)[]> {
     const [properties, scopes, adjustmentCategories] = await Promise.all([
         getProperties(),
         getTaskScopes(),
@@ -1648,7 +1554,7 @@ async function enrichItems(items: (WorkLog | ManualAdjustment)[]): Promise<(Work
         
         if ('categoryId' in item && item.categoryId) {
             const category = adjustmentCategoriesMap.get(item.categoryId);
-            return { ...item, assignmentName, categoryName: category?.name, categoryType: category?.type };
+            return { ...item, assignmentName, categoryName: category?.name };
         }
 
         return { ...item, assignmentName };
@@ -1772,12 +1678,12 @@ export async function getWorkLogsByLiquidationId(liquidationId: string): Promise
     return await enrichItems(logs) as WorkLog[];
 }
 
-export async function getManualAdjustmentsByLiquidationId(liquidationId: string): Promise<(ManualAdjustment & { categoryName?: string })[]> {
+export async function getManualAdjustmentsByLiquidationId(liquidationId: string): Promise<ManualAdjustment[]> {
     const q = query(manualAdjustmentsCollection, where('liquidationId', '==', liquidationId));
     const snapshot = await getDocs(q);
     const adjustments = snapshot.docs.map(processDoc) as ManualAdjustment[];
     const enriched = await enrichItems(adjustments);
-    return enriched as (ManualAdjustment & { categoryName?: string })[];
+    return enriched as ManualAdjustment[];
 }
 
 export async function revertLiquidationDb(liquidationId: string): Promise<void> {
@@ -1928,26 +1834,4 @@ export async function getAdjustmentCategories(): Promise<AdjustmentCategory[]> {
     const q = query(adjustmentCategoriesCollection, orderBy("name"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(processDoc) as AdjustmentCategory[];
-}
-
-export async function addAdjustmentCategoryDb(category: Omit<AdjustmentCategory, 'id'>): Promise<AdjustmentCategory> {
-    const docRef = await addDoc(adjustmentCategoriesCollection, category);
-    return { id: docRef.id, ...category };
-}
-
-export async function updateAdjustmentCategoryDb(updatedCategory: AdjustmentCategory): Promise<AdjustmentCategory> {
-    const { id, ...data } = updatedCategory;
-    const docRef = doc(db, 'adjustmentCategories', id);
-    await updateDoc(docRef, data);
-    return updatedCategory;
-}
-
-export async function deleteAdjustmentCategoryDb(id: string): Promise<void> {
-    const q = query(manualAdjustmentsCollection, where('categoryId', '==', id));
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) {
-        throw new Error(`No se puede eliminar. La categoría está siendo utilizada por ${snapshot.size} ajuste(s).`);
-    }
-    const docRef = doc(db, 'adjustmentCategories', id);
-    await deleteDoc(docRef);
 }
