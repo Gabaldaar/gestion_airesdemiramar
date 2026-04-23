@@ -4,6 +4,9 @@
 import { useEffect } from "react";
 import { useToast } from "./ui/use-toast";
 import { savePushSubscription } from "@/lib/actions";
+import { db } from "@/lib/firebase";
+import { enableIndexedDbPersistence } from "firebase/firestore";
+
 
 // Helper to convert VAPID key
 function urlBase64ToUint8Array(base64String: string) {
@@ -26,6 +29,20 @@ const PwaSetup = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Enable offline persistence
+    enableIndexedDbPersistence(db)
+      .catch((err) => {
+        if (err.code == 'failed-precondition') {
+          // Multiple tabs open, persistence can only be enabled
+          // in one tab at a time.
+          console.warn('Persistencia de Firestore falló: múltiples pestañas abiertas. La persistencia no estará habilitada.');
+        } else if (err.code == 'unimplemented') {
+          // The current browser does not support all of the
+          // features required to enable persistence
+          console.warn('Persistencia de Firestore no es soportada en este navegador.');
+        }
+      });
+
     // 1. Register Service Worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
