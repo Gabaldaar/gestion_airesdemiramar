@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useTransition, useState, useEffect, useMemo } from 'react';
@@ -104,10 +103,10 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 1 * 1024 * 1024) { // 1MB limit
       toast({
         title: "Archivo demasiado grande",
-        description: "La imagen no debe superar los 5MB.",
+        description: "La imagen no debe superar 1MB.",
         variant: "destructive",
       });
       return;
@@ -218,15 +217,9 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                             accept="image/png, image/jpeg, image/webp"
                             disabled={isUploading}
                         />
+                         <p className="text-xs text-muted-foreground mt-2">Imágenes de hasta 1MB en formato .jpg o .png.</p>
                     </div>
-                    <Label htmlFor={`imageUrl-${property.id}`} className="mt-4 block text-xs text-muted-foreground">URL de la imagen (auto-generado)</Label>
-                    <Input 
-                        id={`imageUrl-${property.id}`}
-                        name="imageUrl" 
-                        value={imageUrl}
-                        readOnly
-                        className="bg-muted/50 cursor-default focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
+                    <input type="hidden" name="imageUrl" value={imageUrl} />
                 </div>
 
                 <div className="col-span-1 md:col-span-2">
