@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useToast } from "./ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { savePushSubscription } from "@/lib/actions";
 
 // Helper to convert VAPID key
