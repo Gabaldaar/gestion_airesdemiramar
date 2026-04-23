@@ -1,6 +1,6 @@
-# Guía Rápida para Implementar Funcionalidad Offline en Next.js + Firebase
+# Guía Rápida para Implementar Funcionalidad Offline en Next.js
 
-Esta guía resume los pasos necesarios para habilitar el acceso sin conexión en una Progressive Web App (PWA) construida con Next.js y Firebase, asegurando que la aplicación cargue y muestre datos cacheados cuando no hay conexión a internet.
+Esta guía resume los pasos necesarios para habilitar el acceso sin conexión en una Progressive Web App (PWA) construida con Next.js, asegurando que la aplicación cargue y muestre datos cacheados cuando no hay conexión a internet.
 
 ## Paso 1: Crear un Service Worker Robusto
 
@@ -109,49 +109,8 @@ export default PwaSetup;
 ```
 Luego, importa y usa este componente en tu layout principal (`src/app/layout.tsx`).
 
-## Paso 3: Activar la Persistencia Offline de Firestore
 
-Esta es la clave para que los datos (propiedades, inquilinos, etc.) estén disponibles sin conexión. Firebase tiene una funcionalidad nativa para esto que es muy potente.
-
-En tu archivo de configuración de Firebase (`src/lib/firebase.ts` o donde inicialices la app), añade la llamada a `enableIndexedDbPersistence`.
-
-```ts
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getFirestore, Firestore, enableIndexedDbPersistence } from "firebase/firestore";
-import { getAuth, Auth } from "firebase/auth";
-
-const firebaseConfig = {
-  // ... tu configuración de Firebase
-};
-
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
-
-auth = getAuth(app);
-db = getFirestore(app);
-
-// ¡LÍNEA CLAVE! Activa la persistencia local.
-enableIndexedDbPersistence(db)
-  .catch((err) => {
-    if (err.code == 'failed-precondition') {
-      console.warn('Persistencia de Firestore falló: múltiples pestañas abiertas.');
-    } else if (err.code == 'unimplemented') {
-      console.warn('Persistencia de Firestore no es soportada en este navegador.');
-    }
-  });
-
-export { app, auth, db };
-```
-Con esto, Firebase automáticamente guardará los datos de las consultas `getDocs` en una base de datos local (IndexedDB) y los servirá desde ahí cuando no haya conexión.
-
-## Paso 4: (Recomendado) Añadir un Aviso de "Sin Conexión"
+## Paso 3: (Recomendado) Añadir un Aviso de "Sin Conexión"
 
 Es una buena práctica informar al usuario que está trabajando sin conexión.
 
@@ -210,4 +169,4 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-Con estos 4 pasos, la aplicación tendrá una funcionalidad offline robusta y confiable.
+Con estos 3 pasos, la aplicación tendrá una funcionalidad offline básica para los archivos de la aplicación.
