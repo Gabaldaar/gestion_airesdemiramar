@@ -23,3 +23,5 @@ Forcing update to restore booking-payments-manager to fix the crash for real thi
 Forcing final fix attempt for payment-add-form.
 
 Nota para forzar actualizacion 2025/12/01
+
+Forzando una actualización para resolver el problema de despliegue de Netlify.
