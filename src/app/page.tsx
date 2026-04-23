@@ -19,6 +19,7 @@ import { parseDateSafely } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from 'next/link';
+import PaymentCalculator from "@/components/payment-calculator";
 
 interface DashboardData {
     summaryByCurrency: FinancialSummaryByCurrency;
@@ -480,8 +481,9 @@ export default function DashboardPage() {
             totalTenants={totalTenants}
         />
         
-        <AvailabilitySearcher allProperties={properties} allBookings={bookings} allBlocks={blocks} />
-        
+        <AvailabilitySearcher allProperties={properties} allBookings={bookings} allBlocks={blocks} isPersonalFlavor={isPersonalFlavor} />
+        {isPersonalFlavor && <PaymentCalculator showTabs={true} />}
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-1 lg:col-span-4">
             <CardHeader>

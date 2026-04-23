@@ -37,10 +37,9 @@ interface SettingsData {
     providers: Provider[];
 }
 
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
 export default function SettingsPage() {
-    const { user } = useAuth();
+    const { user, appUser } = useAuth();
+    const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
     const [data, setData] = useState<SettingsData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -86,7 +85,7 @@ export default function SettingsPage() {
                 {isPersonalFlavor && <TabsTrigger value="origins">Orígenes</TabsTrigger>}
                 <TabsTrigger value="expense-categories">Cat. Gastos</TabsTrigger>
                 {isPersonalFlavor && <TabsTrigger value="provider-categories">Cat. Prov.</TabsTrigger>}
-                <TabsTrigger value="task-categories">Cat. Tareas</TabsTrigger>
+                {isPersonalFlavor && <TabsTrigger value="task-categories">Cat. Tareas</TabsTrigger>}
                 {isPersonalFlavor && <TabsTrigger value="adjustment-categories">Cat. Ajustes</TabsTrigger>}
                 {isPersonalFlavor && <TabsTrigger value="task-scopes">Ámbitos</TabsTrigger>}
                 {isPersonalFlavor && <TabsTrigger value="email">Email</TabsTrigger>}
@@ -103,13 +102,13 @@ export default function SettingsPage() {
                         Administra los datos de tus propiedades.
                         </CardDescription>
                     </div>
-                    <PropertyAddForm providers={providers} />
+                    <PropertyAddForm providers={providers} isPersonalFlavor={isPersonalFlavor} />
                 </CardHeader>
                 <CardContent>
                     {properties.length > 0 ? (
                         properties.map((property: Property) => (
                             <div key={property.id} className="border-t">
-                                <PropertyEditForm property={property} providers={providers} />
+                                <PropertyEditForm property={property} providers={providers} isPersonalFlavor={isPersonalFlavor} />
                             </div>
                         ))
                     ) : (
@@ -164,19 +163,21 @@ export default function SettingsPage() {
                 </Card>
             </TabsContent>
         )}
-        <TabsContent value="task-categories">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Categorías de Tareas</CardTitle>
-                    <CardDescription>
-                        Crea, edita y elimina las categorías para organizar tus tareas de mantenimiento.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <TaskCategoryManager initialCategories={taskCategories} onCategoriesChanged={fetchData} />
-                </CardContent>
-            </Card>
-        </TabsContent>
+        {isPersonalFlavor && (
+            <TabsContent value="task-categories">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Categorías de Tareas</CardTitle>
+                        <CardDescription>
+                            Crea, edita y elimina las categorías para organizar tus tareas de mantenimiento.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <TaskCategoryManager initialCategories={taskCategories} onCategoriesChanged={fetchData} />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        )}
         {isPersonalFlavor && (
             <TabsContent value="adjustment-categories">
                 <Card>

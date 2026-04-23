@@ -13,11 +13,10 @@ import { Mail } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 import { isWithinInterval } from 'date-fns';
 import { parseDateSafely } from '@/lib/utils';
+import { useAuth } from './auth-provider';
 
 type BookingStatusFilter = 'all' | 'current' | 'upcoming' | 'closed' | 'cancelled' | 'pending';
 type RatingFilter = 'all' | 'none' | '1' | '2' | '3' | '4' | '5';
-
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 interface TenantsClientProps {
   initialTenants: Tenant[];
@@ -27,6 +26,9 @@ interface TenantsClientProps {
 }
 
 export default function TenantsClient({ initialTenants, allBookings, origins, onFilteredTenantsChange }: TenantsClientProps) {
+  const { appUser } = useAuth();
+  const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
+
   const [tenants, setTenants] = useState(initialTenants);
   const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
   const [originFilter, setOriginFilter] = useState<string>('all');
@@ -220,6 +222,7 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
         origins={origins} 
         onDataChanged={refreshTenants} 
         onEditTenant={handleEditTenant}
+        isPersonalFlavor={isPersonalFlavor}
       />
       {editingTenant && (
         <TenantEditForm
@@ -232,6 +235,3 @@ export default function TenantsClient({ initialTenants, allBookings, origins, on
     </div>
   );
 }
-
-    
-

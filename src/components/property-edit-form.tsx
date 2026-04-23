@@ -62,14 +62,11 @@ function UnsavedChangesBar({ isDirty, onDiscard, formId }: { isDirty: boolean; o
     )
 }
 
-export function PropertyEditForm({ property, providers }: { property: Property; providers: Provider[] }) {
+export function PropertyEditForm({ property, providers, isPersonalFlavor }: { property: Property; providers: Provider[], isPersonalFlavor: boolean }) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  const { width } = useWindowSize();
-  const isMobile = width < 768;
-  const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
+  
   const [imageUrl, setImageUrl] = useState(property.imageUrl || '');
   const [isUploading, setIsUploading] = useState(false);
   const [signatureUrl, setSignatureUrl] = useState(property.contractSignatureUrl || '');

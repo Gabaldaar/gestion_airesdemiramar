@@ -42,12 +42,11 @@ function SubmitButton() {
     )
 }
 
-export function PropertyAddForm({ providers }: { providers: Provider[] }) {
+export function PropertyAddForm({ providers, isPersonalFlavor }: { providers: Provider[], isPersonalFlavor: boolean }) {
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
   const visitRateProviders = useMemo(() => {
     return providers.filter(p => p.billingType === 'per_visit' || p.billingType === 'hourly_or_visit');

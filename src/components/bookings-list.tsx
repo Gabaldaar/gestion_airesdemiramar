@@ -49,9 +49,8 @@ interface BookingsListProps {
   providers?: Provider[];
   showProperty?: boolean;
   onDataChanged: () => void;
+  isPersonalFlavor: boolean;
 }
-
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 const contractStatusMap: Record<ContractStatus, { text: string, className: string }> = {
     not_sent: { text: 'S/Enviar', className: 'bg-gray-500 hover:bg-gray-600' },
@@ -68,7 +67,7 @@ const guaranteeStatusMap: Record<GuaranteeStatus, { text: string, className: str
     not_applicable: { text: 'N/A', className: 'bg-yellow-500 text-black hover:bg-yellow-700' }
 };
 
-function BookingActions({ booking, onEdit, onAddPayment, onCalculatorOpen, onEmailOpen }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void }) {
+function BookingActions({ booking, onEdit, onAddPayment, onCalculatorOpen, onEmailOpen, isPersonalFlavor }: { booking: BookingWithDetails, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, isPersonalFlavor: boolean }) {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [isGuaranteeOpen, setIsGuaranteeOpen] = useState(false);
     const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
@@ -182,7 +181,7 @@ function BookingActions({ booking, onEdit, onAddPayment, onCalculatorOpen, onEma
     )
 }
 
-function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onCalculatorOpen, onEmailOpen, onTenantClick }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void }) {
+function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onCalculatorOpen, onEmailOpen, onTenantClick, isPersonalFlavor }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void, isPersonalFlavor: boolean }) {
 
   const isCancelled = booking.status === 'cancelled';
   const isPending = booking.status === 'pending';
@@ -367,13 +366,13 @@ function BookingRow({ booking, showProperty, origin, onEdit, onAddPayment, onCal
           </TooltipProvider>
       </TableCell>
       <TableCell className="text-right">
-        <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} />
+        <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} isPersonalFlavor={isPersonalFlavor} />
       </TableCell>
     </TableRow>
   );
 }
 
-function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onCalculatorOpen, onEmailOpen, onTenantClick }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void }) {
+function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onCalculatorOpen, onEmailOpen, onTenantClick, isPersonalFlavor }: { booking: BookingWithDetails, showProperty: boolean, origin?: Origin, onEdit: (booking: BookingWithDetails) => void, onAddPayment: (bookingId: string) => void, onCalculatorOpen: (booking: BookingWithDetails) => void, onEmailOpen: (booking: BookingWithDetails) => void, onTenantClick: (tenantId: string) => void, isPersonalFlavor: boolean }) {
     const isCancelled = booking.status === 'cancelled';
     const isPending = booking.status === 'pending';
 
@@ -513,14 +512,14 @@ function BookingCard({ booking, showProperty, origin, onEdit, onAddPayment, onCa
                 </div>
             </CardContent>
             <CardFooter className="p-2 justify-end">
-                <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} />
+                <BookingActions booking={booking} onEdit={onEdit} onAddPayment={onAddPayment} onCalculatorOpen={onCalculatorOpen} onEmailOpen={onEmailOpen} isPersonalFlavor={isPersonalFlavor}/>
             </CardFooter>
         </Card>
     )
 }
 
 
-export default function BookingsList({ bookings, properties, tenants, origins, providers, showProperty = false, onDataChanged }: BookingsListProps) {
+export default function BookingsList({ bookings, properties, tenants, origins, providers, showProperty = false, onDataChanged, isPersonalFlavor }: BookingsListProps) {
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | undefined>(undefined);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [addingPaymentForBookingId, setAddingPaymentForBookingId] = useState<string | undefined>(undefined);
@@ -596,6 +595,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
             onCalculatorOpen={handleCalculatorOpen}
             onEmailOpen={handleEmailOpen}
             onTenantClick={handleTenantClick}
+            isPersonalFlavor={isPersonalFlavor}
         />
         ))}
     </div>
@@ -628,6 +628,7 @@ export default function BookingsList({ bookings, properties, tenants, origins, p
                     onCalculatorOpen={handleCalculatorOpen}
                     onEmailOpen={handleEmailOpen}
                     onTenantClick={handleTenantClick}
+                    isPersonalFlavor={isPersonalFlavor}
                 />
             ))}
         </TableBody>

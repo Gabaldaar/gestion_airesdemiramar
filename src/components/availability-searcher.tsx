@@ -18,16 +18,16 @@ interface AvailabilitySearcherProps {
     allProperties: Property[];
     allBookings: Booking[];
     allBlocks: DateBlock[];
+    isPersonalFlavor: boolean;
 }
 
-export default function AvailabilitySearcher({ allProperties, allBookings, allBlocks }: AvailabilitySearcherProps) {
+export default function AvailabilitySearcher({ allProperties, allBookings, allBlocks, isPersonalFlavor }: AvailabilitySearcherProps) {
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [results, setResults] = useState<{ property: Property, priceResult: PriceResult }[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
-  const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
   const handleSearch = async () => {
     if (!fromDate || !toDate) {
@@ -258,4 +258,3 @@ export default function AvailabilitySearcher({ allProperties, allBookings, allBl
     </Card>
   );
 }
-

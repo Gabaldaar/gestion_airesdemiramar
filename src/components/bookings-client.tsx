@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { parseDateSafely } from '@/lib/utils';
+import { useAuth } from './auth-provider';
 
 
 type ContractStatusFilter = 'all' | ContractStatus;
@@ -43,8 +44,6 @@ const initialStatusFilters: StatusFilters = {
     pending: false,
 };
 
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
 interface BookingsClientProps {
   initialBookings: BookingWithDetails[];
   properties: Property[];
@@ -57,6 +56,9 @@ interface BookingsClientProps {
 }
 
 export default function BookingsClient({ initialBookings, properties, tenants, origins, providers, initialTenantIdFilter, onFilteredBookingsChange, onDataChanged }: BookingsClientProps) {
+  const { appUser } = useAuth();
+  const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
+  
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [statusFilters, setStatusFilters] = useState<StatusFilters>(initialStatusFilters);
@@ -429,11 +431,7 @@ export default function BookingsClient({ initialBookings, properties, tenants, o
               </Button>
           </div>
       </div>
-      <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} origins={origins} providers={providers} showProperty={true} onDataChanged={onDataChanged} />
+      <BookingsList bookings={filteredBookings} properties={properties} tenants={tenants} origins={origins} providers={providers} showProperty={true} onDataChanged={onDataChanged} isPersonalFlavor={isPersonalFlavor} />
     </div>
   );
 }
-
-    
-
-    

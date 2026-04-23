@@ -42,13 +42,12 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
 interface TenantsListProps {
     tenants: Tenant[];
     origins: Origin[];
     onDataChanged: () => void;
     onEditTenant: (tenant: Tenant) => void;
+    isPersonalFlavor: boolean;
 }
 
 const formatWhatsAppLink = (phone: string | null | undefined, countryCode: string | null | undefined) => {
@@ -250,7 +249,7 @@ function TenantActions({ tenant, onDataChanged, onEditTenant }: { tenant: Tenant
 }
 
 
-function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
+function TenantRow({ tenant, origin, onDataChanged, onEditTenant, isPersonalFlavor }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void, isPersonalFlavor: boolean }) {
     const waLink = formatWhatsAppLink(tenant.phone, tenant.countryCode);
     return (
         <TableRow key={tenant.id}>
@@ -295,7 +294,7 @@ function TenantRow({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Te
     );
 }
 
-function TenantCard({ tenant, origin, onDataChanged, onEditTenant }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void }) {
+function TenantCard({ tenant, origin, onDataChanged, onEditTenant, isPersonalFlavor }: { tenant: Tenant, origin?: Origin, onDataChanged: () => void, onEditTenant: (tenant: Tenant) => void, isPersonalFlavor: boolean }) {
     const waLink = formatWhatsAppLink(tenant.phone, tenant.countryCode);
     return (
         <Card>
@@ -359,7 +358,7 @@ function TenantCard({ tenant, origin, onDataChanged, onEditTenant }: { tenant: T
 }
 
 
-export default function TenantsList({ tenants, origins, onDataChanged, onEditTenant }: TenantsListProps) {
+export default function TenantsList({ tenants, origins, onDataChanged, onEditTenant, isPersonalFlavor }: TenantsListProps) {
     const { width } = useWindowSize();
     const useCardView = width < 1280;
 
@@ -372,7 +371,7 @@ export default function TenantsList({ tenants, origins, onDataChanged, onEditTen
     const CardView = () => (
          <div className="space-y-4">
             {tenants.map((tenant: Tenant) => (
-                <TenantCard key={tenant.id} tenant={tenant} origin={isPersonalFlavor && tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
+                <TenantCard key={tenant.id} tenant={tenant} origin={isPersonalFlavor && tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} isPersonalFlavor={isPersonalFlavor} />
             ))}
         </div>
     );
@@ -392,7 +391,7 @@ export default function TenantsList({ tenants, origins, onDataChanged, onEditTen
             </TableHeader>
             <TableBody>
                 {tenants.map((tenant: Tenant) => (
-                    <TenantRow key={tenant.id} tenant={tenant} origin={isPersonalFlavor && tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} />
+                    <TenantRow key={tenant.id} tenant={tenant} origin={isPersonalFlavor && tenant.originId ? originsMap.get(tenant.originId) : undefined} onDataChanged={onDataChanged} onEditTenant={onEditTenant} isPersonalFlavor={isPersonalFlavor} />
                 ))}
             </TableBody>
         </Table>
