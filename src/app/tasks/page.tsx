@@ -27,11 +27,13 @@ interface TasksData {
 }
 
 export default function TasksPage() {
-    const { user } = useAuth();
+    const { user, appUser } = useAuth();
     const [data, setData] = useState<TasksData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isAddOpen, setIsAddOpen] = useState(false);
     
+    const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
+
     const fetchData = useCallback(async () => {
         if (user) {
             setLoading(true);
@@ -90,6 +92,7 @@ export default function TasksPage() {
                 scopes={data.scopes}
                 expenseCategories={data.expenseCategories}
                 onDataChanged={fetchData}
+                isPersonalFlavor={isPersonalFlavor}
             />
         </CardContent>
     </Card>

@@ -59,8 +59,6 @@ interface PropertyDetailData {
     origins: Origin[];
 }
 
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
 const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> = (dayProps) => {
     const { date, activeModifiers, data, ...rest } = dayProps;
     
@@ -121,7 +119,7 @@ const DayContentWithTooltip: FC<DayProps & { data: PropertyDetailData | null }> 
 
 
 export default function PropertyDetailPage() {
-  const { user } = useAuth();
+  const { user, appUser } = useAuth();
   const params = useParams();
   const propertyId = params.id as string;
   const [data, setData] = useState<PropertyDetailData | null>(null);
@@ -136,6 +134,8 @@ export default function PropertyDetailPage() {
   const [isExpenseAddOpen, setIsExpenseAddOpen] = useState(false);
   const [expensePreloadData, setExpensePreloadData] = useState<ExpensePreloadData | undefined>(undefined);
   const [isBlockFormOpen, setIsBlockFormOpen] = useState(false);
+
+  const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
 
   const fetchData = useCallback(async () => {
     if (user && propertyId) {
@@ -170,7 +170,7 @@ export default function PropertyDetailPage() {
             setLoading(false);
         }
     }
-  }, [user, propertyId]);
+  }, [user, propertyId, isPersonalFlavor]);
   
   useEffect(() => {
     fetchData();
@@ -391,7 +391,7 @@ export default function PropertyDetailPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
-                <BookingsList bookings={bookingsForThisProperty} properties={properties} tenants={tenants} origins={origins} providers={providers} onDataChanged={handleDataChanged} />
+                <BookingsList bookings={bookingsForThisProperty} properties={properties} tenants={tenants} origins={origins} providers={providers} onDataChanged={handleDataChanged} isPersonalFlavor={isPersonalFlavor} />
                 </CardContent>
             </Card>
             </TabsContent>

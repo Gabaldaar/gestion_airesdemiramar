@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -20,11 +18,10 @@ interface TasksClientProps {
   scopes: TaskScope[];
   expenseCategories: ExpenseCategory[];
   onDataChanged: () => void;
+  isPersonalFlavor: boolean;
 }
 
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
-export default function TasksClient({ initialTasks, properties, providers, categories, scopes, expenseCategories, onDataChanged }: TasksClientProps) {
+export default function TasksClient({ initialTasks, properties, providers, categories, scopes, expenseCategories, onDataChanged, isPersonalFlavor }: TasksClientProps) {
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
   const [assignmentTypeFilter, setAssignmentTypeFilter] = useState<'all' | 'property' | 'scope' | 'unassigned'>('all');
   const [assignmentIdFilter, setAssignmentIdFilter] = useState<string>('all');
@@ -119,7 +116,7 @@ export default function TasksClient({ initialTasks, properties, providers, categ
         return priorityOrder[a.priority] - priorityOrder[b.priority];
     });
 
-  }, [tasks, assignmentTypeFilter, assignmentIdFilter, providerIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter]);
+  }, [tasks, assignmentTypeFilter, assignmentIdFilter, providerIdFilter, statusFilter, priorityFilter, categoryIdFilter, costCurrencyFilter, isPersonalFlavor]);
 
   useEffect(() => {
     setTasks(initialTasks);
