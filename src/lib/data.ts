@@ -174,6 +174,8 @@ export type Expense = {
     manualAdjustmentId?: string | null;
 }
 
+export type PropertyExpense = Expense;
+
 export type ExpenseWithDetails = Expense & {
     assignmentName: string;
     assignmentColor?: string;
@@ -815,6 +817,16 @@ export async function getAllExpensesUnified(): Promise<ExpenseWithDetails[]> {
     const snapshot = await getDocs(q);
     const allExpenses = snapshot.docs.map(processDoc) as Expense[];
     return await enrichExpenses(allExpenses);
+}
+
+export async function getPropertyExpensesByProviderId(providerId: string): Promise<PropertyExpense[]> {
+    if (!providerId) return [];
+    
+    const q = query(expensesCollection, where('providerId', '==', providerId), orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    
+    const expenses = snapshot.docs.map(processDoc) as PropertyExpense[];
+    return expenses;
 }
 
 // --- REPORTING SUMMARY FUNCTIONS ---
