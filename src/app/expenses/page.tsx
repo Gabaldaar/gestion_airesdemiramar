@@ -8,13 +8,13 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { getProperties, getAllExpensesUnified, getExpenseCategories, UnifiedExpense, Property, ExpenseCategory, Provider, getProviders } from "@/lib/data";
+import { getProperties, getAllExpensesUnified, getExpenseCategories, ExpenseWithDetails, Property, ExpenseCategory, Provider, getProviders } from "@/lib/data";
 import ExpensesClient from "@/components/expenses-client";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 
 interface ExpensesData {
-    allExpenses: UnifiedExpense[];
+    allExpenses: ExpenseWithDetails[];
     properties: Property[];
     categories: ExpenseCategory[];
     providers: Provider[];

@@ -1,9 +1,8 @@
 
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { UnifiedExpense, Property, ExpenseCategory, getAllExpensesUnified, Provider } from '@/lib/data';
+import { ExpenseWithDetails, Property, ExpenseCategory, getAllExpensesUnified, Provider } from '@/lib/data';
 import ExpensesList from '@/components/expenses-list';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import { parseDateSafely } from '@/lib/utils';
 type ExpenseTypeFilter = 'all' | 'Propiedad' | 'Reserva';
 
 interface ExpensesClientProps {
-  initialExpenses: UnifiedExpense[];
+  initialExpenses: ExpenseWithDetails[];
   properties: Property[];
   categories: ExpenseCategory[];
   providers: Provider[];
@@ -22,7 +21,7 @@ interface ExpensesClientProps {
 }
 
 export default function ExpensesClient({ initialExpenses, properties, categories, providers, onDataChanged }: ExpensesClientProps) {
-  const [expenses, setExpenses] = useState<UnifiedExpense[]>(initialExpenses);
+  const [expenses, setExpenses] = useState<ExpenseWithDetails[]>(initialExpenses);
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [propertyIdFilter, setPropertyIdFilter] = useState<string>('all');
