@@ -23,13 +23,12 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup } from './ui/select';
 import { DatePicker } from './ui/date-picker';
 import { useToast } from './ui/use-toast';
+import { useAuth } from './auth-provider';
 
 const initialState = {
   message: '',
   success: false,
 };
-
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -68,6 +67,9 @@ export function TaskAddForm({
     onOpenChange: (isOpen: boolean) => void;
     onTaskAdded: () => void;
 }) {
+  const { appUser } = useAuth();
+  const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
+
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);

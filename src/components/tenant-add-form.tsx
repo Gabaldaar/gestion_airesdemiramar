@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Origin, getOrigins } from '@/lib/data';
 import { countries } from '@/lib/countries';
 import { cn } from '@/lib/utils';
+import { useAuth } from './auth-provider';
 
 const initialState = {
   message: '',
@@ -45,9 +46,10 @@ function SubmitButton() {
     )
 }
 
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
 export function TenantAddForm() {
+  const { appUser } = useAuth();
+  const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
+
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
@@ -74,7 +76,7 @@ export function TenantAddForm() {
     if (isOpen && isPersonalFlavor) {
       getOrigins().then(setOrigins);
     }
-  }, [isOpen]);
+  }, [isOpen, isPersonalFlavor]);
   
   const getStarColorClass = (currentRating: number) => {
     if (currentRating === 1) return "text-red-500 fill-red-500";

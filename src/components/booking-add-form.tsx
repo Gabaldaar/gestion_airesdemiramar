@@ -48,6 +48,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DateRange } from 'react-day-picker';
 import { Textarea } from './ui/textarea';
+import { useAuth } from './auth-provider';
 
 
 const initialState = {
@@ -71,8 +72,6 @@ function SubmitButton({ isDisabled }: { isDisabled: boolean }) {
     )
 }
 
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
 export function BookingAddForm({
   propertyId,
   properties,
@@ -88,6 +87,9 @@ export function BookingAddForm({
   allBlocks: DateBlock[];
   onDataChanged: () => void;
 }) {
+  const { appUser } = useAuth();
+  const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
+
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
@@ -193,7 +195,7 @@ export function BookingAddForm({
     if (isPersonalFlavor) {
         calculateAndSetPrice();
     }
-  }, [date, bookingsForSelectedProperty, blocksForSelectedProperty, selectedPropertyId]);
+  }, [date, bookingsForSelectedProperty, blocksForSelectedProperty, selectedPropertyId, isPersonalFlavor]);
   
    useEffect(() => {
     if (isOpen) {
@@ -203,7 +205,7 @@ export function BookingAddForm({
       // Reset form state when dialog opens
       resetForm();
     }
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, isPersonalFlavor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const disabledDays = useMemo(() => {
     const activeBookings = bookingsForSelectedProperty;
