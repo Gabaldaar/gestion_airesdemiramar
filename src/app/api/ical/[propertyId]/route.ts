@@ -1,5 +1,6 @@
 
-import { getBookingsByPropertyId, getPropertyById, getTenantById, getDateBlocksByPropertyId } from '@/lib/data';
+
+import { getBookingsByPropertyId, getPropertyById, getTenantById, getDateBlocksByPropertyId, Tenant } from '@/lib/data';
 import { NextRequest } from 'next/server';
 import { format, addDays } from 'date-fns';
 
@@ -31,7 +32,9 @@ export async function GET(
 
     const tenantIds = [...new Set(bookings.map(b => b.tenantId))];
     const tenants = await Promise.all(tenantIds.map(id => getTenantById(id)));
-    const tenantsMap = new Map(tenants.map(t => t && [t.id, t]));
+    const tenantsMap = new Map(
+        tenants.filter((t): t is Tenant => !!t).map(t => [t.id, t])
+    );
 
     const events: string[] = [];
 
