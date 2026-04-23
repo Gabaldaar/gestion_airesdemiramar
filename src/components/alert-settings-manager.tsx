@@ -220,3 +220,4 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
         </div>
     );
 }
+
