@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { getBookingWithDetails } from "@/lib/data";
@@ -9,7 +10,6 @@ import ContractActions from "@/components/contract-actions";
 import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import LogoCont from "@/assets/logocont.png";
-import Firma from "@/assets/firma.png";
 import '../globals.css';
 import { BookingWithDetails } from "@/lib/data";
 import { parseDateSafely } from "@/lib/utils";
@@ -297,8 +297,18 @@ function ContractPage({ bookingId }: { bookingId: string }) {
                             <p className="pt-2 border-t border-black w-48 text-center">Firma Locatario</p>
                         </div>
                         <div className="text-center">
-                            <div className="h-20 flex items-center justify-center">
-                                <Image src={Firma} alt="Firma" width={109} height={99} placeholder="blur" />
+                            <div className="h-20 w-48 flex items-center justify-center">
+                                {property.contractSignatureUrl ? (
+                                    <Image 
+                                        src={property.contractSignatureUrl} 
+                                        alt="Firma del locador" 
+                                        width={150} 
+                                        height={75}
+                                        className="object-contain"
+                                    />
+                                ) : (
+                                    <div className="h-full w-full"></div>
+                                )}
                             </div>
                             <p className="pt-2 border-t border-black w-48 text-center">Firma Locador</p>
                         </div>

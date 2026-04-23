@@ -72,6 +72,8 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
 
   const [imageUrl, setImageUrl] = useState(property.imageUrl || '');
   const [isUploading, setIsUploading] = useState(false);
+  const [signatureUrl, setSignatureUrl] = useState(property.contractSignatureUrl || '');
+  const [isSignatureUploading, setIsSignatureUploading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const formId = `property-edit-form-${property.id}`;
 
@@ -141,6 +143,54 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+  
+  const handleSignatureFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1 * 1024 * 1024) { // 1MB limit
+      toast({
+        title: "Archivo demasiado grande",
+        description: "La imagen de la firma no debe superar 1MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (file.type !== 'image/png') {
+        toast({
+            title: "Formato incorrecto",
+            description: "Por favor, sube un archivo .png con fondo transparente.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    setIsSignatureUploading(true);
+
+    const filePath = `property_signatures/${property.id}/signature.png`;
+    const storageRef = ref(storage, filePath);
+
+    try {
+      const uploadTask = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(uploadTask.ref);
+      setSignatureUrl(downloadURL);
+      handleMakeDirty();
+      toast({
+        title: "¡Éxito!",
+        description: "La imagen de la firma se ha subido. Guarda los cambios para que sea permanente.",
+      });
+    } catch (error: any) {
+      console.error("Signature upload failed:", error);
+      toast({
+        title: "Error al subir la firma",
+        description: error.message || "No se pudo completar la subida.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSignatureUploading(false);
     }
   };
 
@@ -243,6 +293,49 @@ export function PropertyEditForm({ property, providers }: { property: Property; 
                     </p>
                 </div>
                 
+                <div className="col-span-1 md:col-span-2 border-t pt-4">
+                    <Label>Firma para Contratos</Label>
+                    <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
+                        <div className="relative w-48 h-24 border rounded-lg bg-muted/50 flex items-center justify-center">
+                            {signatureUrl ? (
+                                <Image
+                                    src={signatureUrl}
+                                    alt="Vista previa de la firma"
+                                    fill
+                                    className="object-contain p-2"
+                                />
+                            ) : (
+                                <span className="text-xs text-muted-foreground">Sin firma</span>
+                            )}
+                            {isSignatureUploading && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+                                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <Label htmlFor={`signature-upload-${property.id}`} className={cn(
+                                buttonVariants({ variant: 'outline' }),
+                                "cursor-pointer",
+                                isSignatureUploading && "cursor-not-allowed opacity-50"
+                            )}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                {isSignatureUploading ? 'Subiendo...' : 'Cambiar Firma'}
+                            </Label>
+                            <Input 
+                                id={`signature-upload-${property.id}`}
+                                type="file" 
+                                className="hidden" 
+                                onChange={handleSignatureFileChange}
+                                accept="image/png"
+                                disabled={isSignatureUploading}
+                            />
+                            <p className="text-xs text-muted-foreground mt-2">Sube un archivo .png con fondo transparente (máx. 1MB).</p>
+                        </div>
+                    </div>
+                    <input type="hidden" name="contractSignatureUrl" value={signatureUrl} />
+                </div>
+
                 {isPersonalFlavor && (
                     <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2">
                         <h4 className="text-md font-medium mb-4 text-center">Campos Personalizados (Para Contratos y Emails)</h4>

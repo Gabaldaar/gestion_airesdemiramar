@@ -51,7 +51,6 @@ export type Property = {
   priceSheetName?: string;
   notes?: string;
   contractTemplate?: string;
-  contractLogoUrl?: string;
   contractSignatureUrl?: string;
   customField1Label?: string;
   customField1Value?: string;

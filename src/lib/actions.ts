@@ -240,7 +240,7 @@ export async function updateProperty(previousState: any, formData: FormData) {
 
     const fields = [
         'name', 'address', 'imageUrl', 'propertyUrl', 'notes', 'contractTemplate', 
-        'priceSheetName', 'customField1Label', 'customField1Value', 
+        'contractSignatureUrl', 'priceSheetName', 'customField1Label', 'customField1Value', 
         'customField2Label', 'customField2Value', 'customField3Label', 'customField3Value', 
         'customField4Label', 'customField4Value', 'customField5Label', 'customField5Value', 
         'customField6Label', 'customField6Value'

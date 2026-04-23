@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -74,6 +75,7 @@ export function PropertyNotesForm({ property }: { property: Property }) {
           <input type="hidden" name="propertyUrl" defaultValue={property.propertyUrl || ''} />
           <input type="hidden" name="priceSheetName" defaultValue={property.priceSheetName || ''} />
           <input type="hidden" name="contractTemplate" defaultValue={property.contractTemplate || ''} />
+          <input type="hidden" name="contractSignatureUrl" defaultValue={property.contractSignatureUrl || ''} />
           <input type="hidden" name="customField1Label" defaultValue={property.customField1Label || ''} />
           <input type="hidden" name="customField1Value" defaultValue={property.customField1Value || ''} />
           <input type="hidden" name="customField2Label" defaultValue={property.customField2Label || ''} />
