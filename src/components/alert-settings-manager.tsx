@@ -8,7 +8,7 @@ import { updateAlertSettings, savePushSubscription as savePushSubscriptionAction
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, BellRing } from 'lucide-react';
+import { Loader2, Bell } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 
@@ -215,7 +215,7 @@ export function AlertSettingsManager({ initialSettings }: { initialSettings: Ale
                         </>
                     ) : (
                         <>
-                            <BellRing className="mr-2 h-4 w-4" />
+                            <Bell className="mr-2 h-4 w-4" />
                             Activar / Re-suscribir Dispositivo
                         </>
                     )}
