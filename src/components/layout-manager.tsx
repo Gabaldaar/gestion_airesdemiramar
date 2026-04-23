@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/
 import { Button } from './ui/button';
 
 const MainLayout = dynamic(() => import('./main-layout'), {
+  ssr: false,
   loading: () => <div className="flex h-screen items-center justify-center">Cargando Interfaz...</div>,
 });
 
