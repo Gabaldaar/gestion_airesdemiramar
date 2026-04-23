@@ -651,8 +651,8 @@ export async function addExpense(previousState: any, formData: FormData) {
       assignment: { type: assignmentType, id: assignmentId },
       date,
       ...expenseData,
-      taskId: taskId || null,
       currency: 'ARS',
+      taskId: taskId || null,
     };
     
     // Explicitly set providerId to null if it's not provided or is 'none'
@@ -1524,6 +1524,7 @@ export async function addProvider(previousState: any, formData: FormData) {
     perVisitRate: null, // Obsolete field, always set to null
     role: (formData.get('role') as UserRole) || 'provider',
     status: (formData.get('status') as UserStatus) || 'pending',
+    appFlavor: (formData.get('appFlavor') as 'personal' | 'commercial') || 'personal',
   };
   
   if (!newProvider.email) {
@@ -1600,6 +1601,7 @@ export async function updateProvider(previousState: any, formData: FormData) {
     dataToUpdate.perVisitRate = null; // Obsolete field
     dataToUpdate.role = (formData.get('role') as UserRole) || 'provider';
     dataToUpdate.status = (formData.get('status') as UserStatus) || 'pending';
+    dataToUpdate.appFlavor = (formData.get('appFlavor') as 'personal' | 'commercial') || 'personal';
 
     // 4. Perform the update
     await updateProviderPartial(providerId, dataToUpdate);

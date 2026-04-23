@@ -143,6 +143,19 @@ export function ProviderAddForm({ categories, onProviderAdded }: { categories: P
                         </RadioGroup>
                     </div>
                 </div>
+                 <div className="space-y-2">
+                    <Label>Versión de App</Label>
+                    <RadioGroup name="appFlavor" defaultValue="personal" className="flex items-center gap-4">
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="personal" id="r-add-flavor-personal" />
+                            <Label htmlFor="r-add-flavor-personal">Personal</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="commercial" id="r-add-flavor-commercial" />
+                            <Label htmlFor="r-add-flavor-commercial">Comercial</Label>
+                        </div>
+                    </RadioGroup>
+                </div>
                 <div className="border-t pt-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                      <div className="space-y-2">
                         <Label htmlFor="categoryId">Categoría</Label>

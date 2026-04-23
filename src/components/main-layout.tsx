@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -47,10 +48,9 @@ const mainNavItems = [
 
 const helpNavItem = { href: '/help', label: 'Ayuda', icon: CircleHelp };
 
-function SidebarNav({ onLinkClick, isCollapsed, pendingLiquidationsCount, pendingBookingsCount }: { onLinkClick?: () => void, isCollapsed: boolean, pendingLiquidationsCount: number, pendingBookingsCount: number }) {
+function SidebarNav({ onLinkClick, isCollapsed, pendingLiquidationsCount, pendingBookingsCount, isPersonalFlavor }: { onLinkClick?: () => void, isCollapsed: boolean, pendingLiquidationsCount: number, pendingBookingsCount: number, isPersonalFlavor: boolean }) {
   const pathname = usePathname();
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION;
-  const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
 
   const navItems = mainNavItems.filter(item => {
     if (!isPersonalFlavor) {
@@ -200,12 +200,15 @@ function OfflineWarning({ isOnline }: { isOnline: boolean }) {
 
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const { appUser } = useAuth();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [pendingLiqCount, setPendingLiqCount] = useState(0);
   const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
   const [unliquidatedItemsCount, setUnliquidatedItemsCount] = useState(0);
+  
+  const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
 
 
   useEffect(() => {
@@ -256,7 +259,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </Button>
             </div>
             <div className="flex-1 overflow-auto py-2">
-                <SidebarNav isCollapsed={isCollapsed} pendingLiquidationsCount={totalLiquidationsBadge} pendingBookingsCount={pendingBookingsCount} />
+                <SidebarNav isCollapsed={isCollapsed} pendingLiquidationsCount={totalLiquidationsBadge} pendingBookingsCount={pendingBookingsCount} isPersonalFlavor={isPersonalFlavor} />
             </div>
         </div>
         <div className="flex flex-col">
@@ -280,7 +283,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                          <SheetTitle className="sr-only">Menú Principal</SheetTitle>
                     </SheetHeader>
                     <div className="flex-1">
-                        <SidebarNav onLinkClick={() => setIsSheetOpen(false)} isCollapsed={false} pendingLiquidationsCount={totalLiquidationsBadge} pendingBookingsCount={pendingBookingsCount} />
+                        <SidebarNav onLinkClick={() => setIsSheetOpen(false)} isCollapsed={false} pendingLiquidationsCount={totalLiquidationsBadge} pendingBookingsCount={pendingBookingsCount} isPersonalFlavor={isPersonalFlavor} />
                     </div>
                 </SheetContent>
             </Sheet>

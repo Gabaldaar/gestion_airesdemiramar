@@ -32,10 +32,9 @@ interface DashboardData {
     pendingBookingsCount: number;
 }
 
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
 export default function DashboardPage() {
-    const { user } = useAuth();
+    const { user, appUser } = useAuth();
+    const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();

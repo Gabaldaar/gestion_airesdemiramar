@@ -39,6 +39,7 @@ import BookingStatusChart from "@/components/booking-status-chart";
 import NetIncomeDistributionChart from "@/components/net-income-distribution-chart";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import PaymentCalculator from "@/components/payment-calculator";
 
 interface InformesData {
     financialSummary: FinancialSummaryByCurrency;
@@ -75,10 +76,9 @@ const reportLabels: Record<keyof ReportVisibility, string> = {
     showUSD: 'Mostrar USD',
 };
 
-const isPersonalFlavor = process.env.NEXT_PUBLIC_APP_FLAVOR !== 'commercial';
-
 function InformesPageContent() {
-  const { user } = useAuth();
+  const { user, appUser } = useAuth();
+  const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -411,7 +411,3 @@ export default function InformesPage() {
         </Suspense>
     )
 }
-
-    
-
-    

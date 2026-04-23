@@ -84,6 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             rateCurrency: null,
             hourlyRate: null,
             perVisitRate: null,
+            appFlavor: 'personal',
           };
           
           // Use setDoc with the user's UID as the document ID

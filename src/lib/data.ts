@@ -324,6 +324,7 @@ export type Provider = {
     userId?: string | null;
     role: UserRole;
     status: UserStatus;
+    appFlavor?: 'personal' | 'commercial';
 };
 
 // New types for flexible task assignment

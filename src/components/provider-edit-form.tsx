@@ -148,6 +148,19 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                             </RadioGroup>
                         </div>
                     </div>
+                    <div className="space-y-2">
+                        <Label>Versión de App</Label>
+                        <RadioGroup name="appFlavor" defaultValue={provider.appFlavor || 'personal'} className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="personal" id={`r-edit-flavor-personal-${provider.id}`} />
+                                <Label htmlFor={`r-edit-flavor-personal-${provider.id}`}>Personal</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="commercial" id={`r-edit-flavor-commercial-${provider.id}`} />
+                                <Label htmlFor={`r-edit-flavor-commercial-${provider.id}`}>Comercial</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
 
                     <div className="border-t pt-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
