@@ -1,0 +1,74 @@
+diff --git a/node_modules/react-quill/lib/component.js b/node_modules/react-quill/lib/component.js
+index 2891d4a..474f850 100644
+--- a/node_modules/react-quill/lib/component.js
++++ b/node_modules/react-quill/lib/component.js
+@@ -231,7 +231,7 @@ ReactQuill.prototype.getEditor = function getEditor() {
+ 	if (!this.quill) return;
+ 	// The editor is stored on the component instance under `this.quill`,
+ 	// but there is no public way to retrieve it.
+-	return this.quill;
++	return this.quill.current;
+ };
+ 
+ /*
+@@ -375,7 +375,7 @@ ReactQuill.prototype.setEditorSelection = function setEditorSelection(range, so
+ ReactQuill.prototype.setEditorContents = function setEditorContents(delta, source) {
+ 	var editor = this.getEditor();
+ 	if (editor) {
+-		editor.setContents(delta, source);
++		editor.current.setContents(delta, source);
+ 	}
+ };
+ 
+@@ -387,7 +387,7 @@ ReactQuill.prototype.setEditorHtml = function setEditorHtml(value, source) {
+ 	var editor = this.getEditor();
+ 	if (editor) {
+ 		var delta = this.convertHtmlToDelta(value);
+-		editor.setContents(delta, source);
++		editor.current.setContents(delta, source);
+ 	}
+ };
+ 
+@@ -398,7 +398,7 @@ ReactQuill.prototype.setEditorText = function setEditorText(value, source) {
+ 	var editor = this.getEditor();
+ 	if (editor) {
+ 		var delta = new this.Quill.sources.Delta().insert(value);
+-		editor.setContents(delta, source);
++		editor.current.setContents(delta, source);
+ 	}
+ };
+ 
+@@ -421,7 +421,7 @@ ReactQuill.prototype.getEditorBounds = function getEditorBounds() {
+  */
+ ReactQuill.prototype.getEditingArea = function getEditingArea() {
+ 	var editor = this.getEditor();
+-	if (!editor) return;
++	if (!editor) return null;
+ 	// The editing area is the element that contains the editor, which is not
+ 	// a public API, but it's the best we can do.
+ 	var element = editor.root;
+diff --git a/node_modules/react-quill/lib/index.js b/node_modules/react-quill/lib/index.js
+index e36417a..393166d 100644
+--- a/node_modules/react-quill/lib/index.js
++++ b/node_modules/react-quill/lib/index.js
+@@ -42,7 +42,7 @@ var findDOMNode =
+ 	// findDOMNode is not available in React 18's StrictMode.
+ 	// It is not recommended for use in the new root API.
+ 	// See https://react.dev/reference/react-dom/findDOMNode
+-	require('react-dom').findDOMNode;
++	null;
+ 
+ var Quill = require('quill');
+ var Component = require('./component');
+diff --git a/node_modules/react-quill/lib/mixin.js b/node_modules/react-quill/lib/mixin.js
+index d631a31..9f80789 100644
+--- a/node_modules/react-quill/lib/mixin.js
++++ b/node_modules/react-quill/lib/mixin.js
+@@ -1,6 +1,6 @@
+ 'use strict';
+ 
+-var findDOMNode = require('react-dom').findDOMNode;
++var findDOMNode = function() {};
+ 
+ /*
+ A mixin for Components that need to watch view changes.

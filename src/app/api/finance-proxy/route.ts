@@ -1,0 +1,81 @@
+import { NextResponse } from 'next/server';
+
+// --- Configuration ---
+const API_BASE_URL = 'https://gestionomiscuentas.netlify.app';
+
+export async function GET(request: Request) {
+  try {
+    const externalApiUrl = `${API_BASE_URL}/api/datos-imputacion`;
+    const FINANCE_API_KEY = process.env.FINANCE_API_KEY || '';
+
+    if (!FINANCE_API_KEY) {
+        console.error('[FINANCE PROXY] No FINANCE_API_KEY found in environment variables.');
+        return NextResponse.json(
+            { error: "La API Key de finanzas no está configurada en las variables de entorno del servidor (FINANCE_API_KEY)." }, 
+            { 
+                status: 500,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                }
+            }
+        );
+    }
+
+    const headersForExternalApi = {
+      'Authorization': `Bearer ${FINANCE_API_KEY}`,
+      'Content-Type': 'application/json',
+    };
+
+    const response = await fetch(externalApiUrl, {
+      method: 'GET',
+      headers: headersForExternalApi,
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      let errorBody = 'La API de finanzas devolvió un error.';
+      try {
+        const errorJson = await response.json();
+        errorBody = errorJson.error || errorJson.message || JSON.stringify(errorJson);
+      } catch (e) {}
+      throw new Error(`Error ${response.status}: ${errorBody}`);
+    }
+    
+    const data = await response.json();
+    
+    // Devolvemos la respuesta con headers de CORS
+    return NextResponse.json(data, {
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+    });
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido en el servidor proxy.';
+    console.error('[FINANCE PROXY ERROR]', errorMessage);
+    return NextResponse.json(
+      { error: `Error en el proxy interno: ${errorMessage}` },
+      { 
+        status: 500,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+        }
+      }
+    );
+  }
+}
+
+export async function OPTIONS() {
+    return new Response(null, {
+        status: 204,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+    });
+}

@@ -1,0 +1,92 @@
+// This is a placeholder file to make TypeScript happy
+// because lucide-react doesn't have its own types.
+declare module 'lucide-react' {
+    import { SVGProps } from 'react';
+    
+    // Define a general type for any Lucide icon
+    export type LucideIcon = React.FC<SVGProps<SVGSVGElement>>;
+
+    // List all icons you use in your app to get type-checking
+    export const Home: LucideIcon;
+    export const Building2: LucideIcon;
+    export const Users: LucideIcon;
+    export const User: LucideIcon;
+    export const Calendar: LucideIcon;
+    export const Settings: LucideIcon;
+    export const Menu: LucideIcon;
+    export const BarChart3: LucideIcon;
+    export const ShoppingCart: LucideIcon;
+    export const CreditCard: LucideIcon;
+    export const Mail: LucideIcon;
+    export const LogOut: LucideIcon;
+    export const CircleHelp: LucideIcon;
+    export const ChevronLeft: LucideIcon;
+    export const WifiOff: LucideIcon;
+    export const DollarSign: LucideIcon;
+    export const TrendingUp: LucideIcon;
+    export const AlertTriangle: LucideIcon;
+    export const Info: LucideIcon;
+    export const Copy: LucideIcon;
+    export const ExternalLink: LucideIcon;
+    export const NotebookPen: LucideIcon;
+    export const Notebook: LucideIcon;
+    export const BookOpen: LucideIcon;
+    export const Landmark: LucideIcon;
+    export const Wallet: LucideIcon;
+    export const Pencil: LucideIcon;
+    export const Trash2: LucideIcon;
+    export const FileText: LucideIcon;
+    export const Phone: LucideIcon;
+    export const PlusCircle: LucideIcon;
+    export const Loader2: LucideIcon;
+    export const Download: LucideIcon;
+    export const ChevronDown: LucideIcon;
+    export const ChevronRight: LucideIcon;
+    export const Circle: LucideIcon;
+    export const History: LucideIcon;
+    export const Send: LucideIcon;
+    export const Save: LucideIcon;
+    export const X: LucideIcon;
+    export const XCircle: LucideIcon;
+    export const Shield: LucideIcon;
+    export const RefreshCw: LucideIcon;
+    export const Search: LucideIcon;
+    export const BedDouble: LucideIcon;
+    export const CalendarX: LucideIcon;
+    export const Calculator: LucideIcon;
+    export const Tag: LucideIcon;
+    export const ChevronsUpDown: LucideIcon;
+    export const Check: LucideIcon;
+    export const Globe: LucideIcon;
+    export const Printer: LucideIcon;
+    export const FileDown: LucideIcon;
+    export const Banknote: LucideIcon;
+    export const ShieldCheck: LucideIcon;
+    export const ShieldAlert: LucideIcon;
+    export const ClipboardList: LucideIcon;
+    export const ClipboardCheck: LucideIcon;
+    export const ArrowUp: LucideIcon;
+    export const ArrowDown: LucideIcon;
+    export const ChevronsRight: LucideIcon;
+    export const Star: LucideIcon;
+    export const Wrench: LucideIcon;
+    export const Briefcase: LucideIcon;
+    export const Upload: LucideIcon;
+    export const Bell: LucideIcon;
+    export const PenLine: LucideIcon;
+    export const ScrollText: LucideIcon;
+    export const CheckCircle: LucideIcon;
+    export const CheckCircle2: LucideIcon;
+    export const Link2: LucideIcon;
+    export const Clock: LucideIcon;
+    export const Languages: LucideIcon;
+    export const MapPin: LucideIcon;
+    export const CircleUser: LucideIcon;
+    export const UserCircle: LucideIcon;
+    export const IdCard: LucideIcon;
+    export const Rocket: LucideIcon;
+    export const Share2: LucideIcon;
+    export const Smartphone: LucideIcon;
+    export const Sun: LucideIcon;
+    export const Moon: LucideIcon;
+}

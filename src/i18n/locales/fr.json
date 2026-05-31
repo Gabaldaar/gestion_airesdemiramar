@@ -1,0 +1,983 @@
+
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "actions": "Actions",
+    "search": "Rechercher",
+    "clean": "Effacer",
+    "details": "Voir Détails",
+    "new": "Nouveau",
+    "all": "Tous",
+    "none": "Aucun",
+    "optional": "optionnel",
+    "select_dates": "Sélectionner les dates",
+    "select_property": "Sélectionner une propriété...",
+    "select_tenant": "Sélectionner un locataire...",
+    "select_origin": "Sélectionner une origine",
+    "select_provider": "Sélectionner un collaborateur...",
+    "select_category": "Sélectionner une catégorie...",
+    "currency": "Devise",
+    "filters": "Filtres",
+    "from": "Du",
+    "to": "Au",
+    "email_all": "Email à tous",
+    "copy": "Copier",
+    "copy_link": "Copier le lien",
+    "reason": "Motif",
+    "dates": "Dates",
+    "copy_link_success": "Lien copié dans le presse-papiers.",
+    "category": "Catégorie",
+    "provider": "Prestataire",
+    "description": "Description",
+    "date": "Date",
+    "totals": "Totaux",
+    "amount_ars": "Montant (ARS)",
+    "amount_usd": "Montant (USD)",
+    "no_image": "Pas d'image",
+    "accept": "Accepter",
+    "confirm_delete": {
+      "title": "Êtes-vous absolument sûr ?",
+      "description": "Cette action est irréversible. Cela supprimera définitivement cet élément et toutes ses données associées.",
+      "confirm": "Supprimer",
+      "cancel": "Annuler",
+      "disclaimer": "Oui, je comprends que cette action est irréversible."
+    },
+    "notes_viewer": {
+      "description": "Contenu des notes associées.",
+      "title": "Accepter"
+    },
+    "placeholders_labels": {
+      "tenant_name": "Nom du Locataire",
+      "tenant_id": "ID Locataire",
+      "tenant_address": "Adresse Locataire",
+      "property_name": "Nom Propriété",
+      "property_address": "Adresse Propriété",
+      "owner_name": "Nom Propriétaire",
+      "owner_id": "ID Propriétaire",
+      "checkin_date": "Date Arrivée",
+      "checkout_date": "Date Départ",
+      "booking_amount": "Montant Réservation",
+      "currency_code": "Devise (Code)",
+      "currency_name": "Devise (Nom)",
+      "booking_balance": "Solde Réservation",
+      "amount_words": "Montant en Lettres",
+      "guarantee_amount": "Montant Caution",
+      "guarantee_amount_words": "Caution en Lettres",
+      "guarantee_currency": "Devise Caution",
+      "guarantee_currency_name": "Devise Caution (Nom)",
+      "payment_amount": "Montant du Paiement",
+      "payment_date": "Date du Paiement",
+      "current_date": "Date Actuelle",
+      "guarantee_received_date": "Caution Reçue",
+      "guarantee_returned_date": "Caution Restituée"
+    },
+    "empty_states": {
+      "tasks_desc": "Aucune tâche en attente. Bon travail !",
+      "expenses_desc": "Enregistrez vos dépenses pour garder le contrôle financier.",
+      "tenants_desc": "Commencez par enregistrer vos clients fréquents.",
+      "bookings_desc": "Aucune location trouvée correspondant aux filtres.",
+      "providers_desc": "Gerez vos collaborateurs et leurs règlements.",
+      "owners_desc": "Autorisez l'accès pour les bailleurs enregistrés.",
+      "properties_desc": "Enregistrez vos maisons ou appartements pour commencer à les gérer.",
+      "contracts_desc": "Vos contrats de location longue durée apparaîtront ici."
+    }
+  },
+  "navigation": {
+    "home": "Accueil",
+    "properties": "Propriétés",
+    "tenants": "Locataires",
+    "owners": "Bailleurs",
+    "providers": "Collaborateurs",
+    "bookings": "Saisonnier",
+    "contracts": "Annuels",
+    "tasks": "Tâches",
+    "payments": "Recettes",
+    "liquidations": "Règlements",
+    "expenses": "Dépenses",
+    "reports": "Rapports",
+    "settings": "Configuration",
+    "help": "Aide",
+    "language": "Langue",
+    "theme": "Thème",
+    "theme_light": "Clair",
+    "theme_dark": "Sombre",
+    "logout": "Se déconnecter",
+    "logout_confirm_title": "Se déconnecter ?",
+    "logout_confirm_desc": "Êtes-vous sûr de vouloir vous déconnecter du système ?",
+    "view_as_owner": "Vue Propriétaire",
+    "view_as_admin": "Vue Administration",
+    "view_as_staff": "Vue Opérateur",
+    "view_as_provider": "Vue Collaborateur",
+    "quick_actions": "Actions Rapides",
+    "new_booking": "Nouvelle Réservation",
+    "new_task": "Nouvelle Tâche",
+    "new_expense": "Nouvelle Dépense"
+  },
+  "settings": {
+    "title": "Configuration",
+    "tabs": {
+      "branding": "Marque",
+      "team": "Équipe",
+      "owners": "Bailleurs",
+      "origins": "Origines",
+      "expense_categories": "Dépenses",
+      "provider_categories": "Collaborateurs",
+      "task_categories": "Tâches",
+      "adjustment_categories": "Ajustements",
+      "task_scopes": "Domaines",
+      "currencies": "Devises",
+      "templates": "Modèles",
+      "alerts": "Alertes",
+      "data": "Données"
+    },
+    "tabs_desc": {
+      "branding": "Téléchargez une image de votre logo. C'est celle qui apparaîtra sur les contrats et les PDF au lieu du logo Regentum.",
+      "team": "Activez l'accès pour votre équipe de travail. Les partenaires ont accès à toutes les informations. Un opérateur charge les réservations et les tâches, ne peut pas voir les données financières.",
+      "owners": "À partir d'ici, vous activez l'accès au portail du propriétaire. Enregistrez-les avec leur e-mail Google. Le même e-mail doit être saisi dans la propriété.",
+      "origins": "Spécifiez d'où viennent vos locataires. Cela vous permettra d'orienter votre entreprise.",
+      "expense_categories": "Classez les dépenses les plus courantes. Taxes, Services, Commissions. Toutes celles qui ne proviennent pas de travaux effectués (Tâches).",
+      "task_categories": "Classez les tâches les plus courantes. Plomberie, Administration, Électricité. Cela vous permettra de mieux contrôler votre propriété.",
+      "provider_categories": "Classez vos collaborateurs externes pour mieux organiser l'équipe.",
+      "adjustment_categories": "Configurez les types d'ajustements manuels ou de primes pour les règlements.",
+      "task_scopes": "Définissez des domaines de gestion généraux qui n'appartiennent pas à une propriété spécifique.",
+      "currencies": "Vous pouvez sélectionner différentes devises pour vos opérations. Sélectionnez les devises habituelles. La devise de base sera prise par défaut.",
+      "templates": "Configurez vos modèles d'e-mail ici pour gagner du temps d'écriture. Utilisez des marqueurs dynamiques pour obtenir des informations personnalisées.",
+      "alerts": "Ajustez le délai de prévenance pour les notifications d'arrivée et d'échéance.",
+      "data": "Exportez/Importez vos données vers un fichier de sauvegarde."
+    },
+    "branding": {
+      "title": "Identité visuelle",
+      "interface_texts": "Textos de l'interface",
+      "app_name": "Nom de l'application",
+      "slogan": "Slogan / Sous-titre",
+      "main_logo": "Logo principal (Barre latérale)",
+      "doc_logo": "Logo des documents (PDF/Contrats)",
+      "logo_recom": "Un fichier PNG avec fond transparent est recommandé.",
+      "upload_logo": "Télécharger le logo",
+      "select_image": "Sélectionner une image",
+      "logo_doc_usage": "Ce logo sera apposé sur les contrats, les reçus et les comptes rendus.",
+      "logo_instr_title": "Instructions pour le logo des documents :",
+      "logo_instr_1": "Utilisez le format PNG avec fond transparent.",
+      "logo_instr_2": "Préférez une orientation horizontale.",
+      "logo_instr_3": "Assurez un bon contraste sur fond blanc.",
+      "logo_instr_4": "Taille maximale de 2 Mo.",
+      "commercial_disclaimer": "Note : Dans la version commerciale, la marque principale du système reste fixe par contrat de service."
+    },
+    "team": {
+      "title": "Membres de l'équipe"
+    },
+    "owners": {
+      "title": "Gestion des propriétaires",
+      "new_access": "Nouvel accès propriétaire",
+      "dialog_title": "Autoriser l'accès au propriétaire",
+      "dialog_desc": "Enregistrez l'adresse e-mail du propriétaire afin qu'il puisse accéder à son portail.",
+      "email_note": "Note : L'e-mail doit correspondre exactement à celui qui figure dans le champ 'Email Propriétaire' de ses biens."
+    },
+    "origins": {
+      "title": "Origines des locataires"
+    },
+    "categories": {
+      "expenses_title": "Catégories de dépenses",
+      "providers_title": "Catégories de collaborateurs",
+      "tasks_title": "Catégories de tâches",
+      "adjustments_title": "Catégories d'ajustements",
+      "new_placeholder": "Nouvelle catégorie...",
+      "expenses_delete_confirm": "Cette catégorie sera supprimée. Les dépenses existantes ne seront pas supprimées mais resteront sans catégorie.",
+      "providers_delete_confirm": "Cette catégorie de collaborateurs sera supprimée.",
+      "tasks_delete_confirm": "Cette catégorie de tâches sera supprimée.",
+      "adjustments_delete_confirm": "Cette catégorie d'ajustements de paiement sera supprimée."
+    },
+    "scopes": {
+      "title": "Domaines de travail",
+      "new_placeholder": "Nouveau domaine (ex : Administration)...",
+      "delete_confirm": "Supprimer ce domaine de travail ?"
+    },
+    "currencies": {
+      "title": "Paramètres de devise",
+      "base_label": "Devise de base du système",
+      "base_desc": "C'est la devise principale pour les calculs et les rapports.",
+      "favorites_label": "Devises favorites",
+      "favorites_desc": "Sélectionnez les devises que vous utilisez régulièrement pour qu'elles apparaissent dans les formulaires."
+    },
+    "templates": {
+      "title": "Modèles d'Email",
+      "new_button": "Nouveau Modèle",
+      "add_title": "Créer un Modèle",
+      "edit_title": "Modifier le Modèle",
+      "desc": "Créez des messages prédéfinis avec des marqueurs dynamiques.",
+      "name_label": "Nom Interne",
+      "subject_label": "Objet de l'Email",
+      "body_label": "Corps du Message",
+      "placeholders_help": "Marqueurs dynamiques (Cliquer pour copier)",
+      "no_templates": "Aucun modèle enregistré.",
+      "delete_confirm": "Supprimer ce modèle définitivement ?"
+    },
+    "alerts": {
+      "title": "Configuration des Alertes",
+      "checkin_label": "Jours avant l'Arrivée",
+      "checkin_desc": "Délai pour l'alerte d'arrivée.",
+      "checkout_label": "Jours avant le Départ",
+      "checkout_desc": "Délai pour l'alerte de départ.",
+      "push_label": "Notifications sur cet appareil",
+      "push_status": "Statut :",
+      "push_supported_no": "Non supporté",
+      "push_supported_ok": "Activé",
+      "push_supported_blocked": "Bloqué",
+      "push_supported_pending": "En attente",
+      "push_desc": "Recevez des alertes directement sur votre écran.",
+      "push_button": "Activer sur cet appareil"
+    },
+    "data": {
+      "title": "Gestion des données",
+      "export_title": "Exporter Backup",
+      "export_desc": "Téléchargez une copie complète de votre base de données au format JSON.",
+      "export_hint": "Il est recommandé d'exporter avant des modifications massives ou des importations.",
+      "export_button": "Générer Backup",
+      "export_selection_title": "Contenu à exporter",
+      "import_title": "Importer données",
+      "import_desc": "Chargez un fichier de backup pour restaurer ou migrer des informations.",
+      "import_hint": "ATTENTION ! L'importation peut dupliquer les enregistrements si le fichier a déjà été chargé.",
+      "import_button": "Select JSON File",
+      "import_confirm_title": "Confirmer l'importation ?",
+      "import_confirm_desc": "Les collections seront traitées et de nouveaux enregistrements seront créés dans votre espace de travail.",
+      "import_confirm_button": "Accepter",
+      "import_selection_title": "Sélection du contenu",
+      "dependency_warning": "Note : En sélectionnant des mouvements (ex : Réservations), leurs dépendances (ex : Propriétés) seront automatiquement incluses.",
+      "import_progress": "Importation en cours... Ne fermez pas la fenêtre.",
+      "import_success": "Données importées avec succès."
+    }
+  },
+  "providers": {
+    "title": "Collaborateurs",
+    "description": "Gérez le personnel externe effectuant des travaux sur vos propriétés.",
+    "new_provider": "Nouveau Collaborateur",
+    "no_providers": "Aucun collaborateur enregistré.",
+    "no_team": "Aucun membre de l'équipe.",
+    "no_owners": "Aucun bailleur autorisé.",
+    "filters": {
+      "category": "Catégorie",
+      "rating": "Évaluation",
+      "status": "Statut",
+      "placeholder_search": "Nom, email, téléphone..."
+    },
+    "status": {
+      "active": "ACTIF",
+      "pending": "EN ATTENTE"
+    },
+    "roles": {
+      "admin": "ADMINISTRATEUR",
+      "socio": "ASSOCIÉ",
+      "staff": "OPÉRATEUR",
+      "provider": "COLLABORATEUR",
+      "owner": "PROPRIÉTAIRE"
+    },
+    "management": {
+      "label": "Gestion",
+      "tasks": "Par Tâches",
+      "liquidations": "Règlements"
+    },
+    "billing": {
+      "label": "Tarif",
+      "hourly": "Heure",
+      "visit": "Visite",
+      "hourly_or_visit": "Heure / Visite",
+      "other": "Autre / N/A",
+      "type": "Type Facturation",
+      "currency": "Devise Tarif",
+      "rate_hour": "Tarif Horaire"
+    },
+    "card": {
+      "address": "Adresse",
+      "email": "Email",
+      "phone": "Téléphone",
+      "category": "Catégorie",
+      "rating": "Évaluation"
+    },
+    "add_dialog": {
+      "title": "Ajouter un Collaborateur",
+      "description": "Remplissez les détails pour inviter un nouveau collaborateur.",
+      "name": "Nom",
+      "email": "Email (Google)",
+      "initial_status": "Statut Initial",
+      "role": "Rôle",
+      "app_flavor": "Version App",
+      "personal": "Personnel",
+      "commercial": "Commercial",
+      "management_method": "Méthode de Gestion",
+      "billing_title": "Facturation et Règlements",
+      "notes_private": "Notes (Privées)",
+      "notes_public": "Note pour le Collaborateur (Visible)",
+      "submit": "Enregistrer"
+    },
+    "edit_dialog": {
+      "title": "Modifier l'Utilisateur",
+      "description": "Modifiez les détails techniques, photos ou accès."
+    },
+    "tooltips": {
+      "send_whatsapp": "Envoyer WhatsApp",
+      "call": "Appeler",
+      "view_history": "Historique de Travail"
+    }
+  },
+  "dashboard": {
+    "title": "Accueil",
+    "description": "Résumé de votre activité de location.",
+    "current_bookings": "Occupation en Cours",
+    "upcoming_bookings": "Prochaines Occupations",
+    "status": {
+      "no_current": "Aucune occupation active",
+      "no_current_desc": "Il n'y a pas de locataires avec des séjours en cours.",
+      "no_upcoming": "Aucune réservation future",
+      "no_upcoming_desc": "Aucune entrée prévue prochainement."
+    },
+    "stats": {
+      "collections": "Recettes",
+      "pending_month": "En attente ce mois",
+      "properties": "Propriétés",
+      "total_units": "Unités totales",
+      "tenants": "Locataires",
+      "total_records": "Total dossiers",
+      "physical_received": "Reçu Physiquement",
+      "collection_pulse": "Pouls des Encaiss.",
+      "occupancy": "Taux d'Occupation",
+      "occupied_units": "unités occupées",
+      "collected": "Encaissé",
+      "expected": "Attendu",
+      "of": "de"
+    },
+    "alerts": {
+      "pending_liquidations": "Règlements en attente",
+      "pending_liquidations_desc": "Vous avez {{count}} règlement(s) en attente.",
+      "unliquidated_items": "Activités non réglées",
+      "unliquidated_items_desc": "Vous avez {{count}} activité(s) en attente de règlement.",
+      "checkins_title": "Attention ! Arrivées proches",
+      "checkins_desc": "Vous avez {{count}} arrivée(s) dans les prochains jours.",
+      "checkouts_title": "Avis : Départs proches",
+      "checkouts_desc": "Vous avez {{count}} départ(s) dans les prochains jours.",
+      "balance_title": "Réservations avec Solde",
+      "balance_desc": "Vous avez {{count}} réservation(s) avec solde à percevoir.",
+      "guarantee_solicited_title": "Cautions Demandées",
+      "guarantee_solicited_desc": "Il y a {{count}} réservation(s) avec caution en attente.",
+      "guarantee_received_title": "Attention ! Cautions à Rendre",
+      "guarantee_received_desc": "Vous avez {{count}} séjour(s) fini(s) avec caution à rendre."
+    },
+    "searcher": {
+      "title": "Disponibilité et Prix",
+      "title_only": "Recherche Disponibilité",
+      "from": "Date d'Arrivée",
+      "to": "Date de Départ",
+      "desc": "Trouvez des biens libres et calculez le coût du séjour.",
+      "desc_only": "Trouvez des biens libres sur une période.",
+      "button": "Rechercher",
+      "results": "Résultats",
+      "calculating": "Calcul...",
+      "no_results": "Aucun bien disponible",
+      "no_results_desc": "Essayez d'autres dates.",
+      "available": "Disponible"
+    },
+    "calculator": {
+      "title": "Calculatrice de Paiement",
+      "desc": "Calculez un paiement pour ce séjour.",
+      "desc_generic": "Outil de calcul de paiement.",
+      "tab_percentage": "Par %",
+      "tab_amount": "Par Montant",
+      "base_amount": "Montant Base",
+      "base_currency": "Devise Base",
+      "percentage_to_pay": "À Payer (%)",
+      "total_amount": "Total Séjour",
+      "received_amount": "Reçu",
+      "received_currency": "Devise Paiement",
+      "dollar_value": "Taux Dollar",
+      "results_title": "Résultats",
+      "to_pay": "Montant à Payer",
+      "register_button": "Enregistrer",
+      "percentage_of_total": "Pourcentage du Total"
+    },
+    "welcome_new": {
+      "title": "Bienvenue sur Regentum !",
+      "subtitle": "Pour commencer à gérer votre entreprise, nous devons configurer vos premiers enregistrements.",
+      "prop_title": "Votre première Propriété",
+      "prop_desc": "Enregistrez une maison, un appartement ou une unité pour commencer à charger des réservations.",
+      "prop_hint": "Commencez par charger la fiche technique de votre première unité pour activer le calendrier.",
+      "prop_btn": "Charger un Bien",
+      "tenant_title": "Votre premier Locataire",
+      "tenant_desc": "Ajoutez vos clients réguliers pour accélérer la saisie.",
+      "tenant_hint": "Avoir vos locataires fréquents enregistrés vous permet de créer des réservations en quelques secondes.",
+      "tenant_btn": "Charger un Locataire"
+    },
+    "notifications_reminder": {
+      "title": "Ne manquez rien !",
+      "desc": "Activez les notifications pour recevoir les alertes critiques d'arrivée et de paiement.",
+      "button": "Activer maintenant"
+    }
+  },
+  "properties": {
+    "title": "Biens",
+    "description": "Gérez vos unités immobilières.",
+    "new_property": "Nouveau Bien",
+    "no_properties": "Aucun bien trouvé.",
+    "analyzing_balances": "Analyse des soldes...",
+    "to_collect": "À percevoir ce mois :",
+    "up_to_date": "À jour / Pas de soldes",
+    "next_adjustment": "Révision loyer dans",
+    "ical_sync": "Synchro iCal",
+    "add_dialog": {
+      "title": "Nouveau Bien",
+      "description": "Remplissez les détails. Cliquez sur enregistrer."
+    },
+    "edit_dialog": {
+      "title": "Modifier le Bien",
+      "description": "Modifiez les données techniques, photos ou bailleur."
+    },
+    "notes_dialog": {
+      "title": "Notes du Bien",
+      "description": "Ajoutez ou modifiez des notes."
+    },
+    "form": {
+      "sections": {
+        "info": "Infos Bien",
+        "owner": "Bailleur",
+        "content": "Contenu et Notes",
+        "additional": "Infos Extras",
+        "rates": "Tarifs Collab."
+      },
+      "labels": {
+        "name": "Nom Public",
+        "address": "Adresse",
+        "image_url": "URL Photo (optionnel)",
+        "property_url": "Site Web du Bien",
+        "price_sheet": "Nom sur Grille Tarifaire",
+        "owner_name": "Noms Complets",
+        "owner_dni": "ID / DNI",
+        "owner_phone": "Téléphone",
+        "owner_email": "Email Principal",
+        "owner_address": "Adresse Légale",
+        "commission": "Commission Gestion (%)",
+        "internal_notes": "Notes Internes",
+        "owner_notes": "Notes pour le Bailleur",
+        "contract_template": "Modèle de Bail",
+        "signature": "Signature Locateur",
+        "upload_image": "Envoyer Image",
+        "upload_signature": "Signature PNG",
+        "discard": "Annuler",
+        "save_changes": "Enregistrer",
+        "unsaved_alert": "Changements non enregistrés.",
+        "markers_help": "Cliquez pour copier",
+        "visit_rate": "Tarif visite pour",
+        "custom_label": "Étiquette {{index}}",
+        "custom_value": "Valeur {{index}}",
+        "load_template_tooltip": "Charger modèle",
+        "image_hint": "PNG ou JPG. Max 2Mo."
+      },
+      "placeholders": {
+        "name": "ex: Appart Vue Mer",
+        "address": "ex: Rue 21 #1234",
+        "property_url": "Airbnb, Booking, etc.",
+        "price_sheet": "Nom exact sur grille",
+        "internal_notes": "Infos pour l'admin...",
+        "owner_notes": "Instructions pour le bailleur...",
+        "contract": "Collez le texte ici...",
+        "signature_hint": "PNG transparent. Max 1Mo.",
+        "visit_rate": "Montant par visite"
+      },
+      "delete": {
+        "button": "Supprimer",
+        "title": "Sûr à 100% ?",
+        "desc": "Irréversible. Toutes les données serán effacées.",
+        "disclaimer": "Oui, je comprends.",
+        "confirm": "Supprimer"
+      }
+    }
+  },
+  "tenants": {
+    "title": "Locataires",
+    "description": "Gérez vos locataires.",
+    "new_tenant": "Nouveau Locataire",
+    "no_tenants": "Aucun locataire.",
+    "loading_tenants": "Chargement...",
+    "add_dialog": {
+      "title": "Nouveau Locataire",
+      "description": "Remplissez les détails.",
+      "submit": "Enregistrer"
+    },
+    "edit_dialog": {
+      "title": "Modifier le Locataire",
+      "description": "Modifiez les données."
+    },
+    "filters": {
+      "origin": "Origine",
+      "rating": "Note",
+      "status": "Statut Résa",
+      "placeholder_search": "Nom, email, ID...",
+      "booking_status": {
+        "all": "Tous",
+        "current": "En cours",
+        "upcoming": "À venir",
+        "closed": "Fini",
+        "cancelled": "Annulé",
+        "pending": "Attente"
+      },
+      "rating_options": {
+        "all": "Tous",
+        "none": "Sans note",
+        "stars": "Étoiles",
+        "star": "Étoile"
+      }
+    },
+    "card": {
+      "rating": "Note",
+      "unrated": "Sans note",
+      "email": "Email",
+      "phone": "Tél",
+      "address": "Adresse",
+      "dni": "ID / DNI",
+      "city": "Ville",
+      "country": "Pays",
+      "notes": "Notes",
+      "bookings_count": "Séjours historiques"
+    },
+    "copy_format": {
+      "title": "Données Locataire",
+      "name": "Nom",
+      "phone": "Tél",
+      "email": "Email",
+      "dni": "ID"
+    },
+    "tooltips": {
+      "copy_data": "Copier pour WhatsApp",
+      "copy_data_success": "Données copiées.",
+      "view_notes": "Voir Notes",
+      "send_whatsapp": "Envoyer WhatsApp",
+      "call": "Appeler",
+      "edit_tenant": "Modifier",
+      "view_history": "Historique",
+      "delete_tenant": "Supprimer"
+    }
+  },
+  "bookings": {
+    "title": "Saisonnier",
+    "description": "Gestion saisonnière.",
+    "description_of": "Résas pour {{name}}.",
+    "new_booking": "Nouvelle Résa",
+    "block_dates": "Bloquer Dates",
+    "no_bookings": "Aucune résa.",
+    "no_blocks": "Aucun bloquage.",
+    "title_of": "Résas de",
+    "tabs": {
+      "temporary": "Saisonnier",
+      "contracts": "Annuels",
+      "blocks": "Bloquages",
+      "calendar": "Calendrier",
+      "report": "Rendement",
+      "tasks": "Tâches",
+      "expenses": "Dépenses",
+      "payments": "Encaiss.",
+      "liquidations": "Redditions"
+    },
+    "tabs_desc": {
+      "temporary": "Gerez les séjours courts",
+      "contracts": "Baux longue durée",
+      "blocks": "Bloquez des dates",
+      "calendar": "Disponibilité",
+      "report": "Progrès du business",
+      "tasks": "Travaux et ménage",
+      "expenses": "Frais directs du bien",
+      "payments": "Tous les encaissements",
+      "liquidations": "Redditions pour le bailleur"
+    },
+    "status": {
+      "active": "Active",
+      "upcoming": "À venir",
+      "closed": "Fini",
+      "pending": "Attente",
+      "cancelled": "Annulée",
+      "with_debt": "Dette",
+      "current": "En cours"
+    },
+    "contract_status": {
+      "not_sent": "Non envoyé",
+      "sent": "Envoyé",
+      "signed": "Signé",
+      "not_required": "Non req."
+    },
+    "guarantee_status": {
+      "not_solicited": "Non Demandée",
+      "solicited": "Demandée",
+      "received": "Reçue",
+      "returned": "Rendue",
+      "not_applicable": "N/A"
+    },
+    "filters": {
+      "property": "Bien",
+      "status": "Statut",
+      "origin": "Origine",
+      "contract": "Contrat",
+      "guarantee": "Caution",
+      "sort": "Ordre",
+      "sort_options": {
+        "distant": "Lointaines",
+        "upcoming": "Proches"
+      }
+    },
+    "table": {
+      "property": "Bien",
+      "tenant": "Locataire",
+      "stay": "Séjour",
+      "nights": "nuits",
+      "amount": "Montant Total",
+      "balance": "Solde",
+      "guarantee": "Caution"
+    },
+    "add_dialog": {
+      "title": "Nouvelle Résa",
+      "description": "Planifiez le séjour.",
+      "submit": "Créer"
+    },
+    "edit_dialog": {
+      "title": "Modifier Résa",
+      "description": "Détails du séjour ou contrat."
+    },
+    "payments_dialog": {
+      "title": "Gestion Encaissements",
+      "description": "Reçus de {{tenant}} pour {{property}}.",
+      "add_payment": "Encaisser"
+    },
+    "email_dialog": {
+      "title": "Message pour {{name}}",
+      "description": "Choisissez un modèle.",
+      "template_label": "Modèle",
+      "template_placeholder": "Choisir...",
+      "subject_label": "Objet",
+      "preview_label": "Aperçu",
+      "send_button": "Rédiger l'Email"
+    },
+    "tooltips": {
+      "notes": "Voir Notes",
+      "calculator": "Calculatrice",
+      "payments": "Voir Encaissements",
+      "email": "Envoyer Email",
+      "signature": "Lien pour signature"
+    },
+    "countdown": {
+      "checkin": "Arrivée dans {{count}} {{unit}}",
+      "checkout": "Départ dans {{count}} {{unit}}",
+      "day": "jour",
+      "days": "jours"
+    },
+    "whatsapp": {
+      "signature_message": "Salut {{name}}, signe le bail ici : {{link}}"
+    }
+  },
+  "contratos": {
+    "title": "Baux Annuels",
+    "description": "Suivi des baux longue durée.",
+    "new_contract": "Nouveau Bail Annuel",
+    "no_contracts": "Aucun bail.",
+    "initial_fee": "Loyer Initial",
+    "adjustment": "Révision",
+    "payment_plan": "Échéancier",
+    "payment_plan_desc": "Suivi des loyers et révisions.",
+    "register_payment": "Encaisser Loyer",
+    "apply_adjustment": "Appliquer Révision",
+    "modify_adjustment": "Modifier Révision",
+    "modify_amount": "Modifier Montant",
+    "detail_payments": "Voir Loyers",
+    "period": "Période",
+    "due_date": "Échéance",
+    "fee_amount": "Montant Loyer",
+    "paid": "Payé",
+    "balance": "Solde",
+    "period_status": {
+      "paid": "Payé",
+      "pending": "Attente",
+      "overdue": "Retard",
+      "partial": "Partiel",
+      "pending_adj": "Révision en attente"
+    },
+    "status": {
+      "draft": "Brouillon",
+      "active": "Actif",
+      "ended": "Fini",
+      "cancelled": "Résilié"
+    },
+    "add_dialog": {
+      "title": "Nouveau Bail",
+      "description": "L'échéancier sera généré auto."
+    },
+    "edit_dialog": {
+      "title": "Modifier Bail",
+      "description": "Changer les termes."
+    },
+    "adjustment_dialog": {
+      "title": "Révision Loyer",
+      "description": "Calculez le nouveau montant.",
+      "base_value": "Base (Mois Précédent)",
+      "increase": "Augmentation",
+      "new_amount": "Nouveau Loyer",
+      "reference": "Indice",
+      "note": "S'appliquera aux loyers futurs.",
+      "submit": "Appliquer"
+    },
+    "register_payment_dialog": {
+      "title": "Encaisser Loyer",
+      "description": "Paiement pour l'échéance du {{date}}.",
+      "pending_balance": "Solde loyer",
+      "currency": "Devise",
+      "amount": "Reçu",
+      "date": "Date",
+      "description_label": "Notes",
+      "submit": "Enregistrer"
+    }
+  },
+  "tasks": {
+    "title": "Tâches",
+    "description": "Agenda de maintenance.",
+    "new_task": "Nouvelle Tâche",
+    "no_tasks": "Aucune tâche.",
+    "selection_legend": "sélectionnées pour calcul",
+    "status": {
+      "pending": "Attente",
+      "in_progress": "Cours",
+      "completed": "Fini"
+    },
+    "priority": {
+      "high": "Haute",
+      "medium": "Moyenne",
+      "low": "Basse"
+    },
+    "assignment_types": {
+      "all": "Tous",
+      "property": "Bien",
+      "scope": "Général",
+      "unassigned": "Libre"
+    },
+    "filters": {
+      "assignment_type": "Lieu",
+      "specific": "Précis",
+      "provider": "Prestataire",
+      "status": "Statut",
+      "priority": "Priorité",
+      "category": "Catégorie",
+      "currency": "Devise"
+    },
+    "table": {
+      "description": "Description",
+      "assignment": "Lieu",
+      "due_date": "Plazo",
+      "est_cost": "Coût Est.",
+      "real_cost": "Coût Réel"
+    },
+    "add_dialog": {
+      "title": "Nouvelle Tâche",
+      "description": "Ménage ou réparation."
+    },
+    "edit_dialog": {
+      "title": "Modifier Tâche",
+      "description": "Changer responsable ou priorité."
+    },
+    "tooltips": {
+      "register_expense": "Payer",
+      "notes": "Voir Notes",
+      "edit": "Modifier",
+      "delete": "Effacer"
+    }
+  },
+  "expenses": {
+    "title": "Dépenses",
+    "description": "Controle des sorties.",
+    "no_expenses": "Aucune dépense.",
+    "add_button": "Ajouter",
+    "filters": {
+      "search": "Chercher",
+      "search_placeholder": "Nom, bien...",
+      "property": "Bien",
+      "scope": "Domaine",
+      "provider": "Prestataire",
+      "type": "Type",
+      "category": "Catégorie",
+      "all_types": "Tous",
+      "type_property": "Biens",
+      "type_scope": "Généraux"
+    },
+    "add_dialog": {
+      "title": "Nouvelle Dépense",
+      "description": "Sortie d'argent.",
+      "impute_to": "Imputer à",
+      "impute_placeholder": "Choisir lieu",
+      "date": "Date",
+      "date_placeholder": "Choisir",
+      "category": "Catégorie",
+      "category_placeholder": "Choisir",
+      "provider": "Prestataire / Magasin",
+      "provider_placeholder": "Responsable",
+      "currency": "Devise",
+      "amount": "Montant",
+      "exchange_rate": "Taux (USD -> ARS)",
+      "exchange_rate_placeholder": "ex: 950.50",
+      "description": "Notes",
+      "submit": "Enregistrer"
+    },
+    "edit_dialog": {
+      "title": "Modifier Dépense",
+      "description": "Changer valeurs."
+    },
+    "delete_dialog": {
+      "description": "Sera effacé de la comptabilité."
+    },
+    "tooltips": {
+      "edit": "Modifier",
+      "delete": "Effacer"
+    }
+  },
+  "liquidations": {
+    "title": "Règlements Collab.",
+    "description": "Payer votre équipe externe.",
+    "provider_selection": "Choix Prestataire",
+    "provider_label": "Collaborateur",
+    "provider_placeholder": "Choisir...",
+    "admin_note": "Note Admin",
+    "no_admin_notes": "Aucune note.",
+    "current_balance_title": "État de compte",
+    "balance_real_total": "SOLDE RÉEL TOTAL",
+    "pending_to_liquidate": "À régler",
+    "current_balance_desc": "Solde total (report + en cours).",
+    "tabs": {
+      "pending": "À régler",
+      "history": "Historique"
+    },
+    "pending_items": {
+      "title": "En attente",
+      "description": "Sélectionnez pour ce règlement.",
+      "hours_visits": "Heures et Visites",
+      "manual_adjustments": "Ajustements",
+      "no_items": "Aucun dans cette devise.",
+      "no_items_any": "Tout est réglé."
+    },
+    "summary": {
+      "subtotal_items": "Sous-total",
+      "previous_balance": "Report",
+      "total_to_liquidate": "TOTAL À PAYER",
+      "mixed_currencies": "Devises mixtes",
+      "generate_button": "Générer"
+    },
+    "actions": {
+      "add_activity": "Ajouter Travail",
+      "add_adjustment": "Ajouter Ajustement"
+    },
+    "activity_types": {
+      "hours": "Heures",
+      "visit": "Visite"
+    },
+    "adjustment_types": {
+      "addition": "Bonus (+)",
+      "deduction": "Remise (-)"
+    },
+    "card_labels": {
+      "imputed_to": "Imputé à"
+    },
+    "history": {
+      "no_liquidations": "Aucun règlement.",
+      "status": {
+        "paid": "Payé",
+        "partial": "Partiel",
+        "pending": "Attente"
+      },
+      "table": {
+        "date": "Date",
+        "provider": "Nom",
+        "amount": "Total",
+        "balance": "Solde",
+        "status": "Statut"
+      },
+      "revert": {
+        "title": "Annuler ?",
+        "description": "Les items redeviennent en attente.",
+        "warning_payments": "ATTENTION ! Déjà payé.",
+        "confirm_label": "Écrire ANNULER :",
+        "confirm_button": "Confirmer"
+      }
+    },
+    "details": {
+      "title": "Détails Règlement",
+      "income": "Travaux",
+      "expenses": "Ajustements",
+      "total": "Total Payé"
+    },
+    "payment": {
+      "title": "Enregistrer Paiement",
+      "description": "Règlement du {{date}}.",
+      "current_balance": "Reste à payer",
+      "amount_label": "Montant",
+      "date_label": "Date",
+      "description_label": "Notes",
+      "category_label": "Catégorie",
+      "submit": "Confirmer"
+    },
+    "add_activity_dialog": {
+      "title": "Travail de {{name}}",
+      "description_mixed": "Tarif heure o visite.",
+      "description_hourly": "Tarif horaire fixe.",
+      "description_visit": "Tarif par visite fixe.",
+      "description_other": "Enregistrez le travail."
+    }
+  },
+  "owner_portal": {
+    "welcome": "Bonjour {{name}},",
+    "title": "Portail Propriétaire",
+    "units_label": "Vos Unités",
+    "no_properties_title": "Aucune propriété liée",
+    "no_properties_desc": "Nous n'avons trouvé aucune propriété associée à votre compte email. Veuillez contacter l'administration pour vérifier votre inscription.",
+    "tabs": {
+      "summary": "Résumé",
+      "occupancy": "Occupation",
+      "finances": "Finances",
+      "info": "Informations"
+    },
+    "sections": {
+      "next_bookings": "Prochaines Entrées",
+      "recent_liquidations": "Comptes-rendus Récents",
+      "occupancy_history": "Historique d'Occupation",
+      "liquidations_made": "Comptes-rendus Effectués",
+      "property_info": "Informations sur la Propriété"
+    },
+    "status": {
+      "ok": "Confirmé",
+      "confirmed": "Occupé",
+      "paid": "Payé"
+    },
+    "labels": {
+      "net": "Net",
+      "invoiced": "Facturé",
+      "admin_notes": "Notes de l'Admin",
+      "liq_summary": "Résumé du Compte-rendu",
+      "period": "Période",
+      "date": "Date",
+      "net_transfer": "Net à Transférer",
+      "recibo_pdf": "Télécharger le Reçu",
+      "print_pdf": "Imprimer",
+      "received_income": "Revenus Reçus",
+      "total_income": "Total des Revenus",
+      "expenses": "Dépenses Détaillées",
+      "commission": "Commission de Gestion",
+      "total_deductions": "Total des Déductions"
+    },
+    "messages": {
+      "no_movements": "Aucun mouvement à venir enregistré.",
+      "auto_generated": "Document généré automatiquement par {{name}}."
+    }
+  },
+  "notifications_reminder": {
+    "title": "Ne manquez rien !",
+    "desc": "Activez les notifications pour recevoir les alertes critiques d'arrivée et de paiement.",
+    "button": "Activer maintenant"
+  }
+}

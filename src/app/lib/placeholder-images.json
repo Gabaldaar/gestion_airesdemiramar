@@ -1,0 +1,27 @@
+
+{
+  "logos": [
+    {
+      "id": "logo-main",
+      "url": "/logo-main.png",
+      "description": "App Main Logo",
+      "keywords": "business logo"
+    },
+    {
+      "id": "logo-doc",
+      "url": "/logo-doc.png",
+      "description": "Document and Contract Logo",
+      "keywords": "corporate identity"
+    }
+  ],
+  "manual": [
+    { "id": "man-install", "url": "https://picsum.photos/seed/reg-app/800/600", "keywords": "smartphone app" },
+    { "id": "man-config", "url": "https://picsum.photos/seed/reg-set/800/600", "keywords": "dashboard settings" },
+    { "id": "man-assets", "url": "https://picsum.photos/seed/reg-house/800/600", "keywords": "modern apartment" },
+    { "id": "man-temporary", "url": "https://picsum.photos/seed/reg-temp/800/600", "keywords": "vacation rental" },
+    { "id": "man-annual", "url": "https://picsum.photos/seed/reg-ann/800/600", "keywords": "signing contract" },
+    { "id": "man-maint", "url": "https://picsum.photos/seed/reg-fix/800/600", "keywords": "repair tools" },
+    { "id": "man-liq", "url": "https://picsum.photos/seed/reg-fin/800/600", "keywords": "financial document" },
+    { "id": "man-data", "url": "https://picsum.photos/seed/reg-data/800/600", "keywords": "analytics chart" }
+  ]
+}

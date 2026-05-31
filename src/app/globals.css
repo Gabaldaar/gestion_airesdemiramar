@@ -1,0 +1,182 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 201 70% 32%; /* #17628d */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 201 70% 32%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 201 80% 45%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 222 47% 14%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 47% 14%;
+    --muted-foreground: 215 20.2% 65%;
+
+    --accent: 222 47% 14%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 222 47% 15%;
+    --input: 222 47% 15%;
+    --ring: 201 80% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+    .day-checkin, .day-checkout {
+        @apply bg-blue-200 text-blue-900 font-bold rounded-md;
+    }
+    .day-booked-middle {
+        @apply bg-red-200/50 text-red-900;
+    }
+    .day-disabled {
+        @apply text-muted-foreground/80;
+    }
+    .rdp-day:not(.rdp-day-disabled) {
+        color: hsl(var(--foreground)) !important;
+    }
+}
+
+/* 
+ * DRIVER.JS OVERRIDES - SOFT BLUE MASTER STYLE
+ * Sobrescribimos directamente las clases para asegurar el estilo visual solicitado.
+ */
+.driver-popover.driverjs-theme {
+  background-color: #17628d !important;
+  color: #ffffff !important;
+  border-radius: 1rem !important;
+  padding: 24px !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  max-width: 350px !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-title {
+  color: #ffffff !important;
+  font-size: 1.125rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: -0.025em !important;
+  margin-bottom: 8px !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-description {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.6 !important;
+  font-weight: 500 !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-progress-text {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  margin-top: 16px !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-close-btn {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-close-btn:hover {
+  color: #ffffff !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-arrow-side-left { border-left-color: #17628d !important; }
+.driver-popover.driverjs-theme .driver-popover-arrow-side-right { border-right-color: #17628d !important; }
+.driver-popover.driverjs-theme .driver-popover-arrow-side-top { border-top-color: #17628d !important; }
+.driver-popover.driverjs-theme .driver-popover-arrow-side-bottom { border-bottom-color: #17628d !important; }
+
+/* Botones dentro del Popover */
+.driver-popover.driverjs-theme .driver-popover-navigation-btns {
+  display: flex !important;
+  gap: 8px !important;
+  margin-top: 20px !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-next-btn,
+.driver-popover.driverjs-theme .driver-popover-prev-btn {
+  border-radius: 0.5rem !important;
+  padding: 8px 16px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  text-shadow: none !important;
+  border: none !important;
+  transition: all 0.2s !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-next-btn {
+  background-color: #ffffff !important;
+  color: #17628d !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-next-btn:hover {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  transform: translateY(-1px);
+}
+
+.driver-popover.driverjs-theme .driver-popover-prev-btn {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.driver-popover.driverjs-theme .driver-popover-prev-btn:hover {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+}

@@ -1,0 +1,16 @@
+{
+  "logos": [
+    {
+      "id": "logo-main",
+      "url": "/logo-main.png",
+      "description": "App Main Logo",
+      "keywords": "business logo"
+    },
+    {
+      "id": "logo-doc",
+      "url": "/logo-doc.png",
+      "description": "Document and Contract Logo",
+      "keywords": "corporate identity"
+    }
+  ]
+}

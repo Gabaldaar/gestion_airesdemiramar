@@ -1,0 +1,1172 @@
+
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "actions": "Ações",
+    "search": "Buscar",
+    "clean": "Limpar",
+    "details": "Ver Detalhes",
+    "new": "Novo",
+    "all": "Todos",
+    "none": "Nenhum",
+    "optional": "opcional",
+    "select_dates": "Selecione as datas",
+    "select_property": "Selecione uma propriedade...",
+    "select_tenant": "Selecione um inquilino...",
+    "select_origin": "Selecione uma origem",
+    "select_provider": "Selecione um colaborador...",
+    "select_category": "Selecione uma categoria...",
+    "currency": "Moeda",
+    "filters": "Filtros",
+    "from": "Desde",
+    "to": "Até",
+    "email_all": "Email para Todos",
+    "copy": "Copiar",
+    "copy_link": "Copiar Enlace",
+    "reason": "Motivo",
+    "dates": "Datas",
+    "copy_link_success": "Link copiado.",
+    "category": "Categoria",
+    "provider": "Fornecedor",
+    "description": "Descrição",
+    "date": "Data",
+    "totals": "Totais",
+    "amount_ars": "Valor (ARS)",
+    "amount_usd": "Valor (USD)",
+    "no_image": "Sem Imagem",
+    "accept": "Aceitar",
+    "confirm_delete": {
+      "title": "Você tem certeza absoluta?",
+      "description": "Esta acción es irreversible. Isso excluirá permanentemente este item e todos os dados associados.",
+      "confirm": "Excluir",
+      "cancel": "Cancelar",
+      "disclaimer": "Sim, eu entendo que esta ação é irreversível."
+    },
+    "notes_viewer": {
+      "description": "Conteúdo das notas associadas."
+    },
+    "placeholders_labels": {
+      "tenant_name": "Nome do Inquilino",
+      "tenant_id": "CPF do Inquilino",
+      "tenant_address": "Endereço do Inquilino",
+      "property_name": "Nome da Propriedade",
+      "property_address": "Endereço da Propriedade",
+      "owner_name": "Nome do Proprietário",
+      "owner_id": "CPF do Proprietário",
+      "checkin_date": "Data de Check-in",
+      "checkout_date": "Data de Check-out",
+      "booking_amount": "Valor da Reserva",
+      "currency_code": "Moeda (Cod)",
+      "currency_name": "Moeda (Nombre)",
+      "booking_balance": "Saldo da Reserva",
+      "amount_words": "Valor por Extenso",
+      "guarantee_amount": "Valor da Garantia",
+      "guarantee_amount_words": "Garantia por Extenso",
+      "guarantee_currency": "Moeda da Garantia",
+      "guarantee_currency_name": "Moeda Garantia (Nombre)",
+      "payment_amount": "Valor do Pagamento",
+      "payment_date": "Data do Pagamento",
+      "current_date": "Data Atual",
+      "guarantee_received_date": "Garantia Recebida",
+      "guarantee_returned_date": "Garantía Devolvida"
+    },
+    "empty_states": {
+      "tasks_desc": "Nenhuma tarefa pendente. Bom trabalho!",
+      "expenses_desc": "Registre suas despesas para manter o controle financieroo.",
+      "tenants_desc": "Comece registrando seus clientes frequentes.",
+      "bookings_desc": "Nenhum aluguel encontrado com os filtros selecionados.",
+      "providers_desc": "Gerencie seus colaboradores e seus pagamentos.",
+      "properties_desc": "Registre suas casas ou departamentos para começar a gerenciá-los.",
+      "contracts_desc": "Aqui aparecerão seus contratos de aluguel de longo prazo."
+    }
+  },
+  "navigation": {
+    "home": "Início",
+    "properties": "Propriedades",
+    "tenants": "Inquilinos",
+    "owners": "Proprietários",
+    "providers": "Colaboradores",
+    "bookings": "Temporários",
+    "contracts": "Anuais",
+    "tasks": "Tarefas",
+    "payments": "Ingressos",
+    "liquidations": "Liquidações",
+    "expenses": "Despesas",
+    "reports": "Relatórios",
+    "settings": "Configurações",
+    "help": "Ajuda",
+    "language": "Idioma",
+    "theme": "Tema",
+    "theme_light": "Claro",
+    "theme_dark": "Oscuro",
+    "logout": "Sair",
+    "logout_confirm_title": "Sair da Sessão?",
+    "logout_confirm_desc": "Tem certeza de que deseja sair del sistema?",
+    "view_as_owner": "Vista Proprietário",
+    "view_as_admin": "Vista Administração",
+    "view_as_staff": "Vista Operador",
+    "view_as_provider": "Vista Colaborador",
+    "quick_actions": "Ações Rápidas",
+    "new_booking": "Nova Reserva",
+    "new_task": "Nova Tarefa",
+    "new_expense": "Nova Despesa"
+  },
+  "settings": {
+    "title": "Configurações",
+    "tabs": {
+      "branding": "Marca",
+      "team": "Equipe",
+      "owners": "Donos",
+      "origins": "Origens",
+      "expense_categories": "Gastos",
+      "provider_categories": "Colaboradores",
+      "task_categories": "Tarefas",
+      "adjustment_categories": "Ajustes",
+      "task_scopes": "Ambitos",
+      "currencies": "Moedas",
+      "templates": "Modelos",
+      "alerts": "Alertas",
+      "data": "Dados"
+    },
+    "tabs_desc": {
+      "branding": "Envie uma imagem do seu logotipo. É a que aparecerá nos Contratos e PDFs em vez do logotipo do Regentum.",
+      "team": "Habilite o acesso para sua equipe de trabalho. Los sócios têm acesso a todas as informações. Um Operador carrega Reservas e Tarefas, não pode ver datos financeiros.",
+      "owners": "A partir daqui, você habilita o acesso ao Portal do Proprietário. Registre-os com o e-mail do Google. O mesmo e-mail deve ser inserido na propriedade.",
+      "origins": "Especifique de onde vêm seus inquilinos. Isso permitirá que você oriente seu negócio.",
+      "expense_categories": "Classifique as despesas más comuns. Impostos, Serviços, Comissões. Todas aquelas que não provêm de trabalhos realizados (Tarefas).",
+      "task_categories": "Classifique as tarefas más comuns. Encanamento, Administração, Eletricidade. Isso permitirá que você tenha um melhor controle de sua propriedade.",
+      "provider_categories": "Classifique seus colaboradores externos para organizar melhor a equipe.",
+      "adjustment_categories": "Configure os tipos de ajustes manuais ou bônus para as liquidações.",
+      "task_scopes": "Defina âmbitos gerais de gestão que não pertencem a uma propriedade específica.",
+      "currencies": "Você pode selecionar diferentes moedas para suas operações. Selecione as habituais. A moeda base será usada por padrão.",
+      "templates": "Configure seus modelos de e-mail aqui para economizar tempo de escrita. Use marcadores dinâmicos para obter informações personalizadas.",
+      "alerts": "Ajuste a antecedência dos avisos de check-in e vencimento.",
+      "data": "Exporte/Importe seus dados para un arquivo de backup."
+    },
+    "branding": {
+      "title": "Identidade Visual",
+      "interface_texts": "Textos de la Interface",
+      "app_name": "Nome do Aplicativo",
+      "slogan": "Slogan / Subtitle",
+      "main_logo": "Logo Principal (Sidebar)",
+      "doc_logo": "Logo de Documentos (PDF/Contratos)",
+      "logo_recom": "Arquivo PNG con fundo transparente é recomendado.",
+      "upload_logo": "Enviar Logo",
+      "select_image": "Selecionar Imagem",
+      "logo_doc_usage": "Este logotipo será impresso em contratos, recibos e relatórios de contas.",
+      "logo_instr_title": "Instruções para o logotipo do documento:",
+      "logo_instr_1": "Use o formato PNG com fundo transparente.",
+      "logo_instr_2": "Prefira a orientação horizontal.",
+      "logo_instr_3": "Garanta um bom contraste em um fundo branco.",
+      "logo_instr_4": "Tamanho máximo de 2 MB.",
+      "commercial_disclaimer": "Nota: Na versão comercial, a marca principal del sistema permanece fixa pelo contrato de serviço."
+    },
+    "team": {
+      "title": "Membros da Equipe"
+    },
+    "owners": {
+      "title": "Gestão de Proprietários",
+      "new_access": "Novo Acesso de Proprietário",
+      "dialog_title": "Autorizar Acesso ao Proprietário",
+      "dialog_desc": "Registe o e-mail do proprietário para que ele possa aceder ao seu portal.",
+      "email_note": "Nota: O e-mail deve corresponder exatamente ao que consta no campo 'E-mail do Proprietário' das suas propriedades."
+    },
+    "origins": {
+      "title": "Origens de Inquilinos"
+    },
+    "categories": {
+      "expenses_title": "Categorias de Gastos",
+      "providers_title": "Categorias de Colaboradores",
+      "tasks_title": "Categorias de Tarefas",
+      "adjustments_title": "Categorias de Ajustes",
+      "new_placeholder": "Nova categoria...",
+      "expenses_delete_confirm": "Esta categoria será excluída. Os gastos existentes não serão excluídos, mas ficarão sem categoria.",
+      "providers_delete_confirm": "Esta categoria de colaborador será excluída.",
+      "tasks_title": "Categorias de Tarefas",
+      "tasks_delete_confirm": "Esta categoria de tarefa será excluída.",
+      "adjustments_delete_confirm": "Esta categoria de ajuste de pagamento será excluída."
+    },
+    "scopes": {
+      "title": "Ambitos de Trabalho",
+      "new_placeholder": "Novo ambito (ex: Administração)...",
+      "delete_confirm": "Excluir este ambito de trabalho?"
+    },
+    "currencies": {
+      "title": "Configurações de Moedas",
+      "base_label": "Moeda Base del Sistema",
+      "base_desc": "É a moeda principal para cálculos e relatórios.",
+      "favorites_label": "Moedas Favoritas",
+      "favorites_desc": "Selecione as moedas que você usa regularmente para que apareça nos formulários."
+    },
+    "templates": {
+      "title": "Modelos de E-mail",
+      "new_button": "Novo Modelo",
+      "add_title": "Criar Modelo",
+      "edit_title": "Editar Modelo",
+      "desc": "Crie mensagens predefinidas usando marcadores dinâmicos.",
+      "name_label": "Nome Interno",
+      "subject_label": "Assunto do E-mail",
+      "body_label": "Corpo da Messagem",
+      "placeholders_help": "Marcadores dinâmicos (clique para copiar)",
+      "no_templates": "Nenhum modelo salvo.",
+      "delete_confirm": "Excluir este modelo permanentemente?"
+    },
+    "alerts": {
+      "title": "Configurações de Alerta",
+      "checkin_label": "Dias antes do Check-in",
+      "checkin_desc": "Com que antecedência o aviso de chegada será mostrado.",
+      "checkout_label": "Dias antes do Check-out",
+      "checkout_desc": "Com que antecedência o aviso de partida será mostrado.",
+      "push_label": "Notifications neste Dispositivo",
+      "push_status": "Status:",
+      "push_supported_no": "Não suportado neste navegador",
+      "push_supported_ok": "Ativado",
+      "push_supported_blocked": "Bloqueado",
+      "push_supported_pending": "Aguardando permissão",
+      "push_desc": "Receba alertas de expiração diretamente na sua tela.",
+      "push_button": "Ativar neste dispositivo"
+    },
+    "data": {
+      "title": "Gestão de Dados",
+      "export_title": "Exportar Backup",
+      "export_desc": "Baixe uma cópia completa do seu banco de dados em formato JSON.",
+      "export_hint": "Recomenda-se exportar antes de alterações em massa ou importações. Apenas as categorias selecionadas serão exportadas.",
+      "export_button": "Gerar Backup",
+      "export_selection_title": "Conteúdo a Exportar",
+      "import_title": "Importar Dados",
+      "import_desc": "Carregue um arquivo de backup para restaurar ou migrar informações.",
+      "import_hint": "AVISO! A importação pode duplicar registros si o arquivo já tiver sido carregado.",
+      "import_button": "Selecionar arquivo JSON",
+      "import_confirm_title": "Confirmar importação?",
+      "import_confirm_desc": "As coleções serão processadas e novos registros serão criados em seu espaço de trabalho.",
+      "import_confirm_button": "Aceitar",
+      "import_selection_title": "Seleção de Conteúdo",
+      "dependency_warning": "Nota: Ao selecionar movimentos (ex: Reservas), suas dependências (ex: Propriedades) serão incluídas automaticamente para manter a integridade.",
+      "import_progress": "Processando Importação... Não feche a janela.",
+      "import_success": "Dados importados com sucesso."
+    }
+  },
+  "providers": {
+    "title": "Colaboradores",
+    "description": "Gerencie a equipe externa que trabalha em suas propriedades.",
+    "new_provider": "Novo Colaborador",
+    "no_providers": "Nenhum colaborador registrado.",
+    "no_team": "Nenhum membro da equipe.",
+    "no_owners": "Nenhum proprietário autorizado.",
+    "filters": {
+      "category": "Categoria",
+      "rating": "Avaliação",
+      "status": "Status",
+      "placeholder_search": "Nome, email, telefone..."
+    },
+    "status": {
+      "active": "ATIVO",
+      "pending": "PENDENTE"
+    },
+    "roles": {
+      "admin": "ADMINISTRADOR",
+      "socio": "SÓCIO",
+      "staff": "OPERADOR",
+      "provider": "COLLABORADOR",
+      "owner": "PROPRIETÁRIO"
+    },
+    "management": {
+      "label": "Gestão",
+      "tasks": "Par Tarefas",
+      "liquidations": "Liquidações"
+    },
+    "billing": {
+      "label": "Tarifa",
+      "hourly": "Heure",
+      "visit": "Visita",
+      "hourly_or_visit": "Heure / Visita",
+      "other": "Outra / Não Aplicável",
+      "type": "Tipo de Cobrança",
+      "currency": "Moeda da Tarifa",
+      "rate_hour": "Tarifa por Hora"
+    },
+    "card": {
+      "address": "Endereço",
+      "email": "Email",
+      "phone": "Telefone",
+      "category": "Categoria",
+      "rating": "Avaliação"
+    },
+    "add_dialog": {
+      "title": "Adicionar Novo Colaborador",
+      "description": "Preencha os dados do novo colaborador para convidá-lo para o aplicativo.",
+      "name": "Nome",
+      "email": "Email (Google)",
+      "initial_status": "Status Inicial",
+      "role": "Função",
+      "app_flavor": "Versão do App",
+      "personal": "Pessoal",
+      "commercial": "Comercial",
+      "management_method": "Método de Gestão",
+      "billing_title": "Facturação e Liquidação",
+      "notes_private": "Notas (Privadas)",
+      "notes_public": "Nota para o Colaborador (Visível para ele)",
+      "submit": "Salvar Colaborador"
+    },
+    "edit_dialog": {
+      "title": "Editar Usuário",
+      "description": "Modifique os dados técnicos, fotos o informações de acesso."
+    },
+    "tooltips": {
+      "send_whatsapp": "Enviar WhatsApp",
+      "call": "Ligar",
+      "view_history": "Ver Historial de Trabalho"
+    }
+  },
+  "dashboard": {
+    "title": "Início",
+    "description": "Um resumo do seu negócio de aluguel.",
+    "current_bookings": "Ocupação em Curso",
+    "upcoming_bookings": "Próximas Ocupações",
+    "status": {
+      "no_current": "Sem ocupação ativa",
+      "no_current_desc": "Não há inquilinos com estadias em curso neste momento.",
+      "no_upcoming": "Sem reservas futuras",
+      "no_upcoming_desc": "Não há receitas programadas no próximo calendário."
+    },
+    "stats": {
+      "collections": "Ingressos",
+      "pending_month": "Pendente do mes",
+      "properties": "Propriedades",
+      "total_units": "Unidades totais",
+      "tenants": "Inquilinos",
+      "total_records": "Total de registros",
+      "physical_received": "Recebido Fisicamente",
+      "collection_pulse": "Pulso de Cobrança",
+      "occupancy": "Nivel de Ocupação",
+      "occupied_units": "unidades ocupadas",
+      "collected": "Cobrado",
+      "expected": "Esperado",
+      "of": "de"
+    },
+    "alerts": {
+      "pending_liquidations": "Liquidações Pendentes",
+      "pending_liquidations_desc": "Você tem {{count}} liquidação(ões) com pagamento pendente aos colaboradores.",
+      "unliquidated_items": "Atividades não Liquidadas",
+      "unliquidated_items_desc": "Você tem {{count}} atividade(s) de colaboradores pendente(s) de liquidação.",
+      "checkins_title": "Atenção! Próximos Check-ins",
+      "checkins_desc": "Você tem {{count}} check-in(s) nos próximos dias.",
+      "checkouts_title": "Aviso: Próximos Check-outs",
+      "checkouts_desc": "Você tem {{count}} check-out(s) nos próximos dias.",
+      "balance_title": "Reserva com Saldo Pendente",
+      "balance_desc": "Você tem {{count}} reserva(s) com saldo a cobrar.",
+      "guarantee_solicited_title": "Garantias Solicitadas",
+      "guarantee_solicited_desc": "Existem {{count}} reserva(s) com garantia solicitada e pendente de recebimento.",
+      "guarantee_received_title": "Atenção! Garantias a Devolver",
+      "guarantee_received_desc": "Você tem {{count}} reserva(s) concluída(s) com garantia pendente de devolução."
+    },
+    "searcher": {
+      "title": "Buscar Disponibilidade e Preços",
+      "title_only": "Buscar Disponibilidade",
+      "from": "Data de Check-in",
+      "to": "Data de Check-out",
+      "desc": "Encontre propriedades libres em um intervalo de datas e calcule o custo da estadia.",
+      "desc_only": "Encontre propriedades libres em um intervalo de datas.",
+      "button": "Buscar",
+      "results": "Resultados da Busca",
+      "calculating": "Calculando...",
+      "no_results": "Nenhuma propriedade disponível encontrada",
+      "no_results_desc": "Tente outro intervalo de datas.",
+      "available": "Disponible"
+    },
+    "calculator": {
+      "title": "Calculadora de Pagamentos",
+      "desc": "Calcule um pagamento para esta reserva.",
+      "desc_generic": "Ferramenta para cálculos de pagamentos hipotéticos.",
+      "tab_percentage": "Calcular por %",
+      "tab_amount": "Calcular por Valor",
+      "base_amount": "Valor Base",
+      "base_currency": "Moeda do Valor Base",
+      "percentage_to_pay": "Porcentagem a Pagar (%)",
+      "total_amount": "Valor Total da Reserva",
+      "received_amount": "Valor Recebido",
+      "received_currency": "Moeda do Pagamento",
+      "dollar_value": "Valor do Dólar",
+      "results_title": "Resultados do Cálculo",
+      "to_pay": "Valor a Pagar",
+      "register_button": "Registrar Pago",
+      "percentage_of_total": "Porcentagem do Valor Base"
+    },
+    "welcome_new": {
+      "title": "Bem-vindo ao Regentum!",
+      "subtitle": "Para começar a gerir o seu negócio, precisamos de configurar os seus primeiros registos.",
+      "prop_title": "Sua primeira Propriedade",
+      "prop_desc": "Registe uma casa, apartamento ou unidade para começar a carregar reservas.",
+      "prop_hint": "Comce carregando a fiche técnica de sua primeira casa ou apartamento para habilitar o calendário de reservas.",
+      "prop_btn": "Carregar Propiedade",
+      "tenant_title": "Seu primeiro Inquilino",
+      "tenant_desc": "Adicione os seus clientes regulares para agilizar a entrada de aluguéis.",
+      "tenant_hint": "Ter seus clientes habituais registrados permite criar reservas e enviar contratos em segundos.",
+      "tenant_btn": "Carregar Inquilino"
+    },
+    "notifications_reminder": {
+      "title": "Não perca nada!",
+      "desc": "Ative as notificações para receber alertas críticos de check-in e pagamentos.",
+      "button": "Ativar agora"
+    }
+  },
+  "properties": {
+    "title": "Propriedades",
+    "description": "Gerencie suas unidades imobiliárias.",
+    "new_property": "Nova Propriedade",
+    "no_properties": "Nenhuma propriedade encontrada.",
+    "analyzing_balances": "Analisando saldos das propriedades...",
+    "to_collect": "A Cobrar este mes:",
+    "up_to_date": "Em dia / Sem cobranças pendentes",
+    "next_adjustment": "Ajuste de parcela em",
+    "ical_sync": "Sincronização de Calendário (iCal)",
+    "add_dialog": {
+      "title": "Adicionar Nova Propriedade",
+      "description": "Preencha os dados da nova propriedade. Clique em salvar quando terminar."
+    },
+    "edit_dialog": {
+      "title": "Editar Propiedade",
+      "description": "Modifique os datos técnicos, fotos ou informações do proprietário."
+    },
+    "notes_dialog": {
+      "title": "Notas da Propriedade",
+      "description": "Adicione ou edite notas informativas."
+    },
+    "form": {
+      "sections": {
+        "info": "Informação da Propriedade",
+        "owner": "Dados do Proprietário",
+        "content": "Conteúdos e Notas",
+        "additional": "Informação Adicional",
+        "rates": "Tarifas de Visita por Colaborador"
+      },
+      "labels": {
+        "name": "Nome Público",
+        "address": "Endereço",
+        "image_url": "URL da Foto (opcional)",
+        "property_url": "Site da Propriedade",
+        "price_sheet": "Nome na Folha de Preços",
+        "owner_name": "Nome Completo",
+        "owner_dni": "CPF / ID",
+        "owner_phone": "Telefone",
+        "owner_email": "E-mail Principal",
+        "owner_address": "Domicílio Legal",
+        "commission": "Comissão de Administração (%)",
+        "internal_notes": "Notas Internas de Administração",
+        "owner_notes": "Notas para o Proprietário (Visibles en seu portal)",
+        "contract_template": "Modelo Base de Contrato",
+        "signature": "Assinatura Digital do Locador",
+        "upload_image": "Enviar Imagem",
+        "upload_signature": "Enviar AssSignature PNG",
+        "discard": "Descartar",
+        "save_changes": "Salvar Alterações",
+        "unsaved_alert": "Você tiene alterações não salvas.",
+        "markers_help": "Toque para copiar marcadores",
+        "visit_rate": "Tarifa de visita para",
+        "custom_label": "Etiqueta {{index}}",
+        "custom_value": "Valor {{index}}",
+        "load_template_tooltip": "Carregar modelo",
+        "image_hint": "PNG o JPG. Max 2MB."
+      },
+      "placeholders": {
+        "name": "Ex: Apartamento Mar",
+        "address": "Ex: Rua 21 #1234",
+        "property_url": "Link para Airbnb, Booking, etc.",
+        "price_sheet": "Nome exato na planilha",
+        "internal_notes": "Informação relevante apenas para administración...",
+        "owner_notes": "Mensagens, senhas o avisos visíveis para o proprietário em seu portal...",
+        "contract": "Cole aqui o texto base del contrato...",
+        "signature_hint": "PNG transparente. Máx 1MB.",
+        "visit_rate": "Valor por visita"
+      },
+      "delete": {
+        "button": "Excluir",
+        "title": "Você tem certeza absoluta?",
+        "desc": "Esta ação é irreversível. A propriedade e todos os seus datos asociados serão excluídos permanentemente.",
+        "disclaimer": "Sim, eu entendo que esta ação es irreversível.",
+        "confirm": "Excluir"
+      }
+    }
+  },
+  "tenants": {
+    "title": "Inquilinos",
+    "description": "Gerencie e filtre as informações dos seus inquilinos.",
+    "new_tenant": "Novo Inquilino",
+    "no_tenants": "Nenhum inquilino para exibir.",
+    "loading_tenants": "Carregando inquilinos...",
+    "add_dialog": {
+      "title": "Adicionar Novo Inquilino",
+      "description": "Preencha os dados do novo inquilino. Clique em salvar quando terminar.",
+      "submit": "Salvar Inquilino"
+    },
+    "edit_dialog": {
+      "title": "Editar Inquilino",
+      "description": "Modifique os dados do inquilino. Clique em salvar quando terminar."
+    },
+    "filters": {
+      "origin": "Origem",
+      "rating": "Avaliação",
+      "status": "Status da Reserva",
+      "placeholder_search": "Nome, email, CPF...",
+      "booking_status": {
+        "all": "Todos",
+        "current": "Com Reserva em Curso",
+        "upcoming": "Com Reserva Próxima",
+        "closed": "Com Reserva Encerrada",
+        "cancelled": "Com Reserva Cancelada",
+        "pending": "Com Reserva em Espera"
+      },
+      "rating_options": {
+        "all": "Todos",
+        "none": "Sem Avaliação",
+        "stars": "Estrellas",
+        "star": "Estrella"
+      }
+    },
+    "card": {
+      "rating": "Avaliação",
+      "unrated": "Sem avaliação",
+      "email": "Email",
+      "phone": "Telefone",
+      "address": "Endereço",
+      "dni": "CPF/ID",
+      "city": "Cidade",
+      "country": "País",
+      "notes": "Notas",
+      "bookings_count": "Reservas históricas"
+    },
+    "copy_format": {
+      "title": "Dados do Inquilino",
+      "name": "Nome",
+      "phone": "Telefone",
+      "email": "Email",
+      "dni": "CPF/ID"
+    },
+    "tooltips": {
+      "copy_data": "Copiar Dados para WhatsApp",
+      "copy_data_success": "Os dados do inquilino foram copiados.",
+      "view_notes": "Ver Notas",
+      "send_whatsapp": "Enviar WhatsApp",
+      "call": "Ligar",
+      "edit_tenant": "Editar Inquilino",
+      "view_history": "Ver Historial de Aluguéis",
+      "delete_tenant": "Excluir Inquilino"
+    }
+  },
+  "bookings": {
+    "title": "Aluguéis Temporários",
+    "description": "Gestão de aluguéis de curta estadia.",
+    "description_of": "Reservas agendadas para {{name}}.",
+    "new_booking": "Nova Reserva",
+    "block_dates": "Bloquear Datas",
+    "no_bookings": "Não há reservas registradas.",
+    "no_blocks": "Não há datas bloqueadas manualmente.",
+    "title_of": "Reservas de",
+    "tabs": {
+      "temporary": "Temporários",
+      "contracts": "Anuais",
+      "blocks": "Bloqueios",
+      "calendar": "Calendário",
+      "report": "Rendimento",
+      "tasks": "Tarefas",
+      "expenses": "Gastos",
+      "payments": "Cobranças",
+      "liquidations": "Rendições"
+    },
+    "tabs_desc": {
+      "temporary": "Gerencie todas as reservas temporárias da propriedade aqui",
+      "contracts": "Gerencie contratos de longo prazo aqui",
+      "blocks": "Bloqueie datas para que sua propriedade não apareça disponível",
+      "calendar": "Veja a disponibilidade da propriedade",
+      "report": "Avalie o progresso do seu negócio",
+      "tasks": "Gerenciar tarefas a serem executadas, seus pagamentos e status de progresso",
+      "expenses": "Registre despesas como publicações, comissões, etc.",
+      "payments": "As cobranças são registradas a partir da própria reserva. Aqui você verá todas as recebidas.",
+      "liquidations": "Gere extratos de conta líquidos para o proprietário desta unidade."
+    },
+    "status": {
+      "active": "Ativa",
+      "upcoming": "Próxima",
+      "closed": "Concluída",
+      "pending": "Em Espera",
+      "cancelled": "Cancelada",
+      "with_debt": "Com Dívida",
+      "current": "Em Curso"
+    },
+    "contract_status": {
+      "not_sent": "Não enviado",
+      "sent": "Enviado",
+      "signed": "Assinado",
+      "not_required": "Não req."
+    },
+    "guarantee_status": {
+      "not_solicited": "Sem Solicitar",
+      "solicited": "Solicitada",
+      "received": "Recebida",
+      "returned": "Devolvida",
+      "not_applicable": "N/A"
+    },
+    "filters": {
+      "property": "Propriedade",
+      "status": "Estado",
+      "origin": "Origem",
+      "contract": "Contrato",
+      "guarantee": "Garantia",
+      "sort": "Ordem",
+      "sort_options": {
+        "distant": "Mais distantes primeiro",
+        "upcoming": "Mais próximas primeiro"
+      }
+    },
+    "table": {
+      "property": "Propriedade",
+      "tenant": "Inquilino",
+      "stay": "Estadia",
+      "nights": "noites",
+      "amount": "Valor Total",
+      "balance": "Saldo",
+      "guarantee": "Garantia"
+    },
+    "add_dialog": {
+      "title": "Nova Reserva Temporária",
+      "description": "Preencha os dados para agendar a estadia.",
+      "submit": "Criar Reserva"
+    },
+    "edit_dialog": {
+      "title": "Editar Reserva",
+      "description": "Modifique os dados da estadia o o status del contrato."
+    },
+    "payments_dialog": {
+      "title": "Gestão de Cobranças",
+      "description": "Pagamentos recebidos de {{tenant}} por {{property}}.",
+      "add_payment": "Registrar Cobrança"
+    },
+    "email_dialog": {
+      "title": "Enviar Mensagem para {{name}}",
+      "description": "Selecione um modelo para redigir o e-mail.",
+      "template_label": "Modelo",
+      "template_placeholder": "Selecione um modelo...",
+      "subject_label": "Assunto",
+      "preview_label": "Visualização",
+      "send_button": "Redigir no Cliente de E-mail"
+    },
+    "tooltips": {
+      "notes": "Ver Notas",
+      "calculator": "Calculadora de Pagamentos",
+      "payments": "Ver Cobranças",
+      "email": "Enviar E-mail",
+      "signature": "Enviar para Assinatura Digital",
+      "signature_copy_success": "Mensagem de assinatura copiada."
+    },
+    "countdown": {
+      "checkin": "Check-in em {{count}} {{unit}}",
+      "checkout": "Check-out em {{count}} {{unit}}",
+      "day": "dia",
+      "days": "dias"
+    },
+    "whatsapp": {
+      "signature_message": "Olá {{name}}, por favor revise o assine o contrato de aluguel neste link: {{link}}"
+    }
+  },
+  "contratos": {
+    "title": "Aluguéis Anuais",
+    "description": "Seguimento de baux de longa duración e parcelas mensais.",
+    "new_contract": "Novo Contrato Anual",
+    "no_contracts": "Não há contratos anuais registrados.",
+    "initial_fee": "Parcela Inicial",
+    "adjustment": "Ajuste",
+    "payment_plan": "Plano de Pagamentos",
+    "payment_plan_desc": "Seguimento de parcelas mensais e reajustes.",
+    "register_payment": "Cobrar Parcela",
+    "apply_adjustment": "Aplicar Ajuste",
+    "modify_adjustment": "Modificar Ajuste",
+    "modify_amount": "Modificar Valor",
+    "detail_payments": "Ver Parcelas",
+    "period": "Período",
+    "due_date": "Vencimento",
+    "fee_amount": "Valor Parcela",
+    "paid": "Pago",
+    "balance": "Saldo",
+    "period_status": {
+      "paid": "Pago",
+      "pending": "Pendente",
+      "overdue": "Vencido",
+      "partial": "Parcial",
+      "pending_adj": "Ajuste Pendente"
+    },
+    "status": {
+      "draft": "Rascunho",
+      "active": "Ativo",
+      "ended": "Encerrado",
+      "cancelled": "Rescindido"
+    },
+    "add_dialog": {
+      "title": "Novo Contrato de Aluguel",
+      "description": "O sistema gerará automaticamente todas las parcelas mensais."
+    },
+    "edit_dialog": {
+      "title": "Editar Contrato",
+      "description": "Modifique os termos gerais do acordo."
+    },
+    "adjustment_dialog": {
+      "title": "Ajuste de Alquiler",
+      "description": "Calcule the novo valor da parcela de acordo com o índice aplicado.",
+      "base_value": "Valor Base (Mês Anterior)",
+      "increase": "Incremento",
+      "new_amount": "Novo Valor da Parcela",
+      "reference": "Referência do Índice",
+      "note": "Esta alteração será propagada para todas as parcelas futuras que ainda não foram ajustadas.",
+      "submit": "Aplicar Novo Valor"
+    },
+    "register_payment_dialog": {
+      "title": "Cobrança de Parcela",
+      "description": "Registra o pagamento da parcela com vencimiento em {{date}}.",
+      "pending_balance": "Saldo da Parcela",
+      "currency": "Moeda do Pagamento",
+      "amount": "Valor Recebido",
+      "date": "Data do Pagamento",
+      "description_label": "Descrição",
+      "submit": "Registrar Pago"
+    }
+  },
+  "tasks": {
+    "title": "Tarefas e Manutenção",
+    "description": "Agenda de trabalhos pendentes nas unidades.",
+    "new_task": "Nova Tarefa",
+    "no_tasks": "Não há tarefas registradas.",
+    "selection_legend": "selecionadas para cálculo de custos",
+    "status": {
+      "pending": "Pendente",
+      "in_progress": "Em Curso",
+      "completed": "Concluída"
+    },
+    "priority": {
+      "high": "Alta",
+      "medium": "Média",
+      "low": "Baixa"
+    },
+    "assignment_types": {
+      "all": "Todos os âmbitos",
+      "property": "Propriedade",
+      "scope": "Âmbito Geral",
+      "unassigned": "Sem Atribuir"
+    },
+    "filters": {
+      "assignment_type": "Tipo de Atribuição",
+      "specific": "Específico",
+      "provider": "Colaborador",
+      "status": "Status",
+      "priority": "Prioridade",
+      "category": "Categoria",
+      "currency": "Moeda de Custo"
+    },
+    "table": {
+      "description": "Descrição",
+      "assignment": "Atribuído a",
+      "due_date": "Prazo",
+      "est_cost": "Custo Est.",
+      "real_cost": "Costo Real"
+    },
+    "add_dialog": {
+      "title": "Nova Tarefa",
+      "description": "Crie uma tarefa de manutenção o gestão."
+    },
+    "edit_dialog": {
+      "title": "Editar Tarefa",
+      "description": "Modifique os detalhes, responsável o prioridade."
+    },
+    "tooltips": {
+      "register_expense": "Registrar Gasto",
+      "notes": "Ver Notas",
+      "edit": "Editar Tarefa",
+      "delete": "Excluir Tarefa"
+    }
+  },
+  "expenses": {
+    "title": "Gastos",
+    "description": "Controle total de saídas e investimentos.",
+    "no_expenses": "Não há gastos registrados.",
+    "add_button": "Adicionar Gasto",
+    "filters": {
+      "search": "Buscar",
+      "search_placeholder": "Descrição, propiedad...",
+      "property": "Propriedade",
+      "scope": "Âmbito",
+      "provider": "Fornecedor",
+      "type": "Tipo de Gasto",
+      "category": "Categoria",
+      "all_types": "Todos os tipos",
+      "type_property": "Gastos de Propriedade",
+      "type_scope": "Gastos Gerais"
+    },
+    "add_dialog": {
+      "title": "Registrar Novo Gasto",
+      "description": "Registra uma saída de dinheiro imputada a uma propriedade ou âmbito.",
+      "impute_to": "Imputar a",
+      "impute_placeholder": "Selecione onde carregar o gasto",
+      "date": "Data",
+      "date_placeholder": "Selecione a data",
+      "category": "Categoria",
+      "category_placeholder": "Selecione uma categoría",
+      "provider": "Colaborador / Comércio",
+      "provider_placeholder": "Responsable pelo gasto",
+      "currency": "Moeda",
+      "amount": "Valor",
+      "exchange_rate": "Tipo de Câmbio (USD -> ARS)",
+      "exchange_rate_placeholder": "Ex: 950.50",
+      "description": "Descrição / Notas",
+      "submit": "Salvar Gasto"
+    },
+    "edit_dialog": {
+      "title": "Editar Gasto",
+      "description": "Modifique os valores o a categoria da saída."
+    },
+    "delete_dialog": {
+      "description": "O registro deste gasto será removido da contabilidade."
+    },
+    "tooltips": {
+      "edit": "Editar Gasto",
+      "delete": "Excluir Gasto"
+    }
+  },
+  "liquidations": {
+    "title": "Liquidações de Colaboradores",
+    "description": "Gerencie os pagamentos pendentes à sua equipe externa.",
+    "provider_selection": "Seleção de Colaborador",
+    "provider_label": "Colaborador",
+    "provider_placeholder": "Seleccione um colaborador para lquidar...",
+    "admin_note": "Nota de Administração",
+    "no_admin_notes": "Não há notas administrativas para este colaborador.",
+    "current_balance_title": "Status da Conta Actual",
+    "balance_real_total": "SALDO REAL TOTAL",
+    "pending_to_liquidate": "Pendente de Liquidar",
+    "current_balance_desc": "O saldo real total incluye o arraste da última liquidação mais todos os itens pendentes actuales.",
+    "tabs": {
+      "pending": "Pendentes",
+      "history": "Histórico"
+    },
+    "pending_items": {
+      "title": "Itens Pendentes de Liquidação",
+      "description": "Selecione os trabalhos e ajustes que deseja incluir neste fechamento.",
+      "hours_visits": "Horas e Visitas",
+      "manual_adjustments": "Ajustes Manuais",
+      "no_items": "Não há itens pendentes nesta moeda.",
+      "no_items_any": "Não há atividades registradas pendentes de liquidação."
+    },
+    "summary": {
+      "subtotal_items": "Subtotal Itens",
+      "previous_balance": "Arraste Anterior",
+      "total_to_liquidate": "TOTAL A LIQUIDAR",
+      "mixed_currencies": "Moedas Mistas",
+      "generate_button": "Gerar Liquidação"
+    },
+    "actions": {
+      "add_activity": "Registrar Actividade",
+      "add_adjustment": "Registrar Ajuste"
+    },
+    "activity_types": {
+      "hours": "Horas",
+      "visit": "Visita"
+    },
+    "adjustment_types": {
+      "addition": "A favor (Suma)",
+      "deduction": "Desconto (Subtração)"
+    },
+    "card_labels": {
+      "imputed_to": "Imputado a"
+    },
+    "history": {
+      "no_liquidations": "Nenhuma liquidação foi gerada ainda.",
+      "status": {
+        "paid": "Paga",
+        "partial": "Parcial",
+        "pending": "Pendente"
+      },
+      "table": {
+        "date": "Data",
+        "provider": "Colaborador",
+        "amount": "Valor Total",
+        "balance": "Saldo",
+        "status": "Status"
+      },
+      "revert": {
+        "title": "Reverter Liquidação?",
+        "description": "As atividades e ajustes voltarão a ficar pendentes. Se houver pagamentos registrados, estes serão excluídos.",
+        "warning_payments": "ATENÇÃO! Esta liquidação já possui pagamentos registrados.",
+        "confirm_label": "Para confirmar, digite REVERT abaixo:",
+        "confirm_button": "Sim, reverter"
+      }
+    },
+    "details": {
+      "title": "Detalhe da Liquidação",
+      "income": "Atividades Realizadas",
+      "expenses": "Ajustes e Descontos",
+      "total": "Total Liquidado"
+    },
+    "payment": {
+      "title": "Registrar Pagamento de Liquidação",
+      "description": "Registra um pagamento parcial o total para a liquidação de {{date}}.",
+      "current_balance": "Saldo Pendente",
+      "amount_label": "Valor a Pagar",
+      "date_label": "Data do Pagamento",
+      "description_label": "Descrição do Pagamento",
+      "category_label": "Categoria Contábil",
+      "submit": "Confirmar Pagamento"
+    },
+    "add_activity_dialog": {
+      "title": "Registrar Actividade - {{name}}",
+      "description_mixed": "Este colaborador cobra por hora o por visita.",
+      "description_hourly": "Este colaborador cobra uma tarifa fixa por hora.",
+      "description_visit": "Este colaborador cobra uma tarifa fixa por visita.",
+      "description_other": "Registre o trabalho realizado.",
+      "hours_label": "Horas Trabalhadas",
+      "visits_label": "Número de Visitas",
+      "rate_hour_label": "Tarifa por Hora",
+      "rate_visit_label": "Tarifa por Visita"
+    },
+    "edit_activity_dialog": {
+      "title": "Editar Atividade - {{name}}",
+      "description": "Modifique os valores da atividade antes de liquidadar."
+    },
+    "add_adjustment_dialog": {
+      "title": "Adicionar Ajuste - {{name}}",
+      "description": "Registra um bônus, adiantamento ou desconto manual."
+    },
+    "edit_adjustment_dialog": {
+      "title": "Editar Ajuste - {{name}}",
+      "description": "Modifique os valores do ajuste manual."
+    }
+  },
+  "owner_liquidations": {
+    "title": "Rendições a Propietarios",
+    "description": "Gere extratos de conta líquidos para os donos das propriedades.",
+    "new_liquidation": "Nueva Rendición",
+    "history": "Histórico de Rendições",
+    "no_liquidations": "Não foram geradas rendições para esta propriedade.",
+    "issue_date": "Fecha de Emisión",
+    "period": "Período",
+    "net_to_owner": "Neto a Transferir",
+    "add_dialog": {
+      "title": "Nueva Rendición de Cuentas",
+      "description": "Selecciona os cobros e gastos do período. O sistema calculará sua comissão automáticamente.",
+      "currency": "Moeda da Rendição",
+      "commission_info": "Comissão configurada",
+      "income": "Ingresos a Liquidar",
+      "no_income": "Não há cobros pendentes nesta moeda.",
+      "expenses": "Gastos a Deducir",
+      "no_expenses": "Não há gastos pendentes nesta moeda.",
+      "total_income": "Total Ingresos",
+      "total_expenses": "Total Gastos",
+      "commission": "Sua Comissão",
+      "net": "Neto para o Dono",
+      "notes": "Notas Adicionales",
+      "notes_placeholder": "Instruções de pagamento, esclarecimentos...",
+      "submit": "Gerar Documento de Rendición"
+    }
+  },
+  "owner_portal": {
+    "welcome": "Olá {{name}},",
+    "title": "Portal do Proprietário",
+    "units_label": "Suas Unidades",
+    "no_properties_title": "Sem propriedades vinculadas",
+    "no_properties_desc": "Não encontramos propriedades associadas à sua conta de e-mail. Entre em contato com a administração para verificar seu registro.",
+    "tabs": {
+      "summary": "Resumo",
+      "occupancy": "Ocupação",
+      "finances": "Finanças",
+      "info": "Informação"
+    },
+    "sections": {
+      "next_bookings": "Próximas Entradas",
+      "recent_liquidations": "Liquidações Recentes",
+      "occupancy_history": "Histórico de Ocupação",
+      "liquidations_made": "Liquidações Realizadas",
+      "property_info": "Informação da Propriedade"
+    },
+    "status": {
+      "ok": "Confirmado",
+      "confirmed": "Ocupado",
+      "paid": "Pago"
+    },
+    "labels": {
+      "net": "Líquido",
+      "invoiced": "Faturado",
+      "admin_notes": "Notas de Administração",
+      "liq_summary": "Resumo da Rendição",
+      "period": "Período",
+      "date": "Data",
+      "net_transfer": "Líquido a Transferir",
+      "recibo_pdf": "Baixar Recibo",
+      "print_pdf": "Imprimir",
+      "received_income": "Rendimentos Recebidos",
+      "total_income": "Total de Rendimentos",
+      "expenses": "Despesas Detalhadas",
+      "commission": "Comissão de Gestão",
+      "total_deductions": "Total de Deduções"
+    },
+    "messages": {
+      "no_movements": "Nenhum movimento futuro registrado.",
+      "auto_generated": "Documento gerado automaticamente por {{name}}."
+    }
+  },
+  "reports": {
+    "description": "Análise detalhada de rentabilidade e ocupação.",
+    "property": "Propriedade",
+    "income": "Receitas",
+    "payments": "Cobranças",
+    "balance": "Saldo",
+    "expenses": "Gastos",
+    "net": "Resultado Líquido",
+    "totals": "TOTAIS",
+    "no_financial_data": "Não há dados para mostrar neste período.",
+    "financial_detail": "Detalhe por Propiedade",
+    "performance": "Desempenho Visual",
+    "tenant_origin": "Origem dos Inquilinos",
+    "booking_origin": "Origem das Reservas",
+    "expense_category": "Gastos por Catégoria",
+    "expense_property": "Gastos por Propriedade",
+    "booking_status": "Status das Reservas",
+    "income_distribution": "Distribuição de Lucro Líquido (USD)",
+    "monthly_trend_title": "Evolução do Resultado Líquido",
+    "monthly_trend_desc": "Comparativo mensal de receitas vs gastos."
+  },
+  "monitor": {
+    "title": "Monitor de Plataforma",
+    "subtitle": "Status global de todas as organizações registradas.",
+    "sync_button": "Sincronizar Dados",
+    "stats": {
+      "orgs": "Organizações",
+      "active": "ativas",
+      "properties": "Propriedades",
+      "tenants": "Inquilinos",
+      "bookings": "Reservas",
+      "contratos": "Contratos",
+      "team": "Equipe",
+      "total": "Total histórico"
+    },
+    "shortcuts": {
+      "firebase": "Console Firebase",
+      "firebase_desc": "Métricas técnicas",
+      "debug": "Debug View",
+      "debug_desc": "Ao vivo",
+      "ga4": "Google Analytics",
+      "ga4_desc": "Relatórios de uso"
+    },
+    "org_detail": {
+      "title": "Detalhe da Organização",
+      "desc": "Estatísticas de uso e atividade para cada espaço de trabalho.",
+      "active_today": "Ativa hoje",
+      "last_activity": "Última atividade"
+    },
+    "alerts": {
+      "info_title": "Informação de Telemetría",
+      "info_desc": "Os datos são atualizados automaticamente com cada ação do usuário ou por meio de sincronização manual.",
+      "privacy_title": "Privacidade de Dados",
+      "privacy_desc": "Apenas contadores numéricos são exibidos. O conteúdo das reservas e dados pessoais são privados para cada organização."
+    }
+  },
+  "tour": {
+    "home": {
+      "title": "Início",
+      "desc": "Aqui tens um resumo rápido do estado dos teus aluguéis, alertas críticos e calculadora de pagamentos."
+    },
+    "properties": {
+      "title": "Propriedades",
+      "desc": "Gerencia tuas casas e apartamentos. Clica em uma para ver o detalhe completo, carregar fotos o configurar contratos.",
+      "continue_desc": "Clica aqui para entrar na secção de propriedades e continuar o tour."
+    },
+    "tenants": {
+      "title": "Inquilinos",
+      "desc": "Acede à tua agenda de clientes, consulta as tuas qualificações por estrelas e o histórico de comportamento."
+    },
+    "providers": {
+      "title": "Colaboradores",
+      "desc": "Administra a tua equipa externa (limpeza, manutenção) e mantém o controlo dos seus trabalhos e pagamentos."
+    },
+    "bookings": {
+      "title": "Temporários",
+      "desc": "Control o calendário de aluguéis por dia, estados de contrato e cobranças pendentes."
+    },
+    "contracts": {
+      "title": "Anuais",
+      "desc": "Acompanhamento de parcelas mensais e reajustes automáticos."
+    },
+    "tasks": {
+      "title": "Tarefas",
+      "desc": "Agenda de manutenção e reparações pendentes. Mantém as tuas unidades em perfeito estado."
+    },
+    "payments": {
+      "title": "Ingressos",
+      "desc": "Consulta todos os pagamentos recebidos dos teus inquilinos num só lugar."
+    },
+    "liquidations": {
+      "title": "Liquidações",
+      "desc": "Gera os fechos de conta para pagar aos teus colaboradores de forma transparente."
+    },
+    "expenses": {
+      "title": "Gastos",
+      "desc": "Regista saídas de dinheiro (impostos, serviços, comissões) para conhecer a tua rentabilidade real."
+    },
+    "informes": {
+      "title": "Relatórios",
+      "desc": "Analiza a rentabilidade, ocupação e desempenho do teu negócio com gráficos detalhados."
+    },
+    "help": {
+      "title": "Ajuda",
+      "desc": "Consulta o manual de uso, os marcadores para contratos e perguntas frequentes."
+    },
+    "settings": {
+      "title": "Configuração",
+      "desc": "Personaliza a tua marca, invita a tua equipa, configura as tuas moedas e cria modelos de email."
+    },
+    "mobile_menu": {
+      "title": "Menu Estendido",
+      "desc": "Usa este botão para aceder às secções avançadas como Gastos, Relatórios e Configuração."
+    },
+    "user_menu": {
+      "title": "Minha Conta",
+      "desc": "Daqui podes mudar o idioma, ativar o modo escuro o mudar o teu perfil para 'Vista Proprietário'."
+    },
+    "property_detail": {
+      "temporarios_title": "Gestão Temporária",
+      "temporarios_desc": "Controla as reservas, contratos digitais e cobranças desta propriedade.",
+      "contratos_title": "Contratos Anuais",
+      "contratos_desc": "Acompanhamento de parcelas mensais e reajustes para inquilinos fixos.",
+      "blocks_title": "Bloqueio de Dates",
+      "blocks_desc": "Fecha datas para manutenção ou uso personal. Sincroniza com iCal automaticamente.",
+      "calendar_title": "Calendário",
+      "calendar_desc": "Verifica a disponibilidade visual desta propriedade.",
+      "tasks_title": "Tarefas da Unidade",
+      "tasks_desc": "Gere reparações e limpeza específicas deste imóvel.",
+      "expenses_title": "Gastos do Bem",
+      "expenses_desc": "Regista gastos diretos imputados a esta propriedade.",
+      "liquidations_title": "Prestações ao Dono",
+      "liquidations_desc": "Gera o estado de conta líquido para enviar ao proprietário.",
+      "done_button": "Continuar Tour"
+    },
+    "settings_page": {
+      "branding_title": "Identidade Visual",
+      "branding_desc": "Envia o teu logo para que apareça nos contratos e recibos que gerares.",
+      "team_title": "Tua Equipa",
+      "team_desc": "Convida sócios e operadores para colaborarem na gestão.",
+      "owners_title": "Portal de Donos",
+      "owners_desc": "Habilita o portal para que os proprietários vejam a sua ocupação e descarreguem rendições.",
+      "templates_title": "Modelos de Email",
+      "templates_desc": "Cria modelos de mensagens personalizados com marcadores dinâmicos."
+    }
+  },
+  "notifications_reminder": {
+    "title": "Não perca nada!",
+    "desc": "Ative as notificações para receber alertas críticos de check-in e pagamentos.",
+    "button": "Ativar agora"
+  }
+}
