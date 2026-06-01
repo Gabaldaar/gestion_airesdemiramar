@@ -14,15 +14,13 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from './auth-provider';
 import { cn } from '@/lib/utils';
-
-/**
- * Sanitiza la llave pública de forma quirúrgica.
- */
-const getSanitizedKey = () => {
-    const rawKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
-    const cleaned = rawKey.replace(/^["']|["']$/g, '').trim();
-    return cleaned;
-};
+import {
+    explainPushSubscribeError,
+    fetchPublicVapidKey,
+    getPushEnvironmentBlocker,
+    subscribeToPush,
+    waitForActiveServiceWorker,
+} from '@/lib/push-client';
 
 function SubmitButton() {
     const { t } = useTranslation();
@@ -41,21 +39,6 @@ function SubmitButton() {
     )
 }
 
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/\-/g, '+')
-    .replace(/_/g, '/');
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
 export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { initialSettings: AlertSettings | null, isPersonalFlavor: boolean }) {
     const { t } = useTranslation();
     const { orgId } = useAuth();
@@ -72,6 +55,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
     const [isResetting, setIsResetting] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
     const [isRunningCycle, setIsRunningCycle] = useState(false);
+    const [pushEnvironmentHint, setPushEnvironmentHint] = useState<string | null>(null);
 
     const refreshPushStatus = async () => {
         if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
@@ -88,6 +72,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
     useEffect(() => {
         if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
             setIsPushSupported(true);
+            setPushEnvironmentHint(getPushEnvironmentBlocker());
             refreshPushStatus();
         }
     }, []);
@@ -140,19 +125,29 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
 
     const handleSubscribe = async () => {
         if (!isPushSupported || !orgId) return;
-        
-        const publicKey = getSanitizedKey();
-        if (!publicKey || publicKey.length < 20) {
+
+        const envBlocker = getPushEnvironmentBlocker();
+        if (envBlocker) {
             toast({
-                title: "Llave no encontrada",
-                description: "La llave pública VAPID parece estar vacía en el servidor. Verifica tus variables de entorno en Netlify.",
-                variant: "destructive"
+                title: "Configuración requerida en móvil",
+                description: envBlocker,
+                variant: "destructive",
             });
             return;
         }
 
         setIsSubscribing(true);
         try {
+            const publicKey = await fetchPublicVapidKey();
+            if (!publicKey || publicKey.length < 20) {
+                toast({
+                    title: "Llave no encontrada",
+                    description: "La llave pública VAPID no está en el servidor. Verifica NEXT_PUBLIC_VAPID_PUBLIC_KEY en Netlify.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
             let permission = Notification.permission;
             if (permission === 'default') {
                 permission = await Notification.requestPermission();
@@ -169,14 +164,9 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                 return;
             }
 
-            await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-            const registration = await navigator.serviceWorker.ready;
-            const applicationServerKey = urlBase64ToUint8Array(publicKey);
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: applicationServerKey,
-            });
-            
+            const registration = await waitForActiveServiceWorker();
+            const subscription = await subscribeToPush(registration, publicKey);
+
             const result = await savePushSubscriptionAction(JSON.parse(JSON.stringify(subscription)), orgId);
             if (result.success) {
                 setHasPushSubscription(true);
@@ -184,12 +174,12 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
             } else {
                  throw new Error(result.message);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("[PUSH] Error en registro:", error);
             toast({
                 title: "Fallo de servicio",
-                description: error?.message || "Error de registro. Usa 'Reseteo Forzado' abajo si el problema persiste.",
-                variant: "destructive"
+                description: explainPushSubscribeError(error),
+                variant: "destructive",
             });
         } finally {
             setIsSubscribing(false);
@@ -298,6 +288,16 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                                 : "Haz clic abajo para autorizar los avisos en este navegador."}
                     </AlertDescription>
                  </Alert>
+
+                {pushEnvironmentHint && (
+                    <Alert className="bg-blue-50 border-blue-200">
+                        <AlertTitle className="text-xs font-bold uppercase flex items-center gap-2">
+                            <Info className="h-4 w-4" />
+                            Importante en este dispositivo
+                        </AlertTitle>
+                        <AlertDescription className="text-xs">{pushEnvironmentHint}</AlertDescription>
+                    </Alert>
+                )}
 
                 <div className="flex flex-col gap-2">
                     <Button 
