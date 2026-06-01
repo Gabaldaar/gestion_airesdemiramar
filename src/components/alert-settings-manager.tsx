@@ -15,12 +15,41 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from './auth-provider';
 import { cn } from '@/lib/utils';
 import {
+    collectPushDiagnostics,
     explainPushSubscribeError,
     fetchPublicVapidKey,
     getPushEnvironmentBlocker,
     subscribeToPush,
     waitForActiveServiceWorker,
+    type PushClientDiagnostics,
 } from '@/lib/push-client';
+import { getAuth } from 'firebase/auth';
+import { getApp } from 'firebase/app';
+
+async function persistPushSubscription(subscription: PushSubscription, orgId: string) {
+    const json = JSON.parse(JSON.stringify(subscription));
+    try {
+        const user = getAuth(getApp()).currentUser;
+        const token = user ? await user.getIdToken() : null;
+        if (token) {
+            const res = await fetch('/api/push/register', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ subscription: json, orgId }),
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                return { success: true, message: 'Suscripción guardada en el servidor.' };
+            }
+        }
+    } catch (e) {
+        console.warn('[PUSH] Guardado vía API falló, usando Firestore cliente:', e);
+    }
+    return savePushSubscriptionAction(json, orgId);
+}
 
 function SubmitButton() {
     const { t } = useTranslation();
@@ -56,6 +85,8 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
     const [isTesting, setIsTesting] = useState(false);
     const [isRunningCycle, setIsRunningCycle] = useState(false);
     const [pushEnvironmentHint, setPushEnvironmentHint] = useState<string | null>(null);
+    const [pushDiagnostics, setPushDiagnostics] = useState<PushClientDiagnostics | null>(null);
+    const [isDiagnosing, setIsDiagnosing] = useState(false);
 
     const refreshPushStatus = async () => {
         if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
@@ -86,7 +117,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                 const sub = await registration.pushManager.getSubscription();
                 if (!sub || cancelled) return;
                 setHasPushSubscription(true);
-                await savePushSubscriptionAction(JSON.parse(JSON.stringify(sub)), orgId);
+                await persistPushSubscription(sub, orgId);
             } catch {
                 // El usuario puede activar manualmente si la sincronización falla.
             }
@@ -167,7 +198,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
             const registration = await waitForActiveServiceWorker();
             const subscription = await subscribeToPush(registration, publicKey);
 
-            const result = await savePushSubscriptionAction(JSON.parse(JSON.stringify(subscription)), orgId);
+            const result = await persistPushSubscription(subscription, orgId);
             if (result.success) {
                 setHasPushSubscription(true);
                 toast({ title: t('common.success'), description: "Dispositivo registrado con éxito." });
@@ -176,6 +207,12 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
             }
         } catch (error: unknown) {
             console.error("[PUSH] Error en registro:", error);
+            try {
+                const publicKey = await fetchPublicVapidKey();
+                setPushDiagnostics(await collectPushDiagnostics(publicKey));
+            } catch {
+                /* ignorar */
+            }
             toast({
                 title: "Fallo de servicio",
                 description: explainPushSubscribeError(error),
@@ -183,6 +220,22 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
             });
         } finally {
             setIsSubscribing(false);
+        }
+    };
+
+    const handleRunDiagnostics = async () => {
+        setIsDiagnosing(true);
+        try {
+            const publicKey = await fetchPublicVapidKey();
+            setPushDiagnostics(await collectPushDiagnostics(publicKey));
+        } catch (e) {
+            toast({
+                title: "Diagnóstico",
+                description: e instanceof Error ? e.message : 'No se pudo completar',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsDiagnosing(false);
         }
     };
 
@@ -336,7 +389,33 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                         </div>
                     )}
 
-                    <div className="pt-4 border-t border-dashed">
+                    {pushDiagnostics && (
+                        <Alert className="bg-muted/30 border-dashed text-left">
+                            <AlertTitle className="text-[10px] font-black uppercase">Diagnóstico de este móvil</AlertTitle>
+                            <AlertDescription className="text-[10px] space-y-1 font-mono">
+                                <p>HTTPS: {pushDiagnostics.isSecureContext ? 'sí' : 'NO'}</p>
+                                <p>Permiso: {pushDiagnostics.notificationPermission}</p>
+                                <p>Service worker: {pushDiagnostics.hasServiceWorkerController ? 'activo' : 'inactivo'}</p>
+                                <p>Clave VAPID: {pushDiagnostics.vapidKeyBytes ?? '?'} bytes</p>
+                                <p>Suscripción local: {pushDiagnostics.existingSubscription ? 'sí' : 'no'}</p>
+                                {pushDiagnostics.hints.map((hint) => (
+                                    <p key={hint} className="text-amber-700 font-sans font-medium">{hint}</p>
+                                ))}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                    <div className="pt-4 border-t border-dashed space-y-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRunDiagnostics}
+                            disabled={isDiagnosing || isSubscribing}
+                            className="w-full text-[10px] uppercase font-bold"
+                        >
+                            {isDiagnosing ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <Info className="h-3 w-3 mr-2" />}
+                            Ver diagnóstico en este móvil
+                        </Button>
                         <Button 
                             variant="ghost" 
                             size="sm" 

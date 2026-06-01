@@ -39,3 +39,10 @@ Al pulsar "Activar", abre la consola (`F12`).
 - **Bytes=65**: Significa que la llave pública es íntegra.
 - **FirstByte=4**: Significa que el formato VAPID es correcto.
 - Si ves ambos y da error, el problema es que la **Llave Privada** en el servidor no es la pareja de esa Pública.
+
+## **Android (móvil)**
+- Usa la **misma URL HTTPS de producción** (Netlify) en el teléfono. `http://192.168.x.x` **no** registra push.
+- Navegador recomendado: **Chrome** (actualizado). Evita visores de WhatsApp/Gmail.
+- Si la **comprobación** llega al PC pero no al móvil: el móvil **no está registrado** (solo el PC figura en `pushSubscriptions`).
+- Tras desplegar: **Reseteo forzado** → recargar → **Activar**. Si instalaste la app en el inicio, quítala y vuelve a añadirla.
+- El `manifest.json` incluye `gcm_sender_id` (requerido por FCM en Chrome Android).

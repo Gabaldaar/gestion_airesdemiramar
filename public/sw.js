@@ -1,4 +1,4 @@
-// Regentum Service Worker v1.7.0
+// Regentum Service Worker v1.8.0
 
 function resolveNotificationUrl(path) {
   try {
@@ -7,6 +7,10 @@ function resolveNotificationUrl(path) {
     return self.location.origin + '/';
   }
 }
+
+self.addEventListener('install', function (event) {
+  event.waitUntil(self.skipWaiting());
+});
 
 self.addEventListener('push', function (event) {
   const fallback = {
@@ -65,8 +69,11 @@ self.addEventListener('notificationclick', function (event) {
   );
 });
 
-self.addEventListener('activate', function () {
-  if ('clearAppBadge' in self.navigator) {
-    self.navigator.clearAppBadge();
-  }
+self.addEventListener('activate', function (event) {
+  event.waitUntil(
+    Promise.all([
+      clients.claim(),
+      'clearAppBadge' in self.navigator ? self.navigator.clearAppBadge() : Promise.resolve(),
+    ])
+  );
 });

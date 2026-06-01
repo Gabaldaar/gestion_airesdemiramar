@@ -1,7 +1,35 @@
 /**
  * Utilidades de registro push en el navegador (cliente).
- * Pensado para móvil: iOS PWA, SW activo, llave VAPID válida.
+ * Android: requiere gcm_sender_id en manifest + FCM (Google Play Services).
  */
+
+export type PushClientDiagnostics = {
+  userAgent: string;
+  isAndroid: boolean;
+  isSecureContext: boolean;
+  notificationPermission: string;
+  hasServiceWorkerController: boolean;
+  vapidKeyLength: number;
+  vapidKeyBytes: number | null;
+  existingSubscription: boolean;
+  hints: string[];
+};
+
+export function isAndroidDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android/i.test(navigator.userAgent);
+}
+
+export function isBraveBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return (navigator as Navigator & { brave?: unknown }).brave !== undefined;
+}
+
+export function isHuaweiWithoutGms(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  return /Huawei|Honor|HMSCore/i.test(ua);
+}
 
 export function sanitizeVapidPublicKey(raw: string): string {
   return raw.replace(/["'\s\n\t]/g, '').trim();
@@ -17,6 +45,15 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
+}
+
+/** Chrome en Android a veces exige ArrayBuffer en lugar de Uint8Array. */
+export function toApplicationServerKey(publicKeyBase64: string): BufferSource {
+  const bytes = decodeVapidPublicKey(publicKeyBase64);
+  if (isAndroidDevice()) {
+    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  }
+  return bytes;
 }
 
 export function validateVapidPublicKeyBytes(key: Uint8Array): void {
@@ -38,7 +75,6 @@ export function decodeVapidPublicKey(base64String: string): Uint8Array {
   return bytes;
 }
 
-/** Llave pública desde el servidor (misma que usa web-push al enviar). */
 export async function fetchPublicVapidKey(): Promise<string> {
   try {
     const res = await fetch('/api/push/vapid-public-key', { cache: 'no-store' });
@@ -47,10 +83,14 @@ export async function fetchPublicVapidKey(): Promise<string> {
       if (data.publicKey) return sanitizeVapidPublicKey(data.publicKey);
     }
   } catch {
-    // fallback al bundle
+    /* fallback */
   }
   const fromEnv = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
   return sanitizeVapidPublicKey(fromEnv);
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function getPushEnvironmentBlocker(): string | null {
@@ -65,15 +105,31 @@ export function getPushEnvironmentBlocker(): string | null {
     (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
   if (/FBAN|FBAV|Instagram|Line\//i.test(ua)) {
-    return 'Abre Regentum en Chrome o Safari directamente (no desde Instagram, WhatsApp ni el visor de Gmail).';
+    return 'Abre Regentum en Chrome (icono de Chrome), no desde WhatsApp, Gmail ni Facebook.';
   }
 
   if (isIOS && !isStandalone) {
-    return 'En iPhone/iPad: en Safari pulsa Compartir → «Añadir a pantalla de inicio», abre Regentum desde el icono instalado y activa las alertas ahí. Safari normal no admite push.';
+    return 'En iPhone: Safari → Compartir → Añadir a pantalla de inicio, y abre la app desde el icono.';
   }
 
   if (!window.isSecureContext) {
-    return 'Las notificaciones push requieren HTTPS. No funcionan en conexiones inseguras.';
+    const host = window.location.hostname;
+    if (/^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./.test(host)) {
+      return `Estás en http://${host} (red local). El móvil no puede registrar push por HTTP. Abre la misma URL HTTPS de producción (Netlify) en el teléfono.`;
+    }
+    return 'Las notificaciones push requieren HTTPS. Abre el sitio publicado en Netlify, no una IP local.';
+  }
+
+  if (isHuaweiWithoutGms()) {
+    return 'Este teléfono Huawei/Honor puede no tener Google Play Services (FCM). Prueba con Chrome actualizado o un dispositivo con servicios de Google.';
+  }
+
+  if (isBraveBrowser()) {
+    return 'En Brave: Ajustes → Privacidad → activa «Usar los servicios de Google para la mensajería push».';
+  }
+
+  if (isAndroidDevice() && /SamsungBrowser/i.test(ua)) {
+    return 'En Samsung Internet a veces falla el registro. Prueba con Chrome instalado desde Play Store.';
   }
 
   return null;
@@ -89,20 +145,86 @@ export function explainPushSubscribeError(error: unknown): string {
   }
 
   if (lower.includes('push service')) {
-    return (
-      'El servicio push del navegador rechazó el registro. Prueba: 1) Reseteo forzado abajo, 2) Cerrar y abrir el navegador, ' +
-      '3) En Android, activar notificaciones para Chrome en Ajustes del sistema. Si usas iPhone, instala la app en la pantalla de inicio.'
-    );
+    if (isAndroidDevice()) {
+      return (
+        'Android rechazó el registro con Google (FCM). Pasos: 1) Usa Chrome (no el navegador de Samsung si falla), ' +
+        '2) Ajustes → Apps → Chrome → Notificaciones activadas, 3) Actualiza «Servicios de Google Play», ' +
+        '4) Reseteo forzado aquí y recarga la página, 5) Si instalaste Regentum como app, desinstálala del inicio y vuelve a añadirla tras desplegar la actualización.'
+      );
+    }
+    return 'El servicio push del navegador rechazó el registro. Usa Reseteo forzado y vuelve a intentar en Chrome.';
   }
 
   if (lower.includes('not allowed') || lower.includes('permission')) {
-    return 'Permiso de notificaciones denegado. Actívalo en Ajustes → Notificaciones para este navegador o app.';
+    return 'Permiso denegado. En Android: Ajustes → Apps → Chrome → Notificaciones → Permitir.';
   }
 
   return message || 'Error de registro. Usa Reseteo forzado y vuelve a intentar.';
 }
 
-/** Espera a que el SW esté activo (en móvil `ready` a veces no basta). */
+export async function collectPushDiagnostics(publicKey: string): Promise<PushClientDiagnostics> {
+  const hints: string[] = [];
+  let vapidKeyBytes: number | null = null;
+  let existingSubscription = false;
+
+  try {
+    vapidKeyBytes = decodeVapidPublicKey(publicKey).length;
+  } catch (e) {
+    hints.push(e instanceof Error ? e.message : 'Clave VAPID inválida');
+  }
+
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    hints.push('Este navegador no soporta notificaciones push.');
+  }
+
+  if (!navigator.serviceWorker.controller) {
+    hints.push('El service worker aún no controla la página. Recarga después del reseteo.');
+  }
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    existingSubscription = !!(await reg.pushManager.getSubscription());
+  } catch {
+    hints.push('No se pudo leer el estado del service worker.');
+  }
+
+  const blocker = getPushEnvironmentBlocker();
+  if (blocker) hints.push(blocker);
+
+  return {
+    userAgent: navigator.userAgent,
+    isAndroid: isAndroidDevice(),
+    isSecureContext: window.isSecureContext,
+    notificationPermission: typeof Notification !== 'undefined' ? Notification.permission : 'unsupported',
+    hasServiceWorkerController: !!navigator.serviceWorker.controller,
+    vapidKeyLength: publicKey.length,
+    vapidKeyBytes,
+    existingSubscription,
+    hints,
+  };
+}
+
+export async function waitForServiceWorkerControl(timeoutMs = 12000): Promise<void> {
+  if (navigator.serviceWorker.controller) return;
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      reject(
+        new Error(
+          'El service worker no tomó control. Recarga la página (tira hacia abajo en Chrome) e intenta de nuevo.'
+        )
+      );
+    }, timeoutMs);
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (navigator.serviceWorker.controller) {
+        window.clearTimeout(timeout);
+        resolve();
+      }
+    });
+  });
+}
+
 export async function waitForActiveServiceWorker(): Promise<ServiceWorkerRegistration> {
   const registration = await navigator.serviceWorker.register('/sw.js', {
     scope: '/',
@@ -115,12 +237,8 @@ export async function waitForActiveServiceWorker(): Promise<ServiceWorkerRegistr
     /* ignorar */
   }
 
-  if (registration.active) {
-    return registration;
-  }
-
   const installing = registration.installing || registration.waiting;
-  if (installing) {
+  if (!registration.active && installing) {
     await new Promise<void>((resolve, reject) => {
       const timeout = window.setTimeout(() => reject(new Error('Service worker timeout')), 15000);
       installing.addEventListener('statechange', () => {
@@ -137,40 +255,68 @@ export async function waitForActiveServiceWorker(): Promise<ServiceWorkerRegistr
   }
 
   await navigator.serviceWorker.ready;
+  await waitForServiceWorkerControl();
   return registration;
+}
+
+async function trySubscribe(
+  registration: ServiceWorkerRegistration,
+  publicKeyBase64: string,
+  clearExisting: boolean
+): Promise<PushSubscription> {
+  if (clearExisting) {
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) {
+      try {
+        await existing.unsubscribe();
+        await delay(isAndroidDevice() ? 1200 : 400);
+      } catch {
+        /* ignorar */
+      }
+    }
+  }
+
+  const applicationServerKey = toApplicationServerKey(publicKeyBase64);
+  return registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey,
+  });
+}
+
+/** Re-registro completo del SW (útil en Android con estado corrupto). */
+export async function resetServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((r) => r.unregister()));
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((k) => caches.delete(k)));
+  }
+  await delay(400);
+  return waitForActiveServiceWorker();
 }
 
 export async function subscribeToPush(
   registration: ServiceWorkerRegistration,
   publicKeyBase64: string
 ): Promise<PushSubscription> {
-  const applicationServerKey = decodeVapidPublicKey(publicKeyBase64);
-  const options: PushSubscriptionOptionsInit = {
-    userVisibleOnly: true,
-    applicationServerKey,
-  };
-
   const existing = await registration.pushManager.getSubscription();
   if (existing) {
     try {
-      await existing.unsubscribe();
+      return existing;
     } catch {
-      /* puede fallar si la suscripción ya no es válida */
+      /* continuar con nuevo registro */
     }
   }
 
   try {
-    return await registration.pushManager.subscribe(options);
-  } catch (firstError) {
-    // Segundo intento tras limpiar (común en Android con suscripción corrupta)
-    const stale = await registration.pushManager.getSubscription();
-    if (stale) {
-      try {
-        await stale.unsubscribe();
-      } catch {
-        /* ignorar */
-      }
+    return await trySubscribe(registration, publicKeyBase64, false);
+  } catch {
+    try {
+      return await trySubscribe(registration, publicKeyBase64, true);
+    } catch {
+      const freshRegistration = await resetServiceWorkerRegistration();
+      await delay(600);
+      return trySubscribe(freshRegistration, publicKeyBase64, false);
     }
-    return await registration.pushManager.subscribe(options);
   }
 }
