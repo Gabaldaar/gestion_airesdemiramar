@@ -15,10 +15,12 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from './auth-provider';
 import { cn } from '@/lib/utils';
 import {
+    BRAVE_ANDROID_PUSH_MESSAGE,
     collectPushDiagnostics,
     explainPushSubscribeError,
     fetchPublicVapidKey,
     getPushEnvironmentBlocker,
+    isBraveOnAndroid,
     subscribeToPush,
     waitForActiveServiceWorker,
     type PushClientDiagnostics,
@@ -361,7 +363,19 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                     </AlertDescription>
                  </Alert>
 
-                {pushEnvironmentHint && (
+                {isBraveOnAndroid() && (
+                    <Alert className="bg-red-50 border-red-300">
+                        <AlertTitle className="text-xs font-bold uppercase flex items-center gap-2 text-red-800">
+                            <ShieldAlert className="h-4 w-4" />
+                            Brave no admite estas alertas en Android
+                        </AlertTitle>
+                        <AlertDescription className="text-xs text-red-900 leading-relaxed">
+                            {BRAVE_ANDROID_PUSH_MESSAGE}
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {pushEnvironmentHint && !isBraveOnAndroid() && (
                     <Alert className="bg-blue-50 border-blue-200">
                         <AlertTitle className="text-xs font-bold uppercase flex items-center gap-2">
                             <Info className="h-4 w-4" />
@@ -374,7 +388,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                 <div className="flex flex-col gap-2">
                     <Button 
                         onClick={handleSubscribe} 
-                        disabled={isSubscribing || !isPushSupported || isResetting}
+                        disabled={isSubscribing || !isPushSupported || isResetting || isBraveOnAndroid()}
                         className={cn("w-full h-12 font-bold uppercase tracking-widest shadow-lg", isSubscribed && "bg-green-600 hover:bg-green-700")}
                     >
                         {isSubscribing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bell className="mr-2 h-4 w-4" />}
@@ -412,6 +426,8 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                         <Alert className="bg-muted/30 border-dashed text-left">
                             <AlertTitle className="text-[10px] font-black uppercase">Diagnóstico de este móvil</AlertTitle>
                             <AlertDescription className="text-[10px] space-y-1 font-mono">
+                                <p>Navegador: {pushDiagnostics.browserLabel}</p>
+                                <p>Registro aquí: {pushDiagnostics.canRegisterHere ? 'sí' : 'NO'}</p>
                                 <p>HTTPS: {pushDiagnostics.isSecureContext ? 'sí' : 'NO'}</p>
                                 <p>Permiso: {pushDiagnostics.notificationPermission}</p>
                                 <p>Service worker: {pushDiagnostics.hasServiceWorkerController ? 'activo' : 'inactivo'}</p>

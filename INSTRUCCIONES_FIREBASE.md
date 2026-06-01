@@ -42,7 +42,9 @@ Al pulsar "Activar", abre la consola (`F12`).
 
 ## **Android (móvil)**
 - Usa la **misma URL HTTPS de producción** (Netlify) en el teléfono. `http://192.168.x.x` **no** registra push.
-- Navegador recomendado: **Chrome** (actualizado). Evita visores de WhatsApp/Gmail.
+- Navegador obligatorio: **Google Chrome** (desde Play Store). **Brave en Android no sirve** para estas alertas: no usa FCM/Google Play y siempre fallará el registro.
+- Puedes seguir usando Brave para navegar; abre Regentum en **Chrome** solo para **Ajustes → Alertas → Activar**.
+- **Edge** en Android puede funcionar (es Chromium) si permites notificaciones en Ajustes del sistema para Edge.
 - Si la **comprobación** llega al PC pero no al móvil: el móvil **no está registrado** (solo el PC figura en `pushSubscriptions`).
 - Tras desplegar: **Reseteo forzado** → recargar → **Activar**. Si instalaste la app en el inicio, quítala y vuelve a añadirla.
 - El `manifest.json` incluye `gcm_sender_id` (requerido por FCM en Chrome Android).

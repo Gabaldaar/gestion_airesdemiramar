@@ -5,7 +5,9 @@
 
 export type PushClientDiagnostics = {
   userAgent: string;
+  browserLabel: string;
   isAndroid: boolean;
+  canRegisterHere: boolean;
   isSecureContext: boolean;
   notificationPermission: string;
   hasServiceWorkerController: boolean;
@@ -15,6 +17,11 @@ export type PushClientDiagnostics = {
   hints: string[];
 };
 
+export const BRAVE_ANDROID_PUSH_MESSAGE =
+  'Brave en Android no puede registrar alertas push: no usa los servicios de Google (FCM) que requiere esta app. ' +
+  'Instala Chrome desde Play Store, abre Regentum en Chrome (misma cuenta), ve a Ajustes → Alertas y pulsa Activar. ' +
+  'Puedes seguir usando Brave para navegar; las notificaciones solo funcionarán en Chrome en este teléfono.';
+
 export function isAndroidDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
   return /Android/i.test(navigator.userAgent);
@@ -23,6 +30,27 @@ export function isAndroidDevice(): boolean {
 export function isBraveBrowser(): boolean {
   if (typeof navigator === 'undefined') return false;
   return (navigator as Navigator & { brave?: unknown }).brave !== undefined;
+}
+
+export function isBraveOnAndroid(): boolean {
+  return isAndroidDevice() && isBraveBrowser();
+}
+
+export function getMobileBrowserLabel(): string {
+  if (typeof navigator === 'undefined') return 'Desconocido';
+  const ua = navigator.userAgent;
+  if (isBraveBrowser()) return 'Brave';
+  if (/Edg\//i.test(ua)) return 'Microsoft Edge';
+  if (/SamsungBrowser/i.test(ua)) return 'Samsung Internet';
+  if (/Firefox/i.test(ua)) return 'Firefox';
+  if (/Chrome\//i.test(ua)) return 'Chrome';
+  return 'Otro';
+}
+
+/** En Android, el push web de Regentum depende de FCM (Chrome/Edge Chromium). Brave no lo soporta. */
+export function canRegisterPushOnThisBrowser(): boolean {
+  if (isBraveOnAndroid()) return false;
+  return getPushEnvironmentBlocker() === null;
 }
 
 export function isHuaweiWithoutGms(): boolean {
@@ -126,12 +154,12 @@ export function getPushEnvironmentBlocker(): string | null {
     return 'Las notificaciones push requieren HTTPS. Abre el sitio publicado en Netlify, no una IP local.';
   }
 
-  if (isHuaweiWithoutGms()) {
-    return 'Este teléfono Huawei/Honor puede no tener Google Play Services (FCM). Prueba con Chrome actualizado o un dispositivo con servicios de Google.';
+  if (isBraveOnAndroid()) {
+    return BRAVE_ANDROID_PUSH_MESSAGE;
   }
 
-  if (isBraveBrowser()) {
-    return 'En Brave: Ajustes → Privacidad → activa «Usar los servicios de Google para la mensajería push».';
+  if (isHuaweiWithoutGms()) {
+    return 'Este teléfono Huawei/Honor puede no tener Google Play Services (FCM). Prueba con Chrome actualizado o un dispositivo con servicios de Google.';
   }
 
   if (isAndroidDevice() && /SamsungBrowser/i.test(ua)) {
@@ -142,6 +170,10 @@ export function getPushEnvironmentBlocker(): string | null {
 }
 
 export function explainPushSubscribeError(error: unknown): string {
+  if (isBraveOnAndroid()) {
+    return BRAVE_ANDROID_PUSH_MESSAGE;
+  }
+
   const message = error instanceof Error ? error.message : String(error);
   const lower = message.toLowerCase();
 
@@ -153,9 +185,9 @@ export function explainPushSubscribeError(error: unknown): string {
   if (lower.includes('push service')) {
     if (isAndroidDevice()) {
       return (
-        'Android rechazó el registro con Google (FCM). Pasos: 1) Usa Chrome (no el navegador de Samsung si falla), ' +
-        '2) Ajustes → Apps → Chrome → Notificaciones activadas, 3) Actualiza «Servicios de Google Play», ' +
-        '4) Reseteo forzado aquí y recarga la página, 5) Si instalaste Regentum como app, desinstálala del inicio y vuelve a añadirla tras desplegar la actualización.'
+        'Android rechazó el registro con Google (FCM). Usa Chrome (no Brave ni Samsung Internet). ' +
+        'En Chrome: Ajustes → Apps → Chrome → Notificaciones activadas, actualiza Servicios de Google Play, ' +
+        'luego Reseteo forzado aquí y vuelve a Activar.'
       );
     }
     return 'El servicio push del navegador rechazó el registro. Usa Reseteo forzado y vuelve a intentar en Chrome.';
@@ -197,9 +229,22 @@ export async function collectPushDiagnostics(publicKey: string): Promise<PushCli
   const blocker = getPushEnvironmentBlocker();
   if (blocker) hints.push(blocker);
 
+  const browserLabel = getMobileBrowserLabel();
+  const canRegisterHere = canRegisterPushOnThisBrowser();
+
+  if (isBraveOnAndroid()) {
+    hints.unshift('Este navegador (Brave) no puede registrar push en Android. Usa Chrome.');
+  } else if (isAndroidDevice() && browserLabel === 'Chrome' && !existingSubscription) {
+    hints.push(
+      'Si Chrome también falla: actualiza Chrome y Servicios de Google Play, desactiva VPN/bloqueadores y prueba otra red.'
+    );
+  }
+
   return {
     userAgent: navigator.userAgent,
+    browserLabel,
     isAndroid: isAndroidDevice(),
+    canRegisterHere,
     isSecureContext: window.isSecureContext,
     notificationPermission: typeof Notification !== 'undefined' ? Notification.permission : 'unsupported',
     hasServiceWorkerController: !!navigator.serviceWorker.controller,
@@ -362,6 +407,10 @@ export async function subscribeToPush(
   registration: ServiceWorkerRegistration,
   publicKeyBase64: string
 ): Promise<PushSubscription | PushSubscriptionJSON> {
+  if (isBraveOnAndroid()) {
+    throw new Error(BRAVE_ANDROID_PUSH_MESSAGE);
+  }
+
   const existing = await registration.pushManager.getSubscription();
   if (existing && !isAndroidDevice()) {
     return existing;
