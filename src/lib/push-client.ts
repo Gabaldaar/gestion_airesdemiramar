@@ -47,14 +47,20 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-/** Chrome en Android a veces exige ArrayBuffer en lugar de Uint8Array. */
 export function toApplicationServerKey(publicKeyBase64: string): BufferSource {
-  const bytes = decodeVapidPublicKey(publicKeyBase64);
-  if (isAndroidDevice()) {
-    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-  }
-  return bytes;
+  return decodeVapidPublicKey(publicKeyBase64);
 }
+
+export function toApplicationServerKeyBuffer(publicKeyBase64: string): ArrayBuffer {
+  const bytes = decodeVapidPublicKey(publicKeyBase64);
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+}
+
+export type PushSubscriptionJSON = {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: { p256dh: string; auth: string };
+};
 
 export function validateVapidPublicKeyBytes(key: Uint8Array): void {
   if (key.length !== 65) {
@@ -259,27 +265,84 @@ export async function waitForActiveServiceWorker(): Promise<ServiceWorkerRegistr
   return registration;
 }
 
+async function clearExistingSubscription(registration: ServiceWorkerRegistration) {
+  const existing = await registration.pushManager.getSubscription();
+  if (existing) {
+    try {
+      await existing.unsubscribe();
+      await delay(isAndroidDevice() ? 1200 : 400);
+    } catch {
+      /* ignorar */
+    }
+  }
+}
+
 async function trySubscribe(
   registration: ServiceWorkerRegistration,
   publicKeyBase64: string,
   clearExisting: boolean
 ): Promise<PushSubscription> {
   if (clearExisting) {
-    const existing = await registration.pushManager.getSubscription();
-    if (existing) {
-      try {
-        await existing.unsubscribe();
-        await delay(isAndroidDevice() ? 1200 : 400);
-      } catch {
-        /* ignorar */
-      }
-    }
+    await clearExistingSubscription(registration);
   }
 
-  const applicationServerKey = toApplicationServerKey(publicKeyBase64);
-  return registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey,
+  const keyVariants: BufferSource[] = [
+    toApplicationServerKey(publicKeyBase64),
+    toApplicationServerKeyBuffer(publicKeyBase64),
+  ];
+
+  let lastError: unknown;
+  for (const applicationServerKey of keyVariants) {
+    try {
+      return await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * En Android Chrome, subscribe() desde la página a veces falla con "push service error"
+ * pero funciona desde el service worker (mismo registro FCM).
+ */
+export async function subscribeViaServiceWorker(
+  publicKeyBase64: string,
+  clearExisting = true
+): Promise<PushSubscriptionJSON> {
+  const registration = await navigator.serviceWorker.ready;
+  const worker = registration.active;
+  if (!worker) {
+    throw new Error('Service worker no activo. Recarga la página e intenta de nuevo.');
+  }
+
+  return new Promise((resolve, reject) => {
+    const channel = new MessageChannel();
+    const timeout = window.setTimeout(() => {
+      reject(new Error('Timeout registrando push en el service worker'));
+    }, 20000);
+
+    channel.port1.onmessage = (event) => {
+      window.clearTimeout(timeout);
+      const data = event.data as {
+        success?: boolean;
+        subscription?: PushSubscriptionJSON;
+        error?: string;
+      };
+      if (data?.success && data.subscription?.endpoint) {
+        resolve(data.subscription);
+        return;
+      }
+      reject(new Error(data?.error || 'Error en registro push (service worker)'));
+    };
+
+    worker.postMessage(
+      { type: 'PUSH_SUBSCRIBE', publicKey: publicKeyBase64, clearExisting },
+      [channel.port2]
+    );
   });
 }
 
@@ -298,25 +361,39 @@ export async function resetServiceWorkerRegistration(): Promise<ServiceWorkerReg
 export async function subscribeToPush(
   registration: ServiceWorkerRegistration,
   publicKeyBase64: string
-): Promise<PushSubscription> {
+): Promise<PushSubscription | PushSubscriptionJSON> {
   const existing = await registration.pushManager.getSubscription();
-  if (existing) {
+  if (existing && !isAndroidDevice()) {
+    return existing;
+  }
+
+  if (isAndroidDevice()) {
     try {
-      return existing;
-    } catch {
-      /* continuar con nuevo registro */
+      return await subscribeViaServiceWorker(publicKeyBase64, true);
+    } catch (swError) {
+      console.warn('[PUSH] Registro vía SW falló, intentando desde página:', swError);
     }
   }
 
   try {
-    return await trySubscribe(registration, publicKeyBase64, false);
-  } catch {
+    return await trySubscribe(registration, publicKeyBase64, isAndroidDevice());
+  } catch (pageError) {
+    if (isAndroidDevice()) {
+      try {
+        return await subscribeViaServiceWorker(publicKeyBase64, true);
+      } catch {
+        throw pageError;
+      }
+    }
     try {
-      return await trySubscribe(registration, publicKeyBase64, true);
-    } catch {
       const freshRegistration = await resetServiceWorkerRegistration();
       await delay(600);
-      return trySubscribe(freshRegistration, publicKeyBase64, false);
+      if (isAndroidDevice()) {
+        return await subscribeViaServiceWorker(publicKeyBase64, true);
+      }
+      return await trySubscribe(freshRegistration, publicKeyBase64, false);
+    } catch {
+      throw pageError;
     }
   }
 }

@@ -22,12 +22,19 @@ import {
     subscribeToPush,
     waitForActiveServiceWorker,
     type PushClientDiagnostics,
+    type PushSubscriptionJSON,
 } from '@/lib/push-client';
 import { getAuth } from 'firebase/auth';
 import { getApp } from 'firebase/app';
 
-async function persistPushSubscription(subscription: PushSubscription, orgId: string) {
-    const json = JSON.parse(JSON.stringify(subscription));
+async function persistPushSubscription(
+    subscription: PushSubscription | PushSubscriptionJSON,
+    orgId: string
+) {
+    const json =
+        'toJSON' in subscription
+            ? (subscription as PushSubscription).toJSON()
+            : subscription;
     try {
         const user = getAuth(getApp()).currentUser;
         const token = user ? await user.getIdToken() : null;
@@ -227,7 +234,19 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
         setIsDiagnosing(true);
         try {
             const publicKey = await fetchPublicVapidKey();
-            setPushDiagnostics(await collectPushDiagnostics(publicKey));
+            const diag = await collectPushDiagnostics(publicKey);
+            try {
+                const healthRes = await fetch('/api/push/health', { cache: 'no-store' });
+                const health = await healthRes.json();
+                if (health.keyPairValid === false) {
+                    diag.hints.push(`Servidor: par VAPID inválido — ${health.keyPairError || 'revisa Netlify'}`);
+                } else if (health.ok) {
+                    diag.hints.push('Servidor: par VAPID OK. Si Android falla, actualiza Chrome y Servicios de Google Play.');
+                }
+            } catch {
+                diag.hints.push('No se pudo verificar el par VAPID en el servidor.');
+            }
+            setPushDiagnostics(diag);
         } catch (e) {
             toast({
                 title: "Diagnóstico",

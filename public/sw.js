@@ -1,4 +1,4 @@
-// Regentum Service Worker v1.8.0
+// Regentum Service Worker v1.9.0
 
 function resolveNotificationUrl(path) {
   try {
@@ -8,12 +8,89 @@ function resolveNotificationUrl(path) {
   }
 }
 
+function urlB64ToUint8Array(base64String) {
+  var cleaned = String(base64String).replace(/["'\s\n\t]/g, '').trim();
+  var padding = '='.repeat((4 - (cleaned.length % 4)) % 4);
+  var base64 = (cleaned + padding).replace(/-/g, '+').replace(/_/g, '/');
+  var rawData = atob(base64);
+  var outputArray = new Uint8Array(rawData.length);
+  for (var i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+function subscribeWithKey(publicKey, clearExisting) {
+  return self.registration.pushManager.getSubscription().then(function (existing) {
+    if (clearExisting && existing) {
+      return existing.unsubscribe().catch(function () {}).then(function () {
+        return delay(800);
+      });
+    }
+    return undefined;
+  }).then(function () {
+    var keyBytes = urlB64ToUint8Array(publicKey);
+    return self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: keyBytes,
+    });
+  });
+}
+
+function delay(ms) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms);
+  });
+}
+
 self.addEventListener('install', function (event) {
   event.waitUntil(self.skipWaiting());
 });
 
+self.addEventListener('message', function (event) {
+  var data = event.data;
+  if (!data || data.type !== 'PUSH_SUBSCRIBE') return;
+
+  var replyPort = event.ports && event.ports[0];
+  if (!replyPort) return;
+
+  event.waitUntil(
+    subscribeWithKey(data.publicKey, !!data.clearExisting)
+      .then(function (subscription) {
+        replyPort.postMessage({
+          success: true,
+          subscription: subscription.toJSON(),
+        });
+      })
+      .catch(function (err) {
+        var keyBytes = urlB64ToUint8Array(data.publicKey);
+        var bufferKey = keyBytes.buffer.slice(
+          keyBytes.byteOffset,
+          keyBytes.byteOffset + keyBytes.byteLength
+        );
+        return self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: bufferKey,
+        })
+          .then(function (subscription) {
+            replyPort.postMessage({
+              success: true,
+              subscription: subscription.toJSON(),
+            });
+          })
+          .catch(function (err2) {
+            replyPort.postMessage({
+              success: false,
+              error: (err2 && err2.message) || String(err2),
+              name: (err2 && err2.name) || 'Error',
+            });
+          });
+      })
+  );
+});
+
 self.addEventListener('push', function (event) {
-  const fallback = {
+  var fallback = {
     title: 'Regentum',
     body: 'Tienes una nueva alerta.',
     tag: 'general-notification',
@@ -21,30 +98,28 @@ self.addEventListener('push', function (event) {
     icon: '/icons/icon-192x192.png',
   };
 
-  let data = fallback;
+  var payload = fallback;
   if (event.data) {
     try {
-      data = { ...fallback, ...event.data.json() };
-    } catch {
-      data = { ...fallback, body: event.data.text() || fallback.body };
+      payload = Object.assign({}, fallback, event.data.json());
+    } catch (e) {
+      payload = Object.assign({}, fallback, { body: event.data.text() || fallback.body });
     }
   }
 
-  const options = {
-    body: data.body,
-    icon: data.icon || '/icons/icon-192x192.png',
+  var options = {
+    body: payload.body,
+    icon: payload.icon || '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
     vibrate: [200, 100, 200],
-    tag: data.tag || 'general-notification',
+    tag: payload.tag || 'general-notification',
     renotify: true,
-    data: {
-      url: data.url || '/',
-    },
+    data: { url: payload.url || '/' },
   };
 
   event.waitUntil(
     Promise.all([
-      self.registration.showNotification(data.title || fallback.title, options),
+      self.registration.showNotification(payload.title || fallback.title, options),
       'setAppBadge' in self.navigator ? self.navigator.setAppBadge() : Promise.resolve(),
     ])
   );
@@ -52,13 +127,13 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  const urlToOpen = resolveNotificationUrl(event.notification.data?.url);
+  var urlToOpen = resolveNotificationUrl(event.notification.data && event.notification.data.url);
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i];
-        if (client.url.startsWith(urlToOpen) && 'focus' in client) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if (client.url.indexOf(urlToOpen) === 0 && 'focus' in client) {
           return client.focus();
         }
       }
