@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/firebase/admin';
 import * as webpush from 'web-push';
+import {
+    getVapidConfigFromEnv,
+    isStalePushSubscriptionError,
+    toWebPushSubscription,
+} from '@/lib/push-notifications';
 
 export async function POST(req: Request) {
     try {
@@ -10,15 +15,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "OrgId is required" }, { status: 400 });
         }
 
-        const pubKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '').replace(/["']/g, '').trim();
-        const privKey = (process.env.VAPID_PRIVATE_KEY || '').replace(/["']/g, '').trim();
-        const mailTo = (process.env.VAPID_MAILTO || '').replace(/["']/g, '').trim();
+        const { publicKey, privateKey, subject } = getVapidConfigFromEnv();
 
-        if (!pubKey || !privKey || !mailTo) {
+        if (!publicKey || !privateKey || !subject) {
             return NextResponse.json({ error: "VAPID keys not configured in Netlify environment" }, { status: 500 });
         }
 
-        webpush.setVapidDetails(mailTo, pubKey, privKey);
+        webpush.setVapidDetails(subject, publicKey, privateKey);
         const db = getDb();
         
         const subsSnap = await db.collection('pushSubscriptions').where('orgId', '==', orgId).get();
@@ -36,12 +39,11 @@ export async function POST(req: Request) {
         });
 
         const results = await Promise.all(subsSnap.docs.map(async (doc) => {
-            const sub = doc.data();
             try {
-                await webpush.sendNotification(sub, payload);
+                await webpush.sendNotification(toWebPushSubscription(doc.data()), payload);
                 return { success: true };
             } catch (error: any) {
-                if (error.statusCode === 410 || error.statusCode === 404) {
+                if (isStalePushSubscriptionError(error.statusCode)) {
                     await doc.ref.delete();
                 }
                 return { success: false, error: error.message };
@@ -53,7 +55,7 @@ export async function POST(req: Request) {
         if (successCount === 0) {
             return NextResponse.json({ 
                 success: false, 
-                error: "No se pudo entregar a ningún dispositivo. Asegúrate de haber 'Activado' las alertas en el móvil." 
+                error: "No se pudo entregar a ningún dispositivo. Vuelve a pulsar 'Activar' en este móvil o revisa que las llaves VAPID coincidan en Netlify." 
             }, { status: 500 });
         }
 

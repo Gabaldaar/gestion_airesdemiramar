@@ -67,17 +67,47 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
 
     const [isPushSupported, setIsPushSupported] = useState(false);
     const [notificationPermission, setNotificationPermission] = useState('default');
+    const [hasPushSubscription, setHasPushSubscription] = useState(false);
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
     const [isRunningCycle, setIsRunningCycle] = useState(false);
 
+    const refreshPushStatus = async () => {
+        if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+        setNotificationPermission(Notification.permission);
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const sub = await registration.pushManager.getSubscription();
+            setHasPushSubscription(!!sub);
+        } catch {
+            setHasPushSubscription(false);
+        }
+    };
+
     useEffect(() => {
         if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
             setIsPushSupported(true);
-            setNotificationPermission(Notification.permission);
+            refreshPushStatus();
         }
     }, []);
+
+    useEffect(() => {
+        if (!orgId || notificationPermission !== 'granted' || !isPushSupported) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                const sub = await registration.pushManager.getSubscription();
+                if (!sub || cancelled) return;
+                setHasPushSubscription(true);
+                await savePushSubscriptionAction(JSON.parse(JSON.stringify(sub)), orgId);
+            } catch {
+                // El usuario puede activar manualmente si la sincronización falla.
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [orgId, notificationPermission, isPushSupported]);
 
     const handleHardReset = async () => {
         setIsResetting(true);
@@ -100,6 +130,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                 description: "Se ha limpiado la memoria de notificaciones. Por favor, refresca la página (F5) antes de intentar activar de nuevo."
             });
             setNotificationPermission('default');
+            setHasPushSubscription(false);
         } catch (e) {
             console.error("[PUSH] Error en reseteo:", e);
         } finally {
@@ -129,10 +160,16 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
             setNotificationPermission(permission);
 
             if (permission !== 'granted') {
+                toast({
+                    title: "Permiso denegado",
+                    description: "Debes permitir notificaciones en la configuración del navegador o del sistema.",
+                    variant: "destructive"
+                });
                 setIsSubscribing(false);
                 return;
             }
 
+            await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
             const registration = await navigator.serviceWorker.ready;
             const applicationServerKey = urlBase64ToUint8Array(publicKey);
             const subscription = await registration.pushManager.subscribe({
@@ -142,6 +179,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
             
             const result = await savePushSubscriptionAction(JSON.parse(JSON.stringify(subscription)), orgId);
             if (result.success) {
+                setHasPushSubscription(true);
                 toast({ title: t('common.success'), description: "Dispositivo registrado con éxito." });
             } else {
                  throw new Error(result.message);
@@ -150,7 +188,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
             console.error("[PUSH] Error en registro:", error);
             toast({
                 title: "Fallo de servicio",
-                description: "Error de registro. Usa 'Reseteo Forzado' abajo si el problema persiste.",
+                description: error?.message || "Error de registro. Usa 'Reseteo Forzado' abajo si el problema persiste.",
                 variant: "destructive"
             });
         } finally {
@@ -212,7 +250,8 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
         });
     };
 
-    const isSubscribed = notificationPermission === 'granted';
+    const isSubscribed = notificationPermission === 'granted' && hasPushSubscription;
+    const permissionOnly = notificationPermission === 'granted' && !hasPushSubscription;
 
     return (
         <div className="space-y-6 max-w-md">
@@ -244,13 +283,19 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
             
             <div className="pt-2 space-y-4">
                  <Label className="text-lg font-black uppercase italic tracking-tighter text-primary">Notificaciones Push</Label>
-                 <Alert className={cn(isSubscribed ? "bg-green-50 border-green-200" : "bg-muted/50")}>
+                 <Alert className={cn(isSubscribed ? "bg-green-50 border-green-200" : permissionOnly ? "bg-amber-50 border-amber-200" : "bg-muted/50")}>
                     <AlertTitle className="flex items-center gap-2 text-xs font-bold uppercase">
                         {isSubscribed ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Bell className="h-4 w-4" />}
-                        Estado: <span className={isSubscribed ? "text-green-600" : "text-yellow-600"}>{isSubscribed ? "Activado" : "Pendiente"}</span>
+                        Estado: <span className={isSubscribed ? "text-green-600" : permissionOnly ? "text-amber-600" : "text-yellow-600"}>
+                            {isSubscribed ? "Activado" : permissionOnly ? "Permiso sin registro" : "Pendiente"}
+                        </span>
                     </AlertTitle>
                     <AlertDescription className="text-xs">
-                        {isSubscribed ? "Este dispositivo está listo para recibir alertas." : "Haz clic abajo para autorizar los avisos en este navegador."}
+                        {isSubscribed
+                            ? "Este dispositivo está listo para recibir alertas."
+                            : permissionOnly
+                                ? "El navegador permite avisos, pero este dispositivo aún no está registrado en el servidor. Pulsa el botón de abajo."
+                                : "Haz clic abajo para autorizar los avisos en este navegador."}
                     </AlertDescription>
                  </Alert>
 
@@ -277,7 +322,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                                 Ejecutar comprobación ahora
                             </Button>
                             
-                            {isSubscribed && (
+                            {(isSubscribed || permissionOnly) && (
                                 <Button 
                                     variant="ghost" 
                                     onClick={handleTestNotification} 

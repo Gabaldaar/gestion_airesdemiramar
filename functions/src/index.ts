@@ -17,15 +17,21 @@ export const rentalReminderSystem = onSchedule({
   memory: "256MiB",
   region: "us-central1",
 }, async (event) => {
-  // Limpieza de llaves: usamos los nombres que el usuario tiene en functions/.env
-  const pubKey = (process.env.PUSH_PUBKEY || '').replace(/["'\s\n\t]/g, '').trim();
-  const privKey = (process.env.PUSH_PRIVKEY || '').replace(/["'\s\n\t]/g, '').trim();
-  const mailTo = (process.env.PUSH_MAILTO || '').replace(/["']/g, '').trim();
+  const sanitize = (value: string) => value.replace(/["'\s\n\t]/g, '').trim();
+  const pubKey = sanitize(
+    process.env.PUSH_PUBKEY || process.env.VAPID_PUBLIC_KEY || ''
+  );
+  const privKey = sanitize(
+    process.env.PUSH_PRIVKEY || process.env.VAPID_PRIVATE_KEY || ''
+  );
+  const mailTo = (process.env.PUSH_MAILTO || process.env.VAPID_MAILTO || '')
+    .replace(/["']/g, '')
+    .trim();
 
-  console.log("[PUSH] --- INICIANDO CICLO DE ALERTAS v1.6.7 ---");
+  console.log("[PUSH] --- INICIANDO CICLO DE ALERTAS v1.6.8 ---");
 
   if (!pubKey || !privKey || !mailTo) {
-      console.error("[PUSH ERROR] Faltan configuraciones PUSH_... en el archivo functions/.env");
+      console.error("[PUSH ERROR] Faltan llaves VAPID (PUSH_* o VAPID_* en functions/.env)");
       return;
   }
 
@@ -119,6 +125,17 @@ export const rentalReminderSystem = onSchedule({
   }
 });
 
+function toWebPushSubscription(data: Record<string, unknown>) {
+  const keys = data.keys as { p256dh?: string; auth?: string } | undefined;
+  if (typeof data.endpoint !== "string" || !keys?.p256dh || !keys?.auth) {
+    throw new Error("Suscripción push incompleta");
+  }
+  return {
+    endpoint: data.endpoint,
+    keys: { p256dh: keys.p256dh, auth: keys.auth },
+  };
+}
+
 async function sendPush(subscriptions: any[], title: string, body: string, tag: string) {
   const payload = JSON.stringify({ 
     title, 
@@ -130,12 +147,13 @@ async function sendPush(subscriptions: any[], title: string, body: string, tag: 
   
   await Promise.all(subscriptions.map(async (sub) => {
     try {
-      await webpush.sendNotification(sub, payload);
+      await webpush.sendNotification(toWebPushSubscription(sub), payload);
     } catch (e: any) {
-      console.log(`[PUSH] Error enviando a ${sub.endpoint.substring(0, 30)}...: ${e.statusCode}`);
+      const endpoint = typeof sub.endpoint === "string" ? sub.endpoint : "desconocido";
+      console.log(`[PUSH] Error enviando a ${endpoint.substring(0, 30)}...: ${e.statusCode}`);
       if (e.statusCode === 410 || e.statusCode === 404 || e.statusCode === 403 || e.statusCode === 401) {
         console.log(`[PUSH] Eliminando suscripción obsoleta.`);
-        const docId = encodeURIComponent(sub.endpoint);
+        const docId = encodeURIComponent(endpoint);
         await db.collection("pushSubscriptions").doc(docId).delete().catch(() => {});
       }
     }

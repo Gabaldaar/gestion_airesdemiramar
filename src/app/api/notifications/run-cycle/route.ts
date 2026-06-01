@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/firebase/admin';
 import * as webpush from 'web-push';
 import { differenceInDays, startOfToday } from 'date-fns';
+import {
+    getVapidConfigFromEnv,
+    isStalePushSubscriptionError,
+    toWebPushSubscription,
+} from '@/lib/push-notifications';
 
 export async function POST(req: Request) {
     try {
@@ -11,16 +16,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "OrgId is required" }, { status: 400 });
         }
 
-        // Obtener llaves VAPID de Netlify (v1.6.7)
-        const pubKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '').replace(/["']/g, '').trim();
-        const privKey = (process.env.VAPID_PRIVATE_KEY || '').replace(/["']/g, '').trim();
-        const mailTo = (process.env.VAPID_MAILTO || '').replace(/["']/g, '').trim();
+        const { publicKey, privateKey, subject } = getVapidConfigFromEnv();
 
-        if (!pubKey || !privKey || !mailTo) {
+        if (!publicKey || !privateKey || !subject) {
             return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
         }
 
-        webpush.setVapidDetails(mailTo, pubKey, privKey);
+        webpush.setVapidDetails(subject, publicKey, privateKey);
         const db = getDb();
         const today = startOfToday();
 
@@ -48,10 +50,35 @@ export async function POST(req: Request) {
 
         const propsMap = new Map(propsSnap.docs.map(d => [d.id, d.data().name]));
         const tenantsMap = new Map(tenantsSnap.docs.map(d => [d.id, d.data().name]));
-        const subscriptions = subsSnap.docs.map(d => d.data());
+        const subscriptions = subsSnap.docs.map(d => ({
+            ref: d.ref,
+            push: toWebPushSubscription(d.data()),
+        }));
 
         let sentCount = 0;
         let skippedCount = 0;
+
+        const sendToAll = async (title: string, body: string, tag: string) => {
+            const payload = JSON.stringify({
+                title,
+                body,
+                tag,
+                url: '/bookings',
+                icon: '/icons/icon-192x192.png',
+            });
+
+            await Promise.all(subscriptions.map(async ({ ref, push }) => {
+                try {
+                    await webpush.sendNotification(push, payload);
+                } catch (e: any) {
+                    console.error("[MANUAL PUSH] Error enviando a un dispositivo:", e.statusCode);
+                    if (isStalePushSubscriptionError(e.statusCode)) {
+                        await ref.delete().catch(() => {});
+                    }
+                }
+            }));
+            sentCount++;
+        };
 
         for (const doc of bookingsSnap.docs) {
             const booking = doc.data();
@@ -66,40 +93,27 @@ export async function POST(req: Request) {
 
             const diffIn = differenceInDays(start, today);
             const diffOut = differenceInDays(end, today);
-            
-            let shouldNotify = false;
-            let title = "";
-            let body = "";
-            let tag = "";
+            let notified = false;
 
             if (diffIn >= 0 && diffIn <= maxCheckInDays) {
-                shouldNotify = true;
-                title = `Check-in: ${propName}`;
-                body = `${tenantsMap.get(booking.tenantId) || "Inquilino"} llega en ${diffIn === 0 ? "HOY" : diffIn + " días"}.`;
-                tag = `in-${doc.id}`;
-            } else if (diffOut >= 0 && diffOut <= maxCheckOutDays) {
-                shouldNotify = true;
-                title = `Check-out: ${propName}`;
-                body = `${tenantsMap.get(booking.tenantId) || "Inquilino"} sale en ${diffOut === 0 ? "HOY" : diffOut + " días"}.`;
-                tag = `out-${doc.id}`;
+                await sendToAll(
+                    `Check-in: ${propName}`,
+                    `${tenantsMap.get(booking.tenantId) || "Inquilino"} llega en ${diffIn === 0 ? "HOY" : diffIn + " días"}.`,
+                    `in-${doc.id}`
+                );
+                notified = true;
             }
 
-            if (shouldNotify) {
-                const payload = JSON.stringify({ 
-                    title, 
-                    body, 
-                    tag,
-                    url: '/bookings', 
-                    icon: '/icons/icon-192x192.png' 
-                });
+            if (diffOut >= 0 && diffOut <= maxCheckOutDays) {
+                await sendToAll(
+                    `Check-out: ${propName}`,
+                    `${tenantsMap.get(booking.tenantId) || "Inquilino"} sale en ${diffOut === 0 ? "HOY" : diffOut + " días"}.`,
+                    `out-${doc.id}`
+                );
+                notified = true;
+            }
 
-                await Promise.all(subscriptions.map(sub => 
-                    webpush.sendNotification(sub as any, payload).catch(e => {
-                        console.error("[MANUAL PUSH] Error enviando a un dispositivo:", e.statusCode);
-                    })
-                ));
-                sentCount++;
-            } else {
+            if (!notified) {
                 skippedCount++;
             }
         }

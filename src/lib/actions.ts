@@ -894,14 +894,35 @@ export async function updateBrandingSettings(ps: any, fd: FormData) {
 
 export async function savePushSubscription(subscription: any, orgId: string) {
   if (!orgId) return { success: false, message: 'Identificador de organización requerido.' };
-  
+  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    return { success: false, message: 'Suscripción del navegador inválida. Intenta el reseteo forzado y vuelve a activar.' };
+  }
+
   const docId = encodeURIComponent(subscription.endpoint);
-  await setDoc(doc(db, 'pushSubscriptions', docId), {
-    ...subscription,
-    orgId: orgId,
+  const payload = {
+    endpoint: subscription.endpoint,
+    keys: {
+      p256dh: subscription.keys.p256dh,
+      auth: subscription.keys.auth,
+    },
+    orgId,
     createdAt: new Date().toISOString(),
-  }).catch(handleError('pushSubscriptions', 'write', subscription));
-  return { success: true, message: 'Suscripción guardada.' };
+    expirationTime: subscription.expirationTime ?? null,
+  };
+
+  try {
+    await setDoc(doc(db, 'pushSubscriptions', docId), payload);
+    return { success: true, message: 'Suscripción guardada.' };
+  } catch (error: any) {
+    console.error('[PUSH] Error guardando suscripción:', error);
+    return {
+      success: false,
+      message:
+        error?.code === 'permission-denied'
+          ? 'Sin permiso para guardar en Firestore. Revisa la sesión o las reglas de seguridad.'
+          : error?.message || 'No se pudo guardar la suscripción en el servidor.',
+    };
+  }
 }
 
 // --- CONTRATOS ---
