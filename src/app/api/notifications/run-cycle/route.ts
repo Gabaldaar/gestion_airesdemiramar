@@ -113,6 +113,20 @@ export async function POST(req: Request) {
                 notified = true;
             }
 
+            const hasDebt = (booking.balance || 0) > 0.01;
+            const isUpcomingDebt = diffIn >= 0 && diffIn <= 3;
+            const isOngoing = diffIn < 0 && diffOut >= 0;
+
+            if (hasDebt && (isUpcomingDebt || isOngoing)) {
+                const formattedDebt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: booking.currency || 'USD' }).format(booking.balance);
+                await sendToAll(
+                    `Deuda Pendiente: ${propName}`,
+                    `${tenantsMap.get(booking.tenantId) || "Inquilino"} debe ${formattedDebt}.`,
+                    `debt-${doc.id}`
+                );
+                notified = true;
+            }
+
             if (!notified) {
                 skippedCount++;
             }
