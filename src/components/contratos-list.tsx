@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format, addMonths, startOfToday } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS, ptBR, fr } from 'date-fns/locale';
 import { cn, parseDateSafely } from '@/lib/utils';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -29,7 +29,16 @@ interface ContratosListProps {
 }
 
 export default function ContratosList({ contratos, properties, tenants, onDataChanged }: ContratosListProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  
+  const getLocale = () => {
+      switch(language) {
+          case 'en': return enUS;
+          case 'pt': return ptBR;
+          case 'fr': return fr;
+          default: return es;
+      }
+  };
   const { toast } = useToast();
   const [baseUrl, setBaseUrl] = useState('');
   const today = startOfToday();
@@ -164,7 +173,7 @@ export default function ContratosList({ contratos, properties, tenants, onDataCh
                             </CardTitle>
                             <CardDescription className="font-medium text-[10px] flex items-center gap-1 mt-1">
                                 <Clock className="h-3 w-3" />
-                                {format(parseDateSafely(c.fechaInicio) || new Date(), "dd MMM yyyy")} - {format(parseDateSafely(c.fechaFin) || new Date(), "dd MMM yyyy")}
+                                {format(parseDateSafely(c.fechaInicio) || new Date(), "dd MMM yyyy", { locale: getLocale() })} - {format(parseDateSafely(c.fechaFin) || new Date(), "dd MMM yyyy", { locale: getLocale() })}
                             </CardDescription>
                         </div>
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -191,7 +200,7 @@ export default function ContratosList({ contratos, properties, tenants, onDataCh
                             {status === 'active' && proximoAjuste && (
                                 <div className="text-right space-y-1">
                                     <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{t('contratos.adjustment')}</p>
-                                    <p className="text-xl font-black text-amber-600 leading-none">{format(proximoAjuste, "MMM yyyy", { locale: es })}</p>
+                                    <p className="text-xl font-black text-amber-600 leading-none">{format(proximoAjuste, "MMM yyyy", { locale: getLocale() })}</p>
                                 </div>
                             )}
                         </div>
@@ -205,14 +214,14 @@ export default function ContratosList({ contratos, properties, tenants, onDataCh
                                 </div>
                             </div>
                             <div className="text-right flex flex-col gap-0.5">
-                                <span className="text-muted-foreground uppercase font-bold">Estado Garantía</span>
+                                <span className="text-muted-foreground uppercase font-bold">{t('bookings.filters.guarantee_status')}</span>
                                 <span className="font-medium text-primary uppercase">{t(`bookings.guarantee_status.${c.guaranteeStatus || 'not_solicited'}`)}</span>
                             </div>
                         </div>
 
                         <div className="pt-1 flex justify-between items-center text-[10px]">
-                            <span className="text-muted-foreground font-bold uppercase">Frecuencia: <span className="text-foreground">Cada {c.frecuenciaAjuste} meses</span></span>
-                            <span className="text-muted-foreground font-bold uppercase">Pago: <span className="text-foreground">Día {c.diaVencimiento}</span></span>
+                            <span className="text-muted-foreground font-bold uppercase">{t('contratos.frequency')}: <span className="text-foreground">{c.frecuenciaAjuste === 1 ? t('contratos.monthly') : t('contratos.every_x_months', { count: c.frecuenciaAjuste })}</span></span>
+                            <span className="text-muted-foreground font-bold uppercase">{t('contratos.payment_day')}: <span className="text-foreground">{t('contratos.day_x', { day: c.diaVencimiento })}</span></span>
                         </div>
                     </CardContent>
                     <CardFooter className="p-2 px-4 justify-between border-t bg-muted/30">

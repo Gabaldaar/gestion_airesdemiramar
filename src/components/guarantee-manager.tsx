@@ -25,6 +25,7 @@ import { Loader2 } from 'lucide-react';
 import { DatePicker } from './ui/date-picker';
 import { Alert, AlertDescription } from './ui/alert';
 import { parseDateSafely } from '@/lib/utils';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const initialState: { message: string; success: boolean, error?: string } = {
   message: '',
@@ -53,6 +54,7 @@ interface GuaranteeManagerProps {
 }
 
 export function GuaranteeManager({ booking, isOpen, onOpenChange }: GuaranteeManagerProps) {
+  const { t } = useTranslation();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   
@@ -135,7 +137,7 @@ export function GuaranteeManager({ booking, isOpen, onOpenChange }: GuaranteeMan
 
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeStatus" className="text-right">Estado</Label>
+                    <Label htmlFor="guaranteeStatus" className="text-right">{t('common.status')}</Label>
                     <Select name="guaranteeStatus" value={status} onValueChange={(val) => setStatus(val as GuaranteeStatus)}>
                         <SelectTrigger className="col-span-3">
                             <SelectValue />
@@ -151,7 +153,7 @@ export function GuaranteeManager({ booking, isOpen, onOpenChange }: GuaranteeMan
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeAmount" className="text-right">Monto</Label>
+                    <Label htmlFor="guaranteeAmount" className="text-right">{t('common.amount')}</Label>
                     <Input 
                       id="guaranteeAmount" 
                       name="guaranteeAmount" 
@@ -164,7 +166,7 @@ export function GuaranteeManager({ booking, isOpen, onOpenChange }: GuaranteeMan
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guaranteeCurrency" className="text-right">Moneda</Label>
+                    <Label htmlFor="guaranteeCurrency" className="text-right">{t('common.currency')}</Label>
                     <Select name="guaranteeCurrency" defaultValue={booking.guaranteeCurrency || 'USD'}>
                         <SelectTrigger className="col-span-3">
                             <SelectValue />
@@ -177,14 +179,14 @@ export function GuaranteeManager({ booking, isOpen, onOpenChange }: GuaranteeMan
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Fecha Recibida</Label>
+                    <Label className="text-right">{t('common.received_date')}</Label>
                     <div className="col-span-3">
                         <DatePicker date={receivedDate} onDateSelect={setReceivedDate} placeholder="Seleccionar fecha" />
                     </div>
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Fecha Devuelta</Label>
+                    <Label className="text-right">{t('common.returned_date')}</Label>
                     <div className="col-span-3">
                         <DatePicker date={returnedDate} onDateSelect={setReturnedDate} placeholder="Seleccionar fecha" />
                     </div>

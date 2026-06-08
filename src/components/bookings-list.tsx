@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { BookingWithDetails, Property, Tenant, Origin, Provider, TaskAssignment, BookingStatus } from "@/lib/data";
 import { format, isWithinInterval, isPast, startOfToday, differenceInDays, isSameDay } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS, ptBR, fr } from 'date-fns/locale';
 import { cn, parseDateSafely } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
 import Link from "next/link";
@@ -53,7 +53,7 @@ export default function BookingsList({
   onDataChanged, 
   isPersonalFlavor 
 }: BookingsListProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { toast } = useToast();
   const [baseUrl, setBaseUrl] = useState('');
   const today = startOfToday();
@@ -79,10 +79,12 @@ export default function BookingsList({
 
   const originsMap = useMemo(() => new Map(origins?.map((o: Origin) => [o.id, o]) || []), [origins]);
 
-  const formatDate = (date: Date | undefined) => 
-    date && !isNaN(date.getTime()) 
-      ? format(new Date(date.valueOf() + date.getTimezoneOffset() * 60 * 1000), "dd-LLL-yyyy", { locale: es }) 
-      : "Fecha inv.";
+  const formatDate = (date: Date | undefined) => {
+    if (!date || isNaN(date.getTime())) return "Fecha inv.";
+    const localeMap: any = { es, en: enUS, pt: ptBR, fr };
+    const currentLocale = localeMap[language] || es;
+    return format(new Date(date.valueOf() + date.getTimezoneOffset() * 60 * 1000), "PP", { locale: currentLocale });
+  };
 
   const formatCurrency = (amount: number, currency: string) => 
     new Intl.NumberFormat('es-AR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);

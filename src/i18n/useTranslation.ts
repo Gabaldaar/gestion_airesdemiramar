@@ -29,7 +29,7 @@ export function useTranslation() {
 
   const { language, setLanguage } = context;
 
-  const t = useCallback((path: string) => {
+  const t = useCallback((path: string, params?: Record<string, string | number>) => {
     const keys = path.split('.');
     let value = locales[language];
 
@@ -38,6 +38,19 @@ export function useTranslation() {
         return path; 
       }
       value = value[key];
+    }
+
+    if (typeof value === 'string' && params) {
+      let result = value;
+      Object.entries(params).forEach(([k, v]) => {
+        // Fallback to replace with a safe regex if replaceAll is somehow not available
+        if (typeof result.replaceAll === 'function') {
+           result = result.replaceAll(`{{${k}}}`, String(v));
+        } else {
+           result = result.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v));
+        }
+      });
+      return result;
     }
 
     return value;

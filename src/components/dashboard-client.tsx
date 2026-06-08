@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { parseDateSafely, cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS, ptBR, fr } from "date-fns/locale";
 import Link from 'next/link';
 import PaymentCalculator from "@/components/payment-calculator";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -56,7 +56,7 @@ export type DashboardStay = {
 
 export default function DashboardClient({ initialData }: { initialData: DashboardData }) {
     const { appUser, activeRole } = useAuth();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
     const [data] = useState<DashboardData | null>(initialData);
     const { toast } = useToast();
@@ -259,7 +259,10 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
         const month = date.getUTCMonth();
         const day = date.getUTCDate();
         const localDate = new Date(year, month, day);
-        return format(localDate, "dd/MM/yyyy", { locale: es });
+        
+        const localeMap: any = { es, en: enUS, pt: ptBR, fr };
+        const currentLocale = localeMap[language] || es;
+        return format(localDate, "dd/MM/yyyy", { locale: currentLocale });
     };
     
     const formatCurrency = (amount: number, currency: string) => {

@@ -12,13 +12,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DashboardStay } from "./dashboard-client";
 import { format, differenceInDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS, ptBR, fr } from 'date-fns/locale';
 import { cn, parseDateSafely } from "@/lib/utils";
 import { useTranslation } from "@/i18n/useTranslation";
 import { Calendar } from "lucide-react";
 
 export default function DashboardRecentBookings({ bookings }: { bookings: DashboardStay[]}) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   
   if (bookings.length === 0) {
     return (
@@ -33,7 +33,9 @@ export default function DashboardRecentBookings({ bookings }: { bookings: Dashbo
   const formatDate = (dateString: string) => {
     const date = parseDateSafely(dateString);
     if (!date) return 'Fecha inv.';
-    return format(date, "dd 'de' LLLL, yyyy", { locale: es });
+    const localeMap: any = { es, en: enUS, pt: ptBR, fr };
+    const currentLocale = localeMap[language] || es;
+    return format(date, "PPP", { locale: currentLocale });
   };
 
   const formatCurrency = (amount: number, currency: string) => {

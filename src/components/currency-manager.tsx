@@ -42,10 +42,31 @@ interface CurrencyManagerProps {
 
 export default function CurrencyManager({ initialSettings, allCurrencies, onSettingsChanged }: CurrencyManagerProps) {
     const { orgId } = useAuth();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const { toast } = useToast();
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
+
+    const currencyDisplay = useMemo(() => {
+        try {
+            return new Intl.DisplayNames([language || 'es'], { type: 'currency' });
+        } catch (e) {
+            return null;
+        }
+    }, [language]);
+
+    const getCurrencyName = (code: string, defaultName: string) => {
+        if (currencyDisplay) {
+            try {
+                const name = currencyDisplay.of(code);
+                // Capitalize first letter
+                if (name) return name.charAt(0).toUpperCase() + name.slice(1);
+            } catch (e) {
+                return defaultName;
+            }
+        }
+        return defaultName;
+    };
 
     const [baseCurrency, setBaseCurrency] = useState(initialSettings?.baseCurrency || 'USD');
     
@@ -141,7 +162,7 @@ export default function CurrencyManager({ initialSettings, allCurrencies, onSett
                                                     onCheckedChange={(checked) => handleFavoriteChange(currency.code, !!checked)}
                                                     className="mr-2"
                                                 />
-                                                <span>{currency.name} ({currency.code})</span>
+                                                <span>{getCurrencyName(currency.code, currency.name)} ({currency.code})</span>
                                             </CommandItem>
                                         );
                                     })}
@@ -161,7 +182,7 @@ export default function CurrencyManager({ initialSettings, allCurrencies, onSett
                     {favoritesWithNames.map(currency => (
                         <div key={currency.code} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted/30 transition-colors">
                             <RadioGroupItem value={currency.code} id={`currency-${currency.code}`} />
-                            <Label htmlFor={`currency-${currency.code}`} className="cursor-pointer flex-1">{currency.name} ({currency.code})</Label>
+                            <Label htmlFor={`currency-${currency.code}`} className="cursor-pointer flex-1">{getCurrencyName(currency.code, currency.name)} ({currency.code})</Label>
                         </div>
                     ))}
                 </RadioGroup>

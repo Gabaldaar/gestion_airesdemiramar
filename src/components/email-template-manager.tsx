@@ -376,7 +376,7 @@ export default function EmailTemplateManager({ initialTemplates, onTemplatesChan
             <div className="flex flex-col sm:flex-row justify-end gap-2">
                  <Button variant="outline" onClick={handleLoadExamples} disabled={isPendingExamples} className="font-bold border-primary/30 text-primary">
                     {isPendingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookOpen className="mr-2 h-4 w-4" />}
-                    Cargar plantillas de ejemplo
+                    {t('common.load_example_templates')}
                  </Button>
                  <TemplateDialog isOpen={isAddDialogOpen} setIsOpen={handleAddDialogChange} onActionComplete={refreshTemplates} />
                  {editTemplate && <TemplateDialog isOpen={isEditDialogOpen} setIsOpen={handleEditDialogChange} template={editTemplate} onActionComplete={refreshTemplates} />}

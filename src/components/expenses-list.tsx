@@ -143,11 +143,11 @@ export default function ExpensesList({ expenses, categories, providers, onDataCh
                             )}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground text-[10px] uppercase font-black tracking-wider">Monto ARS</p>
+                                    <p className="text-muted-foreground text-[10px] uppercase font-black tracking-wider">{t('common.amount_ars')}</p>
                                     <p className="font-black text-lg text-primary leading-none">{formatCurrency(e.amountARS, 'ARS')}</p>
                                 </div>
                                 <div className="space-y-1 text-right border-l pl-4">
-                                    <p className="text-muted-foreground text-[10px] uppercase font-black tracking-wider">Monto USD</p>
+                                    <p className="text-muted-foreground text-[10px] uppercase font-black tracking-wider">{t('common.amount_usd')}</p>
                                     <p className="font-black text-lg text-primary leading-none">{formatCurrency(e.amountUSD, 'USD')}</p>
                                 </div>
                             </div>

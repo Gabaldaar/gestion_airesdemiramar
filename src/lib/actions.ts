@@ -1083,6 +1083,56 @@ export async function applyContratoAdjustment(ps: any, fd: FormData) {
     return { success: true, message: 'Ajuste aplicado y propagado.' };
 }
 
+export async function addProvider(ps: any, fd: FormData) {
+  const orgId = getRequiredOrgId(fd);
+  const data = {
+    orgId,
+    name: fd.get('name') as string,
+    email: fd.get('email') as string,
+    role: fd.get('role') as any,
+    status: fd.get('status') as any,
+    managementType: fd.get('managementType') as any || 'tasks',
+    billingType: fd.get('billingType') as any || 'hourly',
+    rateCurrency: (fd.get('rateCurrency') as any) || 'ARS',
+    hourlyRate: parseFloat(fd.get('hourlyRate') as string) || null,
+    adminNote: fd.get('adminNote') as string || null,
+    categoryId: fd.get('categoryId') !== 'none' ? fd.get('categoryId') as string : null,
+    countryCode: fd.get('countryCode') as string || '+54',
+    phone: fd.get('phone') as string || null,
+    notes: fd.get('notes') as string || null,
+    appFlavor: fd.get('appFlavor') as any || 'commercial'
+  };
+
+  await addDoc(collection(db, 'providers'), data).catch(handleError('providers', 'create', data));
+  await updateStatsCounter(orgId, 'teamCount', 1);
+  return { success: true, message: 'Proveedor/Usuario creado correctamente.' };
+}
+
+export async function updateProvider(ps: any, fd: FormData) {
+  const id = fd.get('id') as string;
+  const data: any = {
+    name: fd.get('name') as string,
+  };
+  
+  // Solo actualizar campos si están presentes en el formData
+  const fields = ['email', 'role', 'status', 'managementType', 'billingType', 'rateCurrency', 'hourlyRate', 'adminNote', 'categoryId', 'countryCode', 'phone', 'notes'];
+  
+  fields.forEach(f => {
+    if (fd.has(f)) {
+      if (f === 'categoryId') {
+        data[f] = fd.get(f) !== 'none' ? fd.get(f) as string : null;
+      } else if (f === 'hourlyRate') {
+        data[f] = parseFloat(fd.get(f) as string) || null;
+      } else {
+        data[f] = fd.get(f);
+      }
+    }
+  });
+
+  await updateDoc(doc(db, 'providers', id), data).catch(handleError(`providers/${id}`, 'update', data));
+  return { success: true, message: 'Proveedor/Usuario actualizado correctamente.' };
+}
+
 export async function updateProviderRating(ps: any, fd: FormData) {
     const id = fd.get('id') as string;
     const rating = parseInt(fd.get('rating') as string, 10);

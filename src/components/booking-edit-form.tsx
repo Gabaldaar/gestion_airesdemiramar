@@ -413,7 +413,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, all
                             <Input id="amount" name="amount" type="number" step="0.01" defaultValue={booking.amount} required className="h-11 bg-background shadow-sm font-black text-primary text-lg" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="currency" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Moneda</Label>
+                            <Label htmlFor="currency" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('common.currency')}</Label>
                             <Select name="currency" defaultValue={booking.currency} required>
                                  <SelectTrigger className="bg-background h-11 shadow-sm w-24">
                                     <SelectValue />
@@ -481,7 +481,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, all
                         <h4 className="text-sm font-black uppercase text-primary tracking-widest border-l-4 border-primary pl-2">{t('bookings.filters.guarantee')}</h4>
                          <div className="space-y-2">
                              <Label htmlFor="guaranteeStatus" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
-                                 Estado
+                                 {t('common.status')}
                              </Label>
                              <Select name="guaranteeStatus" value={guaranteeStatus} onValueChange={(val) => setGuaranteeStatus(val as GuaranteeStatus)}>
                                  <SelectTrigger className="bg-background h-11 shadow-sm">
@@ -498,11 +498,11 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, all
                          </div>
                          <div className='flex gap-4'>
                             <div className="space-y-2 flex-grow">
-                                <Label htmlFor="guaranteeAmount" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Monto</Label>
+                                <Label htmlFor="guaranteeAmount" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('common.amount')}</Label>
                                 <Input id="guaranteeAmount" name="guaranteeAmount" type="number" step="0.01" value={guaranteeAmount} onChange={(e) => setGuaranteeAmount(e.target.value)} className="h-11 bg-background shadow-sm" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="guaranteeCurrency" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Moneda</Label>
+                                <Label htmlFor="guaranteeCurrency" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('common.currency')}</Label>
                                 <Select name="guaranteeCurrency" defaultValue={booking.guaranteeCurrency || 'USD'}>
                                     <SelectTrigger className="bg-background h-11 shadow-sm w-24">
                                         <SelectValue />
@@ -536,13 +536,13 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, all
                          </div>
                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Fecha Recibida</Label>
-                                <DatePicker date={guaranteeReceivedDate} onDateSelect={setGuaranteeReceivedDate} placeholder='Fecha de recepción' />
+                                <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('common.received_date')}</Label>
+                                <DatePicker date={guaranteeReceivedDate} onDateSelect={setGuaranteeReceivedDate} placeholder={t('common.received_date')} />
                                 <input type="hidden" name="guaranteeReceivedDate" value={guaranteeReceivedDate ? guaranteeReceivedDate.toISOString().split('T')[0] : ''} />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Fecha Devuelta</Label>
-                                <DatePicker date={guaranteeReturnedDate} onDateSelect={setGuaranteeReturnedDate} placeholder='Fecha de devolución' />
+                                <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('common.returned_date')}</Label>
+                                <DatePicker date={guaranteeReturnedDate} onDateSelect={setGuaranteeReturnedDate} placeholder={t('common.returned_date')} />
                                 <input type="hidden" name="guaranteeReturnedDate" value={guaranteeReturnedDate ? guaranteeReturnedDate.toISOString().split('T')[0] : ''} />
                             </div>
                          </div>

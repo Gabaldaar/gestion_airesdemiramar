@@ -165,7 +165,7 @@ export default function DashboardStats({
           </p>
           <div className="mt-3 flex items-center gap-1 text-green-600">
               <CheckCircle className="h-3 w-3" />
-              <span className="text-[9px] font-black uppercase">Unidades Activas</span>
+              <span className="text-[9px] font-black uppercase">{t('dashboard.stats.active_units')}</span>
           </div>
         </CardContent>
       </Card>
@@ -183,7 +183,7 @@ export default function DashboardStats({
           </p>
           <div className="mt-3 flex items-center gap-1 text-green-600">
               <CheckCircle className="h-3 w-3" />
-              <span className="text-[9px] font-black uppercase">Directorio Activo</span>
+              <span className="text-[9px] font-black uppercase">{t('dashboard.stats.active_directory')}</span>
           </div>
         </CardContent>
       </Card>

@@ -281,15 +281,16 @@ export function ContratoEditForm({
                         <Select name="frecuenciaAjuste" defaultValue={String(contrato.frecuenciaAjuste)} required>
                                 <SelectTrigger className="bg-background h-11 shadow-sm"><SelectValue/></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="3">Cada 3 meses</SelectItem>
-                                    <SelectItem value="4">Cada 4 meses</SelectItem>
-                                    <SelectItem value="6">Cada 6 meses</SelectItem>
-                                    <SelectItem value="12">Cada 12 meses</SelectItem>
+                                    <SelectItem value="1">{t('contratos.monthly')}</SelectItem>
+                                    <SelectItem value="3">{t('contratos.every_x_months', { count: 3 })}</SelectItem>
+                                    <SelectItem value="4">{t('contratos.every_x_months', { count: 4 })}</SelectItem>
+                                    <SelectItem value="6">{t('contratos.every_x_months', { count: 6 })}</SelectItem>
+                                    <SelectItem value="12">{t('contratos.every_x_months', { count: 12 })}</SelectItem>
                                 </SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="diaVencimiento" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Día de Vencimiento</Label>
+                        <Label htmlFor="diaVencimiento" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('contratos.due_date')}</Label>
                         <Input id="diaVencimiento" name="diaVencimiento" type="number" min="1" max="28" defaultValue={contrato.diaVencimiento} required className="h-11 bg-background shadow-sm" />
                     </div>
                 </div>
@@ -312,7 +313,7 @@ export function ContratoEditForm({
                 <div className="border-t pt-4 mt-6 space-y-4">
                      <h4 className="text-sm font-black uppercase text-primary tracking-widest border-l-4 border-primary pl-2">{t('bookings.filters.guarantee')}</h4>
                      <div className="space-y-2">
-                         <Label htmlFor="guaranteeStatus" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Estado de Garantía</Label>
+                         <Label htmlFor="guaranteeStatus" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('bookings.filters.guarantee_status')}</Label>
                          <Select name="guaranteeStatus" value={guaranteeStatus} onValueChange={(val) => setGuaranteeStatus(val as GuaranteeStatus)}>
                              <SelectTrigger className="bg-background h-11 shadow-sm">
                                  <SelectValue />
@@ -328,11 +329,11 @@ export function ContratoEditForm({
                      </div>
                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="montoGarantia" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Monto Garantía</Label>
+                            <Label htmlFor="montoGarantia" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('bookings.filters.guarantee_amount')}</Label>
                             <Input id="montoGarantia" name="montoGarantia" type="number" step="0.01" defaultValue={contrato.montoGarantia} className="h-11 bg-background shadow-sm" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="monedaGarantia" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Moneda Garantía</Label>
+                            <Label htmlFor="monedaGarantia" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('bookings.filters.guarantee_currency')}</Label>
                             <Select name="monedaGarantia" defaultValue={contrato.monedaGarantia || "USD"}>
                                 <SelectTrigger className="bg-background h-11 shadow-sm w-24"><SelectValue /></SelectTrigger>
                                 <SelectContent>
@@ -344,13 +345,13 @@ export function ContratoEditForm({
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Fecha Recibida</Label>
-                            <DatePicker date={guaranteeReceivedDate} onDateSelect={setGuaranteeReceivedDate} placeholder="Recibida el..." />
+                            <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('common.received_date')}</Label>
+                            <DatePicker date={guaranteeReceivedDate} onDateSelect={setGuaranteeReceivedDate} placeholder={t('bookings.filters.guarantee_received_placeholder')} />
                             <input type="hidden" name="guaranteeReceivedDate" value={guaranteeReceivedDate ? guaranteeReceivedDate.toISOString().split('T')[0] : ''} />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Fecha Devuelta</Label>
-                            <DatePicker date={guaranteeReturnedDate} onDateSelect={setGuaranteeReturnedDate} placeholder="Devuelta el..." />
+                            <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('common.returned_date')}</Label>
+                            <DatePicker date={guaranteeReturnedDate} onDateSelect={setGuaranteeReturnedDate} placeholder={t('bookings.filters.guarantee_returned_placeholder')} />
                             <input type="hidden" name="guaranteeReturnedDate" value={guaranteeReturnedDate ? guaranteeReturnedDate.toISOString().split('T')[0] : ''} />
                         </div>
                     </div>

@@ -231,7 +231,7 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
                 <div className="flex justify-end">
                     <Button variant="outline" size="sm" onClick={handleLoadExamples} disabled={isPendingSeed} className="text-xs font-bold gap-2">
                         {isPendingSeed ? <Loader2 className="h-3 w-3 animate-spin"/> : <BookOpen className="h-3 w-3"/>}
-                        Cargar ejemplos
+                        {t('common.load_examples')}
                     </Button>
                 </div>
             )}
@@ -283,7 +283,7 @@ export default function OriginManager({ initialOrigins, onOriginsChanged }: { in
             <div className="flex justify-end">
                 <Button variant="outline" size="sm" onClick={handleLoadExamples} disabled={isPendingSeed} className="text-xs font-bold gap-2">
                     {isPendingSeed ? <Loader2 className="h-3 w-3 animate-spin"/> : <BookOpen className="h-3 w-3"/>}
-                    Cargar ejemplos
+                    {t('common.load_examples')}
                 </Button>
             </div>
         )}

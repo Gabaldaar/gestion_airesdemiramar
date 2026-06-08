@@ -346,20 +346,20 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
             )}
             
             <div className="pt-2 space-y-4">
-                 <Label className="text-lg font-black uppercase italic tracking-tighter text-primary">Notificaciones Push</Label>
+                 <Label className="text-lg font-black uppercase italic tracking-tighter text-primary">{t('settings.alerts.push_notifications')}</Label>
                  <Alert className={cn(isSubscribed ? "bg-green-50 border-green-200" : permissionOnly ? "bg-amber-50 border-amber-200" : "bg-muted/50")}>
                     <AlertTitle className="flex items-center gap-2 text-xs font-bold uppercase">
                         {isSubscribed ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Bell className="h-4 w-4" />}
                         Estado: <span className={isSubscribed ? "text-green-600" : permissionOnly ? "text-amber-600" : "text-yellow-600"}>
-                            {isSubscribed ? "Activado" : permissionOnly ? "Permiso sin registro" : "Pendiente"}
+                            {isSubscribed ? t('settings.alerts.push_supported_ok') : permissionOnly ? t('settings.alerts.push_permission_only') : t('settings.alerts.push_pending')}
                         </span>
                     </AlertTitle>
                     <AlertDescription className="text-xs">
                         {isSubscribed
-                            ? "Este dispositivo está listo para recibir alertas."
+                            ? t('settings.alerts.push_ready')
                             : permissionOnly
-                                ? "El navegador permite avisos, pero este dispositivo aún no está registrado en el servidor. Pulsa el botón de abajo."
-                                : "Haz clic abajo para autorizar los avisos en este navegador."}
+                                ? t('settings.alerts.push_not_registered')
+                                : t('settings.alerts.push_click_authorize')}
                     </AlertDescription>
                  </Alert>
 
@@ -392,12 +392,12 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                         className={cn("w-full h-12 font-bold uppercase tracking-widest shadow-lg", isSubscribed && "bg-green-600 hover:bg-green-700")}
                     >
                         {isSubscribing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bell className="mr-2 h-4 w-4" />}
-                        {isSubscribing ? "Registrando..." : isSubscribed ? "Actualizar Registro" : "Activar en este dispositivo"}
+                        {isSubscribing ? t('settings.alerts.push_registering') : isSubscribed ? t('settings.alerts.push_update_registry') : t('settings.alerts.push_activate_device')}
                     </Button>
 
                     {isPersonalFlavor && (
                         <div className="grid grid-cols-1 gap-2 pt-4 border-t border-dashed">
-                             <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Herramientas de Diagnóstico</Label>
+                             <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">{t('settings.alerts.push_diagnostics_tools')}</Label>
                             <Button 
                                 variant="outline" 
                                 onClick={handleRunFullCycle} 
@@ -405,7 +405,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                                 className="w-full h-12 font-bold uppercase tracking-widest border-primary/20 hover:bg-primary/5 text-primary"
                             >
                                 {isRunningCycle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                                Ejecutar comprobación ahora
+                                {t('settings.alerts.push_run_check')}
                             </Button>
                             
                             {(isSubscribed || permissionOnly) && (
@@ -416,7 +416,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                                     className="w-full h-10 font-bold uppercase text-[10px] tracking-widest opacity-70 hover:opacity-100"
                                 >
                                     {isTesting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Send className="mr-2 h-3 w-3" />}
-                                    Enviar solo prueba de conexión
+                                    {t('settings.alerts.push_test_connection')}
                                 </Button>
                             )}
                         </div>
@@ -424,7 +424,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
 
                     {pushDiagnostics && (
                         <Alert className="bg-muted/30 border-dashed text-left">
-                            <AlertTitle className="text-[10px] font-black uppercase">Diagnóstico de este móvil</AlertTitle>
+                            <AlertTitle className="text-[10px] font-black uppercase">{t('settings.alerts.push_diagnostics_title')}</AlertTitle>
                             <AlertDescription className="text-[10px] space-y-1 font-mono">
                                 <p>Navegador: {pushDiagnostics.browserLabel}</p>
                                 <p>Registro aquí: {pushDiagnostics.canRegisterHere ? 'sí' : 'NO'}</p>
@@ -449,7 +449,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                             className="w-full text-[10px] uppercase font-bold"
                         >
                             {isDiagnosing ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <Info className="h-3 w-3 mr-2" />}
-                            Ver diagnóstico en este móvil
+                            {t('settings.alerts.push_view_diagnostics')}
                         </Button>
                         <Button 
                             variant="ghost" 
@@ -459,7 +459,7 @@ export function AlertSettingsManager({ initialSettings, isPersonalFlavor }: { in
                             className="w-full text-[10px] uppercase font-bold text-muted-foreground hover:text-destructive flex items-center justify-center gap-2"
                         >
                             {isResetting ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldAlert className="h-3 w-3" />}
-                            ¿Problemas? Realizar Reseteo Forzado
+                            {t('settings.alerts.push_hard_reset')}
                         </Button>
                     </div>
                 </div>

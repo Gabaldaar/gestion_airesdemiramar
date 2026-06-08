@@ -282,15 +282,16 @@ export function ContratoAddForm({
                         <Select name="frecuenciaAjuste" defaultValue="6" required disabled={!selectedPropertyId && isPropertySelectionMode}>
                              <SelectTrigger className="bg-background h-11 shadow-sm"><SelectValue/></SelectTrigger>
                              <SelectContent>
-                                <SelectItem value="3">Cada 3 meses</SelectItem>
-                                <SelectItem value="4">Cada 4 meses</SelectItem>
-                                <SelectItem value="6">Cada 6 meses</SelectItem>
-                                <SelectItem value="12">Cada 12 meses</SelectItem>
+                                <SelectItem value="1">{t('contratos.monthly')}</SelectItem>
+                                <SelectItem value="3">{t('contratos.every_x_months', { count: 3 })}</SelectItem>
+                                <SelectItem value="4">{t('contratos.every_x_months', { count: 4 })}</SelectItem>
+                                <SelectItem value="6">{t('contratos.every_x_months', { count: 6 })}</SelectItem>
+                                <SelectItem value="12">{t('contratos.every_x_months', { count: 12 })}</SelectItem>
                              </SelectContent>
                         </Select>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="diaVencimiento" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Día de Vencimiento</Label>
+                        <Label htmlFor="diaVencimiento" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('contratos.due_date')}</Label>
                         <Input id="diaVencimiento" name="diaVencimiento" type="number" min="1" max="28" defaultValue="10" required disabled={!selectedPropertyId && isPropertySelectionMode} className="h-11 bg-background shadow-sm" />
                     </div>
                 </div>
