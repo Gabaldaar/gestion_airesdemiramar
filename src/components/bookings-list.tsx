@@ -22,6 +22,7 @@ import { BookingEditForm } from './booking-edit-form';
 import { BookingDeleteForm } from './booking-delete-form';
 import { NotesViewer } from './notes-viewer';
 import { GuaranteeManager } from './guarantee-manager';
+import { BookingDetailDialog } from './booking-detail-dialog';
 import { Landmark, Pencil, Trash2, FileText, Calculator, Mail, PenLine, History, ShieldCheck, CalendarX } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { EmailSender } from "./email-sender";
@@ -67,6 +68,7 @@ export default function BookingsList({
   const [paymentsBooking, setPaymentsBooking] = useState<BookingWithDetails | null>(null);
   const [guaranteeBooking, setGuaranteeBooking] = useState<BookingWithDetails | null>(null);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [detailBooking, setDetailBooking] = useState<BookingWithDetails | null>(null);
 
   const [paymentPreloadData, setPaymentPreloadData] = useState<PaymentPreloadData | undefined>(undefined);
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
@@ -224,12 +226,15 @@ export default function BookingsList({
 
             return (
                 <Card key={b.id} className={cn("overflow-hidden border-2 shadow-sm flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl", isCurrent ? "border-green-500" : styles.border)}>
-                    <CardHeader className={cn("p-4 py-3", isCurrent ? "bg-green-500/10" : styles.header)}>
+                    <CardHeader
+                        className={cn("p-4 py-3 cursor-pointer select-none", isCurrent ? "bg-green-500/10" : styles.header)}
+                        onClick={() => setDetailBooking(b)}
+                    >
                         <div className="flex justify-between items-start gap-2">
                             <div className="min-w-0 flex-1">
                                 <CardTitle className="text-base truncate font-bold">{b.property?.name}</CardTitle>
                                 <button 
-                                    onClick={() => setSelectedTenant(tenants.find((t: Tenant) => t.id === b.tenantId) || null)}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedTenant(tenants.find((t: Tenant) => t.id === b.tenantId) || null); }}
                                     className="font-bold text-primary hover:underline block text-left truncate"
                                 >
                                     {b.tenant?.name}
@@ -246,7 +251,7 @@ export default function BookingsList({
                             </p>
                         )}
                     </CardHeader>
-                    <CardContent className="p-4 space-y-4 text-sm flex-grow">
+                    <CardContent className="p-4 space-y-4 text-sm flex-grow cursor-pointer" onClick={() => setDetailBooking(b)}>
                         <div className="flex justify-between items-center border-b pb-2">
                             <div className="flex flex-col">
                                 <span className="text-muted-foreground text-[10px] uppercase font-bold">{t('bookings.table.stay')}</span>
@@ -384,6 +389,23 @@ export default function BookingsList({
                 booking={guaranteeBooking} 
                 isOpen={!!guaranteeBooking} 
                 onOpenChange={(o) => !o && setGuaranteeBooking(null)} 
+            />
+        )}
+
+        {detailBooking && (
+            <BookingDetailDialog
+                booking={detailBooking}
+                isOpen={!!detailBooking}
+                origins={origins}
+                onOpenChange={(o) => !o && setDetailBooking(null)}
+                onEdit={(b) => setEditingBooking(b)}
+                onPayment={(b) => {
+                    setAddingPaymentForBooking(b);
+                    setIsAddPaymentOpen(true);
+                }}
+                onSignature={(b) => handleOpenWhatsAppSignature(b)}
+                onGuarantee={(b) => setGuaranteeBooking(b)}
+                onEmail={(b) => setEmailBooking(b)}
             />
         )}
     </div>

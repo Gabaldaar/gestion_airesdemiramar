@@ -496,8 +496,11 @@ export async function addPayment(ps: any, fd: FormData) {
       const FINANCE_API_URL = 'https://gestionomiscuentas.netlify.app/api/registrar-cobro';
       
       if (FINANCE_API_KEY) {
+          // Normalize date to YYYY-MM-DD
+          const cleanDate = date ? (date.includes('T') ? date.split('T')[0] : date) : new Date().toISOString().split('T')[0];
+          
           const externalData = {
-              fecha: date,
+              fecha: cleanDate,
               monto: physicalAmount,
               moneda: physicalCurrency,
               monto_usd: (physicalCurrency === 'USD') ? physicalAmount : (physicalCurrency === 'ARS' && p.amount ? p.amount : null),
@@ -509,14 +512,29 @@ export async function addPayment(ps: any, fd: FormData) {
               id_externo: `regentum_${Date.now()}`
           };
 
-          fetch(FINANCE_API_URL, {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer ${FINANCE_API_KEY}`,
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(externalData)
-          }).catch(err => console.error("[FINANCE API ERROR]", err));
+          try {
+              console.log("[FINANCE API] Sending registration request:", FINANCE_API_URL, JSON.stringify(externalData));
+              const response = await fetch(FINANCE_API_URL, {
+                  method: 'POST',
+                  headers: {
+                      'Authorization': `Bearer ${FINANCE_API_KEY}`,
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(externalData)
+              });
+
+              if (!response.ok) {
+                  const errText = await response.text();
+                  console.error(`[FINANCE API ERROR] Status ${response.status}: ${errText}`);
+              } else {
+                  const resData = await response.json();
+                  console.log("[FINANCE API SUCCESS] Response:", JSON.stringify(resData));
+              }
+          } catch (err) {
+              console.error("[FINANCE API NETWORK ERROR]", err);
+          }
+      } else {
+          console.warn("[FINANCE API WARNING] FINANCE_API_KEY is not defined in environment.");
       }
   }
 

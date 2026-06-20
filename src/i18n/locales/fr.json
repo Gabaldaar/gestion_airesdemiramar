@@ -715,6 +715,18 @@
     },
     "whatsapp": {
       "signature_message": "Salut {{name}}, signe le bail ici : {{link}}"
+    },
+    "detail_dialog": {
+      "section_stay": "Détails du Séjour",
+      "section_info": "Informations Générales",
+      "section_payments": "Paiements Enregistrés",
+      "no_payments": "Aucun paiement enregistré pour cette réservation.",
+      "credited": "Montant Crédité",
+      "total_paid": "Total Payé",
+      "balance": "Solde Restant",
+      "action_payment": "Enregistrer Paiement",
+      "action_signature": "Signature Numérique",
+      "action_guarantee": "Garantie"
     }
   },
   "contratos": {
@@ -1033,5 +1045,14 @@
     "title": "Ne manquez rien !",
     "desc": "Activez les notifications pour recevoir les alertes critiques d'arrivée et de paiement.",
     "button": "Activer maintenant"
+  },
+  "payments_page": {
+    "description": "Historique de tous les paiements reçus.",
+    "placeholder_search": "Rechercher par propriété, locataire...",
+    "received_physically": "Reçu physiquement",
+    "edit_dialog": {
+      "title": "Modifier le paiement",
+      "description": "Modifier le montant, la date ou la description du paiement enregistré."
+    }
   }
 }

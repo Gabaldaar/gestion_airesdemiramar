@@ -706,6 +706,18 @@
     },
     "whatsapp": {
       "signature_message": "Hola {{name}}, por favor revisa y firma el contrato de alquiler en este link: {{link}}"
+    },
+    "detail_dialog": {
+      "section_stay": "Detalle de la Estadía",
+      "section_info": "Información General",
+      "section_payments": "Pagos Registrados",
+      "no_payments": "No hay pagos registrados para esta reserva.",
+      "credited": "Monto Acreditado",
+      "total_paid": "Total Pagado",
+      "balance": "Saldo Pendiente",
+      "action_payment": "Realizar Pago",
+      "action_signature": "Firma Digital",
+      "action_guarantee": "Garantía"
     }
   },
   "contratos": {
@@ -1080,6 +1092,15 @@
     "income_distribution": "Distribución de Ganancia Neta (USD)",
     "monthly_trend_title": "Evolución del Resultado Neto",
     "monthly_trend_desc": "Comparativa mensual Ingresos vs Gastos."
+  },
+  "payments_page": {
+    "description": "Historial de todos los cobros recibidos.",
+    "placeholder_search": "Buscar por propiedad, inquilino...",
+    "received_physically": "Recibido físicamente",
+    "edit_dialog": {
+      "title": "Editar Cobro",
+      "description": "Modificá el monto, la fecha o la descripción del cobro registrado."
+    }
   },
   "monitor": {
     "title": "Monitor de Plataforma",

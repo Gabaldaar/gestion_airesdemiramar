@@ -132,6 +132,9 @@ export function PaymentAddForm({
   const [isFetchingFinanceData, setIsFetchingFinanceData] = useState(false);
   const [financeApiError, setFinanceApiError] = useState<string | null>(null);
   const [showWarning, setShowWarning] = useState(false);
+  const [categoriaId, setCategoriaId] = useState('');
+  const [cuentaId, setCuentaId] = useState('');
+  const [billeteraId, setBilleteraId] = useState('');
 
   const [booking, setBooking] = useState<BookingWithDetails | null>(initialBooking || null);
   const [dollarRateForBalance, setDollarRateForBalance] = useState<number | null>(null);
@@ -142,11 +145,15 @@ export function PaymentAddForm({
     const formData = new FormData(formRef.current);
     formData.append('appFlavor', isPersonalFlavor ? 'personal' : 'commercial');
     formData.append('orgId', orgId || 'global');
+    // Inject finance select values manually (Shadcn Select does not serialize into native FormData)
+    if (categoriaId) formData.append('categoria_id', categoriaId);
+    if (cuentaId) formData.append('cuenta_id', cuentaId);
+    if (billeteraId) formData.append('billetera_id', billeteraId);
     startTransition(async () => {
       const result = await addPayment(initialState, formData);
       setState(result);
     });
-  }, [isPersonalFlavor, orgId]);
+  }, [isPersonalFlavor, orgId, categoriaId, cuentaId, billeteraId]);
 
   const fetchRate = async () => {
     setIsFetchingRate(true);
@@ -192,6 +199,9 @@ export function PaymentAddForm({
     setIsFetchingRate(false);
     setFinanceApiError(null);
     setShowWarning(false);
+    setCategoriaId('');
+    setCuentaId('');
+    setBilleteraId('');
   }, [booking]);
   
   useEffect(() => {
@@ -305,12 +315,7 @@ export function PaymentAddForm({
         return;
     }
 
-    const formData = new FormData(formRef.current!);
-    const cat = formData.get('categoria_id');
-    const cta = formData.get('cuenta_id');
-    const bill = formData.get('billetera_id');
-
-    if (!cat || !cta || !bill) {
+    if (!categoriaId || !cuentaId || !billeteraId) {
         setShowWarning(true);
     } else {
         executeFormAction();
@@ -482,7 +487,10 @@ export function PaymentAddForm({
                   <div className="grid gap-3 p-3 bg-background/50 rounded-xl border border-dashed">
                     <div className="grid gap-1">
                       <Label htmlFor="categoria_id" className="text-[9px] uppercase font-black text-muted-foreground">Categoría</Label>
-                      <Select name="categoria_id">
+                      <Select
+                        value={categoriaId}
+                        onValueChange={setCategoriaId}
+                      >
                         <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
                         <SelectContent>
                           {datosImputacion.categorias.map(cat => (<SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>))}
@@ -491,7 +499,10 @@ export function PaymentAddForm({
                     </div>
                     <div className="grid gap-1">
                       <Label htmlFor="cuenta_id" className="text-[9px] uppercase font-black text-muted-foreground">Cuenta de Imputación</Label>
-                      <Select name="cuenta_id">
+                      <Select
+                        value={cuentaId}
+                        onValueChange={setCuentaId}
+                      >
                         <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
                         <SelectContent>
                           {datosImputacion.cuentas.map(cta => (<SelectItem key={cta.id} value={cta.id}>{cta.nombre}</SelectItem>))}
@@ -500,7 +511,10 @@ export function PaymentAddForm({
                     </div>
                     <div className="grid gap-1">
                       <Label htmlFor="billetera_id" className="text-[9px] uppercase font-black text-muted-foreground">Billetera de Ingreso</Label>
-                      <Select name="billetera_id">
+                      <Select
+                        value={billeteraId}
+                        onValueChange={setBilleteraId}
+                      >
                         <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
                         <SelectContent>
                           {datosImputacion.billeteras.map(bill => (<SelectItem key={bill.id} value={bill.id}>{bill.nombre}</SelectItem>))}

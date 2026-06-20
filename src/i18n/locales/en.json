@@ -705,6 +705,18 @@
     },
     "whatsapp": {
       "signature_message": "Hi {{name}}, please review and sign the rental contract at this link: {{link}}"
+    },
+    "detail_dialog": {
+      "section_stay": "Stay Details",
+      "section_info": "General Information",
+      "section_payments": "Registered Payments",
+      "no_payments": "No payments recorded for this booking.",
+      "credited": "Credited Amount",
+      "total_paid": "Total Paid",
+      "balance": "Pending Balance",
+      "action_payment": "Record Payment",
+      "action_signature": "Digital Signature",
+      "action_guarantee": "Guarantee"
     }
   },
   "contratos": {
@@ -1078,6 +1090,15 @@
     "income_distribution": "Net Profit Distribution (USD)",
     "monthly_trend_title": "Net Result Evolution",
     "monthly_trend_desc": "Monthly comparison Income vs Expenses."
+  },
+  "payments_page": {
+    "description": "History of all received payments.",
+    "placeholder_search": "Search by property, tenant...",
+    "received_physically": "Physically received",
+    "edit_dialog": {
+      "title": "Edit Payment",
+      "description": "Modify the amount, date or description of the registered payment."
+    }
   },
   "monitor": {
     "title": "Platform Monitor",

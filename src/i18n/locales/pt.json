@@ -705,6 +705,18 @@
     },
     "whatsapp": {
       "signature_message": "Olá {{name}}, por favor revise o assine o contrato de aluguel neste link: {{link}}"
+    },
+    "detail_dialog": {
+      "section_stay": "Detalhes da Estadia",
+      "section_info": "Informações Gerais",
+      "section_payments": "Pagamentos Registrados",
+      "no_payments": "Nenhum pagamento registrado para esta reserva.",
+      "credited": "Valor Creditado",
+      "total_paid": "Total Pago",
+      "balance": "Saldo Pendente",
+      "action_payment": "Registrar Pagamento",
+      "action_signature": "Assinatura Digital",
+      "action_guarantee": "Garantia"
     }
   },
   "contratos": {
@@ -1079,6 +1091,15 @@
     "income_distribution": "Distribuição de Lucro Líquido (USD)",
     "monthly_trend_title": "Evolução do Resultado Líquido",
     "monthly_trend_desc": "Comparativo mensal de receitas vs gastos."
+  },
+  "payments_page": {
+    "description": "Histórico de todos os pagamentos recebidos.",
+    "placeholder_search": "Buscar por propriedade, inquilino...",
+    "received_physically": "Recebido fisicamente",
+    "edit_dialog": {
+      "title": "Editar Pagamento",
+      "description": "Modifique o valor, a data ou a descrição do pagamento registrado."
+    }
   },
   "monitor": {
     "title": "Monitor de Plataforma",
