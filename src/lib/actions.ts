@@ -492,49 +492,47 @@ export async function addPayment(ps: any, fd: FormData) {
   const billId = fd.get('billetera_id') as string;
 
   if (appFlavor === 'personal' && catId && ctaId && billId) {
-      const FINANCE_API_KEY = process.env.FINANCE_API_KEY || '';
-      const FINANCE_API_URL = 'https://gestionomiscuentas.netlify.app/api/registrar-cobro';
+      // Usamos el proxy interno del servidor para no exponer la API key en el cliente
+      const FINANCE_API_URL = '/api/finance-proxy';
       
-      if (FINANCE_API_KEY) {
-          // Normalize date to YYYY-MM-DD
-          const cleanDate = date ? (date.includes('T') ? date.split('T')[0] : date) : new Date().toISOString().split('T')[0];
-          
-          const externalData = {
-              fecha: cleanDate,
-              monto: physicalAmount,
-              moneda: physicalCurrency,
-              monto_usd: (physicalCurrency === 'USD') ? physicalAmount : (physicalCurrency === 'ARS' && p.amount ? p.amount : null),
-              tasa_cambio: p.exchangeRate || null,
-              categoria_id: catId,
-              cuenta_id: ctaId,
-              billetera_id: billId,
-              descripcion: `${baseDescription} (desde Regentum)`,
-              id_externo: `regentum_${Date.now()}`
-          };
+      // La API de finanzas requiere un datetime válido (ISO String completo)
+      const validDate = date ? (date.includes('T') ? date : new Date(date).toISOString()) : new Date().toISOString();
+      
+      // La API de finanzas requiere que tasa_cambio sea de tipo number (no acepta null)
+      const tasaCambioVal = p.exchangeRate || 1;
+      
+      const externalData = {
+          fecha: validDate,
+          monto: physicalAmount,
+          moneda: physicalCurrency,
+          monto_usd: (physicalCurrency === 'USD') ? physicalAmount : (physicalCurrency === 'ARS' && p.amount ? p.amount : null),
+          tasa_cambio: tasaCambioVal,
+          categoria_id: catId,
+          cuenta_id: ctaId,
+          billetera_id: billId,
+          descripcion: `${baseDescription} (desde Regentum)`,
+          id_externo: `regentum_${Date.now()}`
+      };
 
-          try {
-              console.log("[FINANCE API] Sending registration request:", FINANCE_API_URL, JSON.stringify(externalData));
-              const response = await fetch(FINANCE_API_URL, {
-                  method: 'POST',
-                  headers: {
-                      'Authorization': `Bearer ${FINANCE_API_KEY}`,
-                      'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify(externalData)
-              });
+      try {
+          console.log("[FINANCE API] Sending registration request to proxy:", FINANCE_API_URL, JSON.stringify(externalData));
+          const response = await fetch(FINANCE_API_URL, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(externalData)
+          });
 
-              if (!response.ok) {
-                  const errText = await response.text();
-                  console.error(`[FINANCE API ERROR] Status ${response.status}: ${errText}`);
-              } else {
-                  const resData = await response.json();
-                  console.log("[FINANCE API SUCCESS] Response:", JSON.stringify(resData));
-              }
-          } catch (err) {
-              console.error("[FINANCE API NETWORK ERROR]", err);
+          if (!response.ok) {
+              const errText = await response.text();
+              console.error(`[FINANCE API PROXY ERROR] Status ${response.status}: ${errText}`);
+          } else {
+              const resData = await response.json();
+              console.log("[FINANCE API PROXY SUCCESS] Response:", JSON.stringify(resData));
           }
-      } else {
-          console.warn("[FINANCE API WARNING] FINANCE_API_KEY is not defined in environment.");
+      } catch (err) {
+          console.error("[FINANCE API PROXY NETWORK ERROR]", err);
       }
   }
 

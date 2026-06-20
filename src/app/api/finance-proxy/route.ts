@@ -69,6 +69,82 @@ export async function GET(request: Request) {
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const FINANCE_API_KEY = process.env.FINANCE_API_KEY || '';
+
+    if (!FINANCE_API_KEY) {
+        console.error('[FINANCE PROXY POST] No FINANCE_API_KEY found in environment variables.');
+        return NextResponse.json(
+            { error: "La API Key de finanzas no está configurada en las variables de entorno del servidor (FINANCE_API_KEY)." }, 
+            { 
+                status: 500,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                }
+            }
+        );
+    }
+
+    const body = await request.json();
+    const externalApiUrl = `${API_BASE_URL}/api/registrar-cobro`;
+
+    console.log("[FINANCE PROXY POST] Sending payload to external API:", externalApiUrl, JSON.stringify(body));
+
+    const response = await fetch(externalApiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FINANCE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const resText = await response.text();
+
+    if (!response.ok) {
+      console.error(`[FINANCE PROXY POST ERROR] Status ${response.status}: ${resText}`);
+      return NextResponse.json(
+        { error: `Error de la API externa (${response.status}): ${resText}` },
+        { 
+          status: response.status,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+          }
+        }
+      );
+    }
+
+    let resData;
+    try {
+      resData = JSON.parse(resText);
+    } catch (e) {
+      resData = { message: resText };
+    }
+
+    return NextResponse.json(resData, {
+        status: 201,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+        }
+    });
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido en el servidor proxy.';
+    console.error('[FINANCE PROXY POST EXCEPTION]', errorMessage);
+    return NextResponse.json(
+      { error: `Error en el proxy interno: ${errorMessage}` },
+      { 
+        status: 500,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+        }
+      }
+    );
+  }
+}
+
+
 export async function OPTIONS() {
     return new Response(null, {
         status: 204,
