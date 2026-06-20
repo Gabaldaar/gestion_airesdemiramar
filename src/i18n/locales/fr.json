@@ -311,10 +311,13 @@
       "hourly": "Heure",
       "visit": "Visite",
       "hourly_or_visit": "Heure / Visite",
+      "monthly": "Mensuel",
       "other": "Autre / N/A",
       "type": "Type Facturation",
       "currency": "Devise Tarif",
-      "rate_hour": "Tarif Horaire"
+      "rate_hour": "Tarif Horaire",
+      "rate_monthly": "Tarif Mensuel",
+      "visit_note": "Note : Le montant de la visite est saisi dans chaque propriété."
     },
     "card": {
       "address": "Adresse",
@@ -648,6 +651,7 @@
       "guarantee_currency": "Devise de Garantie",
       "guarantee_received_placeholder": "Reçue le...",
       "guarantee_returned_placeholder": "Rendue le...",
+      "origin": "Origine",
       "sort": "Ordre",
       "sort_options": {
         "distant": "Lointaines",
@@ -916,7 +920,8 @@
     },
     "activity_types": {
       "hours": "Heures",
-      "visit": "Visite"
+      "visit": "Visite",
+      "monthly": "Mensuel"
     },
     "adjustment_types": {
       "addition": "Bonus (+)",
@@ -965,10 +970,18 @@
     },
     "add_activity_dialog": {
       "title": "Travail de {{name}}",
-      "description_mixed": "Tarif heure o visite.",
+      "description_mixed": "Tarif heure ou visite.",
       "description_hourly": "Tarif horaire fixe.",
       "description_visit": "Tarif par visite fixe.",
-      "description_other": "Enregistrez le travail."
+      "description_monthly": "Ce collaborateur facture un montant mensuel fixe.",
+      "description_other": "Enregistrez le travail.",
+      "hours_label": "Heures travaillées",
+      "visits_label": "Nombre de visites",
+      "months_label": "Mois",
+      "rate_hour_label": "Tarif par heure",
+      "rate_visit_label": "Tarif par visite",
+      "rate_month_label": "Mensualité",
+      "paid_label": "Déjà payé ? (Générer dépense directe)"
     }
   },
   "owner_portal": {

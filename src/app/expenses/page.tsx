@@ -18,6 +18,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Loader2, PlusCircle } from 'lucide-react';
 import { ExpenseAddForm } from "@/components/expense-add-form";
 import { useTranslation } from "@/i18n/useTranslation";
+import { parseAssignment } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 interface ExpensesData {
@@ -66,12 +67,15 @@ export default function ExpensesPage() {
             const provsMap = new Map(providers.map((p: any) => [p.id, p.name]));
 
             const allExpenses: ExpenseWithDetails[] = expRaw.map((e: any) => {
+                const parsed = parseAssignment(e.assignment);
                 return {
                     ...e,
-                    assignmentName: e.assignment?.type === 'property' ? propsMap.get(e.assignment.id) : scopesMap.get(e.assignment.id),
+                    assignmentName: parsed.type === 'property' 
+                        ? (propsMap.get(parsed.id) || 'N/A') 
+                        : (scopesMap.get(parsed.id) || (parsed.id === 'administracion' ? 'Administración' : 'N/A')),
                     categoryName: e.categoryId ? catsMap.get(e.categoryId) : undefined,
                     providerName: e.providerId ? provsMap.get(e.providerId) : undefined,
-                    type: e.assignment?.type === 'property' ? 'Propiedad' : 'Ámbito',
+                    type: parsed.type === 'property' ? 'Propiedad' : 'Ámbito',
                     amountUSD: e.originalUsdAmount || (e.currency === 'USD' ? e.amount : 0),
                     amountARS: e.currency === 'ARS' ? e.amount : (e.exchangeRate ? e.amount * e.exchangeRate : e.amount)
                 } as ExpenseWithDetails;

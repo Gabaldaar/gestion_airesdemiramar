@@ -15,14 +15,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateExpense } from '@/lib/actions';
-import { ExpenseWithDetails, ExpenseCategory, Provider, CurrencySettings } from '@/lib/data';
+import { ExpenseWithDetails, ExpenseCategory, Provider, CurrencySettings, Property, TaskScope } from '@/lib/data';
 import { Pencil, Calendar as CalendarIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { cn, parseDateSafely } from '@/lib/utils';
+import { cn, parseDateSafely, parseAssignment } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from './ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Textarea } from './ui/textarea';
 import { useAuth } from './auth-provider';
 import { currencies } from '@/lib/currencies';
@@ -52,15 +52,17 @@ function SubmitButton() {
     )
 }
 
-export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdated, isOpen, onOpenChange }: {
+export function ExpenseEditForm({ expense, categories, providers, properties = [], scopes = [], onExpenseUpdated, isOpen, onOpenChange }: {
     expense: ExpenseWithDetails,
     categories: ExpenseCategory[],
     providers?: Provider[],
+    properties?: Property[],
+    scopes?: TaskScope[],
     onExpenseUpdated: () => void;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
-  const { appUser } = useAuth();
+  const { appUser, orgId } = useAuth();
   const { t } = useTranslation();
   const [state, setState] = useState(initialState);
   const [isPending, startTransition] = useTransition();
@@ -70,6 +72,9 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [selectedProviderId, setSelectedProviderId] = useState<string>(expense.providerId || 'none');
   const [currencySettings, setCurrencySettings] = useState<CurrencySettings | null>(null);
+  
+  const initialAssignment = parseAssignment(expense.assignment);
+  const [selectedAssignment, setSelectedAssignment] = useState<string>(`${initialAssignment.type}-${initialAssignment.id}`);
 
   const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
 
@@ -109,14 +114,19 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
         setExchangeRate(expense.exchangeRate?.toString() || '');
         setSelectedProviderId(expense.providerId || 'none');
         setIsFetchingRate(false);
-    } else if (appUser) {
-        if (appUser.appFlavor === 'commercial') {
-            getDoc(doc(db, 'settings', 'currencies')).then(snap => {
-                if (snap.exists()) setCurrencySettings(snap.data() as CurrencySettings);
-            });
+    } else {
+        const parsed = parseAssignment(expense.assignment);
+        setSelectedAssignment(`${parsed.type}-${parsed.id}`);
+        if (appUser) {
+            if (appUser.appFlavor === 'commercial') {
+                const currentOrgId = orgId || 'global';
+                getDoc(doc(db, 'settings', `currencies_${currentOrgId}`)).then(snap => {
+                    if (snap.exists()) setCurrencySettings(snap.data() as CurrencySettings);
+                });
+            }
         }
     }
-  }, [isOpen, expense, appUser]);
+  }, [isOpen, expense, appUser, orgId]);
 
   const isConversionNeeded = useMemo(() => {
     return currency === 'USD' && appUser?.appFlavor !== 'commercial';
@@ -143,12 +153,38 @@ export function ExpenseEditForm({ expense, categories, providers, onExpenseUpdat
         </DialogHeader>
         <form action={formAction} className="bg-muted/30">
             <input type="hidden" name="id" value={expense.id} />
-            <input type="hidden" name="assignmentType" value={expense.assignment.type} />
-            <input type="hidden" name="assignmentId" value={expense.assignment.id} />
+            <input type="hidden" name="assignment" value={selectedAssignment} />
             <input type="hidden" name="date" value={date?.toISOString() || ''} />
             <input type="hidden" name="providerId" value={isPersonalFlavor ? selectedProviderId : 'none'} />
             
             <div className="p-6 max-h-[60vh] overflow-y-auto shadow-inner border-y border-muted-foreground/10 space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="assignment" className="text-right text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('expenses.add_dialog.impute_to')}</Label>
+                    <Select 
+                        name="assignment" 
+                        value={selectedAssignment} 
+                        onValueChange={setSelectedAssignment} 
+                        required 
+                    >
+                        <SelectTrigger className="col-span-3 bg-background h-11 shadow-sm">
+                            <SelectValue placeholder={t('expenses.add_dialog.impute_placeholder')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {properties && properties.length > 0 && (
+                                <SelectGroup>
+                                    <SelectLabel>{t('navigation.properties')}</SelectLabel>
+                                    {properties.map(p => <SelectItem key={p.id} value={`property-${p.id}`}>{p.name}</SelectItem>)}
+                                </SelectGroup>
+                            )}
+                            {isPersonalFlavor && scopes && scopes.length > 0 && (
+                                <SelectGroup>
+                                    <SelectLabel>{t('tasks.assignment_types.scope')}</SelectLabel>
+                                    {scopes.map(s => <SelectItem key={s.id} value={`scope-${s.id}`}>{s.name}</SelectItem>)}
+                                </SelectGroup>
+                            )}
+                        </SelectContent>
+                    </Select>
+                </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="date" className="text-right text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('expenses.add_dialog.date')}</Label>
                     <Popover>

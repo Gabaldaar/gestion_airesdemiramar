@@ -9,6 +9,7 @@ import {
     where, 
     QueryConstraint
 } from 'firebase/firestore';
+import { parseAssignment } from './utils';
 
 // --- INTERFACES ---
 export interface PriceRange { desde: string; hasta: string; precio: number; }
@@ -25,7 +26,7 @@ export interface PriceConfig {
 export type UserRole = 'admin' | 'socio' | 'staff' | 'provider' | 'owner';
 export type UserStatus = 'active' | 'pending';
 export type ProviderManagementType = 'tasks' | 'liquidations';
-export type ProviderBillingType = 'hourly' | 'per_visit' | 'hourly_or_visit' | 'other' | null;
+export type ProviderBillingType = 'hourly' | 'per_visit' | 'hourly_or_visit' | 'monthly' | 'other' | null;
 
 export interface Provider {
   id: string;
@@ -45,6 +46,7 @@ export interface Provider {
   rateCurrency: 'ARS' | 'USD' | null;
   hourlyRate: number | null;
   perVisitRate: number | null;
+  monthlyRate: number | null;
   role: UserRole;
   status: UserStatus;
   appFlavor: 'personal' | 'commercial';
@@ -96,7 +98,7 @@ export interface BookingWithDetails extends Booking { property: Property; tenant
 export interface Payment { id: string; orgId: string; bookingId?: string | null; contratoId?: string | null; propertyId?: string | null; periodoPagoId?: string | null; date: string; amount: number; currency: string; description?: string; exchangeRate?: number | null; originalArsAmount?: number | null; receivedAmount?: number | null; receivedCurrency?: string | null; ownerLiquidationId?: string | null; }
 export interface PaymentWithDetails extends Payment { propertyId?: string; propertyName?: string; tenantName?: string; amountUSD: number; amountARS: number; sourceCurrency?: string; realReceivedAmount: number; realReceivedCurrency: string; }
 export interface TaskAssignment { type: 'property' | 'scope'; id: string; }
-export interface Expense { id: string; orgId: string; assignment: TaskAssignment; date: string; amount: number; currency: 'ARS' | 'USD'; originalUsdAmount?: number; exchangeRate?: number; description?: string; categoryId?: string | null; providerId?: string | null; taskId?: string | null; liquidationId?: string | null; manualAdjustmentId?: string | null; ownerLiquidationId?: string | null; }
+export interface Expense { id: string; orgId: string; assignment: TaskAssignment; date: string; amount: number; currency: 'ARS' | 'USD'; originalUsdAmount?: number; exchangeRate?: number; description?: string; categoryId?: string | null; providerId?: string | null; taskId?: string | null; liquidationId?: string | null; manualAdjustmentId?: string | null; workLogId?: string | null; ownerLiquidationId?: string | null; }
 export interface ExpenseWithDetails extends Expense { assignmentName?: string; assignmentColor?: string; categoryName?: string; providerName?: string; type: string; amountUSD: number; amountARS: number; }
 export interface Origin { id: string; orgId: string; name: string; color: string; }
 export interface EmailSettings { orgId: string; replyToEmail?: string; }
@@ -113,7 +115,7 @@ export interface Task { id: string; orgId: string; assignment: TaskAssignment; d
 export interface TaskWithDetails extends Task { assignmentName?: string; categoryName?: string; providerName?: string; }
 export interface EmailTemplate { id: string; orgId: string; name: string; subject: string; body: string; }
 export interface DateBlock { id: string; orgId: string; propertyId: string; startDate: string; endDate: string; reason?: string; }
-export interface WorkLog { id: string; orgId: string; providerId: string; assignment: TaskAssignment; date: string; activityType: 'hourly' | 'per_visit'; quantity: number; description: string; rateApplied: number; costCurrency: 'ARS' | 'USD'; calculatedCost: number; status: 'pending_liquidation' | 'liquidated'; liquidationId?: string | null; }
+export interface WorkLog { id: string; orgId: string; providerId: string; assignment: TaskAssignment; date: string; activityType: 'hourly' | 'per_visit' | 'monthly'; quantity: number; description: string; rateApplied: number; costCurrency: 'ARS' | 'USD'; calculatedCost: number; status: 'pending_liquidation' | 'liquidated'; liquidationId?: string | null; }
 export interface WorkLogWithDetails extends WorkLog { assignmentName?: string; }
 export interface ManualAdjustment { id: string; orgId: string; providerId: string; assignment: TaskAssignment; date: string; amount: number; currency: 'ARS' | 'USD'; categoryId: string; notes?: string; status: 'pending_liquidation' | 'liquidated'; liquidationId?: string | null; }
 export interface ManualAdjustmentWithDetails extends ManualAdjustment { categoryName?: string; assignmentName?: string; }
@@ -346,7 +348,13 @@ export async function getPendingWorkLogs(providerId: string, orgId: string) {
     const scopesMap = new Map(scopes.map(s => [s.id, s.name]));
     return logs
         .filter(l => l.providerId === providerId && l.status === 'pending_liquidation')
-        .map(l => ({ ...l, assignmentName: l.assignment.type === 'property' ? propsMap.get(l.assignment.id) : scopesMap.get(l.assignment.id) } as WorkLogWithDetails));
+        .map(l => {
+            const parsed = parseAssignment(l.assignment);
+            return { 
+                ...l, 
+                assignmentName: parsed.type === 'property' ? propsMap.get(parsed.id) : scopesMap.get(parsed.id) 
+            } as WorkLogWithDetails;
+        });
 }
 
 export async function getPendingManualAdjustments(providerId: string, orgId: string) {
@@ -361,7 +369,14 @@ export async function getPendingManualAdjustments(providerId: string, orgId: str
     const scopesMap = new Map(scopes.map(s => [s.id, s.name]));
     return adjs
         .filter(a => a.providerId === providerId && a.status === 'pending_liquidation')
-        .map(a => ({ ...a, categoryName: catsMap.get(a.categoryId), assignmentName: a.assignment.type === 'property' ? propsMap.get(a.assignment.id) : scopesMap.get(a.assignment.id) } as ManualAdjustmentWithDetails));
+        .map(a => {
+            const parsed = parseAssignment(a.assignment);
+            return { 
+                ...a, 
+                categoryName: catsMap.get(a.categoryId), 
+                assignmentName: parsed.type === 'property' ? propsMap.get(parsed.id) : scopesMap.get(parsed.id) 
+            } as ManualAdjustmentWithDetails;
+        });
 }
 
 export async function getTasksByProviderId(id: string, orgId: string) {
@@ -369,7 +384,13 @@ export async function getTasksByProviderId(id: string, orgId: string) {
     const propsMap = new Map(properties.map(p => [p.id, p.name]));
     return tasks
         .filter(t => t.providerId === id)
-        .map(t => ({ ...t, assignmentName: t.assignment.type === 'property' ? propsMap.get(t.assignment.id) : 'Ámbito' } as TaskWithDetails));
+        .map(t => {
+            const parsed = parseAssignment(t.assignment);
+            return { 
+                ...t, 
+                assignmentName: parsed.type === 'property' ? propsMap.get(parsed.id) : 'Ámbito' 
+            } as TaskWithDetails;
+        });
 }
 
 export async function getPropertyExpensesByProviderId(id: string, orgId: string) {
@@ -387,7 +408,13 @@ export async function getWorkLogsByLiquidationId(liquidationId: string, orgId: s
     const scopesMap = new Map(scopes.map(s => [s.id, s.name]));
     return logs
         .filter(l => l.liquidationId === liquidationId)
-        .map(l => ({ ...l, assignmentName: l.assignment.type === 'property' ? propsMap.get(l.assignment.id) : scopesMap.get(l.assignment.id) } as WorkLogWithDetails));
+        .map(l => {
+            const parsed = parseAssignment(l.assignment);
+            return { 
+                ...l, 
+                assignmentName: parsed.type === 'property' ? propsMap.get(parsed.id) : scopesMap.get(parsed.id) 
+            } as WorkLogWithDetails;
+        });
 }
 
 export async function getManualAdjustmentsByLiquidationId(liquidationId: string, orgId: string) {
@@ -402,7 +429,14 @@ export async function getManualAdjustmentsByLiquidationId(liquidationId: string,
     const scopesMap = new Map(scopes.map(s => [s.id, s.name]));
     return adjs
         .filter(a => a.liquidationId === liquidationId)
-        .map(a => ({ ...a, categoryName: catsMap.get(a.categoryId), assignmentName: a.assignment.type === 'property' ? propsMap.get(a.assignment.id) : scopesMap.get(a.assignment.id) } as ManualAdjustmentWithDetails));
+        .map(a => {
+            const parsed = parseAssignment(a.assignment);
+            return { 
+                ...a, 
+                categoryName: catsMap.get(a.categoryId), 
+                assignmentName: parsed.type === 'property' ? propsMap.get(parsed.id) : scopesMap.get(parsed.id) 
+            } as ManualAdjustmentWithDetails;
+        });
 }
 
 export async function getEmailSettings(orgId: string) { 

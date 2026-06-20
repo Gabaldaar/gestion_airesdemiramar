@@ -180,11 +180,11 @@ function PrintPageComponent({ data }: { data: PrintPageData }) {
                             <h2 className="text-lg font-semibold border-b pb-2 mb-2">{t('liquidations.details.income')}</h2>
                             <Table>
                                 <TableHeader><TableRow><TableHead>{t('common.date')}</TableHead><TableHead>{t('common.description')}</TableHead><TableHead className="text-right">Cant.</TableHead><TableHead className="text-right">Tarifa</TableHead><TableHead className="text-right">Subtotal</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {workLogs.map(log => (
-                                        <TableRow key={log.id}><TableCell>{formatDate(log.date)}</TableCell><TableCell className="text-xs">{log.description}</TableCell><TableCell className="text-right text-xs">{log.quantity} {log.activityType === 'hourly' ? 'hs' : ''}</TableCell><TableCell className="text-right text-xs">{formatCurrency(log.rateApplied, log.costCurrency)}</TableCell><TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell></TableRow>
-                                    ))}
-                                </TableBody>
+                                 <TableBody>
+                                     {workLogs.map(log => (
+                                         <TableRow key={log.id}><TableCell>{formatDate(log.date)}</TableCell><TableCell className="text-xs">{log.description}</TableCell><TableCell className="text-right text-xs">{log.quantity} {log.activityType === 'hourly' ? 'hs' : log.activityType === 'monthly' ? 'mes' : 'vis.'}</TableCell><TableCell className="text-right text-xs">{formatCurrency(log.rateApplied, log.costCurrency)}</TableCell><TableCell className="text-right font-medium">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell></TableRow>
+                                     ))}
+                                 </TableBody>
                                 <TableFooter><TableRow><TableCell colSpan={4} className="text-right font-bold">{t('liquidations.summary.subtotal_items')}</TableCell><TableCell className="text-right font-bold">{formatCurrency(totalWorkLogs, liquidation.currency)}</TableCell></TableRow></TableFooter>
                             </Table>
                         </div>

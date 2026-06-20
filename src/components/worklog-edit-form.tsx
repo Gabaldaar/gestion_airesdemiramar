@@ -12,9 +12,10 @@ import { Loader2 } from 'lucide-react';
 import { updateWorkLog } from '@/lib/actions';
 import { Provider, Property, TaskScope, WorkLog } from '@/lib/data';
 import { useToast } from './ui/use-toast';
-import { parseDateSafely, cn } from '@/lib/utils';
+import { parseDateSafely, cn, parseAssignment } from '@/lib/utils';
 import { useAuth } from './auth-provider';
 import { useTranslation } from "@/i18n/useTranslation";
+import { Checkbox } from './ui/checkbox';
 
 const initialState = { success: false, message: '' };
 
@@ -31,14 +32,16 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
     const { t } = useTranslation();
     const isAdmin = appUser?.role === 'admin';
 
+    const initialAssignment = parseAssignment(workLog.assignment);
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
-    const [activityType, setActivityType] = useState<'hourly' | 'per_visit'>('hourly');
+    const [activityType, setActivityType] = useState<'hourly' | 'per_visit' | 'monthly'>('hourly');
     const [rate, setRate] = useState<number | ''>('');
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
-    const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(workLog.assignment.id);
+    const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(initialAssignment.id);
+    const [assignment, setAssignment] = useState<string>(`${initialAssignment.type}-${initialAssignment.id}`);
 
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -70,7 +73,9 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
             setDate(parseDateSafely(workLog.date));
             setActivityType(workLog.activityType);
             setRate(workLog.rateApplied);
-            setSelectedAssignmentId(workLog.assignment.id);
+            const parsed = parseAssignment(workLog.assignment);
+            setSelectedAssignmentId(parsed.id);
+            setAssignment(`${parsed.type}-${parsed.id}`);
             setState(initialState);
         }
     }, [isOpen, workLog]);
@@ -79,7 +84,9 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
         let newRate: number | '' = '';
         const isVisit = activityType === 'per_visit';
 
-        if (isVisit && selectedAssignmentId) {
+        if (activityType === 'monthly') {
+             newRate = provider.monthlyRate || '';
+        } else if (isVisit && selectedAssignmentId) {
              const selectedProperty = properties.find(p => p.id === selectedAssignmentId);
              const specificRate = selectedProperty?.visitRates?.[provider.id];
              newRate = specificRate ?? (provider.perVisitRate || '');
@@ -94,9 +101,9 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
     }, [activityType, selectedAssignmentId, properties, provider]);
 
     const showActivityTypeSelect = provider.billingType === 'hourly_or_visit';
-    const quantityLabel = activityType === 'hourly' ? t('liquidations.add_activity_dialog.hours_label') : t('liquidations.add_activity_dialog.visits_label');
+    const quantityLabel = activityType === 'hourly' ? t('liquidations.add_activity_dialog.hours_label') : activityType === 'monthly' ? t('liquidations.add_activity_dialog.months_label') : t('liquidations.add_activity_dialog.visits_label');
     const quantityPlaceholder = activityType === 'hourly' ? "Ej: 2.5" : "Ej: 1";
-    const rateLabel = activityType === 'hourly' ? t('liquidations.add_activity_dialog.rate_hour_label') : t('liquidations.add_activity_dialog.rate_visit_label');
+    const rateLabel = activityType === 'hourly' ? t('liquidations.add_activity_dialog.rate_hour_label') : activityType === 'monthly' ? t('liquidations.add_activity_dialog.rate_month_label') : t('liquidations.add_activity_dialog.rate_visit_label');
 
     const defaultAssignmentValue = `${workLog.assignment.type}-${workLog.assignment.id}`;
 
@@ -124,7 +131,7 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
 
                         <div className="space-y-2">
                             <Label htmlFor="assignment" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('expenses.add_dialog.impute_to')}</Label>
-                            <Select name="assignment" defaultValue={defaultAssignmentValue} onValueChange={(val) => setSelectedAssignmentId(val.split('-')[1])} required>
+                            <Select name="assignment" value={assignment} onValueChange={(val) => { setAssignment(val); setSelectedAssignmentId(val.split('-')[1]); }} required>
                                 <SelectTrigger className="bg-background h-11 shadow-sm"><SelectValue placeholder={t('expenses.add_dialog.impute_placeholder')}/></SelectTrigger>
                                 <SelectContent>
                                     {properties && properties.length > 0 && (
@@ -161,7 +168,7 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
                          <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="quantity" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{quantityLabel}</Label>
-                                <Input id="quantity" name="quantity" type="number" step="0.5" defaultValue={workLog.quantity} placeholder={quantityPlaceholder} required className="h-11 bg-background shadow-sm" />
+                                <Input key={activityType} id="quantity" name="quantity" type="number" step="0.5" defaultValue={workLog.activityType === activityType ? workLog.quantity : (activityType === 'monthly' ? 1 : undefined)} placeholder={quantityPlaceholder} required className="h-11 bg-background shadow-sm" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="rate" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{rateLabel}</Label>
@@ -178,6 +185,15 @@ export function WorkLogEditForm({ provider, properties, scopes, workLog, isOpen,
                                 />
                             </div>
                         </div>
+                        
+                        {isAdmin && (
+                            <div className="flex items-center space-x-2 py-2">
+                                <Checkbox id="paid" name="paid" />
+                                <Label htmlFor="paid" className="cursor-pointer text-muted-foreground font-bold uppercase text-[10px] tracking-widest select-none">
+                                    {t('liquidations.add_activity_dialog.paid_label')}
+                                </Label>
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <Label htmlFor="description" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('common.description')}</Label>

@@ -242,7 +242,7 @@ export default function ExpensesClient({ initialExpenses, properties, categories
             </div>
         )}
       </div>
-      <ExpensesList expenses={filteredExpenses} categories={categories} providers={providers} onDataChanged={onDataChanged} />
+      <ExpensesList expenses={filteredExpenses} categories={categories} providers={providers} properties={properties} scopes={scopes} onDataChanged={onDataChanged} />
     </div>
   );
 }

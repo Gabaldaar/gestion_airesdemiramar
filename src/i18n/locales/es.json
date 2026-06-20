@@ -311,10 +311,13 @@
       "hourly": "Hora",
       "visit": "Visita",
       "hourly_or_visit": "Hora / Visita",
+      "monthly": "Mensual",
       "other": "Otra / N/A",
       "type": "Tipo Facturación",
       "currency": "Moneda Tarifa",
-      "rate_hour": "Tarifa por Hora"
+      "rate_hour": "Tarifa por Hora",
+      "rate_monthly": "Tarifa Mensual",
+      "visit_note": "Nota: El monto de la visita se ingresa en cada propiedad."
     },
     "card": {
       "address": "Dirección",
@@ -648,6 +651,7 @@
       "guarantee_currency": "Moneda Garantía",
       "guarantee_received_placeholder": "Recibida el...",
       "guarantee_returned_placeholder": "Devuelta el...",
+      "origin": "Origen",
       "sort": "Orden",
       "sort_options": {
         "distant": "Más lejanas primero",
@@ -907,7 +911,8 @@
     },
     "activity_types": {
       "hours": "Horas",
-      "visit": "Visita"
+      "visit": "Visita",
+      "monthly": "Mensual"
     },
     "adjustment_types": {
       "addition": "A favor (Suma)",
@@ -959,7 +964,15 @@
       "description_mixed": "Este colaborador cobra por hora o por visita.",
       "description_hourly": "Este colaborador factura una tarifa horaria fija.",
       "description_visit": "Este colaborador factura una tarifa fija por visita.",
-      "description_other": "Registra el trabajo realizado."
+      "description_monthly": "Este colaborador cobra una mensualidad fija.",
+      "description_other": "Registra el trabajo realizado.",
+      "hours_label": "Horas Trabajadas",
+      "visits_label": "Número de Visitas",
+      "months_label": "Meses",
+      "rate_hour_label": "Tarifa por Hora",
+      "rate_visit_label": "Tarifa por Visita",
+      "rate_month_label": "Mensualidad",
+      "paid_label": "¿Ya fue pagado? (Generar gasto directo)"
     },
     "edit_activity_dialog": {
       "title": "Editar Actividad - {{name}}",
@@ -967,7 +980,8 @@
     },
     "add_adjustment_dialog": {
       "title": "Añadir Ajuste - {{name}}",
-      "description": "Registra un bono, adelanto o descuento manual."
+      "description": "Registra un bono, adelanto o descuento manual.",
+      "paid_label": "¿Ya fue pagado? (Generar gasto directo)"
     },
     "edit_adjustment_dialog": {
       "title": "Editar Ajuste - {{name}}",

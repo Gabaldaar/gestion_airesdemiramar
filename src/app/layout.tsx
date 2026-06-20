@@ -1,6 +1,5 @@
 'use client';
 
-import { Inter } from "next/font/google";
 import "./globals.css";
 import LayoutManager from "@/components/layout-manager";
 import PwaSetup from "@/components/pwa-setup";
@@ -22,8 +21,6 @@ const AuthProvider = dynamic(() => import('@/components/auth-provider').then(mod
     </div>
   )
 });
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
@@ -59,7 +56,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
         <link rel="shortcut icon" href="/icons/icon-192x192.png" />
       </head>
-      <body className={inter.className}>
+      <body>
         <LanguageProvider>
           <AuthProvider>
             <TooltipProvider delayDuration={300}>

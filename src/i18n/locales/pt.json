@@ -310,10 +310,13 @@
       "hourly": "Heure",
       "visit": "Visita",
       "hourly_or_visit": "Heure / Visita",
+      "monthly": "Mensal",
       "other": "Outra / Não Aplicável",
       "type": "Tipo de Cobrança",
       "currency": "Moeda da Tarifa",
-      "rate_hour": "Tarifa por Hora"
+      "rate_hour": "Tarifa por Hora",
+      "rate_monthly": "Tarifa Mensal",
+      "visit_note": "Nota: O valor da visita é inserido em cada propriedade."
     },
     "card": {
       "address": "Endereço",
@@ -907,7 +910,8 @@
     },
     "activity_types": {
       "hours": "Horas",
-      "visit": "Visita"
+      "visit": "Visita",
+      "monthly": "Mensal"
     },
     "adjustment_types": {
       "addition": "A favor (Suma)",
@@ -959,11 +963,15 @@
       "description_mixed": "Este colaborador cobra por hora o por visita.",
       "description_hourly": "Este colaborador cobra uma tarifa fixa por hora.",
       "description_visit": "Este colaborador cobra uma tarifa fixa por visita.",
+      "description_monthly": "Este colaborador cobra um valor mensal fixo.",
       "description_other": "Registre o trabalho realizado.",
       "hours_label": "Horas Trabalhadas",
       "visits_label": "Número de Visitas",
+      "months_label": "Meses",
       "rate_hour_label": "Tarifa por Hora",
-      "rate_visit_label": "Tarifa por Visita"
+      "rate_visit_label": "Tarifa por Visita",
+      "rate_month_label": "Mensalidade",
+      "paid_label": "Já foi pago? (Gerar despesa direta)"
     },
     "edit_activity_dialog": {
       "title": "Editar Atividade - {{name}}",
@@ -971,7 +979,8 @@
     },
     "add_adjustment_dialog": {
       "title": "Adicionar Ajuste - {{name}}",
-      "description": "Registra um bônus, adiantamento ou desconto manual."
+      "description": "Registra um bônus, adiantamento ou desconto manual.",
+      "paid_label": "Já foi pago? (Gerar despesa direta)"
     },
     "edit_adjustment_dialog": {
       "title": "Editar Ajuste - {{name}}",

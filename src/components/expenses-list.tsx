@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { ExpenseWithDetails, ExpenseCategory, Provider } from "@/lib/data";
+import { ExpenseWithDetails, ExpenseCategory, Provider, Property, TaskScope } from "@/lib/data";
 import { format } from 'date-fns';
 import { es, enUS, ptBR } from 'date-fns/locale';
 import { ExpenseEditForm } from "./expense-edit-form";
@@ -21,10 +21,12 @@ interface ExpensesListProps {
   expenses: ExpenseWithDetails[];
   categories: ExpenseCategory[];
   providers: Provider[];
+  properties?: Property[];
+  scopes?: TaskScope[];
   onDataChanged: () => void;
 }
 
-export default function ExpensesList({ expenses, categories, providers, onDataChanged }: ExpensesListProps) {
+export default function ExpensesList({ expenses, categories, providers, properties = [], scopes = [], onDataChanged }: ExpensesListProps) {
   const { appUser } = useAuth();
   const { t, language } = useTranslation();
   const currentLocale = locales[language] || es;
@@ -171,6 +173,8 @@ export default function ExpensesList({ expenses, categories, providers, onDataCh
                 expense={editingExpense} 
                 categories={categories} 
                 providers={providers} 
+                properties={properties}
+                scopes={scopes}
                 isOpen={!!editingExpense}
                 onOpenChange={(open) => !open && setEditingExpense(null)}
                 onExpenseUpdated={onDataChanged} 

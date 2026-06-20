@@ -38,7 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Loader2, Copy, Calendar as CalendarIcon, Search, X, Pencil, MapPin, PlusCircle, Home, ScrollText, ListFilter, ChevronDown, ChevronUp, TrendingUp, Wrench, Banknote, Upload, AlertTriangle, ChevronLeft } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import { es, enUS, ptBR } from 'date-fns/locale';
-import { cn, parseDateSafely } from '@/lib/utils';
+import { cn, parseDateSafely, parseAssignment } from '@/lib/utils';
 import { TaskAddForm } from '@/components/task-add-form';
 import { DateBlockAddForm } from '@/components/date-block-add-form';
 import DateBlocksList from '@/components/date-blocks-list';
@@ -307,12 +307,14 @@ export default function PropertyDetailPage() {
         const enrichedContratos = Array.from(uniqueContratosMap.values());
 
         const allExpensesEnriched: ExpenseWithDetails[] = allExpensesRaw.map((e: any) => {
-            const p = propsMap.get(e.assignment?.id);
-            const s = scopesMap.get(e.assignment?.id);
+            const parsed = parseAssignment(e.assignment);
+            const p = propsMap.get(parsed.id);
+            const s = scopesMap.get(parsed.id) || (parsed.id === 'administracion' ? { name: 'Administración', color: '#8b5cf6' } : null);
             return {
                 ...e,
-                assignmentName: e.assignment?.type === 'property' ? p?.name : s?.name,
-                assignmentColor: e.assignment?.type === 'scope' ? s?.color : undefined,
+                assignment: parsed,
+                assignmentName: parsed.type === 'property' ? (p?.name || 'N/A') : (s?.name || 'N/A'),
+                assignmentColor: parsed.type === 'scope' ? s?.color : undefined,
                 categoryName: expenseCatsMap.get(e.categoryId),
                 providerName: provsMap.get(e.providerId),
                 amountUSD: e.originalUsdAmount || (e.currency === 'USD' ? e.amount : 0),
@@ -969,7 +971,7 @@ export default function PropertyDetailPage() {
                             </ExpenseAddForm>
                         </CardHeader>
                         <CardContent className="p-0 sm:p-6 w-full">
-                            <ExpensesList expenses={filteredExpenses} categories={data.expenseCategories} providers={data.providers} onDataChanged={handleDataChanged} />
+                            <ExpensesList expenses={filteredExpenses} categories={data.expenseCategories} providers={data.providers} properties={data.properties} scopes={data.taskScopes} onDataChanged={handleDataChanged} />
                         </CardContent>
                     </Card>
                 </TabsContent>

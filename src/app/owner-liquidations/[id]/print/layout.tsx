@@ -1,7 +1,4 @@
-import { Inter } from "next/font/google";
 import "../../../globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Rendición de Cuentas",
@@ -15,7 +12,7 @@ export default function PrintLayout({
 }) {
   return (
     <html lang="es">
-      <body className={inter.className}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }

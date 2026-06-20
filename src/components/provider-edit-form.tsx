@@ -236,6 +236,7 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                                                     <SelectItem value="hourly">{t('providers.billing.hourly')}</SelectItem>
                                                     <SelectItem value="per_visit">{t('providers.billing.visit')}</SelectItem>
                                                     <SelectItem value="hourly_or_visit">{t('providers.billing.hourly_or_visit')}</SelectItem>
+                                                    <SelectItem value="monthly">{t('providers.billing.monthly')}</SelectItem>
                                                     <SelectItem value="other">{t('providers.billing.other')}</SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -252,10 +253,23 @@ export function ProviderEditForm({ provider, categories, onProviderUpdated, isOp
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="hourlyRate" className="text-[10px] uppercase font-bold text-muted-foreground">{t('providers.billing.rate_hour')}</Label>
-                                            <Input id="hourlyRate" name="hourlyRate" type="number" step="0.01" defaultValue={provider.hourlyRate || ''} className="h-10 bg-muted/20 font-bold" />
-                                        </div>
+                                        {(billingType === 'hourly' || billingType === 'hourly_or_visit') && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="hourlyRate" className="text-[10px] uppercase font-bold text-muted-foreground">{t('providers.billing.rate_hour')}</Label>
+                                                <Input id="hourlyRate" name="hourlyRate" type="number" step="0.01" defaultValue={provider.hourlyRate || ''} className="h-10 bg-muted/20 font-bold" />
+                                            </div>
+                                        )}
+                                        {billingType === 'monthly' && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="monthlyRate" className="text-[10px] uppercase font-bold text-muted-foreground">{t('providers.billing.rate_monthly')}</Label>
+                                                <Input id="monthlyRate" name="monthlyRate" type="number" step="0.01" defaultValue={provider.monthlyRate || ''} className="h-10 bg-muted/20 font-bold" />
+                                            </div>
+                                        )}
+                                        {(billingType === 'per_visit' || billingType === 'hourly_or_visit') && (
+                                            <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 p-3 rounded-xl border border-amber-200 dark:border-amber-900/50 col-span-full">
+                                                {t('providers.billing.visit_note')}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             )}

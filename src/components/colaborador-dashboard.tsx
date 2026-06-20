@@ -56,7 +56,7 @@ function WorkLogCard({ log, onEdit, onDelete }: {
             </CardHeader>
             <CardContent className="p-3 pt-0 text-sm">
                 <p className="font-medium">{log.description}</p>
-                <p className="text-xs text-muted-foreground">({log.quantity} {log.activityType === 'hourly' ? 'hs' : 'visita(s)'} a {formatCurrency(log.rateApplied, log.costCurrency)})</p>
+                <p className="text-xs text-muted-foreground">({log.quantity} {log.activityType === 'hourly' ? 'hs' : log.activityType === 'monthly' ? 'mes(es)' : 'visita(s)'} a {formatCurrency(log.rateApplied, log.costCurrency)})</p>
             </CardContent>
             <CardFooter className="p-2 justify-end">
                 <Button variant="ghost" size="icon" onClick={() => onEdit(log)}><Pencil className="h-4 w-4" /></Button>

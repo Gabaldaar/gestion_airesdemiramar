@@ -19,6 +19,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useTranslation } from "@/i18n/useTranslation";
 import { cn } from '@/lib/utils';
+import { Checkbox } from './ui/checkbox';
 
 const initialState = { success: false, message: '' };
 
@@ -33,11 +34,15 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
     const { appUser, orgId } = useAuth();
     const { t } = useTranslation();
     const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
+    const isAdmin = appUser?.role === 'admin';
 
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [categories, setCategories] = useState<AdjustmentCategory[]>([]);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+    const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+    const showPaidOption = selectedCategory?.type === 'addition';
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
@@ -111,6 +116,7 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
             setDate(new Date());
             setState(initialState);
             setExchangeRate('');
+            setSelectedCategoryId('');
         }
     }, [isOpen, appUser, orgId]);
 
@@ -161,7 +167,7 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
                         
                         <div className="space-y-2">
                             <Label htmlFor="categoryId" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('liquidations.pending_items.manual_adjustments')}</Label>
-                            <Select name="categoryId" required>
+                            <Select name="categoryId" value={selectedCategoryId} onValueChange={setSelectedCategoryId} required>
                                  <SelectTrigger className="bg-background h-11 shadow-sm"><SelectValue placeholder={t('common.select_category')}/></SelectTrigger>
                                  <SelectContent>
                                     {categories.map(cat => (
@@ -233,6 +239,16 @@ export function ManualAdjustmentAddForm({ provider, properties, scopes, isOpen, 
                             </div>
                         )}
                         
+                        
+                        {showPaidOption && isAdmin && (
+                            <div className="flex items-center space-x-2 py-2">
+                                <Checkbox id="paid" name="paid" />
+                                <Label htmlFor="paid" className="cursor-pointer text-muted-foreground font-bold uppercase text-[10px] tracking-widest select-none">
+                                    {t('liquidations.add_adjustment_dialog.paid_label')}
+                                </Label>
+                            </div>
+                        )}
+
                         <div className="space-y-2">
                             <Label htmlFor="notes" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('tenants.card.notes')}</Label>
                             <Textarea id="notes" name="notes" placeholder="..." className="bg-background shadow-inner min-h-[100px]" />

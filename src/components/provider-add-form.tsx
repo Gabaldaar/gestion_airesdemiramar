@@ -19,7 +19,7 @@ import { addProvider } from '@/lib/actions';
 import { PlusCircle, Loader2, Banknote, Wrench } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ProviderCategory, ProviderManagementType, UserRole } from '@/lib/data';
+import { ProviderCategory, ProviderManagementType, UserRole, ProviderBillingType } from '@/lib/data';
 import { countries } from '@/lib/countries';
 import { cn } from '@/lib/utils';
 import { useToast } from './ui/use-toast';
@@ -56,6 +56,7 @@ export function ProviderAddForm({ categories, onProviderAdded, allowedRoles }: {
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [managementType, setManagementType] = useState<ProviderManagementType>('tasks');
+  const [billingType, setBillingType] = useState<ProviderBillingType>('hourly');
   const [role, setRole] = useState<UserRole>(allowedRoles && allowedRoles.length === 1 ? allowedRoles[0] : 'staff');
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -86,6 +87,7 @@ export function ProviderAddForm({ categories, onProviderAdded, allowedRoles }: {
     if (state.success) {
       setIsOpen(false);
       setManagementType('tasks');
+      setBillingType('hourly');
       setRole(allowedRoles && allowedRoles.length === 1 ? allowedRoles[0] : 'staff');
       formRef.current?.reset();
       onProviderAdded();
@@ -184,11 +186,11 @@ export function ProviderAddForm({ categories, onProviderAdded, allowedRoles }: {
                         
                         {managementType === 'liquidations' && (
                             <div className="pt-4 space-y-4 border-t border-muted">
-                                <Label className="flex items-center gap-2 text-primary font-bold text-xs uppercase"><Banknote className="h-4 w-4" /> {t('providers.billing.label')}</Label>
+                                <Label className="flex items-center gap-2 text-primary font-bold text-xs uppercase"><Wrench className="h-4 w-4" /> {t('providers.add_dialog.billing_title')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="billingType" className="text-[10px] uppercase font-bold text-muted-foreground">{t('providers.billing.type')}</Label>
-                                        <Select name="billingType" defaultValue="hourly">
+                                        <Select name="billingType" value={billingType || 'hourly'} onValueChange={(v) => setBillingType(v as ProviderBillingType)}>
                                             <SelectTrigger className="h-10 bg-muted/20">
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -196,6 +198,7 @@ export function ProviderAddForm({ categories, onProviderAdded, allowedRoles }: {
                                                 <SelectItem value="hourly">{t('providers.billing.hourly')}</SelectItem>
                                                 <SelectItem value="per_visit">{t('providers.billing.visit')}</SelectItem>
                                                 <SelectItem value="hourly_or_visit">{t('providers.billing.hourly_or_visit')}</SelectItem>
+                                                <SelectItem value="monthly">{t('providers.billing.monthly')}</SelectItem>
                                                 <SelectItem value="other">{t('providers.billing.other')}</SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -212,10 +215,23 @@ export function ProviderAddForm({ categories, onProviderAdded, allowedRoles }: {
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="hourlyRate" className="text-[10px] uppercase font-bold text-muted-foreground">{t('providers.billing.rate_hour')}</Label>
-                                        <Input id="hourlyRate" name="hourlyRate" type="number" step="0.01" className="h-10 bg-muted/20 font-bold" />
-                                    </div>
+                                    {(billingType === 'hourly' || billingType === 'hourly_or_visit') && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="hourlyRate" className="text-[10px] uppercase font-bold text-muted-foreground">{t('providers.billing.rate_hour')}</Label>
+                                            <Input id="hourlyRate" name="hourlyRate" type="number" step="0.01" className="h-10 bg-muted/20 font-bold" />
+                                        </div>
+                                    )}
+                                    {billingType === 'monthly' && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="monthlyRate" className="text-[10px] uppercase font-bold text-muted-foreground">{t('providers.billing.rate_monthly')}</Label>
+                                            <Input id="monthlyRate" name="monthlyRate" type="number" step="0.01" className="h-10 bg-muted/20 font-bold" />
+                                        </div>
+                                    )}
+                                    {(billingType === 'per_visit' || billingType === 'hourly_or_visit') && (
+                                        <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 p-3 rounded-xl border border-amber-200 dark:border-amber-900/50 col-span-full">
+                                            {t('providers.billing.visit_note')}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}

@@ -310,10 +310,13 @@
       "hourly": "Hour",
       "visit": "Visit",
       "hourly_or_visit": "Hourly / Visit",
+      "monthly": "Monthly",
       "other": "Other / N/A",
       "type": "Fee Type",
       "currency": "Rate Currency",
-      "rate_hour": "Hourly Rate"
+      "rate_hour": "Hourly Rate",
+      "rate_monthly": "Monthly Rate",
+      "visit_note": "Note: The visit rate is configured on each property."
     },
     "card": {
       "address": "Address",
@@ -647,6 +650,7 @@
       "guarantee_currency": "Guarantee Currency",
       "guarantee_received_placeholder": "Received on...",
       "guarantee_returned_placeholder": "Returned on...",
+      "origin": "Origin",
       "sort": "Order",
       "sort_options": {
         "distant": "Distant first",
@@ -906,7 +910,8 @@
     },
     "activity_types": {
       "hours": "Hours",
-      "visit": "Visit"
+      "visit": "Visit",
+      "monthly": "Monthly"
     },
     "adjustment_types": {
       "addition": "Favor (Add)",
@@ -958,11 +963,15 @@
       "description_mixed": "This collaborator bills by hour or visit.",
       "description_hourly": "This collaborator bills a fixed hourly rate.",
       "description_visit": "This collaborator bills a fixed rate per visit.",
+      "description_monthly": "This provider bills a fixed monthly rate.",
       "description_other": "Register the work performed.",
       "hours_label": "Hours Worked",
       "visits_label": "Number of Visits",
+      "months_label": "Months",
       "rate_hour_label": "Hourly Rate",
-      "rate_visit_label": "Rate per Visit"
+      "rate_visit_label": "Rate per Visit",
+      "rate_month_label": "Monthly Rate",
+      "paid_label": "Already paid? (Generate direct expense)"
     },
     "edit_activity_dialog": {
       "title": "Edit Activity - {{name}}",

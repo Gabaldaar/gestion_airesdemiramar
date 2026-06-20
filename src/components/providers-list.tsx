@@ -318,9 +318,15 @@ export default function ProvidersList({
                                                         <Banknote className="h-3 w-3" /> {t('providers.billing.label')}
                                                     </p>
                                                     <p className="font-bold text-primary">
-                                                        {p.billingType === 'hourly' || p.billingType === 'hourly_or_visit' 
-                                                            ? `${formatCurrency(p.hourlyRate, p.rateCurrency)}/h`
-                                                            : p.perVisitRate ? formatCurrency(p.perVisitRate, p.rateCurrency) : '-'}
+                                                        {p.billingType === 'monthly'
+                                                            ? `${formatCurrency(p.monthlyRate, p.rateCurrency)}/mes`
+                                                            : p.billingType === 'hourly'
+                                                                ? `${formatCurrency(p.hourlyRate, p.rateCurrency)}/h`
+                                                                : p.billingType === 'hourly_or_visit'
+                                                                    ? `${formatCurrency(p.hourlyRate, p.rateCurrency)}/h o ${t('providers.billing.visit')}`
+                                                                    : p.billingType === 'per_visit'
+                                                                        ? t('providers.billing.visit')
+                                                                        : '-'}
                                                     </p>
                                                 </div>
                                             )}

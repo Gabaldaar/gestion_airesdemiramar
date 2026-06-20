@@ -19,6 +19,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { startOfMonth, endOfMonth, addMonths, differenceInCalendarMonths } from 'date-fns';
 import { logEvent } from './analytics';
+import { parseAssignment } from './utils';
 
 // Usamos el UID para evitar el escáner de secretos de Netlify.
 const MASTER_ADMIN_UID = 'ymBtFDZUWKR7VCxWNTHWflXc5mx1';
@@ -612,6 +613,9 @@ export async function updateExpense(ps: any, fd: FormData) {
   const amount = parseFloat(fd.get('amount') as string);
   const currency = (fd.get('currency') as string || 'ARS').toUpperCase();
   const rate = parseFloat(fd.get('exchangeRate') as string) || null;
+  const assVal = fd.get('assignment') as string;
+  const assType = fd.get('assignmentType') as string;
+  const assId = fd.get('assignmentId') as string;
   
   const data: any = { 
     date: fd.get('date'), 
@@ -619,6 +623,13 @@ export async function updateExpense(ps: any, fd: FormData) {
     categoryId: fd.get('categoryId') === 'none' ? null : fd.get('categoryId'), 
     providerId: fd.get('providerId') === 'none' ? null : fd.get('providerId') 
   };
+
+  if (assVal) {
+    const { type, id: aid } = parseAssignment(assVal);
+    data.assignment = { type, id: aid };
+  } else if (assType && assId) {
+    data.assignment = { type: assType, id: assId };
+  }
 
   if (currency === 'USD' && rate) { 
     data.amount = amount * rate; 
@@ -1095,6 +1106,7 @@ export async function addProvider(ps: any, fd: FormData) {
     billingType: fd.get('billingType') as any || 'hourly',
     rateCurrency: (fd.get('rateCurrency') as any) || 'ARS',
     hourlyRate: parseFloat(fd.get('hourlyRate') as string) || null,
+    monthlyRate: parseFloat(fd.get('monthlyRate') as string) || null,
     adminNote: fd.get('adminNote') as string || null,
     categoryId: fd.get('categoryId') !== 'none' ? fd.get('categoryId') as string : null,
     countryCode: fd.get('countryCode') as string || '+54',
@@ -1115,13 +1127,13 @@ export async function updateProvider(ps: any, fd: FormData) {
   };
   
   // Solo actualizar campos si están presentes en el formData
-  const fields = ['email', 'role', 'status', 'managementType', 'billingType', 'rateCurrency', 'hourlyRate', 'adminNote', 'categoryId', 'countryCode', 'phone', 'notes'];
+  const fields = ['email', 'role', 'status', 'managementType', 'billingType', 'rateCurrency', 'hourlyRate', 'monthlyRate', 'adminNote', 'categoryId', 'countryCode', 'phone', 'notes'];
   
   fields.forEach(f => {
     if (fd.has(f)) {
       if (f === 'categoryId') {
         data[f] = fd.get(f) !== 'none' ? fd.get(f) as string : null;
-      } else if (f === 'hourlyRate') {
+      } else if (f === 'hourlyRate' || f === 'monthlyRate') {
         data[f] = parseFloat(fd.get(f) as string) || null;
       } else {
         data[f] = fd.get(f);
@@ -1178,45 +1190,142 @@ export async function addWorkLog(ps: any, fd: FormData) {
     const orgId = getRequiredOrgId(fd);
     const providerId = fd.get('providerId') as string;
     const assVal = fd.get('assignment') as string;
-    const [type, aid] = assVal.split('-');
+    const { type, id: aid } = parseAssignment(assVal);
     const quantity = parseFloat(fd.get('quantity') as string);
     const rate = parseFloat(fd.get('rate') as string);
-    const data = {
+    const isPaid = fd.get('paid') === 'true' || fd.get('paid') === 'on';
+
+    const data: any = {
         orgId,
         providerId,
         assignment: { type, id: aid },
         date: fd.get('date') as string,
-        activityType: fd.get('activityType') as 'hourly' | 'per_visit',
+        activityType: fd.get('activityType') as 'hourly' | 'per_visit' | 'monthly',
         quantity,
         rateApplied: rate,
         calculatedCost: quantity * rate,
         description: fd.get('description') as string || '',
         costCurrency: 'ARS',
-        status: 'pending_liquidation' as const,
+        status: isPaid ? 'liquidated' : 'pending_liquidation',
         liquidationId: null
     };
+
     const provSnap = await getDoc(doc(db, 'providers', providerId));
-    if (provSnap.exists()) { (data as any).costCurrency = (provSnap.data().rateCurrency || 'ARS').toUpperCase(); }
-    await addDoc(collection(db, 'workLogs'), data).catch(handleError('workLogs', 'create', data));
+    if (provSnap.exists()) { data.costCurrency = (provSnap.data().rateCurrency || 'ARS').toUpperCase(); }
+
+    const batch = writeBatch(db);
+    const logRef = doc(collection(db, 'workLogs'));
+    
+    if (isPaid) {
+        const liqRef = doc(collection(db, 'liquidations'));
+        const liquidation = { 
+            orgId,
+            providerId, 
+            dateGenerated: new Date().toISOString(), 
+            totalAmount: data.calculatedCost,
+            previousBalance: 0,
+            currency: data.costCurrency, 
+            status: 'paid' as const, 
+            amountPaid: data.calculatedCost, 
+            balance: 0 
+        };
+        batch.set(liqRef, liquidation);
+        data.liquidationId = liqRef.id;
+
+        const expRef = doc(collection(db, 'expenses'));
+        const expenseData: any = {
+            orgId,
+            assignment: { type, id: aid },
+            date: data.date,
+            amount: data.calculatedCost,
+            currency: data.costCurrency,
+            description: `[Actividad Pagada] ${data.description || 'Trabajo de colaborador'}`,
+            categoryId: 'provider_payments',
+            providerId,
+            workLogId: logRef.id,
+            liquidationId: liqRef.id,
+            ownerLiquidationId: null
+        };
+        if (data.costCurrency === 'USD') {
+            expenseData.originalUsdAmount = data.calculatedCost;
+        }
+        batch.set(expRef, expenseData);
+    }
+    
+    batch.set(logRef, data);
+
+    await batch.commit().catch(handleError('workLogs', 'create', data));
     return { success: true, message: 'Actividad registrada.' };
 }
 
 export async function updateWorkLog(ps: any, fd: FormData) {
     const id = fd.get('id') as string;
+    const providerId = fd.get('providerId') as string;
     const assVal = fd.get('assignment') as string;
-    const [type, aid] = assVal.split('-');
+    const { type, id: aid } = parseAssignment(assVal);
     const quantity = parseFloat(fd.get('quantity') as string);
     const rate = parseFloat(fd.get('rate') as string);
-    const data = {
+    const isPaid = fd.get('paid') === 'true' || fd.get('paid') === 'on';
+
+    const provSnap = await getDoc(doc(db, 'providers', providerId));
+    const orgId = provSnap.exists() ? provSnap.data().orgId : 'global';
+    const costCurrency = provSnap.exists() ? (provSnap.data().rateCurrency || 'ARS').toUpperCase() : 'ARS';
+
+    const calculatedCost = quantity * rate;
+    const data: any = {
         assignment: { type, id: aid },
         date: fd.get('date') as string,
         activityType: fd.get('activityType') as any,
         quantity,
         rateApplied: rate,
-        calculatedCost: quantity * rate,
+        calculatedCost,
         description: fd.get('description') as string || '',
     };
-    await updateDoc(doc(db, 'workLogs', id), data).catch(handleError(`workLogs/${id}`, 'update', data));
+
+    const batch = writeBatch(db);
+    const logRef = doc(db, 'workLogs', id);
+
+    if (isPaid) {
+        data.status = 'liquidated';
+        
+        const liqRef = doc(collection(db, 'liquidations'));
+        const liquidation = { 
+            orgId,
+            providerId, 
+            dateGenerated: new Date().toISOString(), 
+            totalAmount: calculatedCost,
+            previousBalance: 0,
+            currency: costCurrency, 
+            status: 'paid' as const, 
+            amountPaid: calculatedCost, 
+            balance: 0 
+        };
+        batch.set(liqRef, liquidation);
+        data.liquidationId = liqRef.id;
+
+        const expRef = doc(collection(db, 'expenses'));
+        const expenseData: any = {
+            orgId,
+            assignment: { type, id: aid },
+            date: data.date,
+            amount: calculatedCost,
+            currency: costCurrency,
+            description: `[Actividad Pagada] ${data.description || 'Trabajo de colaborador'}`,
+            categoryId: 'provider_payments',
+            providerId,
+            workLogId: id,
+            liquidationId: liqRef.id,
+            ownerLiquidationId: null
+        };
+        if (costCurrency === 'USD') {
+            expenseData.originalUsdAmount = calculatedCost;
+        }
+        batch.set(expRef, expenseData);
+    }
+
+    batch.update(logRef, data);
+
+    await batch.commit().catch(handleError(`workLogs/${id}`, 'update', data));
     return { success: true, message: 'Actividad actualizada.' };
 }
 
@@ -1226,15 +1335,15 @@ export async function deleteWorkLog(ps: any, fd: FormData) {
     return { success: true, message: 'Actividad eliminada.' };
 }
 
-// --- AJUSTES MANUALES ---
 export async function addManualAdjustment(ps: any, fd: FormData) {
     const orgId = getRequiredOrgId(fd);
     const providerId = fd.get('providerId') as string;
     const assVal = fd.get('assignment') as string;
-    const [type, aid] = assVal.split('-');
+    const { type, id: aid } = parseAssignment(assVal);
     const amount = parseFloat(fd.get('amount') as string);
     const currency = (fd.get('currency') as string || 'ARS').toUpperCase();
     const catId = fd.get('categoryId') as string;
+    const isPaid = fd.get('paid') === 'true' || fd.get('paid') === 'on';
     
     // Soporte para ambos nombres de colección en el lookup
     let catSnap = await getDoc(doc(db, 'adjustment_categories', catId));
@@ -1243,11 +1352,16 @@ export async function addManualAdjustment(ps: any, fd: FormData) {
     }
     
     let finalAmount = amount;
-    if (catSnap.exists() && catSnap.data()?.type === 'deduction') { 
+    const catType = catSnap.exists() ? catSnap.data()?.type : 'addition';
+    const catName = catSnap.exists() ? catSnap.data()?.name : 'Ajuste';
+    if (catType === 'deduction') { 
         finalAmount = -Math.abs(amount); 
     }
     
-    const data = {
+    const batch = writeBatch(db);
+    const adjRef = doc(collection(db, 'manualAdjustments'));
+
+    const data: any = {
         orgId,
         providerId,
         assignment: { type, id: aid },
@@ -1256,17 +1370,61 @@ export async function addManualAdjustment(ps: any, fd: FormData) {
         currency,
         categoryId: catId,
         notes: fd.get('notes') as string || '',
-        status: 'pending_liquidation' as const,
+        status: (isPaid && catType === 'addition') ? 'liquidated' : 'pending_liquidation',
         liquidationId: null
     };
-    await addDoc(collection(db, 'manualAdjustments'), data).catch(handleError('manualAdjustments', 'create', data));
+    
+    if (isPaid && catType === 'addition') {
+        const liqRef = doc(collection(db, 'liquidations'));
+        const liquidation = { 
+            orgId,
+            providerId, 
+            dateGenerated: new Date().toISOString(), 
+            totalAmount: data.amount,
+            previousBalance: 0,
+            currency: data.currency, 
+            status: 'paid' as const, 
+            amountPaid: data.amount, 
+            balance: 0 
+        };
+        batch.set(liqRef, liquidation);
+        data.liquidationId = liqRef.id;
+
+        const expRef = doc(collection(db, 'expenses'));
+        const expenseData: any = {
+            orgId,
+            assignment: { type, id: aid },
+            date: data.date,
+            amount: data.amount,
+            currency: data.currency,
+            description: `[Ajuste Pagado] ${catName}${data.notes ? `: ${data.notes}` : ''}`,
+            categoryId: 'provider_payments',
+            providerId,
+            manualAdjustmentId: adjRef.id,
+            liquidationId: liqRef.id,
+            ownerLiquidationId: null
+        };
+        if (data.currency === 'USD') {
+            expenseData.originalUsdAmount = data.amount;
+        }
+        batch.set(expRef, expenseData);
+    }
+    
+    batch.set(adjRef, data);
+
+    await batch.commit().catch(handleError('manualAdjustments', 'create', data));
     return { success: true, message: 'Ajuste registrado.' };
 }
 
 export async function updateManualAdjustment(ps: any, fd: FormData) {
     const id = fd.get('id') as string;
+    const providerId = fd.get('providerId') as string;
+    const assVal = fd.get('assignment') as string;
+    const { type, id: aid } = parseAssignment(assVal);
     const amount = parseFloat(fd.get('amount') as string);
+    const currency = (fd.get('currency') as string || 'ARS').toUpperCase();
     const catId = fd.get('categoryId') as string;
+    const isPaid = fd.get('paid') === 'true' || fd.get('paid') === 'on';
     
     // Soporte para ambos nombres de colección en el lookup
     let catSnap = await getDoc(doc(db, 'adjustment_categories', catId));
@@ -1275,18 +1433,68 @@ export async function updateManualAdjustment(ps: any, fd: FormData) {
     }
     
     let finalAmount = amount;
-    if (catSnap.exists() && catSnap.data()?.type === 'deduction') { 
+    const catType = catSnap.exists() ? catSnap.data()?.type : 'addition';
+    const catName = catSnap.exists() ? catSnap.data()?.name : 'Ajuste';
+    if (catType === 'deduction') { 
         finalAmount = -Math.abs(amount); 
     }
 
-    const data = {
+    const provSnap = await getDoc(doc(db, 'providers', providerId));
+    const orgId = provSnap.exists() ? provSnap.data().orgId : 'global';
+
+    const data: any = {
+        assignment: { type, id: aid },
         date: fd.get('date') as string,
         amount: finalAmount,
-        currency: (fd.get('currency') as string || 'ARS').toUpperCase(),
+        currency,
         categoryId: catId,
         notes: fd.get('notes') as string || '',
     };
-    await updateDoc(doc(db, 'manualAdjustments', id), data).catch(handleError(`manualAdjustments/${id}`, 'update', data));
+
+    const batch = writeBatch(db);
+    const adjRef = doc(db, 'manualAdjustments', id);
+
+    if (isPaid && catType === 'addition') {
+        data.status = 'liquidated';
+        
+        const liqRef = doc(collection(db, 'liquidations'));
+        const liquidation = { 
+            orgId,
+            providerId, 
+            dateGenerated: new Date().toISOString(), 
+            totalAmount: data.amount,
+            previousBalance: 0,
+            currency: data.currency, 
+            status: 'paid' as const, 
+            amountPaid: data.amount, 
+            balance: 0 
+        };
+        batch.set(liqRef, liquidation);
+        data.liquidationId = liqRef.id;
+
+        const expRef = doc(collection(db, 'expenses'));
+        const expenseData: any = {
+            orgId,
+            assignment: { type, id: aid },
+            date: data.date,
+            amount: data.amount,
+            currency: data.currency,
+            description: `[Ajuste Pagado] ${catName}${data.notes ? `: ${data.notes}` : ''}`,
+            categoryId: 'provider_payments',
+            providerId,
+            manualAdjustmentId: id,
+            liquidationId: liqRef.id,
+            ownerLiquidationId: null
+        };
+        if (data.currency === 'USD') {
+            expenseData.originalUsdAmount = data.amount;
+        }
+        batch.set(expRef, expenseData);
+    }
+
+    batch.update(adjRef, data);
+
+    await batch.commit().catch(handleError(`manualAdjustments/${id}`, 'update', data));
     return { success: true, message: 'Ajuste actualizado.' };
 }
 
@@ -1303,11 +1511,14 @@ export async function generateLiquidation(ps: any, fd: FormData) {
   const currency = (fd.get('currency') as string || 'ARS').toUpperCase() as 'ARS' | 'USD';
   const workLogIds = fd.getAll('workLogIds') as string[];
   const adjustmentIds = fd.getAll('adjustmentIds') as string[];
+  
   let totalAmount = 0;
   const logsSnap = await Promise.all(workLogIds.map(id => getDoc(doc(db, 'workLogs', id))));
   const adjsSnap = await Promise.all(adjustmentIds.map(id => getDoc(doc(db, 'manualAdjustments', id))));
+  
   logsSnap.forEach(d => { if (d.exists()) totalAmount += d.data().calculatedCost; });
   adjsSnap.forEach(d => { if (d.exists()) totalAmount += d.data().amount; });
+  
   const qLast = query(collection(db, 'liquidations'), where('providerId', '==', providerId), where('currency', '==', currency));
   const lastLiqs = await getDocs(qLast);
   let previousBalance = 0;
@@ -1316,8 +1527,10 @@ export async function generateLiquidation(ps: any, fd: FormData) {
       previousBalance = sorted[0].data().balance || 0;
   }
   const finalTotal = totalAmount + previousBalance;
+  
   const batch = writeBatch(db);
   const liqRef = doc(collection(db, 'liquidations'));
+  
   const liquidation = { 
     orgId,
     providerId, 
@@ -1329,9 +1542,62 @@ export async function generateLiquidation(ps: any, fd: FormData) {
     amountPaid: 0, 
     balance: finalTotal 
   };
+  
   batch.set(liqRef, liquidation);
+  
+  // 1. Create a Gasto for each workLog (activity)
+  logsSnap.forEach(d => {
+    if (d.exists()) {
+      const log = d.data();
+      const expRef = doc(collection(db, 'expenses'));
+      const expenseData: any = {
+        orgId,
+        assignment: log.assignment,
+        date: log.date,
+        amount: log.calculatedCost,
+        currency: log.costCurrency,
+        description: `[Liquidado] ${log.description || 'Actividad de colaborador'}`,
+        categoryId: 'provider_payments',
+        providerId,
+        workLogId: d.id,
+        liquidationId: liqRef.id,
+        ownerLiquidationId: null
+      };
+      if (log.costCurrency === 'USD') {
+        expenseData.originalUsdAmount = log.calculatedCost;
+      }
+      batch.set(expRef, expenseData);
+    }
+  });
+
+  // 2. Create a Gasto for each manualAdjustment (can be positive or negative)
+  adjsSnap.forEach(d => {
+    if (d.exists()) {
+      const adj = d.data();
+      const expRef = doc(collection(db, 'expenses'));
+      const expenseData: any = {
+        orgId,
+        assignment: adj.assignment,
+        date: adj.date,
+        amount: adj.amount,
+        currency: adj.currency,
+        description: `[Liquidado - Ajuste] ${adj.notes || 'Ajuste de colaborador'}`,
+        categoryId: 'provider_payments',
+        providerId,
+        manualAdjustmentId: d.id,
+        liquidationId: liqRef.id,
+        ownerLiquidationId: null
+      };
+      if (adj.currency === 'USD') {
+        expenseData.originalUsdAmount = adj.amount;
+      }
+      batch.set(expRef, expenseData);
+    }
+  });
+
   workLogIds.forEach(id => batch.update(doc(db, 'workLogs', id), { status: 'liquidated', liquidationId: liqRef.id }));
   adjustmentIds.forEach(id => batch.update(doc(db, 'manualAdjustments', id), { status: 'liquidated', liquidationId: liqRef.id }));
+  
   await batch.commit().catch(handleError('liquidations', 'write', liquidation));
   logEvent('liquidation_generated', { org_id: orgId });
   return { success: true, message: 'Liquidación generada con éxito.' };
@@ -1352,18 +1618,10 @@ export async function addLiquidationPayment(ps: any, fd: FormData) {
         balance: newBalance,
         status: newBalance <= 0.01 ? 'paid' : 'partially_paid'
     });
-    const expenseData = {
-        orgId,
-        date: fd.get('paymentDate') as string,
-        amount: amount,
-        currency: (liq.currency || 'ARS').toUpperCase(),
-        description: fd.get('expenseDescription') as string,
-        categoryId: fd.get('expenseCategoryId') as string,
-        providerId: liq.providerId,
-        liquidationId: liqId,
-        assignment: { type: 'scope', id: 'administracion' } 
-    };
-    batch.set(doc(collection(db, 'expenses')), expenseData);
+    
+    // We removed generic expense creation here to avoid duplicate accounting,
+    // since per-activity and per-adjustment expenses are created at liquidation time.
+    
     await batch.commit().catch(handleError(`liquidations/${liqId}`, 'write'));
     return { success: true, message: 'Pago registrado correctamente.' };
 }

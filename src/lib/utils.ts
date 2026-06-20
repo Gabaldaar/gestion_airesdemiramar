@@ -201,6 +201,34 @@ export const calculatePriceForStay = (
     };
 };
 
+export interface ParsedAssignment {
+  type: 'property' | 'scope';
+  id: string;
+}
+
+export function parseAssignment(assignment: any): ParsedAssignment {
+  if (!assignment) {
+    return { type: 'property', id: '' };
+  }
+  if (typeof assignment === 'string') {
+    if (assignment.includes('-')) {
+      const [type, id] = assignment.split('-');
+      return {
+        type: (type === 'scope' ? 'scope' : 'property') as 'property' | 'scope',
+        id: id || ''
+      };
+    }
+    return { type: 'property', id: assignment };
+  }
+  if (typeof assignment === 'object') {
+    return {
+      type: (assignment.type === 'scope' ? 'scope' : 'property') as 'property' | 'scope',
+      id: assignment.id || ''
+    };
+  }
+  return { type: 'property', id: '' };
+}
+
     
 
     

@@ -395,7 +395,7 @@ export function BookingEditForm({ booking, tenants, properties, allBookings, all
                         <Label htmlFor="originId" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('bookings.filters.origin')}</Label>
                         <Select name="originId" defaultValue={booking.originId || undefined}>
                             <SelectTrigger className="bg-background h-11 shadow-sm">
-                                <SelectValue placeholder="Selecciona un origen" />
+                                <SelectValue placeholder={t('common.select_origin')} />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">{t('common.none')}</SelectItem>

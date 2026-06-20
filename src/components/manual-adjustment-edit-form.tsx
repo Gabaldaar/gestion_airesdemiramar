@@ -13,12 +13,13 @@ import { Loader2 } from 'lucide-react';
 import { updateManualAdjustment } from '@/lib/actions';
 import { Provider, Property, TaskScope, ManualAdjustment, AdjustmentCategory, CurrencySettings, getAdjustmentCategories } from '@/lib/data';
 import { useToast } from './ui/use-toast';
-import { parseDateSafely } from '@/lib/utils';
+import { parseDateSafely, parseAssignment } from '@/lib/utils';
 import { useAuth } from './auth-provider';
 import { currencies } from '@/lib/currencies';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useTranslation } from "@/i18n/useTranslation";
+import { Checkbox } from './ui/checkbox';
 
 const initialState = { success: false, message: '' };
 
@@ -34,11 +35,17 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
     const { appUser, orgId } = useAuth();
     const { t } = useTranslation();
     const isPersonalFlavor = appUser?.appFlavor !== 'commercial';
+    const isAdmin = appUser?.role === 'admin';
 
+    const initialAssignment = parseAssignment(adjustment.assignment);
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [categories, setCategories] = useState<AdjustmentCategory[]>([]);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string>(adjustment.categoryId);
+    const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+    const showPaidOption = selectedCategory?.type === 'addition';
+    const [assignment, setAssignment] = useState<string>(`${initialAssignment.type}-${initialAssignment.id}`);
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
     const [currencySettings, setCurrencySettings] = useState<CurrencySettings | null>(null);
@@ -77,6 +84,9 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
                 });
             }
             setState(initialState);
+            setSelectedCategoryId(adjustment.categoryId);
+            const parsed = parseAssignment(adjustment.assignment);
+            setAssignment(`${parsed.type}-${parsed.id}`);
         }
     }, [isOpen, adjustment, appUser, orgId]);
 
@@ -106,7 +116,7 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
 
                         <div className="space-y-2">
                             <Label htmlFor="assignment" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('expenses.add_dialog.impute_to')}</Label>
-                            <Select name="assignment" defaultValue={defaultAssignmentValue} required>
+                            <Select name="assignment" value={assignment} onValueChange={setAssignment} required>
                                 <SelectTrigger className="bg-background h-11 shadow-sm"><SelectValue placeholder={t('expenses.add_dialog.impute_placeholder')}/></SelectTrigger>
                                 <SelectContent>
                                     {properties && properties.length > 0 && (
@@ -127,7 +137,7 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
                         
                         <div className="space-y-2">
                             <Label htmlFor="categoryId" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('liquidations.pending_items.manual_adjustments')}</Label>
-                            <Select name="categoryId" defaultValue={adjustment.categoryId} required>
+                            <Select name="categoryId" value={selectedCategoryId} onValueChange={setSelectedCategoryId} required>
                                  <SelectTrigger className="bg-background h-11 shadow-sm"><SelectValue placeholder={t('common.select_category')}/></SelectTrigger>
                                  <SelectContent>
                                     {categories.map(cat => (
@@ -175,6 +185,16 @@ export function ManualAdjustmentEditForm({ provider, properties, scopes, adjustm
                                 </Select>
                             </div>
                         </div>
+
+                        
+                        {showPaidOption && isAdmin && (
+                            <div className="flex items-center space-x-2 py-2">
+                                <Checkbox id="paid" name="paid" />
+                                <Label htmlFor="paid" className="cursor-pointer text-muted-foreground font-bold uppercase text-[10px] tracking-widest select-none">
+                                    {t('liquidations.add_adjustment_dialog.paid_label')}
+                                </Label>
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <Label htmlFor="notes" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('tenants.card.notes')}</Label>

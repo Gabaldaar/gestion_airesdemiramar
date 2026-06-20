@@ -15,6 +15,7 @@ import { useToast } from './ui/use-toast';
 import { useAuth } from './auth-provider';
 import { useTranslation } from "@/i18n/useTranslation";
 import { cn } from '@/lib/utils';
+import { Checkbox } from './ui/checkbox';
 
 const initialState = { success: false, message: '' };
 
@@ -33,7 +34,7 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
     const [state, setState] = useState(initialState);
     const [isPending, startTransition] = useTransition();
     const [date, setDate] = useState<Date | undefined>(new Date());
-    const [activityType, setActivityType] = useState<'hourly' | 'per_visit'>('hourly');
+    const [activityType, setActivityType] = useState<'hourly' | 'per_visit' | 'monthly'>('hourly');
     const [rate, setRate] = useState<number | ''>('');
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
@@ -77,6 +78,9 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
             } else if (provider.billingType === 'per_visit') {
                 setActivityType('per_visit');
                 setRate(provider.perVisitRate || '');
+            } else if (provider.billingType === 'monthly') {
+                setActivityType('monthly');
+                setRate(provider.monthlyRate || '');
             } else { 
                 setActivityType('hourly'); 
                 setRate(provider.hourlyRate || '');
@@ -89,14 +93,16 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
         let newRate: number | '' = '';
         const isVisit = activityType === 'per_visit';
 
-        if (isVisit && selectedAssignmentId) {
+        if (activityType === 'monthly') {
+             newRate = provider.monthlyRate || '';
+        } else if (isVisit && selectedAssignmentId) {
              const selectedProperty = properties.find(p => p.id === selectedAssignmentId);
              const specificRate = selectedProperty?.visitRates?.[provider.id];
              newRate = specificRate ?? (provider.perVisitRate || '');
         } else if (isVisit) {
              newRate = provider.perVisitRate || '';
         } else { 
-            newRate = provider.hourlyRate || '';
+             newRate = provider.hourlyRate || '';
         }
 
         setRate(newRate);
@@ -105,15 +111,16 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
 
 
     const showActivityTypeSelect = provider?.billingType === 'hourly_or_visit';
-    const quantityLabel = activityType === 'hourly' ? t('liquidations.add_activity_dialog.hours_label') : t('liquidations.add_activity_dialog.visits_label');
+    const quantityLabel = activityType === 'hourly' ? t('liquidations.add_activity_dialog.hours_label') : activityType === 'monthly' ? t('liquidations.add_activity_dialog.months_label') : t('liquidations.add_activity_dialog.visits_label');
     const quantityPlaceholder = activityType === 'hourly' ? "Ej: 2.5" : "Ej: 1";
-    const rateLabel = activityType === 'hourly' ? t('liquidations.add_activity_dialog.rate_hour_label') : t('liquidations.add_activity_dialog.rate_visit_label');
+    const rateLabel = activityType === 'hourly' ? t('liquidations.add_activity_dialog.rate_hour_label') : activityType === 'monthly' ? t('liquidations.add_activity_dialog.rate_month_label') : t('liquidations.add_activity_dialog.rate_visit_label');
 
     const getDialogDescription = () => {
         if (!provider) return '';
         if (provider.billingType === 'hourly_or_visit') return t('liquidations.add_activity_dialog.description_mixed');
         if (provider.billingType === 'hourly') return t('liquidations.add_activity_dialog.description_hourly');
         if (provider.billingType === 'per_visit') return t('liquidations.add_activity_dialog.description_visit');
+        if (provider.billingType === 'monthly') return t('liquidations.add_activity_dialog.description_monthly');
         return t('liquidations.add_activity_dialog.description_other');
     };
 
@@ -180,7 +187,7 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
                          <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="quantity" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{quantityLabel}</Label>
-                                <Input id="quantity" name="quantity" type="number" step="0.5" placeholder={quantityPlaceholder} required className="h-11 bg-background shadow-sm" />
+                                <Input key={activityType} id="quantity" name="quantity" type="number" step="0.5" placeholder={quantityPlaceholder} defaultValue={activityType === 'monthly' ? 1 : undefined} required className="h-11 bg-background shadow-sm" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="rate" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{rateLabel}</Label>
@@ -197,6 +204,15 @@ export function WorkLogAddForm({ provider, properties, scopes, isOpen, onOpenCha
                                 />
                             </div>
                         </div>
+                        
+                        {isAdmin && (
+                            <div className="flex items-center space-x-2 py-2">
+                                <Checkbox id="paid" name="paid" />
+                                <Label htmlFor="paid" className="cursor-pointer text-muted-foreground font-bold uppercase text-[10px] tracking-widest select-none">
+                                    {t('liquidations.add_activity_dialog.paid_label')}
+                                </Label>
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <Label htmlFor="description" className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">{t('common.description')}</Label>

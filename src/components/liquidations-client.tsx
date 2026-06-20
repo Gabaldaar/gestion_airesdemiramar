@@ -161,6 +161,11 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
     const liquidationProviders = useMemo(() => providers.filter((p: Provider) => p.managementType === 'liquidations'), [providers]);
     const selectedProvider = useMemo(() => providers.find((p: Provider) => p.id === selectedProviderId), [providers, selectedProviderId]);
 
+    const filteredHistoryLiquidations = useMemo(() => {
+        if (!selectedProviderId) return liquidations;
+        return liquidations.filter(liq => liq.providerId === selectedProviderId);
+    }, [liquidations, selectedProviderId]);
+
     const canRegisterActivity = useMemo(() => {
         if (!selectedProvider || !selectedProvider.billingType) return false;
         return selectedProvider.billingType !== 'other';
@@ -370,14 +375,26 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                                                                         </div>
                                                                     </div>
                                                                     <Badge variant="outline" className="text-[10px] font-bold uppercase h-5 bg-background">
-                                                                        {log.activityType === 'hourly' ? t('liquidations.activity_types.hours') : t('liquidations.activity_types.visit')}
+                                                                        {log.activityType === 'hourly' 
+                                                                            ? t('liquidations.activity_types.hours') 
+                                                                            : log.activityType === 'monthly'
+                                                                                ? t('liquidations.activity_types.monthly')
+                                                                                : t('liquidations.activity_types.visit')}
                                                                     </Badge>
                                                                 </CardHeader>
                                                                 <CardContent className="p-3 space-y-2 text-sm">
                                                                     <p className="font-medium text-xs leading-tight line-clamp-2">{log.description || '(Sin descripción)'}</p>
                                                                     <div className="flex justify-between items-end border-t pt-2 mt-1">
                                                                         <div className="text-[10px] text-muted-foreground">
-                                                                            <p>{log.quantity} {log.activityType === 'hourly' ? t('liquidations.activity_types.hours').toLowerCase() : t('liquidations.activity_types.visit').toLowerCase()} x {formatCurrency(log.rateApplied, log.costCurrency)}</p>
+                                                                            <p>
+                                                                                {log.quantity}{' '}
+                                                                                {log.activityType === 'hourly' 
+                                                                                    ? t('liquidations.activity_types.hours').toLowerCase() 
+                                                                                    : log.activityType === 'monthly'
+                                                                                        ? t('liquidations.activity_types.monthly').toLowerCase()
+                                                                                        : t('liquidations.activity_types.visit').toLowerCase()}{' '}
+                                                                                x {formatCurrency(log.rateApplied, log.costCurrency)}
+                                                                            </p>
                                                                         </div>
                                                                         <p className="font-black text-primary text-base">{formatCurrency(log.calculatedCost, log.costCurrency)}</p>
                                                                     </div>
@@ -553,7 +570,7 @@ export default function LiquidationsClient({ providers, properties, scopes, liqu
                     )}
                 </TabsContent>
                 <TabsContent value="history">
-                    <LiquidationsHistoryList liquidations={liquidations} properties={properties} scopes={scopes} onDataRefreshed={handleDataChange} />
+                    <LiquidationsHistoryList liquidations={filteredHistoryLiquidations} properties={properties} scopes={scopes} onDataRefreshed={handleDataChange} />
                 </TabsContent>
             </Tabs>
             

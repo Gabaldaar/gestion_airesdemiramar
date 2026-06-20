@@ -47,7 +47,7 @@ function WorkLogDetailCard({ log }: { log: WorkLog & { assignmentName?: string }
                     <p className="font-bold text-primary">{formatCurrency(log.calculatedCost, log.costCurrency)}</p>
                 </div>
                 <p>{log.description}</p>
-                 <p className="text-muted-foreground text-xs">({log.quantity} {log.activityType === 'hourly' ? 'hs' : 'visita(s)'} a {formatCurrency(log.rateApplied, log.costCurrency)})</p>
+                 <p className="text-muted-foreground text-xs">({log.quantity} {log.activityType === 'hourly' ? 'hs' : log.activityType === 'monthly' ? 'mes(es)' : 'visita(s)'} a {formatCurrency(log.rateApplied, log.costCurrency)})</p>
             </CardContent>
         </Card>
     );
@@ -109,7 +109,7 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
             text += "*Actividades:*\n";
             details.workLogs.forEach(log => {
                 const logAsAny = log as any;
-                text += `- ${logAsAny.assignmentName || 'N/A'}: ${log.description} (${log.quantity} ${log.activityType === 'hourly' ? 'hs' : 'visita(s)'}) - *${formatCurrency(log.calculatedCost, log.costCurrency)}*\n`;
+                text += `- ${logAsAny.assignmentName || 'N/A'}: ${log.description} (${log.quantity} ${log.activityType === 'hourly' ? 'hs' : log.activityType === 'monthly' ? 'mes(es)' : 'visita(s)'}) - *${formatCurrency(log.calculatedCost, log.costCurrency)}*\n`;
             });
             text += '\n';
         }
@@ -174,7 +174,7 @@ export function LiquidationDetailsDialog({ liquidation, isOpen, onOpenChange }: 
                                                     <TableCell className="text-xs">{formatDate(log.date)}</TableCell>
                                                     <TableCell className="text-xs font-medium">{(log as any).assignmentName || 'N/A'}</TableCell>
                                                     <TableCell className="text-xs">{log.description}</TableCell>
-                                                    <TableCell className="text-right text-xs">{log.quantity} {log.activityType === 'hourly' ? 'hs' : 'vis.'}</TableCell>
+                                                     <TableCell className="text-right text-xs">{log.quantity} {log.activityType === 'hourly' ? 'hs' : log.activityType === 'monthly' ? 'mes' : 'vis.'}</TableCell>
                                                     <TableCell className="text-right text-xs">{formatCurrency(log.rateApplied, log.costCurrency)}</TableCell>
                                                     <TableCell className="text-right font-bold">{formatCurrency(log.calculatedCost, log.costCurrency)}</TableCell>
                                                 </TableRow>

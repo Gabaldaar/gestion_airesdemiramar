@@ -104,7 +104,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   billingType: 'other',
                   rateCurrency: 'ARS',
                   hourlyRate: 0,
-                  perVisitRate: 0
+                  perVisitRate: 0,
+                  monthlyRate: 0
               };
               setOrgId('global');
               setAppUser(masterData);
