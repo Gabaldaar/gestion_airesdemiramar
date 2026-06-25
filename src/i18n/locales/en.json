@@ -1091,6 +1091,12 @@
     "monthly_trend_title": "Net Result Evolution",
     "monthly_trend_desc": "Monthly comparison Income vs Expenses."
   },
+  "pwa_install": {
+    "title": "Install {{appName}}",
+    "message": "Install the app on your device for fast access and offline capabilities.",
+    "btn_install": "Install",
+    "btn_cancel": "Not now"
+  },
   "payments_page": {
     "description": "History of all received payments.",
     "placeholder_search": "Search by property, tenant...",

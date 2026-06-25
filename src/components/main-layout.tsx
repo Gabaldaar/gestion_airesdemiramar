@@ -79,6 +79,7 @@ import { BookingAddForm } from './booking-add-form';
 import { TaskAddForm } from './task-add-form';
 import { ExpenseAddForm } from './expense-add-form';
 import { ProductTour } from './product-tour';
+import { PwaInstallPrompt } from './pwa-install-prompt';
 import { differenceInDays, startOfToday } from 'date-fns';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
@@ -821,6 +822,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     pendingBookingsCount={pendingBookingsCount}
                 />
                 <ProductTour />
+                <PwaInstallPrompt appName={appName} />
             </div>
             </div>
         </div>

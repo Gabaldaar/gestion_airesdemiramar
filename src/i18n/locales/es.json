@@ -1093,6 +1093,12 @@
     "monthly_trend_title": "Evolución del Resultado Neto",
     "monthly_trend_desc": "Comparativa mensual Ingresos vs Gastos."
   },
+  "pwa_install": {
+    "title": "Instalar {{appName}}",
+    "message": "Instala la aplicación en tu dispositivo para acceder de forma rápida y sin conexión.",
+    "btn_install": "Instalar",
+    "btn_cancel": "Ahora no"
+  },
   "payments_page": {
     "description": "Historial de todos los cobros recibidos.",
     "placeholder_search": "Buscar por propiedad, inquilino...",

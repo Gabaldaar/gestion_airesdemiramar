@@ -1046,6 +1046,12 @@
     "desc": "Activez les notifications pour recevoir les alertes critiques d'arrivée et de paiement.",
     "button": "Activer maintenant"
   },
+  "pwa_install": {
+    "title": "Installer {{appName}}",
+    "message": "Installez l'application sur votre appareil pour un accès rapide et des fonctionnalités hors ligne.",
+    "btn_install": "Installer",
+    "btn_cancel": "Pas maintenant"
+  },
   "payments_page": {
     "description": "Historique de tous les paiements reçus.",
     "placeholder_search": "Rechercher par propriété, locataire...",

@@ -1092,6 +1092,12 @@
     "monthly_trend_title": "Evolução do Resultado Líquido",
     "monthly_trend_desc": "Comparativo mensal de receitas vs gastos."
   },
+  "pwa_install": {
+    "title": "Instalar {{appName}}",
+    "message": "Instale o aplicativo no seu dispositivo para acesso rápido e recursos off-line.",
+    "btn_install": "Instalar",
+    "btn_cancel": "Agora não"
+  },
   "payments_page": {
     "description": "Histórico de todos os pagamentos recebidos.",
     "placeholder_search": "Buscar por propriedade, inquilino...",
