@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "miramar-rentals-manager"
+  },
+  "targets": {
+    "miramar-rentals-manager": {
+      "hosting": {
+        "regentum": [
+          "regentum"
+        ]
+      }
+    }
   }
 }
